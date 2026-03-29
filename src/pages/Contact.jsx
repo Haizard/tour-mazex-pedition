@@ -65,7 +65,7 @@ const Contact = () => {
             Contact Us
           </Badge>
           <h1 className="text-5xl font-black uppercase tracking-tighter font-heading md:text-7xl">
-            Tanzania Inside <span className="text-primary italic">& Safari</span>
+            Mazex <span className="text-primary italic">Pedition</span>
           </h1>
         </div>
       </div>
@@ -84,11 +84,10 @@ const Contact = () => {
             </div>
 
             <p className="text-gray-600 text-lg leading-relaxed font-medium">
-              TANZANIA INSIDE AND SAFARI is an exclusive, unique African safari
-              company that creates an experience based on the conversations we
-              have with you. We literally customize each safari itinerary,
-              listening to your dreams to carefully select the places you will
-              go.
+              MAZEX PEDITION creates custom African safari experiences shaped
+              around the conversations we have with you. We listen carefully to
+              your goals, style of travel, and dream destinations, then design
+              an itinerary that feels personal from start to finish.
             </p>
 
             <Card className="rounded-[32px] border-none shadow-xl p-8 md:p-10">

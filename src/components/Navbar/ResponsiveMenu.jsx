@@ -62,7 +62,7 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
           <a href="#"><FaRedditAlien /></a>
         </div>
         <div className="text-[10px] text-slate-500 uppercase flex flex-col gap-1 items-center font-oswald">
-          <span>&copy; 2026 Makolo Adventure Tours</span>
+          <span>&copy; 2026 Mazex Pedition</span>
           <span>Crafted for premium expeditions</span>
         </div>
       </div>

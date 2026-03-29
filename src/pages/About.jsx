@@ -28,7 +28,7 @@ const About = () => {
             Our Story
           </Badge>
           <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter font-heading">
-            The Makolo <span className="text-primary italic">Heritage</span>
+            The Mazex <span className="text-primary italic">Story</span>
           </h1>
         </div>
       </div>
@@ -47,7 +47,7 @@ const About = () => {
             </div>
 
             <p className="text-gray-600 text-lg leading-relaxed font-medium">
-              At Makolo Safari, we are dedicated to crafting unforgettable
+              At Mazex Pedition, we are dedicated to crafting unforgettable
               African adventures. Founded with a passion for the wild, our goal
               is to connect you with the continent's stunning landscapes,
               diverse wildlife, and rich cultures.
@@ -174,7 +174,7 @@ const About = () => {
                   <p className="font-black uppercase tracking-widest text-xs opacity-60">
                     Email
                   </p>
-                  <p className="text-lg font-bold">hello@makolosafari.com</p>
+                  <p className="text-lg font-bold">info@tanzaniainsideandsafari.com</p>
                 </div>
               </div>
             </div>

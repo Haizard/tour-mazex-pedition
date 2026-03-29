@@ -53,7 +53,7 @@ const Footer = () => {
         <div className="container max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" onClick={() => window.scrollTo(0, 0)}>
-            <img src={FooterLogo} alt="Tanzania Inside and Safari" className="h-16 w-auto object-contain" />
+            <img src={FooterLogo} alt="Mazex Pedition" className="h-16 w-auto object-contain" />
           </Link>
 
           {/* Social Icons */}
@@ -91,10 +91,10 @@ const Footer = () => {
           {/* Column 1: Brand / Contact */}
           <div className="md:col-span-4 space-y-5">
             <h5 className="text-white font-oswald font-semibold text-lg uppercase tracking-wide border-b border-safari-green pb-2">
-              Tanzania Inside and Safari
+              Mazex Pedition
             </h5>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Tanzania Inside and Safari is a local tour operator based in Moshi and Arusha Tanzania East Africa, established for just one purpose; which is to provide travelers with "the real taste of Africa".
+              Mazex Pedition is a safari and expedition company based in Tanzania, dedicated to creating personalized African journeys with local expertise, trusted guides, and unforgettable wilderness experiences.
             </p>
             <div className="space-y-2.5 text-sm">
               <a href="tel:+255762226648" className="flex items-center gap-3 text-gray-400 hover:text-safari-green transition-colors">
@@ -108,7 +108,7 @@ const Footer = () => {
                 <FaEnvelope className="text-safari-green shrink-0" /> info@tanzaniainsideandsafari.com
               </a>
               <a href="/" className="flex items-center gap-3 text-gray-400 hover:text-safari-green transition-colors">
-                <FaGlobe className="text-safari-green shrink-0" /> Tanzania Inside and Safari
+                <FaGlobe className="text-safari-green shrink-0" /> Mazex Pedition
               </a>
             </div>
           </div>
@@ -201,7 +201,7 @@ const Footer = () => {
       <div className="bg-black/40 border-t border-white/5">
         <div className="container max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-3 text-center">
           <p className="text-gray-500 text-xs font-medium">
-            Copyright &copy;2025 Tanzania Inside and Safari | All rights reserved
+            Copyright &copy;2025 Mazex Pedition | All rights reserved
           </p>
           <Link
             to="/login"
