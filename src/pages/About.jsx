@@ -28,7 +28,7 @@ const About = () => {
             Our Story
           </Badge>
           <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter font-heading">
-            The Mazex <span className="text-primary italic">Story</span>
+            The Mazex Pedition <span className="text-primary italic">Story</span>
           </h1>
         </div>
       </div>

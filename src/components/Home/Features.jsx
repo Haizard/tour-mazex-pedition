@@ -35,7 +35,7 @@ const Features = () => {
             Why Choose Us
           </p>
           <h2 className="text-4xl md:text-5xl font-black font-heading text-slate-900">
-            The Mazex Difference
+            The Mazex Pedition Difference
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

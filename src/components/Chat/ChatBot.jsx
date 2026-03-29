@@ -61,7 +61,7 @@ const ChatBot = () => {
               </div>
               <div>
                 <h3 className="font-black uppercase tracking-tighter text-sm">
-                  Mazex AI Guide
+                  Mazex Pedition AI Guide
                 </h3>
                 <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest">
                   Always Online
