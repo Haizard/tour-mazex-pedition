@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-#dist
+dist/
 dist-ssr
 *.local
 
@@ -31,3 +31,6 @@ backend/.env
 
 # Local HTML clone archive
 safari_clone/
+
+# Local design/source assets
+Mazex Pedition logo.png
