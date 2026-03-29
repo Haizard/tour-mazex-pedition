@@ -1,0 +1,172 @@
+.blog-detail-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  gap: 20px;
+  margin-top: 80px; /* Ensure this value is greater than or equal to the height of your navbar */
+}
+
+.blog-content {
+  flex: 1;
+}
+
+.blog-card {
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.blog-image {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.blog-card-info {
+  border-top: 2px solid gold; /* Golden line separating author and date */
+  padding-top: 10px;
+}
+
+.blog-card-date {
+  font-weight: bold;
+  color: red; /* Red color for the date */
+}
+
+.blog-card-author {
+  font-weight: bold;
+  color: green; /* Green color for the author */
+  margin-top: 5px; /* Space between date and author */
+}
+
+.blog-text {
+  padding-top: 12px;
+}
+
+.blog-title {
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.blog-description {
+  margin-top: 8px;
+}
+
+.order-popup-container {
+  width: 400px;
+  margin-top: 20px; /* Adds space between the blog content and the order form */
+}
+
+.order-popup {
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.itinerary-section {
+  margin-top: 20px;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.itinerary-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.itinerary-details {
+  padding: 8px;
+}
+
+.itinerary-day {
+  margin-bottom: 16px;
+}
+
+.itinerary-day-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.itinerary-events {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.itinerary-event {
+  padding: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #ddd;
+}
+
+@media (max-width: 768px) {
+  .blog-detail-container {
+    flex-direction: column;
+  }
+
+  .order-popup-container {
+    width: 100%;
+  }
+}
+
+/* Additional styles for buttons and other elements */
+.toggle-itinerary-btn {
+  background-color: #007bff; /* Primary color */
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.toggle-itinerary-btn:hover {
+  background-color: #0056b3; /* Darker shade of primary color */
+}
+
+.open-blog-btn {
+  background-color: #28a745; /* Green color */
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.open-blog-btn:hover {
+  background-color: #218838; /* Darker green shade */
+}
+
+/* Icon styling for toggle-itinerary-btn */
+.toggle-itinerary-btn::before {
+  content: "\f107"; /* Default icon for down arrow (FontAwesome) */
+  font-family: "FontAwesome";
+  font-weight: normal;
+  margin-right: 5px;
+}
+
+.toggle-itinerary-btn.showing::before {
+  content: "\f106"; /* Icon for up arrow when itinerary is visible (FontAwesome) */
+}
+.blog-card-info {
+  border-top: 2px solid gold !important; /* Force apply */
+  padding-top: 10px !important;
+}
+
+.blog-card-date {
+  font-weight: bold !important;
+  color: red !important; /* Red color for the date */
+}
+
+.blog-card-author {
+  font-weight: bold !important;
+  color: green !important; /* Green color for the author */
+  margin-top: 5px !important; /* Space between date and author */
+}
