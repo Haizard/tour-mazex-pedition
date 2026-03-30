@@ -72,9 +72,9 @@ const OrderPopup = ({
   return (
     <div className="fixed left-0 top-0 z-[1300] flex h-screen w-screen items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div
-        className={`relative shadow-2xl ${
+        className={`relative shadow-2xl ${isTailorMadeMode ? "" : "overflow-y-auto max-h-[90vh]"} ${
           isTailorMadeMode
-            ? "w-full max-w-6xl"
+            ? "w-full max-w-3xl"
             : "w-[450px] rounded-3xl bg-white p-8"
         }`}
       >
