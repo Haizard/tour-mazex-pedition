@@ -70,8 +70,8 @@ const stepConfig = [
 const IntroCard = ({ onCancel, onProceed }) => {
   return (
     <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[#f8f3ec] shadow-2xl">
-      <div className="grid md:grid-cols-[1.1fr_0.9fr]">
-        <div className="bg-[#17331c] p-8 text-white md:p-10">
+      <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="bg-[#17331c] p-8 text-white lg:p-10">
           <div className="mb-4 inline-flex rounded-full border border-white/20 px-4 py-1 text-[10px] font-black uppercase tracking-[0.35em] text-white/80">
             Plan My Trip
           </div>
@@ -85,7 +85,7 @@ const IntroCard = ({ onCancel, onProceed }) => {
           </p>
         </div>
 
-        <div className="p-8 md:p-10">
+        <div className="p-6 lg:p-10">
           <div className="space-y-5">
             <div className="rounded-2xl border border-[#d8c9b7] bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-primary">
@@ -257,20 +257,20 @@ const PlanMyTripWizard = ({
 
   return (
     <div className={`${wrapperClass} ${className}`}>
-      <div className="grid md:grid-cols-[280px_1fr]">
-        <div className="bg-primary p-8 text-white md:p-10">
+      <div className="grid lg:grid-cols-[280px_1fr]">
+        <div className="bg-primary p-6 text-white lg:p-10">
           <div className="mb-5 inline-flex rounded-full border border-white/20 px-4 py-1 text-[10px] font-black uppercase tracking-[0.32em] text-white/85">
             Plan My Trip
           </div>
           <h1 className="text-4xl font-black uppercase leading-none tracking-tighter">
             Plan Your Trip
           </h1>
-          <p className="mt-5 text-sm leading-7 text-white/80">
+          <p className="mt-3 text-xs leading-7 text-white/80">
             Move through the steps and share the essentials our safari planners
             need to design your custom journey.
           </p>
 
-          <div className="mt-10 space-y-4">
+          <div className="mt-6 space-y-3">
             {stepConfig.map((step, index) => {
               const isActive = index === currentStep;
               const isDone = index < currentStep || success;
@@ -309,7 +309,7 @@ const PlanMyTripWizard = ({
           </div>
         </div>
 
-        <div className="p-8 md:p-10">
+        <div className="p-6 lg:p-10">
           {success ? (
             <div className="flex min-h-[520px] flex-col items-center justify-center text-center">
               <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-4xl text-green-600">
