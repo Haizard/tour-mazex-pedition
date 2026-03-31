@@ -22,14 +22,17 @@ const buildPrompt = ({ text, contentType, context = {} }) => {
 
   if (contentType === "blog") {
     return `
-Paraphrase the BLOG content below into original wording while preserving the exact meaning and factual details.
+Rewrite the BLOG content below into fresh, high-quality editorial wording while preserving the exact meaning and factual details.
 
 Strict rules:
 - Keep the same language.
 - Keep all facts, names, numbers, places, durations, and recommendations.
 - Do not invent new claims.
-- Preserve markdown structure (headings, bullet points, emphasis, links) if present.
-- Improve clarity and readability naturally.
+- Keep it sounding natural and human-authored with varied rhythm and sentence length.
+- Preserve markdown structure (headings, bullet points, emphasis, links) if present, and improve it when helpful.
+- Add tasteful engagement icons/emojis where appropriate (for example: 📍, ✅, 🦁, 🌍, ✨, 🧭). Use them sparingly and naturally.
+- Avoid robotic phrasing, repetition, and generic filler lines.
+- Improve clarity, flow, and storytelling without changing facts.
 - Return only the rewritten blog content, no intro/explanation.
 
 Context:
@@ -41,13 +44,16 @@ ${text}
   }
 
   return `
-Paraphrase the TOUR DESCRIPTION below into original wording while preserving the exact meaning and factual details.
+Rewrite the TOUR DESCRIPTION below into fresh, premium, human-sounding copy while preserving the exact meaning and factual details.
 
 Strict rules:
 - Keep the same language.
 - Keep all facts, names, numbers, places, durations, and inclusions/exclusions references.
 - Do not invent new claims.
 - Keep it as plain descriptive text (no markdown headings).
+- Use natural, human style with vivid but accurate language and varied sentence rhythm.
+- Add light engagement icons/emojis in-line where natural (for example: 📍, ⏱️, ✅, 🌿, 🦓). Do not overuse.
+- Avoid robotic phrasing, repetition, and generic filler lines.
 - Improve clarity and readability naturally.
 - Return only the rewritten description, no intro/explanation.
 
@@ -70,7 +76,7 @@ export const rewriteContentWithAi = async ({ text, contentType = "blog", context
         model,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
-          temperature: 0.35,
+          temperature: 0.55,
           maxOutputTokens: 2400,
         },
       });
@@ -86,4 +92,3 @@ export const rewriteContentWithAi = async ({ text, contentType = "blog", context
 
   throw new Error(lastError?.message || "AI rewrite failed.");
 };
-
