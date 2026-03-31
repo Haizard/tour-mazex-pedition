@@ -1,5 +1,8 @@
 import React from "react";
 import BlogsComp from "../components/Blogs/BlogsComp";
+import Testimonial from "../components/Testimonial/Testimonial";
+import TripCTA from "../components/Home/TripCTA";
+import LogoSlider from "../components/Home/LogoSlider";
 
 const Blogs = () => {
   return (
@@ -18,6 +21,16 @@ const Blogs = () => {
         </div>
       </div>
       <BlogsComp />
+
+      <div className="mt-16">
+        <Testimonial />
+      </div>
+
+      <div className="mt-12 md:mt-16">
+        <TripCTA />
+      </div>
+
+      <LogoSlider />
     </div>
   );
 };

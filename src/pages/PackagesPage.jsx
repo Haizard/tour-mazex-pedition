@@ -1,6 +1,9 @@
 import React from "react";
 import PackagesComp from "../components/Blogs/PackagesComp";
 import Badge from "../components/UI/Badge";
+import Testimonial from "../components/Testimonial/Testimonial";
+import TripCTA from "../components/Home/TripCTA";
+import LogoSlider from "../components/Home/LogoSlider";
 
 const PackagesPage = () => {
   return (
@@ -19,6 +22,16 @@ const PackagesPage = () => {
         </div>
       </div>
       <PackagesComp />
+
+      <div className="mt-16">
+        <Testimonial />
+      </div>
+
+      <div className="mt-12 md:mt-16">
+        <TripCTA />
+      </div>
+
+      <LogoSlider />
     </div>
   );
 };

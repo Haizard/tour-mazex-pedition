@@ -20,6 +20,9 @@ import {
 } from "react-icons/io5";
 import OrderPopup from "../OrderPopup/OrderPopup";
 import { createBooking, fetchTour, fetchTourBySlug, fetchTours } from "../../services/api";
+import Testimonial from "../Testimonial/Testimonial";
+import TripCTA from "../Home/TripCTA";
+import LogoSlider from "../Home/LogoSlider";
 
 const slugifyTitle = (value = "") =>
   value
@@ -887,6 +890,16 @@ const PackageDetail = () => {
           </div>
         </div>
       </div>
+
+      <div className="mt-16">
+        <Testimonial />
+      </div>
+
+      <div className="mt-12 md:mt-16">
+        <TripCTA />
+      </div>
+
+      <LogoSlider />
 
       <OrderPopup
         isVisible={isOrderPopupVisible}

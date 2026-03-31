@@ -12,6 +12,9 @@ import {
 } from "react-icons/fa6";
 import { fetchBlogBySlug, fetchBlogs, fetchTours } from "../../services/api";
 import PackageCard from "./PackageCard";
+import Testimonial from "../Testimonial/Testimonial";
+import TripCTA from "../Home/TripCTA";
+import LogoSlider from "../Home/LogoSlider";
 
 const BlogDetail = () => {
   const { title: blogSlug } = useParams();
@@ -313,6 +316,16 @@ const BlogDetail = () => {
           </div>
         </div>
       </div>
+
+      <div className="mt-16">
+        <Testimonial />
+      </div>
+
+      <div className="mt-12 md:mt-16">
+        <TripCTA />
+      </div>
+
+      <LogoSlider />
     </div>
   );
 };
