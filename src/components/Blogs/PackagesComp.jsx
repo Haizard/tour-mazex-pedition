@@ -5,6 +5,20 @@ import { fetchTours, fetchTaxonomies } from "../../services/api";
 import { useSearchParams } from "react-router-dom";
 import { FaFilter, FaTimes } from "react-icons/fa";
 
+const uniqueSorted = (values = []) =>
+  [...new Set(values.map((value) => (value || "").toString().trim()).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b),
+  );
+
+const normalizeFilterValue = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const PackagesComp = () => {
   const [allTours, setAllTours] = useState([]);
   const [filteredTours, setFilteredTours] = useState([]);
@@ -24,14 +38,40 @@ const PackagesComp = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const [toursRes, catRes, typeRes] = await Promise.all([
+        const [toursResult, catResult, typeResult] = await Promise.allSettled([
           fetchTours(),
           fetchTaxonomies("tourCategory"),
           fetchTaxonomies("tourType"),
         ]);
-        setAllTours(toursRes.data);
-        setCategories(catRes.data.map((c) => c.name));
-        setTourTypes(typeRes.data.map((t) => t.name));
+
+        const toursData =
+          toursResult.status === "fulfilled" && Array.isArray(toursResult.value.data)
+            ? toursResult.value.data
+            : [];
+        setAllTours(toursData);
+
+        const taxonomyCategories =
+          catResult.status === "fulfilled" && Array.isArray(catResult.value.data)
+            ? catResult.value.data.map((c) => c.name).filter(Boolean)
+            : [];
+        const taxonomyTypes =
+          typeResult.status === "fulfilled" && Array.isArray(typeResult.value.data)
+            ? typeResult.value.data.map((t) => t.name).filter(Boolean)
+            : [];
+
+        const tourFallbackCategories = uniqueSorted(toursData.map((tour) => tour.category));
+        const tourFallbackTypes = uniqueSorted(toursData.map((tour) => tour.tourType));
+
+        // Prefer real values from tours so selecting filters always maps to real data.
+        // Fall back to taxonomy values only if tours do not provide them.
+        setCategories(
+          uniqueSorted(
+            tourFallbackCategories.length ? tourFallbackCategories : taxonomyCategories,
+          ),
+        );
+        setTourTypes(
+          uniqueSorted(tourFallbackTypes.length ? tourFallbackTypes : taxonomyTypes),
+        );
       } catch (error) {
         console.error("Error loading packages data:", error);
       }
@@ -53,17 +93,15 @@ const PackagesComp = () => {
 
     // Sidebar Filters (Normalization for case/whitespace)
     if (filters.category) {
+      const selectedCategory = normalizeFilterValue(filters.category);
       result = result.filter(
-        (t) =>
-          t.category?.trim().toLowerCase() ===
-          filters.category.trim().toLowerCase(),
+        (t) => normalizeFilterValue(t.category) === selectedCategory,
       );
     }
     if (filters.tourType) {
+      const selectedTourType = normalizeFilterValue(filters.tourType);
       result = result.filter(
-        (t) =>
-          t.tourType?.trim().toLowerCase() ===
-          filters.tourType.trim().toLowerCase(),
+        (t) => normalizeFilterValue(t.tourType) === selectedTourType,
       );
     }
     if (filters.maxPrice) {
