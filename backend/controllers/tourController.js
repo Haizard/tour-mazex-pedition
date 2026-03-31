@@ -1,4 +1,5 @@
 import TourPackage from '../models/TourPackage.js';
+import { rewriteContentWithAi } from "../utils/aiRewrite.js";
 
 const slugifyTitle = (value = '') =>
     value
@@ -97,6 +98,26 @@ export const deleteTourPackage = async (req, res) => {
         const deletedTour = await TourPackage.findByIdAndDelete(id);
         if (!deletedTour) return res.status(404).json({ message: 'Tour package not found' });
         res.status(200).json({ message: 'Tour package deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const regenerateTourDescription = async (req, res) => {
+    try {
+        const { description, title, tourType, category, location, duration } = req.body;
+
+        if (!description || !description.toString().trim()) {
+            return res.status(400).json({ message: "Tour description is required." });
+        }
+
+        const rewritten = await rewriteContentWithAi({
+            text: description,
+            contentType: "tour",
+            context: { title, tourType, category, location, duration },
+        });
+
+        res.status(200).json({ description: rewritten });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

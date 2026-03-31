@@ -1,11 +1,12 @@
 import express from 'express';
-import { getAllBlogs, getBlogById, getBlogBySlug, createBlog, updateBlog, deleteBlog } from '../controllers/blogController.js';
+import { getAllBlogs, getBlogById, getBlogBySlug, createBlog, updateBlog, deleteBlog, regenerateBlogContent } from '../controllers/blogController.js';
 import { generateDailyBlog } from '../controllers/blogAutomationController.js';
 
 const router = express.Router();
 
 // Auto-generate blog
 router.post('/auto-generate', generateDailyBlog);
+router.post('/regenerate-content', regenerateBlogContent);
 
 // Get all blogs
 router.get('/', getAllBlogs);

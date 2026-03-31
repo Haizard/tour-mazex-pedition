@@ -5,6 +5,7 @@ import {
   createTour,
   updateTour,
   deleteTour,
+  regenerateTourDescription,
   fetchGallery,
   createGallery,
   deleteGallery,
@@ -15,6 +16,7 @@ import {
   updateBlog,
   deleteBlog,
   generateAiBlog,
+  regenerateBlogContent,
   fetchInquiries,
   updateInquiryStatus,
   deleteInquiry,
@@ -153,6 +155,8 @@ const AdminDashboard = () => {
   const [editingBlogId, setEditingBlogId] = useState(null);
   const [editingVisionaryId, setEditingVisionaryId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isAiRegeneratingTour, setIsAiRegeneratingTour] = useState(false);
+  const [isAiRegeneratingBlog, setIsAiRegeneratingBlog] = useState(false);
   const [bodyImageUrl, setBodyImageUrl] = useState("");
   const blogContentTextareaRef = useRef(null);
 
@@ -291,6 +295,69 @@ const AdminDashboard = () => {
 
     insertIntoBlogContent(`\n\n![Body image](${url})\n\n`);
     setBodyImageUrl("");
+  };
+  const handleRegenerateTourWithAi = async () => {
+    if (!tourFormData.description?.trim()) {
+      alert("Please add a tour description first.");
+      return;
+    }
+
+    setIsAiRegeneratingTour(true);
+    try {
+      const response = await regenerateTourDescription({
+        description: tourFormData.description,
+        title: tourFormData.title,
+        tourType: tourFormData.tourType,
+        category: tourFormData.category,
+        location: tourFormData.location,
+        duration: tourFormData.duration,
+      });
+
+      setTourFormData((prev) => ({
+        ...prev,
+        description: response.data?.description || prev.description,
+      }));
+      alert("Tour description regenerated.");
+    } catch (error) {
+      console.error(error);
+      if (error?.response?.status === 404) {
+        alert("AI regenerate endpoint not found. Please restart the backend server and try again.");
+      } else {
+        alert(error?.response?.data?.message || "Failed to regenerate description.");
+      }
+    } finally {
+      setIsAiRegeneratingTour(false);
+    }
+  };
+  const handleRegenerateBlogWithAi = async () => {
+    if (!blogFormData.content?.trim()) {
+      alert("Please add blog content first.");
+      return;
+    }
+
+    setIsAiRegeneratingBlog(true);
+    try {
+      const response = await regenerateBlogContent({
+        content: blogFormData.content,
+        title: blogFormData.title,
+        category: blogFormData.category,
+      });
+
+      setBlogFormData((prev) => ({
+        ...prev,
+        content: response.data?.content || prev.content,
+      }));
+      alert("Blog content regenerated.");
+    } catch (error) {
+      console.error(error);
+      if (error?.response?.status === 404) {
+        alert("AI regenerate endpoint not found. Please restart the backend server and try again.");
+      } else {
+        alert(error?.response?.data?.message || "Failed to regenerate blog content.");
+      }
+    } finally {
+      setIsAiRegeneratingBlog(false);
+    }
   };
   const handleGalleryInputChange = (e) =>
     setGalleryFormData({ ...galleryFormData, [e.target.name]: e.target.value });
@@ -810,9 +877,19 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
-                      Description
-                    </label>
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                        Description
+                      </label>
+                      <Button
+                        type="button"
+                        onClick={handleRegenerateTourWithAi}
+                        disabled={isAiRegeneratingTour || loading || !tourFormData.description?.trim()}
+                        className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white text-[10px] px-4 py-2"
+                      >
+                        {isAiRegeneratingTour ? "Regenerating..." : "Regenerate with AI"}
+                      </Button>
+                    </div>
                     <textarea
                       name="description"
                       value={tourFormData.description}
@@ -1091,6 +1168,13 @@ const AdminDashboard = () => {
                             ...tourFormData,
                             title: "",
                             description: "",
+                            image: tourFormData.image || "",
+                            location: tourFormData.location || "",
+                            startLocation: tourFormData.startLocation || "",
+                            endLocation: tourFormData.endLocation || "",
+                            accommodationType: tourFormData.accommodationType || "",
+                            inclusions: tourFormData.inclusions || "",
+                            exclusions: tourFormData.exclusions || "",
                           });
                         }}
                       >
@@ -1121,11 +1205,22 @@ const AdminDashboard = () => {
                             setEditingTourId(t._id);
                             setTourFormData({
                               ...t,
+                              title: t.title || "",
+                              description: t.description || "",
+                              price: t.price ?? "",
+                              image: t.image || "",
+                              location: t.location || "",
+                              startLocation: t.startLocation || "",
+                              endLocation: t.endLocation || "",
+                              duration: t.duration || "",
+                              tourType: t.tourType || "Safari",
+                              category: t.category || "Luxury",
+                              accommodationType: t.accommodationType || "",
                               galleryImages: t.galleryImages?.join("\n") || "",
                               destinationsVisited:
                                 t.destinationsVisited?.join("\n") || "",
-                              inclusions: t.inclusions?.join("\n"),
-                              exclusions: t.exclusions?.join("\n"),
+                              inclusions: t.inclusions?.join("\n") || "",
+                              exclusions: t.exclusions?.join("\n") || "",
                               itinerary:
                                 t.itinerary?.map((i) => ({
                                   day: i.day,
@@ -1138,6 +1233,10 @@ const AdminDashboard = () => {
                               tripAdvisorRating: t.tripAdvisorRating || "",
                               tripAdvisorReviewCount:
                                 t.tripAdvisorReviewCount || "",
+                              launchDate: t.launchDate || "",
+                              isGroupTour: Boolean(t.isGroupTour),
+                              maxCapacity: t.maxCapacity ?? 12,
+                              currentBookings: t.currentBookings ?? 0,
                             });
                             window.scrollTo(0, 0);
                           }}
@@ -1269,9 +1368,19 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
-                      Story Content
-                    </label>
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                        Story Content
+                      </label>
+                      <Button
+                        type="button"
+                        onClick={handleRegenerateBlogWithAi}
+                        disabled={isAiRegeneratingBlog || loading || !blogFormData.content?.trim()}
+                        className="bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary hover:text-white text-[10px] px-4 py-2"
+                      >
+                        {isAiRegeneratingBlog ? "Regenerating..." : "Regenerate with AI"}
+                      </Button>
+                    </div>
                     <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 md:flex-row md:items-end">
                       <div className="flex-1 space-y-2">
                         <label className="text-[10px] font-black uppercase text-gray-400">
@@ -1312,7 +1421,18 @@ const AdminDashboard = () => {
                         variant="outline"
                         onClick={() => {
                           setEditingBlogId(null);
-                          setBlogFormData({ title: "", content: "" });
+                          setBlogFormData({
+                            title: "",
+                            content: "",
+                            image: "",
+                            category: getPreferredTaxonomyName(
+                              taxonomies,
+                              "blogCategory",
+                              "Safari Articles",
+                              "Travel Tips"
+                            ),
+                            author: "Admin",
+                          });
                         }}
                       >
                         Cancel
@@ -1350,7 +1470,20 @@ const AdminDashboard = () => {
                             <button
                               onClick={() => {
                                 setEditingBlogId(b._id);
-                                setBlogFormData(b);
+                                setBlogFormData({
+                                  title: b.title || "",
+                                  content: b.content || "",
+                                  image: b.image || "",
+                                  category:
+                                    b.category ||
+                                    getPreferredTaxonomyName(
+                                      taxonomies,
+                                      "blogCategory",
+                                      "Safari Articles",
+                                      "Travel Tips"
+                                    ),
+                                  author: b.author || "Admin",
+                                });
                                 window.scrollTo(0, 0);
                               }}
                               className="text-blue-500 hover:text-blue-700 transition font-black text-[10px] uppercase"

@@ -1,4 +1,5 @@
 import Blog from '../models/Blog.js';
+import { rewriteContentWithAi } from "../utils/aiRewrite.js";
 
 const slugify = (text = '') =>
     text
@@ -94,6 +95,26 @@ export const deleteBlog = async (req, res) => {
     try {
         await Blog.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: 'Blog deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const regenerateBlogContent = async (req, res) => {
+    try {
+        const { content, title, category } = req.body;
+
+        if (!content || !content.toString().trim()) {
+            return res.status(400).json({ message: "Blog content is required." });
+        }
+
+        const rewritten = await rewriteContentWithAi({
+            text: content,
+            contentType: "blog",
+            context: { title, category },
+        });
+
+        res.status(200).json({ content: rewritten });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
