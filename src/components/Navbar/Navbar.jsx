@@ -13,8 +13,76 @@ import {
 import { HiMenuAlt3, HiMenuAlt1 } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import ResponsiveMenu from "./ResponsiveMenu";
-import { fetchMenuItems } from "../../services/api";
+import { fetchMenuItems, fetchTours } from "../../services/api";
 import { FRONTEND_MENU_DEFAULTS, MENU_IMAGE_BY_KEY } from "./defaultMenuItems";
+
+const slugifyTitle = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const normalizeValue = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase();
+
+const getPackageTypeFromLink = (link = "") => {
+  if (!link.includes("/packages")) return "";
+
+  try {
+    const url = new URL(link, "http://localhost");
+    return url.searchParams.get("type") || "";
+  } catch (_error) {
+    const query = link.split("?")[1] || "";
+    const params = new URLSearchParams(query);
+    return params.get("type") || "";
+  }
+};
+
+const getToursForMenuItem = (item, tours) => {
+  const typeFromLink = normalizeValue(getPackageTypeFromLink(item.link));
+  const itemKey = normalizeValue(item.categoryKey || item.label);
+  const isPackageMenu = normalizeValue(item.link).includes("/packages");
+
+  if (!isPackageMenu) return [];
+
+  return tours.filter((tour) => {
+    const tourType = normalizeValue(tour.tourType);
+    const tourCategory = normalizeValue(tour.category);
+
+    if (typeFromLink && (tourType === typeFromLink || tourCategory === typeFromLink)) {
+      return true;
+    }
+
+    if (itemKey && (tourType.includes(itemKey) || tourCategory.includes(itemKey))) {
+      return true;
+    }
+
+    return false;
+  });
+};
+
+const buildMenuWithLiveTours = (menuItems, tours) =>
+  menuItems.map((item) => {
+    if (item.itemType === "link") return item;
+
+    const matchedTours = getToursForMenuItem(item, tours);
+    if (!matchedTours.length) return item;
+
+    return {
+      ...item,
+      children: matchedTours.slice(0, 12).map((tour, index) => ({
+        label: tour.title,
+        link: `/packages/${slugifyTitle(tour.title)}?tourId=${tour._id}`,
+        sortOrder: index + 1,
+      })),
+    };
+  });
 
 const Navbar = ({ handleOrderPopup }) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -35,9 +103,15 @@ const Navbar = ({ handleOrderPopup }) => {
   useEffect(() => {
     const loadMenuItems = async () => {
       try {
-        const res = await fetchMenuItems();
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          setMenuItems(res.data);
+        const [menuRes, toursRes] = await Promise.all([fetchMenuItems(), fetchTours()]);
+        const menuData =
+          Array.isArray(menuRes.data) && menuRes.data.length > 0
+            ? menuRes.data
+            : FRONTEND_MENU_DEFAULTS;
+        const toursData = Array.isArray(toursRes.data) ? toursRes.data : [];
+
+        if (menuData.length > 0) {
+          setMenuItems(buildMenuWithLiveTours(menuData, toursData));
         }
       } catch (error) {
         console.error("Error loading menu items:", error);

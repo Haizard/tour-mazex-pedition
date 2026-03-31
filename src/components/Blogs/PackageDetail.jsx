@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   IoBedOutline,
@@ -19,7 +19,7 @@ import {
   IoTimeOutline,
 } from "react-icons/io5";
 import OrderPopup from "../OrderPopup/OrderPopup";
-import { createBooking, fetchTourBySlug, fetchTours } from "../../services/api";
+import { createBooking, fetchTour, fetchTourBySlug, fetchTours } from "../../services/api";
 
 const slugifyTitle = (value = "") =>
   value
@@ -33,6 +33,8 @@ const slugifyTitle = (value = "") =>
 const PackageDetail = () => {
   const location = useLocation();
   const { title: slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const tourId = searchParams.get("tourId");
   const [tourData, setTourData] = useState(location.state || null);
   const [isPageLoading, setIsPageLoading] = useState(!location.state);
   const [loadError, setLoadError] = useState("");
@@ -63,10 +65,17 @@ const PackageDetail = () => {
 
   useEffect(() => {
     const loadTour = async () => {
-      if (!slug) return;
+      if (!slug && !tourId) return;
 
       setIsPageLoading(true);
       try {
+        if (tourId) {
+          const byIdResponse = await fetchTour(tourId);
+          setTourData(byIdResponse.data);
+          setLoadError("");
+          return;
+        }
+
         const response = await fetchTourBySlug(slug);
         setTourData(response.data);
         setLoadError("");
@@ -93,7 +102,7 @@ const PackageDetail = () => {
     };
 
     loadTour();
-  }, [slug]);
+  }, [slug, tourId]);
 
   const galleryImages = useMemo(() => {
     if (!tourData) return [];
