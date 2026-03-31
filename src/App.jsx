@@ -7,6 +7,7 @@ import NoPage from "./pages/NoPage";
 import PlacesRoute from "./pages/PlacesRoute";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Gallery from "./pages/Gallery";
 import PackageDetail from "./components/Blogs/PackageDetail";
 import PackagesPage from "./pages/PackagesPage";
 import BlogDetail from "./components/Blogs/BlogDetail";
@@ -42,6 +43,7 @@ const App = () => {
             <Route path="best-places" element={<PlacesRoute />} />
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
+            <Route path="gallery" element={<Gallery />} />
             <Route path="admin" element={<AdminDashboard />} />
             <Route path="login" element={<AdminLogin />} />
             <Route path="plan-my-trip" element={<PlanMyTrip />} />
