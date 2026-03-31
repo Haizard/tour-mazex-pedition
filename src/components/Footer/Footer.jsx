@@ -16,6 +16,7 @@ import {
   FaShieldAlt,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { fetchBlogs, fetchTours } from "../../services/api";
 
 const importantLinks = [
   { title: "Home", link: "/" },
@@ -26,14 +27,31 @@ const importantLinks = [
   { title: "Blog", link: "/blogs" },
 ];
 
-const popularTours = [
-  { title: "7 Day Kilimanjaro Trek Via Machame Route", link: "/packages" },
-  { title: "All Inclusive 12-Day Tanzania Safari & Zanzibar Beach Retreat", link: "/packages" },
-  { title: "Big Five & Beyond: A 7-Day Tanzania Wildlife Safari", link: "/packages" },
-  { title: "All Inclusive 12 Days Honeymoon Special Safari Featuring Serengeti and Zanzibar", link: "/packages" },
-  { title: "11-Day Photographic Tanzania Safari", link: "/packages" },
-  { title: "8 Days Best Of Migration Safari - Mara River Crossing Experience", link: "/packages" },
+const FALLBACK_TOURS = [
+  { title: "Explore Safari Packages", link: "/packages" },
+  { title: "Luxury Safari Packages", link: "/packages?type=Luxury" },
+  { title: "Trekking Packages", link: "/packages?type=Trekking" },
+  { title: "Day Trips", link: "/packages?type=Day Trip" },
 ];
+
+const FALLBACK_BLOGS = [{ title: "Explore Travel Articles", link: "/blogs" }];
+
+const slugifyTourTitle = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const slugifyBlogTitle = (value = "") =>
+  value
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "");
 
 const socialLinks = [
   { icon: <FaFacebook />, href: "https://www.facebook.com/profile.php?id=100088374186954", label: "Facebook" },
@@ -45,6 +63,42 @@ const socialLinks = [
 ];
 
 const Footer = () => {
+  const [popularTours, setPopularTours] = React.useState(FALLBACK_TOURS);
+  const [popularBlogs, setPopularBlogs] = React.useState(FALLBACK_BLOGS);
+
+  React.useEffect(() => {
+    const loadFooterLinks = async () => {
+      try {
+        const [toursRes, blogsRes] = await Promise.all([fetchTours(), fetchBlogs()]);
+
+        const tours = Array.isArray(toursRes.data) ? toursRes.data : [];
+        const blogs = Array.isArray(blogsRes.data) ? blogsRes.data : [];
+
+        if (tours.length > 0) {
+          setPopularTours(
+            tours.slice(0, 6).map((tour) => ({
+              title: tour.title,
+              link: `/packages/${slugifyTourTitle(tour.title)}?tourId=${tour._id}`,
+            })),
+          );
+        }
+
+        if (blogs.length > 0) {
+          setPopularBlogs(
+            blogs.slice(0, 6).map((blog) => ({
+              title: blog.title,
+              link: `/blogs/${slugifyBlogTitle(blog.title)}`,
+            })),
+          );
+        }
+      } catch (error) {
+        console.error("Error loading footer links:", error);
+      }
+    };
+
+    loadFooterLinks();
+  }, []);
+
   return (
     <footer className="bg-[#1a1a1a] text-white">
 
@@ -115,7 +169,7 @@ const Footer = () => {
 
           {/* Column 2: Two sub-columns — Important Links + Popular Tours */}
           <div className="md:col-span-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {/* Important Links */}
               <div>
                 <h5 className="text-white font-oswald font-semibold text-lg uppercase tracking-wide border-b border-safari-green pb-2 mb-4">
@@ -152,6 +206,26 @@ const Footer = () => {
                       >
                         <span className="w-3 h-px bg-gray-600 group-hover:w-5 group-hover:bg-safari-green transition-all duration-300 mt-2 shrink-0" />
                         {tour.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h5 className="text-white font-oswald font-semibold text-lg uppercase tracking-wide border-b border-safari-green pb-2 mb-4">
+                  Popular Blogs
+                </h5>
+                <ul className="space-y-2">
+                  {popularBlogs.map((blog) => (
+                    <li key={blog.title}>
+                      <Link
+                        to={blog.link}
+                        onClick={() => window.scrollTo(0, 0)}
+                        className="text-gray-400 hover:text-safari-green transition-colors text-sm leading-snug flex items-start gap-2 group"
+                      >
+                        <span className="w-3 h-px bg-gray-600 group-hover:w-5 group-hover:bg-safari-green transition-all duration-300 mt-2 shrink-0" />
+                        {blog.title}
                       </Link>
                     </li>
                   ))}

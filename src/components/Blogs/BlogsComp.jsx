@@ -65,7 +65,7 @@ const SectionHeading = ({ title, accent }) => (
   </div>
 );
 
-const BlogsComp = () => {
+const BlogsComp = ({ maxPerCategory = null }) => {
   const [blogsData, setBlogsData] = React.useState([]);
 
   React.useEffect(() => {
@@ -87,11 +87,17 @@ const BlogsComp = () => {
       <section className="container px-4 max-w-7xl mx-auto">
         {blogsData.length > 0 ? (
           <div className="space-y-16">
-            {blogGroups.map((group) => (
+            {blogGroups.map((group) => {
+              const visibleBlogs =
+                typeof maxPerCategory === "number" && maxPerCategory > 0
+                  ? group.blogs.slice(0, maxPerCategory)
+                  : group.blogs;
+
+              return (
               <section key={group.key} className="py-2">
                 <SectionHeading title={group.title} accent={group.accent} />
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-                  {group.blogs.map((item) => (
+                  {visibleBlogs.map((item) => (
                     <BlogCard key={item._id} {...item} />
                   ))}
                 </div>
@@ -105,7 +111,8 @@ const BlogsComp = () => {
                   </Link>
                 </div>
               </section>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="py-20 text-center font-sans text-lg text-gray-500">

@@ -49,7 +49,7 @@ const Home = () => {
       <GroupTours />
 
       {/* Blogs — warm ivory (bg-surface) */}
-      <BlogsComp />
+      <BlogsComp maxPerCategory={3} />
 
       {/* Our African Safari Destinations - from HTML Design */}
       <AfricanDestinations />

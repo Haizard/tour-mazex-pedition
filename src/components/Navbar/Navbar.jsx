@@ -221,7 +221,7 @@ const Navbar = ({ handleOrderPopup }) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         className={`absolute top-full left-1/2 -translate-x-1/2 mt-4 transition-all duration-300 ${
-                          item.itemType === "megamenu" ? "w-[800px]" : "w-[240px]"
+                          item.itemType === "megamenu" ? "w-[820px] max-w-[88vw]" : "w-[260px] max-w-[84vw]"
                         } bg-white text-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-100 z-[2000]`}
                       >
                         {item.itemType === "megamenu" ? (
