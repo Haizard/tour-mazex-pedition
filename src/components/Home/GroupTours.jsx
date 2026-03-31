@@ -4,6 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
 import { FaCalendarAlt } from "react-icons/fa";
 
+const slugifyTitle = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 const GroupTours = () => {
   const [groupTours, setGroupTours] = useState([]);
   const navigate = useNavigate();
@@ -23,7 +32,7 @@ const GroupTours = () => {
   }, []);
 
   const handleItinerary = (item) => {
-    navigate(`/packages/${item.title}`, { state: item });
+    navigate(`/packages/${slugifyTitle(item.title)}?tourId=${item._id}`, { state: item });
     window.scrollTo(0, 0);
   };
 

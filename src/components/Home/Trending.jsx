@@ -3,6 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
 
+const slugifyTitle = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 const Trending = () => {
   const [tours, setTours] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -30,7 +39,7 @@ const Trending = () => {
   }, [tours]);
 
   const handleNavigate = (item) => {
-    navigate(`/packages/${item.title}`, { state: item });
+    navigate(`/packages/${slugifyTitle(item.title)}?tourId=${item._id}`, { state: item });
     window.scrollTo(0, 0);
   };
 
