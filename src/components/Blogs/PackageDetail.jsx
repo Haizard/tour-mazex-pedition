@@ -227,7 +227,7 @@ const PackageDetail = () => {
   };
 
   return (
-    <div className="pb-20 pt-24 px-4 lg:px-24 bg-gray-50 min-h-screen">
+    <div className="pb-20 pt-24 px-0 md:px-4 lg:px-24 bg-gray-50 min-h-screen overflow-x-hidden">
       <SEO 
         title={tourData.seo?.title || tourData.title}
         description={tourData.seo?.description || tourData.description}
@@ -264,10 +264,10 @@ const PackageDetail = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto bg-white rounded-[40px] shadow-2xl border">
+      <div className="max-w-7xl mx-auto bg-white rounded-none md:rounded-[40px] shadow-none md:shadow-2xl border-0 md:border">
 
         {galleryImages.length > 1 && (
-          <div className="px-8 md:px-12 pt-8">
+          <div className="px-4 md:px-12 pt-6 md:pt-8">
             <div className="flex items-center gap-2 mb-4">
               <IoCameraOutline className="text-primary text-lg" />
               <p className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Tour Gallery</p>
@@ -289,9 +289,9 @@ const PackageDetail = () => {
           </div>
         )}
 
-        <div className="px-8 md:px-12 pt-8">
-          <div className="rounded-[28px] border border-[#8b5e34]/15 bg-[#faf6f1] p-5 md:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-            <div className="flex flex-col gap-3">
+        <div className="px-4 md:px-12 pt-6 md:pt-8">
+          <div className="rounded-2xl md:rounded-[28px] border border-[#8b5e34]/15 bg-[#faf6f1] p-4 md:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 md:gap-5">
+            <div className="flex flex-col gap-2 md:gap-3">
               <div className="flex items-center gap-2 text-[#8b5e34]">
                 {[...Array(5)].map((_, index) => (
                   <IoStarOutline key={index} className="text-lg" />
@@ -341,35 +341,35 @@ const PackageDetail = () => {
           </div>
         </div>
 
-        <div className="p-8 md:p-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div className="space-y-10 lg:col-span-8">
-            <div className="overflow-hidden rounded-[32px] border border-[#8b5e34]/15 bg-white shadow-sm">
-              <div className="w-full h-[280px] md:h-[380px] lg:h-[460px]">
+        <div className="p-0 md:p-12 mb-8 md:mb-0 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-12">
+          <div className="space-y-6 md:space-y-10 lg:col-span-8">
+            <div className="overflow-hidden rounded-none md:rounded-[32px] border-y md:border border-[#8b5e34]/15 bg-white shadow-sm md:shadow-sm">
+              <div className="w-full h-[220px] md:h-[380px] lg:h-[460px]">
                 <img
                   src={galleryImages[1] || image}
                   alt={`${title} feature`}
                   className="w-full h-full object-fill"
                 />
               </div>
-              <div className="p-6 md:p-8 lg:p-10 bg-[#fcfaf7] border-t border-[#8b5e34]/10">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8b5e34] mb-3">
+              <div className="p-5 md:p-8 lg:p-10 bg-[#fcfaf7] border-t border-[#8b5e34]/10">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8b5e34] mb-2 md:mb-3">
                   Tour Description
                 </p>
-                <h2 className="text-3xl md:text-4xl font-black text-gray-900 uppercase tracking-tight mb-5">
+                <h2 className="text-lg md:text-3xl font-black text-gray-900 uppercase tracking-tight mb-3 md:mb-5">
                   {title}
                 </h2>
-                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                <div className="prose prose-sm md:prose-lg max-w-none text-gray-700 leading-relaxed">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
                       h4: ({ node, ...props }) => (
                         <h4
-                          className="text-2xl font-black text-gray-900 uppercase tracking-tight mt-10 mb-6 border-l-4 border-primary pl-4 scroll-mt-32"
+                          className="text-lg md:text-2xl font-black text-gray-900 uppercase tracking-tight mt-6 md:mt-10 mb-4 md:mb-6 border-l-[3px] md:border-l-4 border-primary pl-3 md:pl-4 scroll-mt-32"
                           {...props}
                         />
                       ),
                       p: ({ node, ...props }) => (
-                        <p className="mb-8 leading-8 text-lg font-medium" {...props} />
+                        <p className="mb-4 md:mb-8 leading-relaxed md:leading-8 text-[13px] md:text-lg font-medium" {...props} />
                       ),
                       img: ({ node, ...props }) => (
                         <img
@@ -403,27 +403,27 @@ const PackageDetail = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-3xl bg-gray-50 border p-5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Start Location</p>
-                <p className="text-lg font-black text-gray-900">{startLocation || loc}</p>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <div className="rounded-2xl md:rounded-3xl bg-gray-50 border p-4 md:p-5">
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 md:mb-2">Start Location</p>
+                <p className="text-xs md:text-lg font-black text-gray-900">{startLocation || loc}</p>
               </div>
-              <div className="rounded-3xl bg-gray-50 border p-5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">End Location</p>
-                <p className="text-lg font-black text-gray-900">{endLocation || loc}</p>
+              <div className="rounded-2xl md:rounded-3xl bg-gray-50 border p-4 md:p-5">
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 md:mb-2">End Location</p>
+                <p className="text-xs md:text-lg font-black text-gray-900">{endLocation || loc}</p>
               </div>
-              <div className="rounded-3xl bg-gray-50 border p-5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Accommodation Style</p>
-                <p className="text-lg font-black text-gray-900">{accommodationType || category}</p>
+              <div className="rounded-2xl md:rounded-3xl bg-gray-50 border p-4 md:p-5 col-span-2 lg:col-span-1">
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 md:mb-2">Accommodation Style</p>
+                <p className="text-xs md:text-lg font-black text-gray-900">{accommodationType || category}</p>
               </div>
             </div>
 
             {destinationsVisited?.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-4">Destinations Visited</h2>
-                <div className="flex flex-wrap gap-3">
+              <div className="px-4 md:px-0">
+                <h2 className="text-xl md:text-2xl font-black text-gray-900 uppercase tracking-tight mb-3 md:mb-4">Destinations Visited</h2>
+                <div className="flex flex-wrap gap-2 md:gap-3">
                   {destinationsVisited.map((destination, index) => (
-                    <span key={`${destination}-${index}`} className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-black uppercase tracking-wide">
+                    <span key={`${destination}-${index}`} className="px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-primary/10 text-primary text-xs md:text-sm font-black uppercase tracking-wide">
                       {destination}
                     </span>
                   ))}
@@ -431,9 +431,9 @@ const PackageDetail = () => {
               </div>
             )}
 
-            <div className="rounded-[32px] border border-[#8b5e34]/20 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-none md:rounded-[32px] border-y md:border border-[#8b5e34]/20 bg-white shadow-none md:shadow-sm overflow-hidden">
               <div className="p-4 md:p-6 border-b border-[#8b5e34]/15">
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2 md:gap-3">
                   {[
                     { id: "overview", label: "Overview" },
                     { id: "itinerary", label: "Itinerary" },
@@ -470,12 +470,12 @@ const PackageDetail = () => {
                           components={{
                             h4: ({ node, ...props }) => (
                               <h4
-                                className="text-xl font-black text-gray-900 uppercase tracking-tight mt-8 mb-4 border-l-4 border-primary pl-4"
+                                className="text-base md:text-xl font-black text-gray-900 uppercase tracking-tight mt-6 md:mt-8 mb-3 md:mb-4 border-l-[3px] md:border-l-4 border-primary pl-3 md:pl-4"
                                 {...props}
                               />
                             ),
                             p: ({ node, ...props }) => (
-                              <p className="mb-8 leading-8 text-lg font-medium" {...props} />
+                              <p className="mb-4 md:mb-8 leading-relaxed md:leading-8 text-[13px] md:text-lg font-medium" {...props} />
                             ),
                             img: ({ node, ...props }) => (
                               <img
@@ -508,20 +508,20 @@ const PackageDetail = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="rounded-2xl border bg-gray-50 p-5">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">
+                    <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
+                      <div className="rounded-2xl border bg-gray-50 p-4 md:p-5">
+                        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 md:mb-2">
                           Route
                         </p>
-                        <p className="text-sm font-bold text-gray-800">
+                        <p className="text-xs md:text-sm font-bold text-gray-800">
                           {startLocation || loc} to {endLocation || loc}
                         </p>
                       </div>
-                      <div className="rounded-2xl border bg-gray-50 p-5">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">
+                      <div className="rounded-2xl border bg-gray-50 p-4 md:p-5">
+                        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 md:mb-2">
                           Accommodation
                         </p>
-                        <p className="text-sm font-bold text-gray-800">
+                        <p className="text-xs md:text-sm font-bold text-gray-800">
                           {accommodationType || category}
                         </p>
                       </div>
@@ -702,14 +702,14 @@ const PackageDetail = () => {
                             <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Traveler feedback snapshot</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-                          <div className="rounded-2xl bg-white border p-5">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Rating</p>
-                            <p className="text-3xl font-black text-[#00aa6c]">{tripAdvisorRating || "Excellent"}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 mb-5">
+                          <div className="rounded-2xl bg-white border p-4 md:p-5">
+                            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 md:mb-2">Rating</p>
+                            <p className="text-xl md:text-3xl font-black text-[#00aa6c]">{tripAdvisorRating || "Excellent"}</p>
                           </div>
-                          <div className="rounded-2xl bg-white border p-5">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Review Count</p>
-                            <p className="text-3xl font-black text-[#00aa6c]">{tripAdvisorReviewCount || "Traveler feedback"}</p>
+                          <div className="rounded-2xl bg-white border p-4 md:p-5">
+                            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 md:mb-2">Review Count</p>
+                            <p className="text-xl md:text-3xl font-black text-[#00aa6c]">{tripAdvisorReviewCount || "Traveler feedback"}</p>
                           </div>
                         </div>
                         {tripAdvisorUrl && (
@@ -732,14 +732,14 @@ const PackageDetail = () => {
             </div>
           </div>
 
-          <div className="space-y-8 lg:col-span-4 sticky top-32 self-start h-fit">
-            <div className="bg-gray-900 text-white p-8 rounded-[32px] shadow-xl">
-              <p className="text-gray-400 font-black uppercase text-xs mb-2 tracking-widest">
+          <div className="space-y-6 md:space-y-8 lg:col-span-4 sticky top-32 self-start h-fit px-4 md:px-0">
+            <div className="bg-gray-900 text-white p-6 md:p-8 rounded-3xl md:rounded-[32px] shadow-xl">
+              <p className="text-gray-400 font-black uppercase text-[10px] md:text-xs mb-1 md:mb-2 tracking-widest">
                 Starting From
               </p>
-              <h3 className="text-5xl font-black text-primary mb-6">
+              <h3 className="text-2xl md:text-5xl font-black text-primary mb-4 md:mb-6">
                 ${price}
-                <span className="text-sm text-gray-400">/PP</span>
+                <span className="text-[10px] md:text-sm text-gray-400 ml-1">/PP</span>
               </h3>
               <button
                 onClick={() => setOrderPopupVisible(true)}
@@ -749,8 +749,8 @@ const PackageDetail = () => {
               </button>
             </div>
 
-            <div className="border p-8 rounded-[32px] overflow-hidden bg-gradient-to-br from-white to-gray-50">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="border p-6 md:p-8 rounded-3xl md:rounded-[32px] overflow-hidden bg-gradient-to-br from-white to-gray-50">
+              <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
                   <IoCalendarOutline className="text-2xl" />
                 </div>
