@@ -41,6 +41,14 @@ const tourPackageSchema = new mongoose.Schema({
   maxCapacity: { type: Number, default: 0 },
   currentBookings: { type: Number, default: 0 },
   launchDate: { type: Date },
+  seo: {
+    title: { type: String },
+    description: { type: String },
+    keywords: [{ type: String }],
+    ogImage: { type: String },
+    canonicalUrl: { type: String },
+    schema: { type: String }
+  },
 }, { timestamps: true });
 
 const TourPackage = mongoose.model('TourPackage', tourPackageSchema);

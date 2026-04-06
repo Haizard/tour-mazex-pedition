@@ -1,5 +1,5 @@
 import Blog from '../models/Blog.js';
-import { rewriteContentWithAi } from "../utils/aiRewrite.js";
+import { rewriteContentWithAi, generateSeoWithAi } from "../utils/aiRewrite.js";
 
 const slugify = (text = '') =>
     text
@@ -115,6 +115,20 @@ export const regenerateBlogContent = async (req, res) => {
         });
 
         res.status(200).json({ content: rewritten });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const generateBlogSeo = async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        if (!title || !content) {
+            return res.status(400).json({ message: "Blog title and content are required for SEO generation." });
+        }
+
+        const seo = await generateSeoWithAi({ title, content, contentType: "blog" });
+        res.status(200).json(seo);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

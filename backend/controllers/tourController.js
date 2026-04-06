@@ -1,5 +1,5 @@
 import TourPackage from '../models/TourPackage.js';
-import { rewriteContentWithAi } from "../utils/aiRewrite.js";
+import { rewriteContentWithAi, generateSeoWithAi } from "../utils/aiRewrite.js";
 
 const slugifyTitle = (value = '') =>
     value
@@ -118,6 +118,20 @@ export const regenerateTourDescription = async (req, res) => {
         });
 
         res.status(200).json({ description: rewritten });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const generateTourSeo = async (req, res) => {
+    try {
+        const { title, description } = req.body;
+        if (!title || !description) {
+            return res.status(400).json({ message: "Tour title and description are required for SEO generation." });
+        }
+
+        const seo = await generateSeoWithAi({ title, description, contentType: "tour" });
+        res.status(200).json(seo);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

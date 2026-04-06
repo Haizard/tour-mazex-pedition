@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllBlogs, getBlogById, getBlogBySlug, createBlog, updateBlog, deleteBlog, regenerateBlogContent } from '../controllers/blogController.js';
+import { getAllBlogs, getBlogById, getBlogBySlug, createBlog, updateBlog, deleteBlog, regenerateBlogContent, generateBlogSeo } from '../controllers/blogController.js';
 import { generateDailyBlog } from '../controllers/blogAutomationController.js';
 
 const router = express.Router();
@@ -7,6 +7,7 @@ const router = express.Router();
 // Auto-generate blog
 router.post('/auto-generate', generateDailyBlog);
 router.post('/regenerate-content', regenerateBlogContent);
+router.post('/generate-seo', generateBlogSeo);
 
 // Get all blogs
 router.get('/', getAllBlogs);

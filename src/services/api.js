@@ -17,6 +17,8 @@ export const updateTour = (id, updatedTour) =>
 export const deleteTour = (id) => API.delete(`/tours/${id}`);
 export const regenerateTourDescription = (data) =>
   API.post("/tours/regenerate-description", data);
+export const generateTourSeo = (data) =>
+  API.post("/tours/generate-seo", data);
 
 // Gallery
 export const fetchGallery = () => API.get("/gallery");
@@ -39,6 +41,8 @@ export const deleteBlog = (id) => API.delete(`/blogs/${id}`);
 export const generateAiBlog = () => API.post("/blogs/auto-generate");
 export const regenerateBlogContent = (data) =>
   API.post("/blogs/regenerate-content", data);
+export const generateBlogSeo = (data) =>
+  API.post("/blogs/generate-seo", data);
 
 // Custom Inquiries
 export const fetchInquiries = () => API.get("/custom-inquiries");

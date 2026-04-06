@@ -17,6 +17,8 @@ import {
   deleteBlog,
   generateAiBlog,
   regenerateBlogContent,
+  generateBlogSeo,
+  generateTourSeo,
   fetchInquiries,
   updateInquiryStatus,
   deleteInquiry,
@@ -108,6 +110,12 @@ const AdminDashboard = () => {
     maxCapacity: 12,
     currentBookings: 0,
     launchDate: "",
+    seoTitle: "",
+    seoDescription: "",
+    seoKeywords: "",
+    seoOgImage: "",
+    seoCanonicalUrl: "",
+    seoSchema: "",
   });
 
   const [blogFormData, setBlogFormData] = useState({
@@ -116,6 +124,12 @@ const AdminDashboard = () => {
     image: "",
     category: "Safari Articles",
     author: "Admin",
+    seoTitle: "",
+    seoDescription: "",
+    seoKeywords: "",
+    seoOgImage: "",
+    seoCanonicalUrl: "",
+    seoSchema: "",
   });
 
   const [galleryFormData, setGalleryFormData] = useState({
@@ -157,6 +171,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [isAiRegeneratingTour, setIsAiRegeneratingTour] = useState(false);
   const [isAiRegeneratingBlog, setIsAiRegeneratingBlog] = useState(false);
+  const [isGeneratingTourSeo, setIsGeneratingTourSeo] = useState(false);
+  const [isGeneratingBlogSeo, setIsGeneratingBlogSeo] = useState(false);
   const [bodyImageUrl, setBodyImageUrl] = useState("");
   const blogContentTextareaRef = useRef(null);
 
@@ -359,6 +375,58 @@ const AdminDashboard = () => {
       setIsAiRegeneratingBlog(false);
     }
   };
+
+  const handleGenerateTourSeoWithAi = async () => {
+    if (!tourFormData.title || !tourFormData.description) {
+      alert("Please provide at least a title and description to generate SEO metadata.");
+      return;
+    }
+    setIsGeneratingTourSeo(true);
+    try {
+      const res = await generateTourSeo({
+        title: tourFormData.title,
+        description: tourFormData.description
+      });
+      setTourFormData(prev => ({
+        ...prev,
+        seoTitle: res.data.title,
+        seoDescription: res.data.description,
+        seoKeywords: res.data.keywords
+      }));
+      alert("SEO Metadata generated!");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate SEO metadata.");
+    } finally {
+      setIsGeneratingTourSeo(false);
+    }
+  };
+
+  const handleGenerateBlogSeoWithAi = async () => {
+    if (!blogFormData.title || !blogFormData.content) {
+      alert("Please provide a title and content to generate SEO metadata.");
+      return;
+    }
+    setIsGeneratingBlogSeo(true);
+    try {
+      const res = await generateBlogSeo({
+        title: blogFormData.title,
+        content: blogFormData.content
+      });
+      setBlogFormData(prev => ({
+        ...prev,
+        seoTitle: res.data.title,
+        seoDescription: res.data.description,
+        seoKeywords: res.data.keywords
+      }));
+      alert("SEO Metadata generated!");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate SEO metadata.");
+    } finally {
+      setIsGeneratingBlogSeo(false);
+    }
+  };
   const handleGalleryInputChange = (e) =>
     setGalleryFormData({ ...galleryFormData, [e.target.name]: e.target.value });
   const handleVisionaryInputChange = (e) =>
@@ -396,6 +464,14 @@ const AdminDashboard = () => {
       tripAdvisorReviewCount: tourFormData.tripAdvisorReviewCount
         ? Number(tourFormData.tripAdvisorReviewCount)
         : undefined,
+      seo: {
+        title: tourFormData.seoTitle,
+        description: tourFormData.seoDescription,
+        keywords: tourFormData.seoKeywords.split(",").map(k => k.trim()).filter(Boolean),
+        ogImage: tourFormData.seoOgImage,
+        canonicalUrl: tourFormData.seoCanonicalUrl,
+        schema: tourFormData.seoSchema,
+      },
     };
     try {
       if (editingTourId) await updateTour(editingTourId, processed);
@@ -420,6 +496,12 @@ const AdminDashboard = () => {
           tripAdvisorUrl: "",
           tripAdvisorRating: "",
           tripAdvisorReviewCount: "",
+          seoTitle: "",
+          seoDescription: "",
+          seoKeywords: "",
+          seoOgImage: "",
+          seoCanonicalUrl: "",
+          seoSchema: "",
         });
       setEditingTourId(null);
       loadTours();
@@ -435,9 +517,20 @@ const AdminDashboard = () => {
   const handleBlogSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const processed = {
+      ...blogFormData,
+      seo: {
+        title: blogFormData.seoTitle,
+        description: blogFormData.seoDescription,
+        keywords: blogFormData.seoKeywords.split(",").map(k => k.trim()).filter(Boolean),
+        ogImage: blogFormData.seoOgImage,
+        canonicalUrl: blogFormData.seoCanonicalUrl,
+        schema: blogFormData.seoSchema,
+      }
+    };
     try {
-      if (editingBlogId) await updateBlog(editingBlogId, blogFormData);
-      else await createBlog(blogFormData);
+      if (editingBlogId) await updateBlog(editingBlogId, processed);
+      else await createBlog(processed);
       setBlogFormData({
         title: "",
         content: "",
@@ -449,6 +542,12 @@ const AdminDashboard = () => {
           "Travel Tips"
         ),
         author: "Admin",
+        seoTitle: "",
+        seoDescription: "",
+        seoKeywords: "",
+        seoOgImage: "",
+        seoCanonicalUrl: "",
+        seoSchema: "",
       });
       setBodyImageUrl("");
       setEditingBlogId(null);
@@ -1158,6 +1257,82 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
+                  {/* SEO Optimization */}
+                  <div className="bg-primary/5 p-8 rounded-2xl border border-primary/10 space-y-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter flex items-center gap-3">
+                        <span className="w-2 h-6 bg-primary rounded-full"></span>
+                        SEO Optimization
+                      </h3>
+                      <Button
+                        type="button"
+                        onClick={handleGenerateTourSeoWithAi}
+                        disabled={isGeneratingTourSeo || loading}
+                        className="bg-primary text-white text-[10px] px-6 py-2"
+                      >
+                        {isGeneratingTourSeo ? "Generating..." : "Auto-generate with AI"}
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">SEO Title Tag</label>
+                        <input
+                          type="text"
+                          name="seoTitle"
+                          value={tourFormData.seoTitle}
+                          onChange={handleTourInputChange}
+                          placeholder="Meta Title (Max 60 chars)"
+                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Canonical URL</label>
+                        <input
+                          type="text"
+                          name="seoCanonicalUrl"
+                          value={tourFormData.seoCanonicalUrl}
+                          onChange={handleTourInputChange}
+                          placeholder="https://makoloafrika.com/..."
+                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Meta Description (155-160 chars)</label>
+                      <textarea
+                        name="seoDescription"
+                        value={tourFormData.seoDescription}
+                        onChange={handleTourInputChange}
+                        placeholder="Snippet for search results..."
+                        className="w-full bg-white p-4 rounded-xl border-none h-24 focus:ring-2 focus:ring-primary font-medium shadow-sm"
+                      ></textarea>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Focus Keywords (Comma separated)</label>
+                        <input
+                          type="text"
+                          name="seoKeywords"
+                          value={tourFormData.seoKeywords}
+                          onChange={handleTourInputChange}
+                          placeholder="Safari, Serengeti, Adventure..."
+                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">OG Image URL (Social Sharing)</label>
+                        <input
+                          type="text"
+                          name="seoOgImage"
+                          value={tourFormData.seoOgImage}
+                          onChange={handleTourInputChange}
+                          placeholder="https://..."
+                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex justify-end gap-4">
                     {editingTourId && (
                       <Button
@@ -1236,7 +1411,14 @@ const AdminDashboard = () => {
                               launchDate: t.launchDate || "",
                               isGroupTour: Boolean(t.isGroupTour),
                               maxCapacity: t.maxCapacity ?? 12,
+                              maxCapacity: t.maxCapacity ?? 12,
                               currentBookings: t.currentBookings ?? 0,
+                              seoTitle: t.seo?.title || "",
+                              seoDescription: t.seo?.description || "",
+                              seoKeywords: t.seo?.keywords?.join(", ") || "",
+                              seoOgImage: t.seo?.ogImage || "",
+                              seoCanonicalUrl: t.seo?.canonicalUrl || "",
+                              seoSchema: t.seo?.schema || "",
                             });
                             window.scrollTo(0, 0);
                           }}
@@ -1415,6 +1597,82 @@ const AdminDashboard = () => {
                       required
                     ></textarea>
                   </div>
+                  {/* Blog SEO Optimization */}
+                  <div className="bg-secondary/5 p-8 rounded-2xl border border-secondary/10 space-y-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-bold text-gray-900 uppercase tracking-tighter flex items-center gap-3">
+                        <span className="w-2 h-6 bg-secondary rounded-full"></span>
+                        Search Engine Optimization
+                      </h3>
+                      <Button
+                        type="button"
+                        onClick={handleGenerateBlogSeoWithAi}
+                        disabled={isGeneratingBlogSeo || loading}
+                        className="bg-secondary text-white text-[10px] px-6 py-2"
+                      >
+                        {isGeneratingBlogSeo ? "Generating..." : "Auto-fill with AI"}
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">SEO Page Title</label>
+                        <input
+                          type="text"
+                          name="seoTitle"
+                          value={blogFormData.seoTitle}
+                          onChange={handleBlogInputChange}
+                          placeholder="Max 60 characters..."
+                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Canonical Link</label>
+                        <input
+                          type="text"
+                          name="seoCanonicalUrl"
+                          value={blogFormData.seoCanonicalUrl}
+                          onChange={handleBlogInputChange}
+                          placeholder="Specific URL link..."
+                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">SEO Meta Description</label>
+                      <textarea
+                        name="seoDescription"
+                        value={blogFormData.seoDescription}
+                        onChange={handleBlogInputChange}
+                        placeholder="Write a compelling snippet for search engines..."
+                        className="w-full bg-white p-4 rounded-xl border-none h-24 focus:ring-2 focus:ring-secondary font-medium shadow-sm"
+                      ></textarea>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Keywords (Comma separated)</label>
+                        <input
+                          type="text"
+                          name="seoKeywords"
+                          value={blogFormData.seoKeywords}
+                          onChange={handleBlogInputChange}
+                          placeholder="e.g. Travel, Africa, Tourism"
+                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Social Preview Image (OG Image)</label>
+                        <input
+                          type="text"
+                          name="seoOgImage"
+                          value={blogFormData.seoOgImage}
+                          onChange={handleBlogInputChange}
+                          placeholder="https://..."
+                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex justify-end gap-4">
                     {editingBlogId && (
                       <Button
@@ -1483,6 +1741,12 @@ const AdminDashboard = () => {
                                       "Travel Tips"
                                     ),
                                   author: b.author || "Admin",
+                                  seoTitle: b.seo?.title || "",
+                                  seoDescription: b.seo?.description || "",
+                                  seoKeywords: b.seo?.keywords?.join(", ") || "",
+                                  seoOgImage: b.seo?.ogImage || "",
+                                  seoCanonicalUrl: b.seo?.canonicalUrl || "",
+                                  seoSchema: b.seo?.schema || "",
                                 });
                                 window.scrollTo(0, 0);
                               }}

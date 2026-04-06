@@ -92,3 +92,36 @@ export const rewriteContentWithAi = async ({ text, contentType = "blog", context
 
   throw new Error(lastError?.message || "AI rewrite failed.");
 };
+
+export const generateSeoWithAi = async ({ title, description, content, contentType = "tour" }) => {
+  const ai = getClient();
+  const prompt = `
+Generate SEO metadata (Title, Meta Description, Keywords) for the following ${contentType.toUpperCase()}:
+Title: ${title}
+Description/Content: ${ (description || content || '').substring(0, 1200) }...
+
+Rules:
+- SEO Title: Max 60 chars, catchy, includes primary keywords and brand name "Makolo Afrika".
+- Meta Description: 150-160 chars, includes a compelling call to action.
+- Keywords: Top 5-8 relevant keywords, comma separated.
+- Return ONLY a JSON object with: { "title": "...", "description": "...", "keywords": "..." }
+- No markdown formatting, just the raw JSON.
+`.trim();
+
+  let lastError;
+  for (const model of MODELS_TO_TRY) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: { temperature: 0.4 }
+      });
+      const text = response?.text?.trim().replace(/```json|```/g, "").trim();
+      return JSON.parse(text);
+    } catch (error) {
+      lastError = error;
+      console.error(`AI SEO failed for model ${model}:`, error.message);
+    }
+  }
+  throw new Error(lastError?.message || "AI SEO generation failed.");
+};

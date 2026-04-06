@@ -7,7 +7,15 @@ const blogSchema = new mongoose.Schema({
     author: { type: String, default: "Admin" },
     category: { type: String },
     date: { type: String, default: () => new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) },
-    views: { type: Number, default: 0, min: 0 }
+    views: { type: Number, default: 0, min: 0 },
+    seo: {
+        title: { type: String },
+        description: { type: String },
+        keywords: [{ type: String }],
+        ogImage: { type: String },
+        canonicalUrl: { type: String },
+        schema: { type: String }
+    }
 }, { timestamps: true });
 
 const Blog = mongoose.model('Blog', blogSchema);
