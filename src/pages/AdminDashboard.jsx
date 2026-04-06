@@ -1331,6 +1331,16 @@ const AdminDashboard = () => {
                         />
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">JSON-LD Schema Markup (Advanced)</label>
+                      <textarea
+                        name="seoSchema"
+                        value={tourFormData.seoSchema}
+                        onChange={handleTourInputChange}
+                        placeholder='{ "@context": "https://schema.org", "@type": "Product", ... }'
+                        className="w-full bg-white p-4 rounded-xl border-none h-24 focus:ring-2 focus:ring-primary font-mono text-xs shadow-sm"
+                      ></textarea>
+                    </div>
                   </div>
 
                   <div className="flex justify-end gap-4">
@@ -1410,7 +1420,6 @@ const AdminDashboard = () => {
                                 t.tripAdvisorReviewCount || "",
                               launchDate: t.launchDate || "",
                               isGroupTour: Boolean(t.isGroupTour),
-                              maxCapacity: t.maxCapacity ?? 12,
                               maxCapacity: t.maxCapacity ?? 12,
                               currentBookings: t.currentBookings ?? 0,
                               seoTitle: t.seo?.title || "",
@@ -1670,6 +1679,16 @@ const AdminDashboard = () => {
                           className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
                         />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">JSON-LD Schema Markup (Advanced)</label>
+                      <textarea
+                        name="seoSchema"
+                        value={blogFormData.seoSchema}
+                        onChange={handleBlogInputChange}
+                        placeholder='{ "@context": "https://schema.org", "@type": "BlogPosting", ... }'
+                        className="w-full bg-white p-4 rounded-xl border-none h-24 focus:ring-2 focus:ring-secondary font-mono text-xs shadow-sm"
+                      ></textarea>
                     </div>
                   </div>
 

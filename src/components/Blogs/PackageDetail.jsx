@@ -23,6 +23,7 @@ import { createBooking, fetchTour, fetchTourBySlug, fetchTours } from "../../ser
 import Testimonial from "../Testimonial/Testimonial";
 import TripCTA from "../Home/TripCTA";
 import LogoSlider from "../Home/LogoSlider";
+import SEO from "../UI/SEO";
 
 const slugifyTitle = (value = "") =>
   value
@@ -212,6 +213,15 @@ const PackageDetail = () => {
 
   return (
     <div className="pb-20 pt-24 px-4 lg:px-24 bg-gray-50 min-h-screen">
+      <SEO 
+        title={tourData.seo?.title || tourData.title}
+        description={tourData.seo?.description || tourData.description}
+        keywords={tourData.seo?.keywords}
+        ogImage={tourData.seo?.ogImage || tourData.image}
+        canonicalUrl={tourData.seo?.canonicalUrl || window.location.href}
+        schema={tourData.seo?.schema}
+        type="article"
+      />
       <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 h-[280px] md:h-[420px] lg:h-[520px] overflow-hidden mb-10 md:mb-14">
         <img src={activeImage} alt={title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/25 flex items-center justify-center px-6">

@@ -15,6 +15,7 @@ import PackageCard from "./PackageCard";
 import Testimonial from "../Testimonial/Testimonial";
 import TripCTA from "../Home/TripCTA";
 import LogoSlider from "../Home/LogoSlider";
+import SEO from "../UI/SEO";
 
 const BlogDetail = () => {
   const { title: blogSlug } = useParams();
@@ -88,6 +89,15 @@ const BlogDetail = () => {
 
   return (
     <div className="pb-20 pt-24 bg-gray-50/30 min-h-screen">
+      <SEO 
+        title={blog.seo?.title || blog.title}
+        description={blog.seo?.description || (blog.content?.substring(0, 160))}
+        keywords={blog.seo?.keywords}
+        ogImage={blog.seo?.ogImage || blog.image}
+        canonicalUrl={blog.seo?.canonicalUrl || window.location.href}
+        schema={blog.seo?.schema}
+        type="article"
+      />
       <div
         className="relative flex min-h-[340px] items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat md:min-h-[440px]"
         style={{ backgroundImage: `url('${image}')` }}
