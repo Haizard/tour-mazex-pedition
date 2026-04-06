@@ -117,7 +117,7 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
                 <FaPhone size={8} className="text-safari-gold" /> 0781071061
               </a>
               <a href="mailto:haithammisape@gmail.com" className="flex items-center gap-1 text-white/70 hover:text-safari-gold transition-colors text-[9px] lowercase">
-                <FaEnvelope size={8} className="text-safari-gold" /> haithammisape@gmail.co
+                <FaEnvelope size={8} className="text-safari-gold" /> haithammisape@gmail.com
               </a>
             </div>
           </div>

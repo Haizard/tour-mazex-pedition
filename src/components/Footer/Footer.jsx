@@ -272,7 +272,7 @@ const Footer = () => {
           <p className="text-gray-500 text-[10px] sm:text-xs font-medium order-2 md:order-1">
             Copyright &copy;2025 MAZ Expeditions | All rights reserved
           </p>
-          
+
           <div className="flex flex-col items-center md:items-end gap-1 text-gray-300">
             <span className="font-bold text-[10px] md:text-sm uppercase tracking-widest text-[#4ade80]">
               Developed by:
@@ -282,10 +282,10 @@ const Footer = () => {
             </span>
             <div className="flex items-center gap-4 text-[10px] md:text-xs font-bold mt-1">
               <a href="tel:0781071061" className="text-[#4ade80] hover:text-white transition-colors flex items-center gap-1.5 bg-white/5 py-1 px-2 rounded-full border border-white/5">
-                 <FaPhone size={10} className="text-[#4ade80]" /> 0781071061
+                <FaPhone size={10} className="text-[#4ade80]" /> 0781071061
               </a>
               <a href="mailto:haithammisape@gmail.com" className="text-[#4ade80] hover:text-white transition-colors flex items-center gap-1.5 bg-white/5 py-1 px-2 rounded-full border border-white/5">
-                 <FaEnvelope size={10} className="text-[#4ade80]" /> haithammisape@gmail.co
+                <FaEnvelope size={10} className="text-[#4ade80]" /> haithammisape@gmail.com
               </a>
             </div>
           </div>
