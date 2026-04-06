@@ -60,7 +60,7 @@ const Home = () => {
       <Testimonial />
 
       {/* Trip to Africa CTA - from HTML Design with gap spacing */}
-      <div className="mt-12 md:mt-16">
+      <div className="mt-1 md:mt-2">
         <TripCTA />
       </div>
 

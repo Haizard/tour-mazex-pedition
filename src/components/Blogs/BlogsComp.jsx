@@ -104,7 +104,7 @@ const BlogsComp = ({ maxPerCategory = null }) => {
 
                 <div className="mt-10 flex justify-center">
                   <Link
-                    to="/blogs"
+                    to={`/blogs/category/${group.key}`}
                     className="rounded-md bg-[#2a5d24] px-6 py-3 text-sm font-bold text-white transition-colors duration-300 hover:bg-[#1f471b]"
                   >
                     {group.cta}

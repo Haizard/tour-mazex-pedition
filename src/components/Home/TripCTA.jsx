@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 const TripCTA = () => {
   return (
     <section
-      className="relative w-full bg-cover bg-center bg-no-repeat py-12 md:py-16"
+      className="relative w-full bg-cover bg-center bg-no-repeat py-8 md:py-20 lg:py-24"
       style={{
         backgroundImage:
           "url('https://images.unsplash.com/photo-1547970810-dc1eac37d174?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
@@ -23,12 +23,12 @@ const TripCTA = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="md:w-[38%] text-center md:text-right shrink-0 md:pr-10"
+            className="md:w-[38%] text-center md:text-right shrink-0 md:pr-8"
           >
-            <h2 className="text-white font-heading text-4xl md:text-5xl font-bold leading-tight">
+            <h2 className="text-white font-heading text-2xl md:text-5xl font-bold leading-tight">
               Let's talk about your
             </h2>
-            <h4 className="text-safari-green font-heading text-3xl md:text-4xl font-light mt-1">
+            <h4 className="text-safari-green font-heading text-xl md:text-4xl font-light mt-0.5 md:mt-2">
               Trip to Africa!
             </h4>
           </motion.div>
@@ -42,24 +42,24 @@ const TripCTA = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="md:w-[62%] md:pl-10"
+            className="md:w-[62%] md:pl-8"
           >
-            <p className="text-white font-sans text-base md:text-lg leading-7 mb-8">
-              All our custom itineraries are inspired by our travel experts and positive feedback from past travelers. We're sharing them so you can get a taste of the experience. However, we're flexible and can tailor-make an itinerary just for you. Let us know your preferences (parks, accommodation, timing, etc.), and our safari experts will create a personalized proposal.
+            <p className="text-white/80 font-sans text-xs md:text-lg leading-relaxed md:leading-7 mb-4 md:mb-8 line-clamp-3 md:line-clamp-none">
+              All our custom itineraries are inspired by our travel experts and positive feedback from past travelers. We're sharing them so you can get a taste of the experience. However, we're flexible and can tailor-make an itinerary just for you. Let us know your preferences, and our safari experts will create a personalized proposal.
             </p>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-2 md:gap-4">
               <Link
                 to="/blogs"
                 onClick={() => window.scrollTo(0, 0)}
-                className="font-oswald uppercase tracking-wider text-sm bg-safari-green text-white px-6 py-3 rounded-md hover:bg-green-800 transition-colors duration-300"
+                className="font-oswald uppercase tracking-wider text-[10px] md:text-sm bg-safari-green text-white px-4 md:px-8 py-2 md:py-3.5 rounded-md hover:bg-green-800 transition-colors duration-300"
               >
                 Useful Articles
               </Link>
               <Link
                 to="/contact"
                 onClick={() => window.scrollTo(0, 0)}
-                className="font-oswald uppercase tracking-wider text-sm bg-safari-green text-white px-6 py-3 rounded-md hover:bg-green-800 transition-colors duration-300"
+                className="font-oswald uppercase tracking-wider text-[10px] md:text-sm bg-safari-green text-white px-4 md:px-8 py-2 md:py-3.5 rounded-md hover:bg-green-800 transition-colors duration-300"
               >
                 Plan My Trip
               </Link>

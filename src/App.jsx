@@ -11,6 +11,7 @@ import Gallery from "./pages/Gallery";
 import PackageDetail from "./components/Blogs/PackageDetail";
 import PackagesPage from "./pages/PackagesPage";
 import BlogDetail from "./components/Blogs/BlogDetail";
+import BlogCategory from "./pages/BlogCategory";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import PlanMyTrip from "./pages/PlanMyTrip";
@@ -40,6 +41,7 @@ const App = () => {
             <Route index element={<Home />} />
             <Route path="blogs" element={<Blogs />} />
             <Route path="blogs/:title" element={<BlogDetail />} />
+            <Route path="blogs/category/:categoryId" element={<BlogCategory />} />
             <Route path="packages" element={<PackagesPage />} />
             <Route path="packages/:title" element={<PackageDetail />} />
             <Route path="best-places" element={<PlacesRoute />} />
