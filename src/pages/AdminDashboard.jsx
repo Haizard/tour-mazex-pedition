@@ -1608,38 +1608,22 @@ const AdminDashboard = () => {
 
           {/* Blogs Section */}
           {activeTab === "blogs" && (
-            <div className="animate-fade-in">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
+            <div className="animate-fade-in w-full">
+              <div className="flex justify-between items-center mb-6 md:mb-10 px-2 md:px-0">
+                <h2 className="text-xl md:text-3xl font-black text-gray-900 uppercase tracking-tighter">
                   Content Hub
                 </h2>
-                <Button
-                  onClick={async () => {
-                    setLoading(true);
-                    try {
-                      await generateAiBlog();
-                      alert("AI is writing a new blog post...");
-                      loadBlogs();
-                    } catch (e) {
-                      alert("AI Generation failed.");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white"
-                >
-                  🤖 AI Generator
-                </Button>
+                <Badge variant="secondary" className="scale-75 md:scale-100">{blogs.length} Stories</Badge>
               </div>
 
-              <Card className="p-8 mb-12 border-none shadow-xl">
-                <h3 className="text-xl font-bold mb-8 flex items-center gap-2">
+              <Card className="p-3 md:p-8 mb-12 border-none shadow-none md:shadow-xl w-full rounded-none md:rounded-3xl">
+                <h3 className="text-xl font-bold mb-8 flex items-center gap-2 text-secondary">
                   <span className="w-2 h-8 bg-secondary rounded-full" />
                   {editingBlogId ? "Refine Story" : "Compose New Story"}
                 </h3>
                 <form onSubmit={handleBlogSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="md:col-span-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="md:col-span-2 space-y-2">
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
                         Story Title
                       </label>
@@ -1649,7 +1633,7 @@ const AdminDashboard = () => {
                         value={blogFormData.title}
                         onChange={handleBlogInputChange}
                         placeholder="A cinematic title..."
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold text-xs"
                         required
                       />
                     </div>
@@ -1661,7 +1645,7 @@ const AdminDashboard = () => {
                         name="category"
                         value={blogFormData.category}
                         onChange={handleBlogInputChange}
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold uppercase text-xs"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold uppercase text-[10px]"
                       >
                         {taxonomies
                           .filter((t) => t.type === "blogCategory")
@@ -1683,7 +1667,7 @@ const AdminDashboard = () => {
                       value={blogFormData.image}
                       onChange={handleBlogInputChange}
                       placeholder="https://..."
-                      className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary"
+                      className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary text-xs"
                       required
                     />
                   </div>
@@ -1697,17 +1681,17 @@ const AdminDashboard = () => {
                           type="button"
                           onClick={handleGenerateFullBlog}
                           disabled={isGeneratingFullBlog || loading}
-                          className="bg-secondary text-white text-[10px] px-4 py-2"
+                          className="bg-secondary text-white text-[9px] px-3 py-1.5 uppercase font-black rounded-lg tracking-tight"
                         >
-                          {isGeneratingFullBlog ? "Full AI Creating..." : "🤖 Full AI Creator"}
+                          {isGeneratingFullBlog ? "Creating..." : "🤖 Full AI Creator"}
                         </Button>
                         <Button
                           type="button"
                           onClick={handleRegenerateBlogWithAi}
                           disabled={isAiRegeneratingBlog || loading || !blogFormData.content?.trim()}
-                          className="bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary hover:text-white text-[10px] px-4 py-2"
+                          className="bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary hover:text-white text-[9px] px-3 py-1.5 uppercase font-black rounded-lg tracking-tight"
                         >
-                          {isAiRegeneratingBlog ? "Regenerating..." : "Regenerate with AI"}
+                          {isAiRegeneratingBlog ? "Wait..." : "Regenerate AI"}
                         </Button>
                       </div>
                     </div>
@@ -1741,7 +1725,7 @@ const AdminDashboard = () => {
                       value={blogFormData.content}
                       onChange={handleBlogInputChange}
                       placeholder="Write your epic travel story here..."
-                      className="w-full bg-gray-50 p-6 rounded-2xl border-none focus:ring-2 focus:ring-secondary h-64 font-medium leading-relaxed"
+                      className="w-full bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-secondary h-64 text-xs md:text-sm font-medium leading-relaxed"
                       required
                     ></textarea>
                   </div>
@@ -1756,9 +1740,9 @@ const AdminDashboard = () => {
                         type="button"
                         onClick={handleGenerateBlogSeoWithAi}
                         disabled={isGeneratingBlogSeo || loading}
-                        className="bg-secondary text-white text-[10px] px-6 py-2"
+                        className="bg-secondary text-white text-[9px] px-4 py-1.5 uppercase font-black rounded-lg tracking-widest"
                       >
-                        {isGeneratingBlogSeo ? "Generating..." : "Auto-fill with AI"}
+                        {isGeneratingBlogSeo ? "Analyzing..." : "Auto-SEO AI"}
                       </Button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1770,7 +1754,7 @@ const AdminDashboard = () => {
                           value={blogFormData.seoTitle}
                           onChange={handleBlogInputChange}
                           placeholder="Max 60 characters..."
-                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
+                          className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm text-xs"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1781,7 +1765,7 @@ const AdminDashboard = () => {
                           value={blogFormData.seoCanonicalUrl}
                           onChange={handleBlogInputChange}
                           placeholder="Specific URL link..."
-                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
+                          className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm text-xs"
                         />
                       </div>
                     </div>
@@ -1792,7 +1776,7 @@ const AdminDashboard = () => {
                         value={blogFormData.seoDescription}
                         onChange={handleBlogInputChange}
                         placeholder="Write a compelling snippet for search engines..."
-                        className="w-full bg-white p-4 rounded-xl border-none h-24 focus:ring-2 focus:ring-secondary font-medium shadow-sm"
+                        className="w-full bg-white p-2.5 rounded-xl border-none h-24 focus:ring-2 focus:ring-secondary font-medium shadow-sm text-xs"
                       ></textarea>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1804,7 +1788,7 @@ const AdminDashboard = () => {
                           value={blogFormData.seoKeywords}
                           onChange={handleBlogInputChange}
                           placeholder="e.g. Travel, Africa, Tourism"
-                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
+                          className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm text-xs"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1815,7 +1799,7 @@ const AdminDashboard = () => {
                           value={blogFormData.seoOgImage}
                           onChange={handleBlogInputChange}
                           placeholder="https://..."
-                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm"
+                          className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm text-xs"
                         />
                       </div>
                     </div>
@@ -1831,7 +1815,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-4">
+                  <div className="flex flex-col md:flex-row justify-end gap-3">
                     {editingBlogId && (
                       <Button
                         variant="outline"
@@ -1850,6 +1834,7 @@ const AdminDashboard = () => {
                             author: "Admin",
                           });
                         }}
+                        className="w-full md:w-auto py-3 md:py-2 rounded-xl text-xs font-bold order-2 md:order-1"
                       >
                         Cancel
                       </Button>
@@ -1858,9 +1843,9 @@ const AdminDashboard = () => {
                       type="submit"
                       variant="secondary"
                       disabled={loading}
-                      className="px-12"
+                      className="w-full md:w-auto px-12 py-3 md:py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest order-1 md:order-2"
                     >
-                      {editingBlogId ? "Save Changes" : "Publish Story"}
+                      {editingBlogId ? "Post Update" : "Publish Story"}
                     </Button>
                   </div>
                 </form>
