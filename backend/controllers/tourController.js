@@ -1,4 +1,5 @@
 import TourPackage from '../models/TourPackage.js';
+import Blog from '../models/Blog.js';
 import { rewriteContentWithAi, generateSeoWithAi, generateFullTourPackageWithAi } from "../utils/aiRewrite.js";
 
 const slugifyTitle = (value = '') =>
@@ -145,13 +146,21 @@ export const generateFullTourPackage = async (req, res) => {
             return res.status(400).json({ message: "Tour title and initial idea/description are required." });
         }
 
+        // Fetch available blogs for internal linking context
+        const availableBlogs = await Blog.find({}).select("title").limit(15);
+        const blogContext = availableBlogs.map(b => ({
+            title: b.title,
+            slug: slugifyTitle(b.title) // Assuming same slug logic
+        }));
+
         const fullPackage = await generateFullTourPackageWithAi({
             title,
             description,
             tourType,
             category,
             location,
-            durationDays
+            durationDays,
+            availableBlogs: blogContext
         });
 
         res.status(200).json(fullPackage);

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   IoBedOutline,
   IoCalendarOutline,
@@ -355,9 +357,48 @@ const PackageDetail = () => {
                 <h2 className="text-3xl md:text-4xl font-black text-gray-900 uppercase tracking-tight mb-5">
                   {title}
                 </h2>
-                <p className="text-gray-600 leading-relaxed text-base md:text-lg whitespace-pre-line">
-                  {description}
-                </p>
+                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      h4: ({ node, ...props }) => (
+                        <h4
+                          className="text-2xl font-black text-gray-900 uppercase tracking-tight mt-10 mb-6 border-l-4 border-primary pl-4 scroll-mt-32"
+                          {...props}
+                        />
+                      ),
+                      p: ({ node, ...props }) => (
+                        <p className="mb-8 leading-8 text-lg font-medium" {...props} />
+                      ),
+                      img: ({ node, ...props }) => (
+                        <img
+                          className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-cover shadow-lg"
+                          loading="lazy"
+                          {...props}
+                        />
+                      ),
+                      strong: ({ node, ...props }) => (
+                        <strong className="font-black text-gray-900" {...props} />
+                      ),
+                      li: ({ node, ...props }) => (
+                        <li className="mb-3 list-disc list-outside ml-4 font-medium" {...props} />
+                      ),
+                      ul: ({ node, ...props }) => (
+                        <ul className="mb-8 space-y-2" {...props} />
+                      ),
+                      a: ({ node, ...props }) => (
+                        <Link
+                          to={props.href}
+                          className="text-primary font-black hover:underline decoration-2"
+                        >
+                          {props.children}
+                        </Link>
+                      ),
+                    }}
+                  >
+                    {description}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
 
@@ -422,9 +463,48 @@ const PackageDetail = () => {
                       <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-4">
                         Tour Overview
                       </h2>
-                      <p className="text-gray-600 leading-relaxed text-lg whitespace-pre-line">
-                        {description}
-                      </p>
+                      <div className="prose max-w-none text-gray-600 leading-relaxed">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h4: ({ node, ...props }) => (
+                              <h4
+                                className="text-xl font-black text-gray-900 uppercase tracking-tight mt-8 mb-4 border-l-4 border-primary pl-4"
+                                {...props}
+                              />
+                            ),
+                            p: ({ node, ...props }) => (
+                              <p className="mb-8 leading-8 text-lg font-medium" {...props} />
+                            ),
+                            img: ({ node, ...props }) => (
+                              <img
+                                className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-cover shadow-lg"
+                                loading="lazy"
+                                {...props}
+                              />
+                            ),
+                            strong: ({ node, ...props }) => (
+                              <strong className="font-black text-gray-900" {...props} />
+                            ),
+                            li: ({ node, ...props }) => (
+                              <li className="mb-3 list-disc list-outside ml-4" {...props} />
+                            ),
+                            ul: ({ node, ...props }) => (
+                              <ul className="mb-8 space-y-2" {...props} />
+                            ),
+                            a: ({ node, ...props }) => (
+                              <Link
+                                to={props.href}
+                                className="text-primary font-black hover:underline"
+                              >
+                                {props.children}
+                              </Link>
+                            ),
+                          }}
+                        >
+                          {description}
+                        </ReactMarkdown>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -461,14 +541,31 @@ const PackageDetail = () => {
                           </div>
                           <div className="bg-gray-50 p-6 rounded-3xl flex-1 border">
                             <ul className="space-y-2">
-                              {(day.events || []).map((event, eventIndex) => (
-                                <li
-                                  key={`${event}-${eventIndex}`}
-                                  className="text-gray-700 text-sm italic"
-                                >
-                                  - {event}
-                                </li>
-                              ))}
+                                {(day.events || []).map((event, eventIndex) => (
+                                  <li
+                                    key={`${event}-${eventIndex}`}
+                                    className="text-gray-700 text-sm font-medium"
+                                  >
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm]}
+                                      components={{
+                                        p: ({ node, ...props }) => (
+                                          <span {...props} /> // Render as span inside li
+                                        ),
+                                        a: ({ node, ...props }) => (
+                                          <Link
+                                            to={props.href}
+                                            className="text-primary font-black hover:underline"
+                                          >
+                                            {props.children}
+                                          </Link>
+                                        ),
+                                      }}
+                                    >
+                                      {event.startsWith("- ") ? event.substring(2) : event}
+                                    </ReactMarkdown>
+                                  </li>
+                                ))}
                             </ul>
                             {day.accommodation && (
                               <div className="mt-5 pt-4 border-t border-gray-200 flex items-start gap-3">

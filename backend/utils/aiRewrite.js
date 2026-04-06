@@ -114,7 +114,7 @@ Rules:
       const response = await ai.models.generateContent({
         model,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        config: { temperature: 0.4 }
+        config: { temperature: 0.4, responseMimeType: "application/json" }
       });
       const text = response?.text?.trim().replace(/```json|```/g, "").trim();
       return JSON.parse(text);
@@ -126,8 +126,10 @@ Rules:
   throw new Error(lastError?.message || "AI SEO generation failed.");
 };
 
-export const generateFullTourPackageWithAi = async ({ title, description, tourType, category, location, durationDays }) => {
+export const generateFullTourPackageWithAi = async ({ title, description, tourType, category, location, durationDays, availableBlogs = [] }) => {
   const ai = getClient();
+  const blogListStr = availableBlogs.map(b => `- ${b.title} (Slug: ${b.slug})`).join("\n");
+  
   const prompt = `
 Generate a COMPLETE, LUXURY safari tour package for "Makolo Afrika" based on the following:
 Title: ${title}
@@ -137,21 +139,28 @@ Category: ${category}
 Location: ${location}
 Requested Duration: ${durationDays || '7'} days
 
-Strict rules for generation:
+STRICT RULES FOR GENERATION:
 1. SEO FOCUS: Use high-intent travel keywords like "Luxury Safari", "Exclusive Experience", "Wildlife Adventure", and specific park names if applicable.
-2. CINEMATIC DESCRIPTION: Write a compelling, immersive description (300-500 words) using vivid storytelling but keeping it accurate. 
-3. START/END LOCATION: Provide logical hubs (e.g., Arusha, Kilimanjaro Airport, Zanzibar).
+2. CINEMATIC DESCRIPTION & FORMATTING: Write a compelling, immersive description (300-500 words) using vivid storytelling. 
+   - WORD DOCUMENT STYLE: Format the description with hierarchical Markdown headers (####), bold text, and bullet points.
+   - VIBRANT FORMATTING: Use tasteful travel emojis and icons (e.g. 📍, 🦁, 🦒, ⛺, ✨, 🌅).
+   - INTERNAL LINKING: Link to relevant blogs from "Available Blogs" list: ${blogListStr || "none"}
+   - LINK FORMAT: [Link Text](/blogs/[slug])
+
+3. START/END LOCATION: Provide logical hubs (e.g., Arusha ✈️, Kilimanjaro Airport 🛫, Zanzibar 🌴).
 4. DURATION: Must match ${durationDays || 'the logical length for this trip'}.
-5. INCLUSIONS/EXCLUSIONS: Provide 8-12 comprehensive points for each, as arrays of strings.
-6. ITINERARY: For EACH day of the tour, provide:
-   - day: Number
-   - events: An array of 3-5 high-detail descriptions of activities.
-   - accommodation: A realistic luxury lodge/camp name matching the region.
-7. PRICING: Realistic "Green Season (Apr-May)", "High Season (Jun-Oct)", and "Peak Season (Dec-Feb)" prices (e.g., "$3500 PP").
-8. FAQs: 5-8 common traveler questions and professional answers.
+5. INCLUSIONS/EXCLUSIONS: Provide 8-12 comprehensive points as arrays of strings with icons (e.g. ✅, ❌).
+6. ITINERARY: For EACH day, provide detailed events and accommodation.
+7. PRICING: Provide realistic prices for Green, High, and Peak seasons.
+8. FAQs: 5-8 common questions with professional answers.
 9. SEO METADATA: High-conversion Title, Meta Description, and Keywords.
 
-Return ONLY a valid JSON object with the following structure:
+OUTPUT INSTRUCTIONS:
+- You MUST return a valid JSON object.
+- NO literal newlines inside strings. Use "\\n" for any line breaks in the description or events.
+- Escape all double quotes inside string values.
+
+JSON STRUCTURE:
 {
   "description": "...",
   "startLocation": "...",
@@ -160,38 +169,36 @@ Return ONLY a valid JSON object with the following structure:
   "inclusions": ["...", "..."],
   "exclusions": ["...", "..."],
   "itinerary": [
-    { "day": 1, "events": ["...", "..."], "accommodation": "..." },
-    ...
+    { "day": 1, "events": ["...", "..."], "accommodation": "..." }
   ],
   "pricingTable": { "greenSeason": "$...", "highSeason": "$...", "peakSeason": "$..." },
-  "faqs": [ { "question": "...", "answer": "..." }, ... ],
+  "faqs": [ { "question": "...", "answer": "..." } ],
   "seoTitle": "...",
   "seoDescription": "...",
   "seoKeywords": "keyword1, keyword2, ..."
 }
-
-Return ONLY the raw JSON. No markdown blocks.
 `.trim();
 
   let lastError;
-  for (const model of MODELS_TO_TRY) {
+  for (const modelName of MODELS_TO_TRY) {
     try {
       const response = await ai.models.generateContent({
-        model,
+        model: modelName,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
-          temperature: 0.7,
-          maxOutputTokens: 3500,
+          temperature: 0.6,
+          maxOutputTokens: 5000,
+          responseMimeType: "application/json",
         },
       });
 
-      const text = response?.text?.trim().replace(/```json|```/g, "").trim();
+      const text = response.text?.trim()?.replace(/```json|```/g, "").trim();
       if (text) {
         return JSON.parse(text);
       }
     } catch (error) {
       lastError = error;
-      console.error(`Full Tour Generation failed for model ${model}:`, error.message);
+      console.error(`Full Tour Generation failed for model ${modelName}:`, error.message);
     }
   }
 

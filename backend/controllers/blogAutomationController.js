@@ -117,6 +117,7 @@ export const generateDailyBlog = async (req, res) => {
               - Use bold for key terms, place names, and wildlife.
               - Use italics for emphasis or local Swahili terms with translations.
               - Use bullet points or numbered lists for practical tips.
+              - VIBRANT CONTENT: Add tasteful travel-themed emojis and icons (e.g. 🦁, 🌍, ✨, 🥾, 🌅) in-line to create a boutique, human feel.
               - Do not generate inline image placeholders or body image markdown.
             - Expert value: include specific advice that only a local expert would know.
 

@@ -155,8 +155,8 @@ const Navbar = ({ handleOrderPopup }) => {
               <option>Germany DE</option>
             </select>
             <Link to="/about" className="hover:text-safari-gold transition-colors">About Us</Link>
-            <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 max-w-[150px] text-white">
-              <option disabled selected>Practical Info</option>
+            <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 max-w-[150px] text-white" defaultValue="Practical Info">
+              <option disabled>Practical Info</option>
               <option>Privacy Policy</option>
               <option>Terms & Conditions</option>
               <option>Safari FAQs</option>
