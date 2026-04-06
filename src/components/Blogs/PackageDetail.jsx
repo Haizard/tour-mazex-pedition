@@ -541,20 +541,20 @@ const PackageDetail = () => {
                           >
                             <button
                               onClick={() => setOpenItineraryIndex(isOpen ? -1 : index)}
-                              className={`w-full flex items-center justify-between p-5 text-left transition-all ${
+                              className={`w-full flex items-center justify-between p-4 md:p-5 text-left transition-all ${
                                 isOpen ? "bg-[#8b5e34] text-white" : "bg-gray-50 text-gray-900 hover:bg-gray-100"
                               }`}
                             >
-                              <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black ${
+                              <div className="flex items-center gap-3 md:gap-4">
+                                <div className={`w-8 h-8 md:w-10 md:h-10 text-xs md:text-base rounded-full flex items-center justify-center font-black shrink-0 ${
                                   isOpen ? "bg-white text-[#8b5e34]" : "bg-[#8b5e34] text-white"
                                 }`}>
                                   {day.day}
                                 </div>
-                                <span className="font-black uppercase tracking-tight">Day {day.day}: {day.accommodation || "Tour Journey"}</span>
+                                <span className="text-[13px] md:text-base font-black uppercase tracking-tight">Day {day.day}: {day.accommodation || "Tour Journey"}</span>
                               </div>
                               <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-                                <IoChevronDownOutline className="text-xl" />
+                                <IoChevronDownOutline className="text-lg md:text-xl" />
                               </motion.div>
                             </button>
                             
@@ -566,7 +566,7 @@ const PackageDetail = () => {
                                   exit={{ height: 0, opacity: 0 }}
                                   className="overflow-hidden bg-white"
                                 >
-                                  <div className="p-6 md:p-8 space-y-6">
+                                  <div className="p-4 md:p-8 space-y-4 md:space-y-6">
                                     <ul className="space-y-4">
                                       {(day.events || []).map((event, eventIndex) => (
                                         <li
@@ -664,9 +664,9 @@ const PackageDetail = () => {
                           <div key={`${faq.question}-${index}`} className="rounded-2xl border border-gray-100 bg-gray-50 overflow-hidden">
                             <button
                               onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
-                              className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left"
+                              className="w-full px-4 py-3 md:px-5 md:py-4 flex items-center justify-between gap-3 md:gap-4 text-left"
                             >
-                              <span className="text-sm font-black text-gray-900">{faq.question}</span>
+                              <span className="text-[13px] md:text-sm font-black text-gray-900">{faq.question}</span>
                               <motion.div animate={{ rotate: isOpen ? 180 : 0 }} className="text-primary shrink-0">
                                 <IoChevronDownOutline />
                               </motion.div>
@@ -674,8 +674,8 @@ const PackageDetail = () => {
                             <AnimatePresence>
                               {isOpen && (
                                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                  <div className="px-5 pb-5 text-sm text-gray-600 leading-relaxed border-t border-gray-100 bg-white">
-                                    <div className="pt-4 whitespace-pre-line">{faq.answer}</div>
+                                  <div className="px-4 pb-4 md:px-5 md:pb-5 text-[13px] md:text-sm text-gray-600 leading-relaxed border-t border-gray-100 bg-white">
+                                    <div className="pt-3 md:pt-4 whitespace-pre-line">{faq.answer}</div>
                                   </div>
                                 </motion.div>
                               )}
@@ -692,10 +692,10 @@ const PackageDetail = () => {
                 {activeTab === "reviews" && (
                   <div className="space-y-5">
                     {(tripAdvisorUrl || tripAdvisorRating || tripAdvisorReviewCount) ? (
-                      <div className="rounded-3xl border bg-[#f5f9f7] p-6">
-                        <div className="flex items-center gap-3 mb-5">
-                          <div className="w-12 h-12 rounded-2xl bg-[#34e0a1]/15 text-[#00aa6c] flex items-center justify-center">
-                            <IoStarOutline className="text-2xl" />
+                      <div className="rounded-2xl md:rounded-3xl border bg-[#f5f9f7] p-4 md:p-6">
+                        <div className="flex items-center gap-3 mb-4 md:mb-5">
+                          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-[#34e0a1]/15 text-[#00aa6c] flex items-center justify-center shrink-0">
+                            <IoStarOutline className="text-xl md:text-2xl" />
                           </div>
                           <div>
                             <h4 className="font-black uppercase tracking-tight text-gray-900">TripAdvisor Reviews</h4>
@@ -717,7 +717,7 @@ const PackageDetail = () => {
                             href={tripAdvisorUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center justify-center bg-[#00aa6c] text-white font-black px-6 py-3 rounded-2xl uppercase tracking-widest hover:opacity-90 transition"
+                            className="inline-flex items-center justify-center bg-[#00aa6c] text-white font-black text-[11px] md:text-sm px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl uppercase tracking-widest hover:opacity-90 transition"
                           >
                             View on TripAdvisor
                           </a>
