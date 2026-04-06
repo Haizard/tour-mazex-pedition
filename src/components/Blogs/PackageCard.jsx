@@ -37,7 +37,7 @@ const PackageCard = (props) => {
       state={props}
       className="group block h-full"
     >
-      <Card className="relative h-full border-none shadow-xl hover:shadow-[0_30px_60px_rgba(0,0,0,0.12)] transition-all duration-700 rounded-[40px] overflow-hidden bg-white px-0 py-0">
+      <Card className="relative h-full border-none shadow-xl hover:shadow-[0_30px_60px_rgba(0,0,0,0.12)] transition-all duration-700 rounded-2xl md:rounded-3xl overflow-hidden bg-white px-0 py-0">
         <div className="relative h-48 md:h-72 overflow-hidden">
           <img
             src={image}

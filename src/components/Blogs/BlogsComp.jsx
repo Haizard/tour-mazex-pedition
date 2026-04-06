@@ -96,7 +96,7 @@ const BlogsComp = ({ maxPerCategory = null }) => {
               return (
               <section key={group.key} className="py-2">
                 <SectionHeading title={group.title} accent={group.accent} />
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8 md:gap-6">
                   {visibleBlogs.map((item) => (
                     <BlogCard key={item._id} {...item} />
                   ))}

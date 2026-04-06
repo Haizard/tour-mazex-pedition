@@ -319,7 +319,7 @@ const BlogDetail = () => {
               View All Packages
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-8">
             {featuredTours.map((tour) => (
               <PackageCard key={tour._id} {...tour} />
             ))}
