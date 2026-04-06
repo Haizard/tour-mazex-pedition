@@ -11,12 +11,34 @@ const SEO = ({
   type = 'website' 
 }) => {
   const siteName = 'Makolo Afrika - Luxury Tours & Safaris';
-  const defaultDescription = 'Experience the best luxury safaris and adventure tours in Tanzania with Makolo Afrika.';
+  const defaultDescription = 'Experience the best luxury safaris and adventure tours in Tanzania with Makolo Afrika. Explore the Serengeti, Ngorongoro, Kilimanjaro, and Zanzibar.';
   
   // Format title
   const fullTitle = title 
     ? `${title} | Makolo Afrika` 
     : siteName;
+
+  // Standard Company / Site Schemas if on Home or generic
+  const orgSchema = {
+    "@context": "https://schema.org",
+    "@type": "TravelAgency",
+    "name": "Makolo Afrika",
+    "alternateName": "Makolo Afrika Luxury Safaris",
+    "url": "https://makoloafrika.com",
+    "logo": "https://makoloafrika.com/logo.png",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+255-752-000-000",
+      "contactType": "customer service",
+      "areaServed": "TZ",
+      "availableLanguage": ["English", "Swahili"]
+    },
+    "sameAs": [
+      "https://www.facebook.com/makoloafrika",
+      "https://www.instagram.com/makoloafrika",
+      "https://twitter.com/makoloafrika"
+    ]
+  };
 
   return (
     <Helmet>
@@ -41,7 +63,12 @@ const SEO = ({
       <meta name="twitter:description" content={description || defaultDescription} />
       {ogImage && <meta name="twitter:image" content={ogImage} />}
 
-      {/* Structured Data (JSON-LD) */}
+      {/* Default Organization Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify(orgSchema)}
+      </script>
+
+      {/* Page Specific Structured Data (JSON-LD) */}
       {schema && (
         <script type="application/ld+json">
           {schema}

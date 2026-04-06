@@ -14,6 +14,8 @@ import BlogDetail from "./components/Blogs/BlogDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import PlanMyTrip from "./pages/PlanMyTrip";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsConditions from "./pages/TermsConditions";
 import ScrollToTop from "./components/UI/ScrollToTop";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -48,6 +50,8 @@ const App = () => {
             <Route path="login" element={<AdminLogin />} />
             <Route path="plan-my-trip" element={<PlanMyTrip />} />
             <Route path="tailor-made" element={<PlanMyTrip />} />
+            <Route path="privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="terms" element={<TermsConditions />} />
             <Route path="*" element={<NoPage />} />
           </Route>
         </Routes>

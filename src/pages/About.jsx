@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import { fetchVisionaries } from "../services/api";
+import SEO from "../components/UI/SEO";
 
 const About = () => {
   const [visionaries, setVisionaries] = React.useState([]);
@@ -19,6 +20,10 @@ const About = () => {
   }, []);
   return (
     <div className="bg-white">
+      <SEO 
+        title="About Our Safari Expertise"
+        description="Learn more about Makolo Afrika, our mission, values, and the expert visionaries behind our luxury Tanzanian safari experiences."
+      />
       {/* Hero Section */}
       <div className="relative h-[50vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-black/50 z-10" />

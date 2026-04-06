@@ -4,6 +4,7 @@ import Card from "../components/UI/Card";
 import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
 import LogoSlider from "../components/Home/LogoSlider";
+import SEO from "../components/UI/SEO";
 import {
   createContactMessage,
   fetchFaqs,
@@ -57,6 +58,10 @@ const Contact = () => {
 
   return (
     <div className="bg-white">
+      <SEO 
+        title="Contact Us - Plan Your Tanzania Safari"
+        description="Get in touch with Makolo Afrika to start planning your luxury African adventure. Our experts are ready to help you design a personalized itinerary."
+      />
       <div className="relative flex h-[50vh] items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-10 bg-black/50" />
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center" />

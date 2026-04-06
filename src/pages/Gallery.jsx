@@ -4,6 +4,7 @@ import { fetchGallery } from "../services/api";
 import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
 import LogoSlider from "../components/Home/LogoSlider";
+import SEO from "../components/UI/SEO";
 
 const normalizeValue = (value = "") =>
   value
@@ -83,6 +84,10 @@ const Gallery = () => {
 
   return (
     <div className="min-h-screen bg-[#f6f1e8] pt-24 pb-20">
+      <SEO 
+        title="Safari Photo Gallery - Real Tanzania Adventures"
+        description="Browse our curated collection of safari photos. Discover majestic wildlife, stunning landscapes, and authentic traveler experiences in Tanzania."
+      />
       <section className="relative overflow-hidden text-white min-h-[60vh] md:min-h-[68vh]">
         {heroImage ? (
           <img

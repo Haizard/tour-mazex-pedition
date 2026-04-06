@@ -38,6 +38,7 @@ const BlogCard = ({
           <img
             src={image}
             alt={title}
+            loading="lazy"
             className="h-[250px] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
         </div>

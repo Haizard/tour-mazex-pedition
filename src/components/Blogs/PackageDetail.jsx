@@ -24,6 +24,8 @@ import Testimonial from "../Testimonial/Testimonial";
 import TripCTA from "../Home/TripCTA";
 import LogoSlider from "../Home/LogoSlider";
 import SEO from "../UI/SEO";
+import PackageCard from "./PackageCard";
+
 
 const slugifyTitle = (value = "") =>
   value
@@ -61,11 +63,20 @@ const PackageDetail = () => {
     notes: "",
   });
   const [planSubmitting, setPlanSubmitting] = useState(false);
-  const [planSuccess, setPlanSuccess] = useState(false);
+  const [relatedTours, setRelatedTours] = useState([]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    const loadRelated = async () => {
+      try {
+        const res = await fetchTours();
+        setRelatedTours(res.data.filter(t => t._id !== tourData?._id).slice(0, 3));
+      } catch (err) {
+        console.error("Related tours load fail:", err);
+      }
+    };
+    if (tourData) loadRelated();
+  }, [tourData?._id]);
 
   useEffect(() => {
     const loadTour = async () => {
@@ -898,6 +909,30 @@ const PackageDetail = () => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 lg:px-24 mt-24 mb-16">
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <span className="text-primary font-black uppercase text-xs tracking-widest mb-2 block">
+              Discover More
+            </span>
+            <h2 className="text-4xl md:text-5xl font-black text-gray-900 uppercase tracking-tighter">
+              Related Adventures
+            </h2>
+          </div>
+          <Link
+            to="/packages"
+            className="mb-2 text-gray-400 font-bold hover:text-primary uppercase text-xs tracking-widest"
+          >
+            All Packages
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {relatedTours.map((tour) => (
+            <PackageCard key={tour._id} {...tour} />
+          ))}
         </div>
       </div>
 

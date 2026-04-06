@@ -12,16 +12,18 @@ import PopularTours from "../components/Home/PopularTours";
 import GroupTours from "../components/Home/GroupTours";
 import Welcome from "../components/Home/Welcome";
 import Trending from "../components/Home/Trending";
+import SEO from "../components/UI/SEO";
 
 const Home = () => {
   const [orderPopup, setOrderPopup] = React.useState(false);
 
-  const handleOrderPopup = () => {
-    setOrderPopup(!orderPopup);
-  };
-
   return (
     <div>
+      <SEO 
+        title="Tanzania Luxury Safaris & Adventure Tours"
+        description="Makolo Afrika offers premium safari experiences in Serengeti, Ngorongoro, and Zanzibar. Book your dream African holiday today."
+        keywords={["Safari", "Tanzania", "Serengeti", "Zanzibar", "Luxury Travel", "Makolo Afrika"]}
+      />
       {/* Hero — dark */}
       <div className="h-screen relative overflow-hidden">
         <video
