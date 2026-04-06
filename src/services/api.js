@@ -19,6 +19,8 @@ export const regenerateTourDescription = (data) =>
   API.post("/tours/regenerate-description", data);
 export const generateTourSeo = (data) =>
   API.post("/tours/generate-seo", data);
+export const generateFullTourPackage = (data) =>
+  API.post("/tours/generate-full", data);
 
 // Gallery
 export const fetchGallery = () => API.get("/gallery");

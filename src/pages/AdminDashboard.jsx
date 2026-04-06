@@ -19,6 +19,7 @@ import {
   regenerateBlogContent,
   generateBlogSeo,
   generateTourSeo,
+  generateFullTourPackage,
   fetchInquiries,
   updateInquiryStatus,
   deleteInquiry,
@@ -171,6 +172,100 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [isAiRegeneratingTour, setIsAiRegeneratingTour] = useState(false);
   const [isAiRegeneratingBlog, setIsAiRegeneratingBlog] = useState(false);
+  const [isGeneratingFullTour, setIsGeneratingFullTour] = useState(false);
+  const [isGeneratingFullBlog, setIsGeneratingFullBlog] = useState(false);
+
+  const handleGenerateFullTour = async () => {
+    if (!tourFormData.title || !tourFormData.description) {
+      alert("Please provide at least a Title and a brief Idea/Description for the AI to work with.");
+      return;
+    }
+
+    setIsGeneratingFullTour(true);
+    try {
+      // Ask for duration if not set to be wise about it
+      const durationDays = tourFormData.duration?.match(/\d+/)?.[0] || prompt("How many days should this tour be?", "7");
+      
+      const res = await generateFullTourPackage({
+        title: tourFormData.title,
+        description: tourFormData.description,
+        tourType: tourFormData.tourType,
+        category: tourFormData.category,
+        location: tourFormData.location,
+        durationDays: durationDays
+      });
+
+      const data = res.data;
+      setTourFormData(prev => ({
+        ...prev,
+        description: data.description,
+        startLocation: data.startLocation,
+        endLocation: data.endLocation,
+        duration: data.duration,
+        inclusions: data.inclusions?.join("\n") || "",
+        exclusions: data.exclusions?.join("\n") || "",
+        itinerary: data.itinerary?.map(day => ({
+          day: day.day,
+          events: Array.isArray(day.events) ? day.events.join("\n") : day.events,
+          accommodation: day.accommodation
+        })) || prev.itinerary,
+        pricingTable: data.pricingTable || prev.pricingTable,
+        faqs: data.faqs || prev.faqs,
+        seoTitle: data.seoTitle,
+        seoDescription: data.seoDescription,
+        seoKeywords: data.seoKeywords,
+      }));
+      alert("Full tour package generated successfully!");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate full tour package: " + (e.response?.data?.message || e.message));
+    } finally {
+      setIsGeneratingFullTour(false);
+    }
+  };
+
+  const handleGenerateFullBlog = async () => {
+    if (!blogFormData.title) {
+      alert("Please provide a Title for the blog post.");
+      return;
+    }
+
+    setIsGeneratingFullBlog(true);
+    try {
+      // We'll reuse the regenerate logic but with an empty content to signify "Generate New"
+      const response = await regenerateBlogContent({
+        content: blogFormData.content || "Write a comprehensive blog post about this title.",
+        title: blogFormData.title,
+        category: blogFormData.category,
+      });
+
+      setBlogFormData((prev) => ({
+        ...prev,
+        content: response.data?.content || prev.content,
+      }));
+
+      // Also generate SEO
+      const seoRes = await generateBlogSeo({
+        title: blogFormData.title,
+        content: response.data?.content
+      });
+
+      setBlogFormData(prev => ({
+        ...prev,
+        seoTitle: seoRes.data.title,
+        seoDescription: seoRes.data.description,
+        seoKeywords: seoRes.data.keywords
+      }));
+
+      alert("Blog content and SEO generated!");
+    } catch (error) {
+       console.error(error);
+       alert("Failed to generate blog content.");
+    } finally {
+      setIsGeneratingFullBlog(false);
+    }
+  };
+
   const [isGeneratingTourSeo, setIsGeneratingTourSeo] = useState(false);
   const [isGeneratingBlogSeo, setIsGeneratingBlogSeo] = useState(false);
   const [bodyImageUrl, setBodyImageUrl] = useState("");
@@ -278,6 +373,7 @@ const AdminDashboard = () => {
     setFaqFormData({ ...faqFormData, [e.target.name]: e.target.value });
   const handleMenuInputChange = (e) =>
     setMenuFormData({ ...menuFormData, [e.target.name]: e.target.value });
+    
   const insertIntoBlogContent = (snippet) => {
     const textarea = blogContentTextareaRef.current;
 
@@ -427,6 +523,7 @@ const AdminDashboard = () => {
       setIsGeneratingBlogSeo(false);
     }
   };
+
   const handleGalleryInputChange = (e) =>
     setGalleryFormData({ ...galleryFormData, [e.target.name]: e.target.value });
   const handleVisionaryInputChange = (e) =>
@@ -980,14 +1077,24 @@ const AdminDashboard = () => {
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
                         Description
                       </label>
-                      <Button
-                        type="button"
-                        onClick={handleRegenerateTourWithAi}
-                        disabled={isAiRegeneratingTour || loading || !tourFormData.description?.trim()}
-                        className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white text-[10px] px-4 py-2"
-                      >
-                        {isAiRegeneratingTour ? "Regenerating..." : "Regenerate with AI"}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          onClick={handleGenerateFullTour}
+                          disabled={isGeneratingFullTour || loading}
+                          className="bg-primary text-white text-[10px] px-4 py-2"
+                        >
+                          {isGeneratingFullTour ? "Full AI Generating..." : "🤖 Full AI Generator"}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleRegenerateTourWithAi}
+                          disabled={isAiRegeneratingTour || loading || !tourFormData.description?.trim()}
+                          className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white text-[10px] px-4 py-2"
+                        >
+                          {isAiRegeneratingTour ? "Regenerating..." : "Regenerate with AI"}
+                        </Button>
+                      </div>
                     </div>
                     <textarea
                       name="description"
@@ -1563,14 +1670,24 @@ const AdminDashboard = () => {
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
                         Story Content
                       </label>
-                      <Button
-                        type="button"
-                        onClick={handleRegenerateBlogWithAi}
-                        disabled={isAiRegeneratingBlog || loading || !blogFormData.content?.trim()}
-                        className="bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary hover:text-white text-[10px] px-4 py-2"
-                      >
-                        {isAiRegeneratingBlog ? "Regenerating..." : "Regenerate with AI"}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          onClick={handleGenerateFullBlog}
+                          disabled={isGeneratingFullBlog || loading}
+                          className="bg-secondary text-white text-[10px] px-4 py-2"
+                        >
+                          {isGeneratingFullBlog ? "Full AI Creating..." : "🤖 Full AI Creator"}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleRegenerateBlogWithAi}
+                          disabled={isAiRegeneratingBlog || loading || !blogFormData.content?.trim()}
+                          className="bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary hover:text-white text-[10px] px-4 py-2"
+                        >
+                          {isAiRegeneratingBlog ? "Regenerating..." : "Regenerate with AI"}
+                        </Button>
+                      </div>
                     </div>
                     <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 md:flex-row md:items-end">
                       <div className="flex-1 space-y-2">
