@@ -36,19 +36,19 @@ const PopularTours = () => {
   };
 
   return (
-    <div className="bg-[#f7f7f7] py-20 pb-24">
+    <div className="bg-[#f7f7f7] py-12 md:py-20 pb-16 md:pb-24">
       <div className="container px-4">
         {/* Title Area */}
-        <div className="text-center mb-16 px-4">
-          <h2 className="text-4xl md:text-5xl font-heading text-gray-900 flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
-            <span className="uppercase tracking-wide">Our</span>
-            <span className="font-signature text-7xl md:text-[88px] text-safari-green leading-none lowercase -mt-4 md:mt-0">popular</span>
-            <span className="uppercase tracking-wide">Tours</span>
+        <div className="text-center mb-10 md:mb-16 px-4">
+          <h2 className="text-3xl md:text-5xl font-heading text-gray-900 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4">
+            <span className="uppercase tracking-wide text-2xl md:text-4xl">Our</span>
+            <span className="font-signature text-6xl md:text-[88px] text-safari-green leading-none lowercase -mt-2 md:mt-0">popular</span>
+            <span className="uppercase tracking-wide text-2xl md:text-4xl">Tours</span>
           </h2>
         </div>
 
         {/* Cards Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 max-w-7xl mx-auto">
           {tours.map((item, index) => (
             <motion.div
               key={item._id}
@@ -60,7 +60,7 @@ const PopularTours = () => {
             >
               <div 
                 onClick={() => handleNavigate(item)}
-                className="group relative w-full h-[300px] bg-white rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.03]"
+                className="group relative w-full h-[220px] md:h-[300px] bg-white rounded-xl md:rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 transform md:hover:scale-[1.03]"
               >
                 {/* Image */}
                 <div className="absolute inset-0">
