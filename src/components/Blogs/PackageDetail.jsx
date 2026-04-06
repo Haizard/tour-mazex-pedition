@@ -52,6 +52,7 @@ const PackageDetail = () => {
   const [isInclusionsOpen, setIsInclusionsOpen] = useState(true);
   const [isExclusionsOpen, setIsExclusionsOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
+  const [openItineraryIndex, setOpenItineraryIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("overview");
 
   const [planForm, setPlanForm] = useState({
@@ -529,62 +530,94 @@ const PackageDetail = () => {
                 )}
 
                 {activeTab === "itinerary" && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {itinerary?.length > 0 ? (
-                      itinerary.map((day, index) => (
-                        <div
-                          key={`${day.day}-${index}`}
-                          className="flex gap-6 items-start"
-                        >
-                          <div className="bg-[#8b5e34] text-white w-10 h-10 rounded-full flex items-center justify-center font-black shrink-0">
-                            {day.day}
-                          </div>
-                          <div className="bg-gray-50 p-6 rounded-3xl flex-1 border">
-                            <ul className="space-y-2">
-                                {(day.events || []).map((event, eventIndex) => (
-                                  <li
-                                    key={`${event}-${eventIndex}`}
-                                    className="text-gray-700 text-sm font-medium"
-                                  >
-                                    <ReactMarkdown
-                                      remarkPlugins={[remarkGfm]}
-                                      components={{
-                                        p: ({ node, ...props }) => (
-                                          <span {...props} /> // Render as span inside li
-                                        ),
-                                        a: ({ node, ...props }) => (
-                                          <Link
-                                            to={props.href}
-                                            className="text-primary font-black hover:underline"
-                                          >
-                                            {props.children}
-                                          </Link>
-                                        ),
-                                      }}
-                                    >
-                                      {event.startsWith("- ") ? event.substring(2) : event}
-                                    </ReactMarkdown>
-                                  </li>
-                                ))}
-                            </ul>
-                            {day.accommodation && (
-                              <div className="mt-5 pt-4 border-t border-gray-200 flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-white text-primary flex items-center justify-center shadow-sm shrink-0">
-                                  <IoBedOutline className="text-lg" />
+                      itinerary.map((day, index) => {
+                        const isOpen = openItineraryIndex === index;
+                        return (
+                          <div
+                            key={`${day.day}-${index}`}
+                            className="rounded-3xl border border-gray-100 overflow-hidden"
+                          >
+                            <button
+                              onClick={() => setOpenItineraryIndex(isOpen ? -1 : index)}
+                              className={`w-full flex items-center justify-between p-5 text-left transition-all ${
+                                isOpen ? "bg-[#8b5e34] text-white" : "bg-gray-50 text-gray-900 hover:bg-gray-100"
+                              }`}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black ${
+                                  isOpen ? "bg-white text-[#8b5e34]" : "bg-[#8b5e34] text-white"
+                                }`}>
+                                  {day.day}
                                 </div>
-                                <div>
-                                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">
-                                    Accommodation
-                                  </p>
-                                  <p className="text-sm font-bold text-gray-700">
-                                    {day.accommodation}
-                                  </p>
-                                </div>
+                                <span className="font-black uppercase tracking-tight">Day {day.day}: {day.accommodation || "Tour Journey"}</span>
                               </div>
-                            )}
+                              <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+                                <IoChevronDownOutline className="text-xl" />
+                              </motion.div>
+                            </button>
+                            
+                            <AnimatePresence>
+                              {isOpen && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden bg-white"
+                                >
+                                  <div className="p-6 md:p-8 space-y-6">
+                                    <ul className="space-y-4">
+                                      {(day.events || []).map((event, eventIndex) => (
+                                        <li
+                                          key={`${event}-${eventIndex}`}
+                                          className="text-gray-700 text-sm md:text-base font-medium flex gap-3"
+                                        >
+                                          <span className="text-primary mt-1">•</span>
+                                          <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                              p: ({ node, ...props }) => (
+                                                <span {...props} />
+                                              ),
+                                              a: ({ node, ...props }) => (
+                                                <Link
+                                                  to={props.href}
+                                                  className="text-primary font-black hover:underline"
+                                                >
+                                                  {props.children}
+                                                </Link>
+                                              ),
+                                            }}
+                                          >
+                                            {event.startsWith("- ") ? event.substring(2) : event}
+                                          </ReactMarkdown>
+                                        </li>
+                                      ))}
+                                    </ul>
+
+                                    {day.accommodation && (
+                                      <div className="pt-6 border-t border-gray-100 flex items-start gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                          <IoBedOutline className="text-2xl" />
+                                        </div>
+                                        <div>
+                                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">
+                                            Overnight Stay
+                                          </p>
+                                          <p className="text-lg font-black text-gray-900">
+                                            {day.accommodation}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     ) : (
                       <p className="text-gray-500">No itinerary details available.</p>
                     )}
