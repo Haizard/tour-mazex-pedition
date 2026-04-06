@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { HiMenu, HiX } from "react-icons/hi";
 import { motion } from "framer-motion";
 import {
   fetchTours,
@@ -171,6 +172,7 @@ const AdminDashboard = () => {
   const [editingBlogId, setEditingBlogId] = useState(null);
   const [editingMenuId, setEditingMenuId] = useState(null);
   const [editingVisionaryId, setEditingVisionaryId] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAiRegeneratingTour, setIsAiRegeneratingTour] = useState(false);
   const [isAiRegeneratingBlog, setIsAiRegeneratingBlog] = useState(false);
@@ -778,44 +780,57 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(id) => {
+          setActiveTab(id);
+          setIsSidebarOpen(false);
+        }}
         handleLogout={handleLogout}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64 min-h-screen">
+      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-64 opacity-50 pointer-events-none md:opacity-100 md:pointer-events-auto" : "ml-0 md:ml-64"} min-h-screen w-full`}>
         {/* Top bar (for spacing/branding) */}
-        <div className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 flex items-center justify-between px-12">
-          <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">
-            Control <span className="text-primary italic">Center</span>
-          </h2>
+        <div className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 flex items-center justify-between px-4 md:px-12">
           <div className="flex items-center gap-4">
-            <Badge variant="primary">Online</Badge>
+             <button 
+               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+               className="p-2 md:hidden text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+             >
+               {isSidebarOpen ? <HiX size={24} /> : <HiMenu size={24} />}
+             </button>
+             <h2 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tighter italic">
+               Control <span className="text-primary italic text-sm md:text-xl">Center</span>
+             </h2>
+          </div>
+          <div className="flex items-center gap-4">
+            <Badge variant="primary" className="hidden sm:block">Online</Badge>
           </div>
         </div>
 
-        <div className="p-12">
+        <div className="p-2 md:p-12 w-full max-w-full overflow-x-hidden">
           {/* Header information removed in favor of sidebar context */}
-          <div className="mb-12">
-            <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter mb-2">
+          <div className="mb-6 md:mb-12 px-2 md:px-0">
+            <h1 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter mb-2">
               {activeTab} Management
             </h1>
-            <p className="text-slate-500 font-medium">
+            <p className="text-slate-500 font-medium text-xs md:text-base">
               Manage your {activeTab} inventory and resources from here.
             </p>
           </div>
 
           {/* Packages Section */}
           {activeTab === "packages" && (
-            <div className="animate-fade-in">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
-                  Tour Inventory
+            <div className="animate-fade-in w-full">
+              <div className="flex justify-between items-center mb-6 md:mb-10 px-2 md:px-0">
+                <h2 className="text-xl md:text-3xl font-black text-gray-900 uppercase tracking-tighter">
+                  Inventory
                 </h2>
-                <Badge variant="primary">{tours.length} Active Packages</Badge>
+                <Badge variant="primary" className="scale-75 md:scale-100">{tours.length} Active</Badge>
               </div>
 
-              <Card className="p-8 mb-12 border-none shadow-xl">
+              <Card className="p-3 md:p-8 mb-12 border-none shadow-none md:shadow-xl w-full rounded-none md:rounded-3xl">
                 <h3 className="text-xl font-bold mb-8 flex items-center gap-2">
                   <span className="w-2 h-8 bg-primary rounded-full" />
                   {editingTourId
@@ -823,7 +838,7 @@ const AdminDashboard = () => {
                     : "Create New Adventure"}
                 </h3>
                 <form onSubmit={handleTourSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="md:col-span-2 space-y-2">
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
                         Package Title
@@ -834,7 +849,7 @@ const AdminDashboard = () => {
                         value={tourFormData.title}
                         onChange={handleTourInputChange}
                         placeholder="e.g. Serengeti Luxury Escape"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                         required
                       />
                     </div>
@@ -848,7 +863,7 @@ const AdminDashboard = () => {
                         value={tourFormData.location}
                         onChange={handleTourInputChange}
                         placeholder="e.g. Tanzania"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                         required
                       />
                     </div>
@@ -862,13 +877,13 @@ const AdminDashboard = () => {
                         value={tourFormData.price}
                         onChange={handleTourInputChange}
                         placeholder="0.00"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-black text-primary"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-black text-primary text-xs"
                         required
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
                         Adventure Type
@@ -877,7 +892,7 @@ const AdminDashboard = () => {
                         name="tourType"
                         value={tourFormData.tourType}
                         onChange={handleTourInputChange}
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                       >
                         {taxonomies
                           .filter((t) => t.type === "tourType")
@@ -896,7 +911,7 @@ const AdminDashboard = () => {
                         name="category"
                         value={tourFormData.category}
                         onChange={handleTourInputChange}
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                       >
                         {taxonomies
                           .filter((t) => t.type === "tourCategory")
@@ -917,7 +932,7 @@ const AdminDashboard = () => {
                         value={tourFormData.duration}
                         onChange={handleTourInputChange}
                         placeholder="e.g. 5 Days"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary text-xs"
                       />
                     </div>
                     <div className="space-y-2">
@@ -930,13 +945,13 @@ const AdminDashboard = () => {
                         value={tourFormData.image}
                         onChange={handleTourInputChange}
                         placeholder="https://..."
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary text-xs"
                         required
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
                         Start Location
@@ -960,10 +975,10 @@ const AdminDashboard = () => {
                         value={tourFormData.endLocation}
                         onChange={handleTourInputChange}
                         placeholder="e.g. Zanzibar"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-medium"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-medium text-xs"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="md:col-span-2 space-y-2">
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
                         Accommodation Type
                       </label>
@@ -973,12 +988,12 @@ const AdminDashboard = () => {
                         value={tourFormData.accommodationType}
                         onChange={handleTourInputChange}
                         placeholder="e.g. Luxury Lodge"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-medium"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-medium text-xs"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase text-gray-400 ml-2">
                         Gallery Images (One URL per line)
@@ -1029,9 +1044,9 @@ const AdminDashboard = () => {
                     </div>
 
                     {tourFormData.isGroupTour && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-slide-up">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                      <div className="grid grid-cols-2 gap-4 animate-slide-up">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                             Max Capacity
                           </label>
                           <input
@@ -1039,11 +1054,11 @@ const AdminDashboard = () => {
                             name="maxCapacity"
                             value={tourFormData.maxCapacity}
                             onChange={handleTourInputChange}
-                            className="w-full bg-white p-4 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-primary font-bold"
+                            className="w-full bg-white p-2 rounded-lg border-none shadow-sm focus:ring-2 focus:ring-primary font-bold text-xs"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                             Pre-booked
                           </label>
                           <input
@@ -1051,11 +1066,11 @@ const AdminDashboard = () => {
                             name="currentBookings"
                             value={tourFormData.currentBookings}
                             onChange={handleTourInputChange}
-                            className="w-full bg-white p-4 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-primary font-bold"
+                            className="w-full bg-white p-2 rounded-lg border-none shadow-sm focus:ring-2 focus:ring-primary font-bold text-xs"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                        <div className="col-span-2 space-y-1">
+                          <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                             Launch Date
                           </label>
                           <input
@@ -1067,7 +1082,7 @@ const AdminDashboard = () => {
                                 : ""
                             }
                             onChange={handleTourInputChange}
-                            className="w-full bg-white p-4 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-primary font-bold"
+                            className="w-full bg-white p-2 rounded-lg border-none shadow-sm focus:ring-2 focus:ring-primary font-bold text-xs"
                           />
                         </div>
                       </div>
@@ -1084,17 +1099,17 @@ const AdminDashboard = () => {
                           type="button"
                           onClick={handleGenerateFullTour}
                           disabled={isGeneratingFullTour || loading}
-                          className="bg-primary text-white text-[10px] px-4 py-2"
+                          className="bg-primary text-white text-[10px] px-4 py-2 uppercase font-black rounded-lg tracking-tight"
                         >
-                          {isGeneratingFullTour ? "Full AI Generating..." : "🤖 Full AI Generator"}
+                          {isGeneratingFullTour ? "Generating..." : "🤖 Full AI Generator"}
                         </Button>
                         <Button
                           type="button"
                           onClick={handleRegenerateTourWithAi}
                           disabled={isAiRegeneratingTour || loading || !tourFormData.description?.trim()}
-                          className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white text-[10px] px-4 py-2"
+                          className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white text-[10px] px-4 py-2 uppercase font-black rounded-lg tracking-tight"
                         >
-                          {isAiRegeneratingTour ? "Regenerating..." : "Regenerate with AI"}
+                          {isAiRegeneratingTour ? "Wait..." : "Regenerate AI"}
                         </Button>
                       </div>
                     </div>
@@ -1108,7 +1123,7 @@ const AdminDashboard = () => {
                     ></textarea>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase text-gray-400 ml-2">
                         Inclusions (One per line)
@@ -1221,35 +1236,35 @@ const AdminDashboard = () => {
                     <label className="text-sm font-black uppercase text-gray-900">
                       Seasonal Pricing Table
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-gray-50 p-4 rounded-xl border-none space-y-2">
-                        <label className="text-xs font-black uppercase text-gray-400">Green Season (Apr-May)</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gray-50 p-2 rounded-xl border-none space-y-1">
+                        <label className="text-[9px] font-black uppercase text-gray-400">Green (Apr-May)</label>
                         <input
                           type="text"
                           value={tourFormData.pricingTable?.greenSeason || ""}
                           onChange={(e) => setTourFormData({...tourFormData, pricingTable: {...tourFormData.pricingTable, greenSeason: e.target.value}})}
                           placeholder="$ PP"
-                          className="w-full bg-white p-3 rounded-lg border-none text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                          className="w-full bg-white p-2 rounded-lg border-none text-xs outline-none focus:ring-2 focus:ring-primary font-bold"
                         />
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-xl border-none space-y-2">
-                        <label className="text-xs font-black uppercase text-gray-400">High Season (Jun-Oct)</label>
+                      <div className="bg-gray-50 p-2 rounded-xl border-none space-y-1">
+                        <label className="text-[9px] font-black uppercase text-gray-400">High (Jun-Oct)</label>
                         <input
                           type="text"
                           value={tourFormData.pricingTable?.highSeason || ""}
                           onChange={(e) => setTourFormData({...tourFormData, pricingTable: {...tourFormData.pricingTable, highSeason: e.target.value}})}
                           placeholder="$ PP"
-                          className="w-full bg-white p-3 rounded-lg border-none text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                          className="w-full bg-white p-2 rounded-lg border-none text-xs outline-none focus:ring-2 focus:ring-primary font-bold"
                         />
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-xl border-none space-y-2">
-                        <label className="text-xs font-black uppercase text-gray-400">Peak Season (Dec-Feb)</label>
+                      <div className="col-span-2 bg-gray-50 p-2 rounded-xl border-none space-y-1">
+                        <label className="text-[9px] font-black uppercase text-gray-400">Peak (Dec-Feb)</label>
                         <input
                           type="text"
                           value={tourFormData.pricingTable?.peakSeason || ""}
                           onChange={(e) => setTourFormData({...tourFormData, pricingTable: {...tourFormData.pricingTable, peakSeason: e.target.value}})}
                           placeholder="$ PP"
-                          className="w-full bg-white p-3 rounded-lg border-none text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                          className="w-full bg-white p-2 rounded-lg border-none text-xs outline-none focus:ring-2 focus:ring-primary font-bold"
                         />
                       </div>
                     </div>
@@ -1259,9 +1274,9 @@ const AdminDashboard = () => {
                     <label className="text-sm font-black uppercase text-gray-900">
                       TripAdvisor Review Widget
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-2 bg-gray-50 p-4 rounded-xl border-none space-y-2">
-                        <label className="text-xs font-black uppercase text-gray-400">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2 bg-gray-50 p-2 rounded-xl border-none space-y-1">
+                        <label className="text-[9px] font-black uppercase text-gray-400">
                           TripAdvisor URL
                         </label>
                         <input
@@ -1269,12 +1284,12 @@ const AdminDashboard = () => {
                           name="tripAdvisorUrl"
                           value={tourFormData.tripAdvisorUrl}
                           onChange={handleTourInputChange}
-                          placeholder="https://www.tripadvisor.com/..."
-                          className="w-full bg-white p-3 rounded-lg border-none text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                          placeholder="Link..."
+                          className="w-full bg-white p-2 rounded-lg border-none text-xs outline-none focus:ring-2 focus:ring-primary font-bold"
                         />
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-xl border-none space-y-2">
-                        <label className="text-xs font-black uppercase text-gray-400">
+                      <div className="bg-gray-50 p-2 rounded-xl border-none space-y-1">
+                        <label className="text-[9px] font-black uppercase text-gray-400">
                           Rating / 5
                         </label>
                         <input
@@ -1286,12 +1301,12 @@ const AdminDashboard = () => {
                           value={tourFormData.tripAdvisorRating}
                           onChange={handleTourInputChange}
                           placeholder="4.9"
-                          className="w-full bg-white p-3 rounded-lg border-none text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                          className="w-full bg-white p-2 rounded-lg border-none text-xs outline-none focus:ring-2 focus:ring-primary font-bold"
                         />
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-xl border-none space-y-2">
-                        <label className="text-xs font-black uppercase text-gray-400">
-                          Review Count
+                      <div className="bg-gray-50 p-2 rounded-xl border-none space-y-1">
+                        <label className="text-[9px] font-black uppercase text-gray-400">
+                          Total Review
                         </label>
                         <input
                           type="number"
@@ -1300,7 +1315,7 @@ const AdminDashboard = () => {
                           value={tourFormData.tripAdvisorReviewCount}
                           onChange={handleTourInputChange}
                           placeholder="128"
-                          className="w-full bg-white p-3 rounded-lg border-none text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                          className="w-full bg-white p-2 rounded-lg border-none text-xs outline-none focus:ring-2 focus:ring-primary font-bold"
                         />
                       </div>
                     </div>
@@ -1377,12 +1392,12 @@ const AdminDashboard = () => {
                         type="button"
                         onClick={handleGenerateTourSeoWithAi}
                         disabled={isGeneratingTourSeo || loading}
-                        className="bg-primary text-white text-[10px] px-6 py-2"
+                        className="bg-primary text-white text-[10px] px-4 py-2 uppercase font-black rounded-lg tracking-widest"
                       >
-                        {isGeneratingTourSeo ? "Generating..." : "Auto-generate with AI"}
+                        {isGeneratingTourSeo ? "Analysing..." : "Auto-SEO AI"}
                       </Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-gray-400 ml-2">SEO Title Tag</label>
                         <input
@@ -1391,7 +1406,7 @@ const AdminDashboard = () => {
                           value={tourFormData.seoTitle}
                           onChange={handleTourInputChange}
                           placeholder="Meta Title (Max 60 chars)"
-                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
+                          className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm text-xs"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1402,7 +1417,7 @@ const AdminDashboard = () => {
                           value={tourFormData.seoCanonicalUrl}
                           onChange={handleTourInputChange}
                           placeholder="https://mazexpeditions.com/..."
-                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
+                          className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm text-xs"
                         />
                       </div>
                     </div>
@@ -1413,7 +1428,7 @@ const AdminDashboard = () => {
                         value={tourFormData.seoDescription}
                         onChange={handleTourInputChange}
                         placeholder="Snippet for search results..."
-                        className="w-full bg-white p-4 rounded-xl border-none h-24 focus:ring-2 focus:ring-primary font-medium shadow-sm"
+                        className="w-full bg-white p-2.5 rounded-xl border-none h-24 focus:ring-2 focus:ring-primary font-medium shadow-sm text-xs"
                       ></textarea>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1425,7 +1440,7 @@ const AdminDashboard = () => {
                           value={tourFormData.seoKeywords}
                           onChange={handleTourInputChange}
                           placeholder="Safari, Serengeti, Adventure..."
-                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
+                          className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm text-xs"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1436,7 +1451,7 @@ const AdminDashboard = () => {
                           value={tourFormData.seoOgImage}
                           onChange={handleTourInputChange}
                           placeholder="https://..."
-                          className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
+                          className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm text-xs"
                         />
                       </div>
                     </div>
@@ -1452,7 +1467,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-4">
+                  <div className="flex flex-col md:flex-row justify-end gap-3">
                     {editingTourId && (
                       <Button
                         variant="outline"
@@ -1471,24 +1486,29 @@ const AdminDashboard = () => {
                             exclusions: tourFormData.exclusions || "",
                           });
                         }}
+                        className="w-full md:w-auto py-3 md:py-2 rounded-xl text-xs font-bold order-2 md:order-1"
                       >
                         Cancel
                       </Button>
                     )}
-                    <Button type="submit" disabled={loading} className="px-12">
-                      {editingTourId ? "Confirm Update" : "Launch Package"}
+                    <Button 
+                      type="submit" 
+                      disabled={loading} 
+                      className="w-full md:w-auto px-12 py-3 md:py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest order-1 md:order-2"
+                    >
+                      {editingTourId ? "Update Now" : "Launch Now"}
                     </Button>
                   </div>
                 </form>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                 {tours.map((t) => (
                   <Card
                     key={t._id}
                     className="group relative overflow-hidden flex flex-col h-full border-none shadow-lg hover:shadow-2xl"
                   >
-                    <div className="h-48 overflow-hidden relative">
+                    <div className="h-32 md:h-48 overflow-hidden relative">
                       <img
                         src={t.image}
                         className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
@@ -1559,23 +1579,23 @@ const AdminDashboard = () => {
                         <Badge variant="luxury">{t.category}</Badge>
                       </div>
                     </div>
-                    <div className="p-6 flex-1 flex flex-col justify-between">
+                    <div className="p-3 md:p-6 flex-1 flex flex-col justify-between">
                       <div>
-                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">
+                        <p className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-widest mb-1">
                           {t.tourType}
                         </p>
-                        <h4 className="font-black text-xl text-gray-900 mb-2 leading-tight">
+                        <h4 className="font-black text-sm md:text-xl text-gray-900 mb-1 md:mb-2 leading-tight line-clamp-1">
                           {t.title}
                         </h4>
-                        <p className="text-gray-500 text-sm line-clamp-2">
+                        <p className="text-gray-500 text-[10px] md:text-sm line-clamp-1 md:line-clamp-2">
                           {t.description}
                         </p>
                       </div>
-                      <div className="mt-6 pt-6 border-t flex justify-between items-center">
-                        <p className="font-black text-2xl text-primary">
+                      <div className="mt-2 md:mt-6 pt-2 md:pt-6 border-t flex justify-between items-center">
+                        <p className="font-black text-base md:text-2xl text-primary">
                           ${t.price}
                         </p>
-                        <p className="text-xs font-bold text-gray-400">
+                        <p className="text-[8px] md:text-xs font-bold text-gray-400">
                           {t.duration}
                         </p>
                       </div>
