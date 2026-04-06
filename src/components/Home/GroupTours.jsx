@@ -88,7 +88,7 @@ const GroupTours = () => {
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="rounded-[10px] h-[130px] w-full max-w-[200px] object-cover shadow-sm"
+                  className="rounded-[10px] h-[130px] w-full max-w-[200px] object-contain bg-gray-50 shadow-sm"
                 />
               </div>
 

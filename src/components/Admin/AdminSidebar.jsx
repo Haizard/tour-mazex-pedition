@@ -36,7 +36,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, handleLogout }) => {
                 <img
                     src={Logo}
                     alt="Admin Logo"
-                    className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/30"
+                    className="h-10 w-10 rounded-full object-contain bg-gray-50 ring-2 ring-primary/30"
                 />
                 <div>
                     <h2 className="font-black text-lg font-heading uppercase tracking-tighter">

@@ -77,7 +77,7 @@ const Testimonial = () => {
                   <img 
                     src={review.img} 
                     alt={review.name}
-                    className="w-[50px] h-[50px] rounded-full mr-5 object-cover shrink-0" 
+                    className="w-[50px] h-[50px] rounded-full mr-5 object-contain bg-gray-50 shrink-0" 
                   />
                   
                   {/* Content */}

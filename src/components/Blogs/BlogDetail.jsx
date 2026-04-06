@@ -161,7 +161,7 @@ const BlogDetail = () => {
                       },
                       img: ({ node, ...props }) => (
                         <img
-                          className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-cover shadow-lg"
+                          className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-contain bg-gray-50 shadow-lg"
                           loading="lazy"
                           {...props}
                         />
@@ -284,7 +284,7 @@ const BlogDetail = () => {
                       <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border border-gray-100">
                         <img
                           src={b.image}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-contain bg-gray-50 group-hover:scale-110 transition-transform duration-500"
                         />
                       </div>
                       <div>

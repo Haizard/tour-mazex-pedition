@@ -18,7 +18,7 @@ const GalleryCard = ({ item, onOpen, tall = false }) => (
       <img
         src={item.img}
         alt={item.caption || item.location || "Gallery image"}
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        className="w-full h-full object-contain bg-gray-50 transition-transform duration-700 group-hover:scale-110"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
       <button
@@ -93,7 +93,7 @@ const Gallery = () => {
           <img
             src={heroImage}
             alt="Safari gallery hero"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-contain bg-gray-50"
           />
         ) : (
           <div className="absolute inset-0 bg-[#2f2418]" />

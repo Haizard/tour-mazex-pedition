@@ -30,7 +30,7 @@ const Home = () => {
           autoPlay
           loop
           muted
-          className="absolute right-0 top-0 h-full w-full object-cover z-0"
+          className="absolute right-0 top-0 h-full w-full object-contain bg-gray-50 z-0"
         >
           <source src={NatureVid} type="video/mp4" />
         </video>

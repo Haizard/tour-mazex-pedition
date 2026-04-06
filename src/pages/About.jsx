@@ -112,7 +112,7 @@ const About = () => {
                         <img
                           src={operator.image}
                           alt={operator.name}
-                          className="w-20 h-20 rounded-full object-cover relative z-10 border-2 border-white shadow-md transition-transform group-hover:scale-105"
+                          className="w-20 h-20 rounded-full object-contain bg-gray-50 relative z-10 border-2 border-white shadow-md transition-transform group-hover:scale-105"
                         />
                       </div>
                       <div>

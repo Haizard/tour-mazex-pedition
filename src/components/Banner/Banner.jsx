@@ -35,7 +35,7 @@ const Banner = () => {
             <img
               src={TravelImg}
               alt="Tanzania Adventure"
-              className="relative z-10 w-full h-[420px] object-cover rounded-[32px] shadow-2xl"
+              className="relative z-10 w-full h-[420px] object-contain bg-gray-50 rounded-[32px] shadow-2xl"
             />
             <div className="absolute bottom-0 right-0 z-20 bg-secondary text-white p-5 rounded-2xl shadow-xl border border-secondary/20">
               <p className="font-black text-2xl leading-none">500+</p>

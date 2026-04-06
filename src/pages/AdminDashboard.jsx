@@ -1489,7 +1489,7 @@ const AdminDashboard = () => {
                     <div className="h-48 overflow-hidden relative">
                       <img
                         src={t.image}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-contain bg-gray-50 transition-transform duration-500 group-hover:scale-110"
                       />
                       <div className="absolute top-4 right-4 flex gap-2">
                         <button
@@ -1853,7 +1853,7 @@ const AdminDashboard = () => {
                     <div className="w-full md:w-48 h-full overflow-hidden shrink-0">
                       <img
                         src={b.image}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-contain bg-gray-50 transition-transform duration-500 group-hover:scale-110"
                       />
                     </div>
                     <div className="p-8 flex-1 flex flex-col justify-between">
@@ -2435,7 +2435,7 @@ const AdminDashboard = () => {
                   >
                     <img
                       src={g.img}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125"
+                      className="w-full h-full object-contain bg-gray-50 transition-transform duration-700 group-hover:scale-125"
                     />
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center items-center p-4 text-center">
                       <p className="text-white font-black text-xs uppercase mb-1">
@@ -2832,7 +2832,7 @@ const AdminDashboard = () => {
                       <img
                         src={v.image}
                         alt={v.name}
-                        className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform"
+                        className="w-20 h-20 rounded-full object-contain bg-gray-50 border-2 border-white shadow-md group-hover:scale-105 transition-transform"
                       />
                     </div>
                     <div className="flex-1">
