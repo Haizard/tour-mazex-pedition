@@ -15,7 +15,7 @@ const Blogs = () => {
           <div className="absolute inset-0 bg-black/45" />
           <div className="container relative z-10 px-4 text-center">
             <h1 className="font-heading text-4xl font-bold text-white sm:text-5xl md:text-[56px] md:leading-tight">
-              Mazex Pedition Blog
+              MAZ Expeditions Blog
             </h1>
           </div>
         </div>

@@ -6,7 +6,7 @@ const TermsConditions = () => {
         <div className="pt-32 pb-20 bg-gray-50">
             <SEO 
                 title="Terms & Conditions"
-                description="Read our terms and conditions for booking tours and safaris in Tanzania with Makolo Afrika."
+                description="Read our terms and conditions for booking tours and safaris in Tanzania with MAZ Expeditions."
             />
             <div className="container max-w-4xl mx-auto px-4">
                 <div className="bg-white p-8 md:p-12 rounded-[40px] shadow-xl border border-gray-100">
@@ -18,14 +18,14 @@ const TermsConditions = () => {
                         <section>
                             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-4">1. Acceptance of Terms</h2>
                             <p>
-                                By accessing or using the website at makoloafrika.com, you agree to comply with and be bound by these Terms and Conditions. These terms apply to all visitors, users, and others who access or use the Service.
+                                By accessing or using the website at mazexpeditions.com, you agree to comply with and be bound by these Terms and Conditions. These terms apply to all visitors, users, and others who access or use the Service.
                             </p>
                         </section>
 
                         <section>
                             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-4">2. Tour Bookings</h2>
                             <p>
-                                When you book a tour or safari through our platform, you are entering into a contract with Mazex Pedition. You must provide us with information that is accurate, complete, and current at all times.
+                                When you book a tour or safari through our platform, you are entering into a contract with MAZ Expeditions. You must provide us with information that is accurate, complete, and current at all times.
                             </p>
                         </section>
 
@@ -39,7 +39,7 @@ const TermsConditions = () => {
                         <section>
                             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-4">4. Limitation of Liability</h2>
                             <p>
-                                Mazex Pedition shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.
+                                MAZ Expeditions shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.
                             </p>
                         </section>
 

@@ -7,7 +7,7 @@ const testimonialData = [
     id: 1,
     name: "Roderick P",
     date: "2025-01-21",
-    text: "My family and I had an amazing combination of a safari and a Kilimanjaro trek with Mazex Pedition. Our safari guide, Laurent, was fantastic...",
+    text: "My family and I had an amazing combination of a safari and a Kilimanjaro trek with MAZ Expeditions. Our safari guide, Laurent, was fantastic...",
     img: "https://randomuser.me/api/portraits/men/32.jpg",
   },
   {

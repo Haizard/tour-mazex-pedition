@@ -60,7 +60,7 @@ const Contact = () => {
     <div className="bg-white">
       <SEO 
         title="Contact Us - Plan Your Tanzania Safari"
-        description="Get in touch with Makolo Afrika to start planning your luxury African adventure. Our experts are ready to help you design a personalized itinerary."
+        description="Get in touch with MAZ Expeditions to start planning your luxury African adventure. Our experts are ready to help you design a personalized itinerary."
       />
       <div className="relative flex h-[50vh] items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-10 bg-black/50" />
@@ -70,7 +70,7 @@ const Contact = () => {
             Contact Us
           </Badge>
           <h1 className="text-5xl font-black uppercase tracking-tighter font-heading md:text-7xl">
-            Mazex <span className="text-primary italic">Pedition</span>
+            MAZ <span className="text-primary italic">Expeditions</span>
           </h1>
         </div>
       </div>
@@ -89,7 +89,7 @@ const Contact = () => {
             </div>
 
             <p className="text-gray-600 text-lg leading-relaxed font-medium">
-              MAZEX PEDITION creates custom African safari experiences shaped
+              MAZ Expeditions creates custom African safari experiences shaped
               around the conversations we have with you. We listen carefully to
               your goals, style of travel, and dream destinations, then design
               an itinerary that feels personal from start to finish.

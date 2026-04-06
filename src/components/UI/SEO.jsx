@@ -10,22 +10,22 @@ const SEO = ({
   schema,
   type = 'website' 
 }) => {
-  const siteName = 'Makolo Afrika - Luxury Tours & Safaris';
-  const defaultDescription = 'Experience the best luxury safaris and adventure tours in Tanzania with Makolo Afrika. Explore the Serengeti, Ngorongoro, Kilimanjaro, and Zanzibar.';
+  const siteName = 'MAZ Expeditions - Luxury Tours & Safaris';
+  const defaultDescription = 'Experience the best luxury safaris and adventure tours in Tanzania with MAZ Expeditions. Explore the Serengeti, Ngorongoro, Kilimanjaro, and Zanzibar.';
   
   // Format title
   const fullTitle = title 
-    ? `${title} | Makolo Afrika` 
+    ? `${title} | MAZ Expeditions` 
     : siteName;
 
   // Standard Company / Site Schemas if on Home or generic
   const orgSchema = {
     "@context": "https://schema.org",
     "@type": "TravelAgency",
-    "name": "Makolo Afrika",
-    "alternateName": "Makolo Afrika Luxury Safaris",
-    "url": "https://makoloafrika.com",
-    "logo": "https://makoloafrika.com/logo.png",
+    "name": "MAZ Expeditions",
+    "alternateName": "MAZ Expeditions Luxury Safaris",
+    "url": "https://mazexpeditions.com",
+    "logo": "https://mazexpeditions.com/logo.png",
     "contactPoint": {
       "@type": "ContactPoint",
       "telephone": "+255-752-000-000",
@@ -34,9 +34,9 @@ const SEO = ({
       "availableLanguage": ["English", "Swahili"]
     },
     "sameAs": [
-      "https://www.facebook.com/makoloafrika",
-      "https://www.instagram.com/makoloafrika",
-      "https://twitter.com/makoloafrika"
+      "https://www.facebook.com/mazexpeditions",
+      "https://www.instagram.com/mazexpeditions",
+      "https://twitter.com/mazexpeditions"
     ]
   };
 
@@ -55,7 +55,7 @@ const SEO = ({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description || defaultDescription} />
       {ogImage && <meta property="og:image" content={ogImage} />}
-      <meta property="og:site_name" content="Makolo Afrika" />
+      <meta property="og:site_name" content="MAZ Expeditions" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />

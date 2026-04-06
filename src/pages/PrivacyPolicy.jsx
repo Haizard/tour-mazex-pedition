@@ -18,7 +18,7 @@ const PrivacyPolicy = () => {
                         <section>
                             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-4">1. Introduction</h2>
                             <p>
-                                Welcome to Makolo Afrika (operated as Mazex Pedition). We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you as to how we look after your personal data when you visit our website.
+                                Welcome to MAZ Expeditions. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you as to how we look after your personal data when you visit our website.
                             </p>
                         </section>
 

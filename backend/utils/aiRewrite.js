@@ -101,7 +101,7 @@ Title: ${title}
 Description/Content: ${ (description || content || '').substring(0, 1200) }...
 
 Rules:
-- SEO Title: Max 60 chars, catchy, includes primary keywords and brand name "Makolo Afrika".
+- SEO Title: Max 60 chars, catchy, includes primary keywords and brand name "MAZ Expeditions".
 - Meta Description: 150-160 chars, includes a compelling call to action.
 - Keywords: Top 5-8 relevant keywords, comma separated.
 - Return ONLY a JSON object with: { "title": "...", "description": "...", "keywords": "..." }
@@ -131,7 +131,7 @@ export const generateFullTourPackageWithAi = async ({ title, description, tourTy
   const blogListStr = availableBlogs.map(b => `- ${b.title} (Slug: ${b.slug})`).join("\n");
   
   const prompt = `
-Generate a COMPLETE, LUXURY safari tour package for "Makolo Afrika" based on the following:
+Generate a COMPLETE, LUXURY safari tour package for "MAZ Expeditions" based on the following:
 Title: ${title}
 Initial Idea: ${description}
 Type: ${tourType}

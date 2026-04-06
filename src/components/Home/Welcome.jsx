@@ -20,7 +20,7 @@ const Welcome = () => {
           <i className="italic font-light text-gray-600">Welcome to </i>
           <br className="md:hidden" />
           <span className="font-oswald font-extrabold uppercase ml-2 text-safari-green">
-            Mazex Pedition
+            MAZ Expeditions
           </span>
         </motion.h1>
 
@@ -43,13 +43,13 @@ const Welcome = () => {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-base md:text-lg text-gray-600 font-sans leading-loose max-w-4xl mx-auto text-justify sm:text-center mb-16"
         >
-          MAZEX PEDITION is a locally rooted African safari company built around
+          MAZ Expeditions is a locally rooted African safari company built around
           thoughtful planning, personal service, and tailor-made adventures. We
           shape each itinerary around your interests, carefully choosing the
           places, pace, and experiences that fit you best. On your private
           journey, we create a close, memorable experience led by knowledgeable
           local professionals who know these landscapes deeply. Traveling with
-          Mazex Pedition means exploring Tanzania with a team that values
+          MAZ Expeditions means exploring Tanzania with a team that values
           authenticity, safety, and lasting impact for both travelers and the
           communities connected to each journey.
         </motion.p>
@@ -61,8 +61,7 @@ const Welcome = () => {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="text-3xl md:text-4xl font-heading text-gray-900 max-w-4xl mx-auto leading-tight"
         >
-          Experience the unmatched luxury of Africa's wilderness with MAZEX
-          PEDITION.
+          Experience the unmatched luxury of Africa's wilderness with MAZ Expeditions.
         </motion.h2>
       </div>
 
@@ -162,7 +161,7 @@ const Welcome = () => {
                 </h3>
                 <p className="text-gray-600 font-sans leading-relaxed">
                   Born from a passion for travel and shaped by deep local
-                  experience, Mazex Pedition creates meaningful African journeys
+                  experience, MAZ Expeditions creates meaningful African journeys
                   with a strong focus on authenticity, care, and unforgettable
                   memories for every traveler.
                 </p>

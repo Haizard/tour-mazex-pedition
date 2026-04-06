@@ -40,7 +40,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, handleLogout }) => {
                 />
                 <div>
                     <h2 className="font-black text-lg font-heading uppercase tracking-tighter">
-                        Mazex Pedition
+                        MAZ Expeditions
                     </h2>
                     <p className="text-primary text-[10px] font-black uppercase tracking-widest">
                         Admin Portal

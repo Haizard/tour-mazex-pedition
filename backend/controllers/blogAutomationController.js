@@ -98,7 +98,7 @@ export const generateDailyBlog = async (req, res) => {
             : "Safari News | Trekking Tips | Cultural Insights";
 
         const systemInstruction = `
-            Act as a Senior Tanzanian Travel Journalist and Luxury Safari Architect for "Makolo Adventure Tours".
+            Act as a Senior Tanzanian Travel Journalist and Luxury Safari Architect for "MAZ Expeditions".
             Your goal is to write a weekly "Expert Insight" blog that feels handcrafted, authoritative, and deeply knowledgeable. Avoid generic AI phrasing.
 
             Internal Linking (CRITICAL):
@@ -188,7 +188,7 @@ Every blog must end with a strong closing CTA that encourages booking a package 
             content: blogData.content,
             category: blogData.category,
             image: imageUrl,
-            author: "Makolo AI Expert"
+            author: "MAZ Expeditions Expert"
         });
 
         await newBlog.save();

@@ -1399,7 +1399,7 @@ const AdminDashboard = () => {
                           name="seoCanonicalUrl"
                           value={tourFormData.seoCanonicalUrl}
                           onChange={handleTourInputChange}
-                          placeholder="https://makoloafrika.com/..."
+                          placeholder="https://mazexpeditions.com/..."
                           className="w-full bg-white p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm"
                         />
                       </div>

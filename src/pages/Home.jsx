@@ -21,8 +21,8 @@ const Home = () => {
     <div>
       <SEO 
         title="Tanzania Luxury Safaris & Adventure Tours"
-        description="Makolo Afrika offers premium safari experiences in Serengeti, Ngorongoro, and Zanzibar. Book your dream African holiday today."
-        keywords={["Safari", "Tanzania", "Serengeti", "Zanzibar", "Luxury Travel", "Makolo Afrika"]}
+        description="MAZ Expeditions offers premium safari experiences in Serengeti, Ngorongoro, and Zanzibar. Book your dream African holiday today."
+        keywords={["Safari", "Tanzania", "Serengeti", "Zanzibar", "Luxury Travel", "MAZ Expeditions"]}
       />
       {/* Hero — dark */}
       <div className="h-screen relative overflow-hidden">

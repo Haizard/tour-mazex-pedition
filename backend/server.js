@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: ["http://localhost:5173", "https://makoloafrika.com", "https://tourism-website-inky.vercel.app"],
+    origin: ["http://localhost:5173", "https://mazexpeditions.com", "https://tourism-website-inky.vercel.app"],
     credentials: true
 }));
 

@@ -4,7 +4,7 @@ import Blog from '../models/Blog.js';
 
 const router = express.Router();
 
-const BASE_URL = 'https://makoloafrika.com';
+const BASE_URL = 'https://mazexpeditions.com';
 
 const slugify = (text) =>
   text

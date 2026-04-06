@@ -39,7 +39,7 @@ const AdminLogin = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="relative z-10 text-white">
           <p className="text-primary font-black uppercase tracking-[0.3em] text-xs mb-4">
-            Mazex Pedition
+            MAZ Expeditions
           </p>
           <h1 className="text-5xl font-black font-heading uppercase tracking-tighter leading-none mb-4">
             Control

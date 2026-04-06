@@ -9,7 +9,7 @@ const ChatBot = () => {
     {
       role: "model",
       content:
-        "Hi! I'm your Mazex Pedition assistant. Ready to plan your dream safari?",
+        "Hi! I'm your MAZ Expeditions assistant. Ready to plan your dream safari?",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +61,7 @@ const ChatBot = () => {
               </div>
               <div>
                 <h3 className="font-black uppercase tracking-tighter text-sm">
-                  Mazex Pedition AI Guide
+                  MAZ Expeditions AI Guide
                 </h3>
                 <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest">
                   Always Online
