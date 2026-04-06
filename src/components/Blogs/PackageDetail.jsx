@@ -541,7 +541,7 @@ const PackageDetail = () => {
                           >
                             <button
                               onClick={() => setOpenItineraryIndex(isOpen ? -1 : index)}
-                              className={`w-full flex items-center justify-between p-4 md:p-5 text-left transition-all ${
+                              className={`w-full group flex items-center justify-between p-4 md:p-5 text-left transition-all ${
                                 isOpen ? "bg-[#8b5e34] text-white" : "bg-gray-50 text-gray-900 hover:bg-gray-100"
                               }`}
                             >
@@ -553,8 +553,13 @@ const PackageDetail = () => {
                                 </div>
                                 <span className="text-[13px] md:text-base font-black uppercase tracking-tight">Day {day.day}: {day.accommodation || "Tour Journey"}</span>
                               </div>
-                              <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-                                <IoChevronDownOutline className="text-lg md:text-xl" />
+                              <motion.div 
+                                animate={{ rotate: isOpen ? 180 : 0 }}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                                  isOpen ? "bg-white/20 text-white" : "bg-primary/20 text-primary group-hover:bg-primary group-hover:text-white"
+                                }`}
+                              >
+                                <IoChevronDownOutline className="text-base md:text-lg" />
                               </motion.div>
                             </button>
                             
@@ -664,11 +669,16 @@ const PackageDetail = () => {
                           <div key={`${faq.question}-${index}`} className="rounded-2xl border border-gray-100 bg-gray-50 overflow-hidden">
                             <button
                               onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
-                              className="w-full px-4 py-3 md:px-5 md:py-4 flex items-center justify-between gap-3 md:gap-4 text-left"
+                              className="w-full group px-4 py-3 md:px-5 md:py-4 flex items-center justify-between gap-3 md:gap-4 text-left"
                             >
                               <span className="text-[13px] md:text-sm font-black text-gray-900">{faq.question}</span>
-                              <motion.div animate={{ rotate: isOpen ? 180 : 0 }} className="text-primary shrink-0">
-                                <IoChevronDownOutline />
+                              <motion.div 
+                                animate={{ rotate: isOpen ? 180 : 0 }} 
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                                  isOpen ? "bg-[#8b5e34] text-white" : "bg-primary/15 text-primary group-hover:bg-primary group-hover:text-white"
+                                }`}
+                              >
+                                <IoChevronDownOutline className="text-base" />
                               </motion.div>
                             </button>
                             <AnimatePresence>
@@ -743,22 +753,22 @@ const PackageDetail = () => {
               </h3>
               <button
                 onClick={() => setOrderPopupVisible(true)}
-                className="w-full bg-primary text-white font-black py-4 rounded-2xl hover:bg-white hover:text-primary transition shadow-lg uppercase tracking-widest"
+                className="w-full bg-primary text-white font-black py-3 md:py-4 text-xs md:text-base rounded-xl md:rounded-2xl hover:bg-white hover:text-primary transition shadow-lg uppercase tracking-widest"
               >
                 Book This Tour
               </button>
             </div>
 
-            <div className="border p-6 md:p-8 rounded-3xl md:rounded-[32px] overflow-hidden bg-gradient-to-br from-white to-gray-50">
-              <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                  <IoCalendarOutline className="text-2xl" />
+            <div className="border p-4 md:p-8 rounded-2xl md:rounded-[32px] overflow-hidden bg-gradient-to-br from-white to-gray-50">
+              <div className="flex items-center gap-3 mb-4 md:mb-6">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <IoCalendarOutline className="text-xl md:text-2xl" />
                 </div>
                 <div>
-                  <h4 className="font-black uppercase tracking-tight text-gray-900">
+                  <h4 className="text-sm md:text-base font-black uppercase tracking-tight text-gray-900">
                     Plan My Trip
                   </h4>
-                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                  <p className="text-[9px] md:text-xs font-bold uppercase tracking-widest text-gray-400">
                     Send your preferred dates and traveler mix
                   </p>
                 </div>
@@ -774,14 +784,14 @@ const PackageDetail = () => {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handlePlanSubmit} className="space-y-4">
+                <form onSubmit={handlePlanSubmit} className="space-y-3 md:space-y-4">
                   <input
                     type="text"
                     name="name"
                     value={planForm.name}
                     onChange={handlePlanFieldChange}
                     placeholder="Full Name"
-                    className="w-full bg-white p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                    className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
                     required
                   />
                   <input
@@ -790,17 +800,17 @@ const PackageDetail = () => {
                     value={planForm.email}
                     onChange={handlePlanFieldChange}
                     placeholder="Email Address"
-                    className="w-full bg-white p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                    className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
                     required
                   />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3 md:gap-4">
                     <input
                       type="text"
                       name="phone"
                       value={planForm.phone}
                       onChange={handlePlanFieldChange}
                       placeholder="Phone"
-                      className="w-full bg-white p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                      className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
                       required
                     />
                     <input
@@ -809,7 +819,7 @@ const PackageDetail = () => {
                       value={planForm.address}
                       onChange={handlePlanFieldChange}
                       placeholder="Country"
-                      className="w-full bg-white p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                      className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
                       required
                     />
                   </div>
@@ -818,9 +828,9 @@ const PackageDetail = () => {
                     name="travelDate"
                     value={planForm.travelDate}
                     onChange={handlePlanFieldChange}
-                    className="w-full bg-white p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                    className="w-full bg-white p-3 md:p-4 text-[13px] md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
                   />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3 md:gap-4">
                     <input
                       type="number"
                       min="1"
@@ -828,7 +838,7 @@ const PackageDetail = () => {
                       value={planForm.adults}
                       onChange={handlePlanFieldChange}
                       placeholder="Adults"
-                      className="w-full bg-white p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                      className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
                     />
                     <input
                       type="number"
@@ -837,7 +847,7 @@ const PackageDetail = () => {
                       value={planForm.children}
                       onChange={handlePlanFieldChange}
                       placeholder="Children"
-                      className="w-full bg-white p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                      className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
                     />
                   </div>
                   <textarea
@@ -845,21 +855,21 @@ const PackageDetail = () => {
                     value={planForm.notes}
                     onChange={handlePlanFieldChange}
                     placeholder="Special requests, room setup, or questions..."
-                    className="w-full bg-white p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium h-28"
+                    className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium h-24 md:h-28"
                   ></textarea>
 
-                  <div className="rounded-3xl bg-white border border-gray-100 p-5 space-y-3">
-                    <div className="flex items-center justify-between text-sm font-bold text-gray-500 uppercase">
+                  <div className="rounded-2xl md:rounded-3xl bg-white border border-gray-100 p-4 md:p-5 space-y-2 md:space-y-3">
+                    <div className="flex items-center justify-between text-[11px] md:text-sm font-bold text-gray-500 uppercase">
                       <span className="flex items-center gap-2">
-                        <IoPeopleOutline className="text-primary text-lg" /> Travelers
+                        <IoPeopleOutline className="text-primary text-base md:text-lg" /> Travelers
                       </span>
                       <span>{travelerCount || 1}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm font-bold text-gray-500 uppercase">
+                    <div className="flex items-center justify-between text-[11px] md:text-sm font-bold text-gray-500 uppercase">
                       <span className="flex items-center gap-2">
-                        <IoPricetagOutline className="text-primary text-lg" /> Estimated Total
+                        <IoPricetagOutline className="text-primary text-base md:text-lg" /> Estimated Total
                       </span>
-                      <span className="text-primary text-xl font-black">
+                      <span className="text-primary text-lg md:text-xl font-black">
                         ${totalEstimate || Number(price || 0)}
                       </span>
                     </div>
@@ -868,7 +878,7 @@ const PackageDetail = () => {
                   <button
                     type="submit"
                     disabled={planSubmitting}
-                    className="w-full bg-primary text-white font-black py-4 rounded-2xl shadow-xl hover:translate-y-[-2px] transition-all disabled:bg-gray-400 uppercase tracking-widest"
+                    className="w-full bg-primary text-white font-black py-3 md:py-4 text-xs md:text-base rounded-xl md:rounded-2xl shadow-xl hover:translate-y-[-2px] transition-all disabled:bg-gray-400 uppercase tracking-widest"
                   >
                     {planSubmitting ? "Sending..." : "Send Trip Plan Request"}
                   </button>
@@ -877,16 +887,16 @@ const PackageDetail = () => {
             </div>
 
             {seasonalPrices.length > 0 && (
-              <div className="border p-8 rounded-[32px] overflow-hidden bg-gradient-to-br from-white to-gray-50">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                    <IoPricetagOutline className="text-2xl" />
+              <div className="border p-4 md:p-8 rounded-2xl md:rounded-[32px] overflow-hidden bg-gradient-to-br from-white to-gray-50">
+                <div className="flex items-center gap-3 mb-4 md:mb-6">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <IoPricetagOutline className="text-xl md:text-2xl" />
                   </div>
                   <div>
-                    <h4 className="font-black uppercase tracking-tight text-gray-900">
+                    <h4 className="text-sm md:text-base font-black uppercase tracking-tight text-gray-900">
                       Seasonal Pricing
                     </h4>
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                    <p className="text-[9px] md:text-xs font-bold uppercase tracking-widest text-gray-400">
                       Compare rates by travel season
                     </p>
                   </div>
@@ -895,17 +905,17 @@ const PackageDetail = () => {
                   {seasonalPrices.map((season) => (
                     <div
                       key={season.label}
-                      className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-5 py-4"
+                      className="flex items-center justify-between rounded-xl md:rounded-2xl border border-gray-100 bg-white px-4 md:px-5 py-3 md:py-4"
                     >
                       <div>
-                        <p className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                        <p className="text-xs md:text-sm font-black text-gray-900 uppercase tracking-tight">
                           {season.label}
                         </p>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                           {season.months}
                         </p>
                       </div>
-                      <p className="text-xl font-black text-primary">
+                      <p className="text-lg md:text-xl font-black text-primary">
                         {season.value}
                       </p>
                     </div>
@@ -914,19 +924,21 @@ const PackageDetail = () => {
               </div>
             )}
 
-            <div className="border p-8 rounded-[32px] overflow-hidden">
+            <div className="border p-4 md:p-8 rounded-2xl md:rounded-[32px] overflow-hidden">
               <button
                 onClick={() => setIsInclusionsOpen(!isInclusionsOpen)}
-                className="w-full flex justify-between items-center mb-6"
+                className="w-full group flex justify-between items-center mb-4 md:mb-6"
               >
-                <h4 className="font-black uppercase tracking-tight text-gray-900">
+                <h4 className="text-sm md:text-base font-black uppercase tracking-tight text-gray-900">
                   What's Included
                 </h4>
                 <motion.div
                   animate={{ rotate: isInclusionsOpen ? 180 : 0 }}
-                  className="text-gray-400"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                    isInclusionsOpen ? "bg-[#8b5e34] text-white" : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white"
+                  }`}
                 >
-                  <IoChevronDownOutline />
+                  <IoChevronDownOutline className="text-base" />
                 </motion.div>
               </button>
               <AnimatePresence>
@@ -957,19 +969,21 @@ const PackageDetail = () => {
             </div>
 
             {exclusions?.length > 0 && (
-              <div className="border p-8 rounded-[32px] overflow-hidden">
+              <div className="border p-4 md:p-8 rounded-2xl md:rounded-[32px] overflow-hidden">
                 <button
                   onClick={() => setIsExclusionsOpen(!isExclusionsOpen)}
-                  className="w-full flex justify-between items-center mb-6"
+                  className="w-full group flex justify-between items-center mb-4 md:mb-6"
                 >
-                  <h4 className="font-black uppercase tracking-tight text-gray-900">
+                  <h4 className="text-sm md:text-base font-black uppercase tracking-tight text-gray-900">
                     What's Not Included
                   </h4>
                   <motion.div
                     animate={{ rotate: isExclusionsOpen ? 180 : 0 }}
-                    className="text-gray-400"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                      isExclusionsOpen ? "bg-[#8b5e34] text-white" : "bg-red-50 text-red-500 group-hover:bg-red-500 group-hover:text-white"
+                    }`}
                   >
-                    <IoChevronDownOutline />
+                    <IoChevronDownOutline className="text-base" />
                   </motion.div>
                 </button>
                 <AnimatePresence>
@@ -997,16 +1011,16 @@ const PackageDetail = () => {
             )}
 
             {(tripAdvisorUrl || tripAdvisorRating || tripAdvisorReviewCount) && (
-              <div className="border p-8 rounded-[32px] overflow-hidden bg-[#f5f9f7]">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-[#34e0a1]/15 text-[#00aa6c] flex items-center justify-center">
-                    <IoStarOutline className="text-2xl" />
+              <div className="border p-4 md:p-8 rounded-2xl md:rounded-[32px] overflow-hidden bg-[#f5f9f7]">
+                <div className="flex items-center gap-3 mb-4 md:mb-6">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-[#34e0a1]/15 text-[#00aa6c] flex items-center justify-center shrink-0">
+                    <IoStarOutline className="text-xl md:text-2xl" />
                   </div>
                   <div>
-                    <h4 className="font-black uppercase tracking-tight text-gray-900">
+                    <h4 className="text-sm md:text-base font-black uppercase tracking-tight text-gray-900">
                       Traveler Reviews
                     </h4>
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                    <p className="text-[9px] md:text-xs font-bold uppercase tracking-widest text-gray-400">
                       TripAdvisor snapshot
                     </p>
                   </div>
@@ -1032,7 +1046,7 @@ const PackageDetail = () => {
                     href={tripAdvisorUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="block w-full text-center bg-[#00aa6c] text-white font-black py-4 rounded-2xl uppercase tracking-widest hover:opacity-90 transition"
+                    className="block w-full text-center bg-[#00aa6c] text-white font-black py-3 md:py-4 text-xs md:text-base rounded-xl md:rounded-2xl uppercase tracking-widest hover:opacity-90 transition"
                   >
                     View on TripAdvisor
                   </a>
@@ -1043,27 +1057,29 @@ const PackageDetail = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 lg:px-24 mt-24 mb-16">
-        <div className="flex justify-between items-end mb-12">
-          <div>
-            <span className="text-primary font-black uppercase text-xs tracking-widest mb-2 block">
-              Discover More
-            </span>
-            <h2 className="text-4xl md:text-5xl font-black text-gray-900 uppercase tracking-tighter">
-              Related Adventures
-            </h2>
+      <div className="container mx-auto px-0 md:px-4 lg:px-24 mt-12 md:mt-24 mb-12 md:mb-16">
+        <div className="px-4 md:px-0">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 md:gap-0 mb-6 md:mb-12">
+            <div>
+              <span className="text-primary font-black uppercase text-[10px] md:text-xs tracking-widest mb-1 md:mb-2 block">
+                Discover More
+              </span>
+              <h2 className="text-2xl md:text-5xl font-black text-gray-900 uppercase tracking-tight md:tracking-tighter">
+                Related Adventures
+              </h2>
+            </div>
+            <Link
+              to="/packages"
+              className="mb-1 md:mb-2 text-gray-400 font-bold hover:text-primary uppercase text-[10px] md:text-xs tracking-widest"
+            >
+              All Packages
+            </Link>
           </div>
-          <Link
-            to="/packages"
-            className="mb-2 text-gray-400 font-bold hover:text-primary uppercase text-xs tracking-widest"
-          >
-            All Packages
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-8">
-          {relatedTours.map((tour) => (
-            <PackageCard key={tour._id} {...tour} />
-          ))}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-8">
+            {relatedTours.map((tour) => (
+              <PackageCard key={tour._id} {...tour} />
+            ))}
+          </div>
         </div>
       </div>
 

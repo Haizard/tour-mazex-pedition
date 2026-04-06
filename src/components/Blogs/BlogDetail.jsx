@@ -108,7 +108,7 @@ const BlogDetail = () => {
             <span className="bg-white/15 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 inline-block backdrop-blur-sm border border-white/20">
               {category}
             </span>
-            <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4 leading-[0.95]">
+            <h1 className="text-xl md:text-5xl font-black text-white uppercase tracking-tight md:tracking-tighter mb-4 leading-[0.95]">
               {title}
             </h1>
             <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-white/80 font-bold uppercase text-[9px] tracking-widest">
@@ -125,7 +125,7 @@ const BlogDetail = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 lg:px-12 pt-12">
+      <div className="container mx-auto px-0 md:px-4 lg:px-12 pt-8 md:pt-12">
         <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50 hidden xl:flex flex-col gap-4">
           <div className="bg-white p-3 rounded-full shadow-2xl border border-gray-100 flex flex-col gap-6">
             <ShareButton icon={<FaFacebookF />} url={`https://www.facebook.com/sharer/sharer.php?u=${window.location.href}`} color="hover:text-[#1877F2]" />
@@ -140,9 +140,9 @@ const BlogDetail = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           <div className="lg:col-span-8">
-            <div className="bg-white rounded-[40px] overflow-hidden shadow-2xl mb-12 border border-gray-100">
-              <div className="p-8 md:p-12">
-                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+            <div className="bg-white rounded-none md:rounded-[40px] overflow-hidden shadow-none md:shadow-2xl mb-8 md:mb-12 border-y md:border border-gray-100">
+              <div className="p-4 md:p-12">
+                <div className="prose prose-sm md:prose-lg max-w-none text-gray-700 leading-relaxed">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
@@ -154,21 +154,21 @@ const BlogDetail = () => {
                         return (
                           <h4
                             id={headingId}
-                            className="text-2xl font-black text-gray-900 uppercase tracking-tight mt-10 mb-6 border-l-4 border-primary pl-4 scroll-mt-32"
+                            className="text-lg md:text-2xl font-black text-gray-900 uppercase tracking-tight mt-6 md:mt-10 mb-4 md:mb-6 border-l-[3px] md:border-l-4 border-primary pl-3 md:pl-4 scroll-mt-32"
                             {...props}
                           />
                         );
                       },
                       img: ({ node, ...props }) => (
                         <img
-                          className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-fill shadow-lg"
+                          className="mx-auto my-6 md:my-10 max-h-[420px] w-full max-w-2xl rounded-xl md:rounded-[24px] object-fill shadow-lg"
                           loading="lazy"
                           {...props}
                         />
                       ),
                       p: ({ node, ...props }) => (
                         <p
-                          className="mb-8 leading-8 text-lg font-medium"
+                          className="mb-4 md:mb-8 leading-relaxed md:leading-8 text-[13px] md:text-lg font-medium"
                           {...props}
                         />
                       ),
@@ -225,10 +225,10 @@ const BlogDetail = () => {
             </div>
           </div>
 
-          <aside className="lg:col-span-4 space-y-10 sticky top-32 self-start h-fit">
+          <aside className="lg:col-span-4 space-y-6 md:space-y-10 sticky top-32 self-start h-fit px-4 md:px-0">
             {sectionHeadings.length > 0 && (
-              <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 border-b pb-4">
+              <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[32px] border border-gray-100 shadow-sm">
+                <h3 className="text-lg md:text-xl font-black text-gray-900 uppercase tracking-tight mb-4 md:mb-6 border-b pb-3 md:pb-4">
                   On This Page
                 </h3>
                 <div className="space-y-3">
@@ -236,7 +236,7 @@ const BlogDetail = () => {
                     <a
                       key={item.id}
                       href={`#${item.id}`}
-                      className="block text-sm font-bold text-gray-500 hover:text-primary transition-colors"
+                      className="block text-xs md:text-sm font-bold text-gray-500 hover:text-primary transition-colors"
                     >
                       {item.label}
                     </a>
@@ -245,8 +245,8 @@ const BlogDetail = () => {
               </div>
             )}
 
-            <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 border-b pb-4">
+            <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[32px] border border-gray-100 shadow-sm">
+              <h3 className="text-lg md:text-xl font-black text-gray-900 uppercase tracking-tight mb-4 md:mb-6 border-b pb-3 md:pb-4">
                 Categories
               </h3>
               <div className="space-y-4">
@@ -256,10 +256,10 @@ const BlogDetail = () => {
                     to="/blogs"
                     className="flex justify-between items-center group"
                   >
-                    <span className="font-bold text-gray-500 group-hover:text-primary transition-colors">
+                    <span className="text-sm md:text-base font-bold text-gray-500 group-hover:text-primary transition-colors">
                       {cat}
                     </span>
-                    <span className="bg-gray-100 text-gray-400 group-hover:bg-primary/10 group-hover:text-primary px-3 py-1 rounded-full text-xs font-black transition-all">
+                    <span className="bg-gray-100 text-gray-400 group-hover:bg-primary/10 group-hover:text-primary px-2.5 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-black transition-all">
                       {count}
                     </span>
                   </Link>
@@ -267,11 +267,11 @@ const BlogDetail = () => {
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 border-b pb-4">
+            <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[32px] border border-gray-100 shadow-sm">
+              <h3 className="text-lg md:text-xl font-black text-gray-900 uppercase tracking-tight mb-4 md:mb-6 border-b pb-3 md:pb-4">
                 Read Next
               </h3>
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {latestBlogs
                   .filter((b) => b.title !== title)
                   .map((b) => (
@@ -281,17 +281,17 @@ const BlogDetail = () => {
                       state={b}
                       className="flex gap-4 group"
                     >
-                      <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border border-gray-100">
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl md:rounded-2xl overflow-hidden flex-shrink-0 border border-gray-100">
                         <img
                           src={b.image}
                           className="w-full h-full object-fill group-hover:scale-110 transition-transform duration-500"
                         />
                       </div>
-                      <div>
-                        <h4 className="font-black text-sm text-gray-900 leading-tight group-hover:text-primary transition-colors line-clamp-2 uppercase">
+                      <div className="flex flex-col justify-center">
+                        <h4 className="font-black text-xs md:text-sm text-gray-900 leading-tight group-hover:text-primary transition-colors line-clamp-2 uppercase">
                           {b.title}
                         </h4>
-                        <span className="text-[10px] font-black text-gray-400 uppercase mt-2 block">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase mt-1 md:mt-2 block">
                           {b.category}
                         </span>
                       </div>
@@ -302,19 +302,19 @@ const BlogDetail = () => {
           </aside>
         </div>
 
-        <div className="mt-24 border-t pt-16">
-          <div className="flex justify-between items-end mb-12">
+        <div className="mt-12 md:mt-24 border-t pt-8 md:pt-16 mb-8 md:mb-0 px-4 md:px-0">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 md:gap-0 mb-6 md:mb-12">
             <div>
-              <span className="text-primary font-black uppercase text-xs tracking-widest mb-2 block">
+              <span className="text-primary font-black uppercase text-[10px] md:text-xs tracking-widest mb-1 md:mb-2 block">
                 Take Action
               </span>
-              <h2 className="text-4xl md:text-5xl font-black text-gray-900 uppercase tracking-tighter">
+              <h2 className="text-2xl md:text-5xl font-black text-gray-900 uppercase tracking-tight md:tracking-tighter">
                 Ready for an Adventure?
               </h2>
             </div>
             <Link
               to="/packages"
-              className="mb-2 text-gray-400 font-bold hover:text-primary uppercase text-xs tracking-widest"
+              className="mb-1 md:mb-2 text-gray-400 font-bold hover:text-primary uppercase text-[10px] md:text-xs tracking-widest"
             >
               View All Packages
             </Link>
