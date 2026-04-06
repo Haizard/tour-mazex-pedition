@@ -189,9 +189,9 @@ const Navbar = ({ handleOrderPopup }) => {
                 isScrolled ? "text-[#2f2418]" : "text-white"
               }`}
             >
-              {menuItems.map((item) => (
+              {menuItems.map((item, index) => (
                 <li
-                  key={item._id || `${item.label}-${item.link}`}
+                  key={`${item.label}-${index}`}
                   className="relative group"
                   onMouseEnter={() => setActiveMenu(item.categoryKey || null)}
                   onMouseLeave={() => setActiveMenu(null)}

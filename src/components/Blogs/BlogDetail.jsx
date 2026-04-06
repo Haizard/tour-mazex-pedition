@@ -36,8 +36,13 @@ const BlogDetail = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    loadBlog();
-    loadSidebarData();
+    const initPage = async () => {
+      const currentBlog = await loadBlog();
+      if (currentBlog) {
+        loadSidebarData(currentBlog);
+      }
+    };
+    initPage();
   }, [blogSlug]);
 
   const loadBlog = async () => {
@@ -45,21 +50,55 @@ const BlogDetail = () => {
       setIsLoading(true);
       const response = await fetchBlogBySlug(blogSlug);
       setBlog(response.data);
+      return response.data;
     } catch (error) {
       console.error("Blog load fail:", error);
       setBlog(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loadSidebarData = async () => {
+  const loadSidebarData = async (currentBlog) => {
     try {
       const blogsRes = await fetchBlogs();
       const toursRes = await fetchTours();
 
       setLatestBlogs(blogsRes.data.slice(0, 5));
-      setFeaturedTours(toursRes.data.slice(0, 3));
+      
+      // Smart filter for featured tours based on blog context
+      const blogCat = (currentBlog?.category || "").toLowerCase();
+      const blogTitle = (currentBlog?.title || "").toLowerCase();
+      const blogContent = (currentBlog?.content || "").toLowerCase();
+      const blogFullContext = `${blogCat} ${blogTitle} ${blogContent}`;
+      
+      const isTrekking = /trek|trekking|kilimanjaro|climb|summit|route|hike|mountain/.test(blogFullContext);
+      const isSafari = /safari|serengeti|ngorongoro|tarangire|wildlife|migration|game drive/.test(blogFullContext);
+      
+      const filteredTours = toursRes.data.filter((tour) => {
+        const tourType = (tour.tourType || "").toLowerCase();
+        const tourCat = (tour.category || "").toLowerCase();
+        const tourTitle = (tour.title || "").toLowerCase();
+        const tourLocation = (tour.location || "").toLowerCase();
+        const tourFullContext = `${tourType} ${tourCat} ${tourTitle} ${tourLocation}`;
+
+        // STRICT: If trek blog, ONLY show trek tours
+        if (isTrekking) {
+          return /trek|trekking|kilimanjaro|climb|mountain/.test(tourFullContext);
+        }
+        
+        // STRICT: If safari blog, ONLY show safari tours
+        if (isSafari) {
+          return /safari|serengeti|wildlife|national park|game drive/.test(tourFullContext) && 
+                 !/kilimanjaro|mountain|trekking/.test(tourFullContext); // Extra safeguard
+        }
+        
+        // Fallback or other
+        return false;
+      });
+      
+      setFeaturedTours(filteredTours.slice(0, 3));
 
       const counts = {};
       blogsRes.data.forEach((b) => {

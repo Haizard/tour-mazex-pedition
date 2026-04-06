@@ -79,6 +79,15 @@ const PackagesComp = () => {
     loadInitialData();
   }, []);
 
+  // Sync filters with URL params (e.g. if type is null, reset to show ALL tours)
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      tourType: typeFromUrl || "",
+      category: searchParams.get("category") || ""
+    }));
+  }, [typeFromUrl, searchParams]);
+
   useEffect(() => {
     let result = [...allTours];
 
@@ -120,7 +129,7 @@ const PackagesComp = () => {
             <h1 className="border-l-8 border-primary py-2 pl-4 text-4xl font-black uppercase tracking-tighter text-secondary">
               {filters.tourType
                 ? `${filters.tourType} Adventures`
-                : "Discover Our Packages"}
+                : "Discover Our Tours"}
             </h1>
             <p className="text-gray-500 font-bold mt-2 ml-4 uppercase tracking-widest text-xs">
               Showing {filteredTours.length} results

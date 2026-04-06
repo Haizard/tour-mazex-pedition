@@ -126,8 +126,8 @@ export const FRONTEND_MENU_DEFAULTS = [
     children: [],
   },
   {
-    label: "Honeymoon",
-    link: "/packages?type=Honeymoon",
+    label: "Our Tours",
+    link: "/packages",
     itemType: "link",
     sortOrder: 11,
     children: [],

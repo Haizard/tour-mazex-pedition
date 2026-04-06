@@ -16,9 +16,9 @@ const PackagesPage = () => {
           <Badge variant="secondary" className="mb-4">
             Curated Expeditions
           </Badge>
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter font-heading">
-            Our <span className="text-primary italic">Packages</span>
-          </h1>
+            <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter font-heading">
+              Our <span className="text-primary italic">Tours</span>
+            </h1>
         </div>
       </div>
       <PackagesComp />

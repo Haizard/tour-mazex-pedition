@@ -1,46 +1,57 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { fetchBlogs } from "../services/api";
+import { fetchBlogs, fetchTours } from "../services/api";
 import BlogCard from "../components/Blogs/BlogCard";
+import PackageCard from "../components/Blogs/PackageCard";
 import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
+import { motion, AnimatePresence } from "framer-motion";
 import LogoSlider from "../components/Home/LogoSlider";
 
 const BlogCategory = () => {
   const { categoryId } = useParams();
   const [blogs, setBlogs] = useState([]);
+  const [matchingTours, setMatchingTours] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getBlogs = async () => {
+    const getData = async () => {
       try {
-        const response = await fetchBlogs();
-        // Filter blogs based on the category logic from BlogsComp
-        const filtered = response.data.filter((blog) => {
+        const [blogsRes, toursRes] = await Promise.all([
+          fetchBlogs(),
+          fetchTours()
+        ]);
+        
+        // Filter blogs
+        const filteredBlogs = blogsRes.data.filter((blog) => {
           const searchable = `${blog.category || ""} ${blog.title || ""} ${blog.content || ""}`.toLowerCase();
-          
-          if (categoryId === "trekking") {
-            return /trek|trekking|kilimanjaro|climb|summit|route|hike|mountain/.test(searchable);
-          }
-          if (categoryId === "safari") {
-            return /safari|serengeti|ngorongoro|tarangire|wildlife|migration|zanzibar|beach|game drive/.test(searchable);
-          }
+          if (categoryId === "trekking") return /trek|trekking|kilimanjaro|climb|summit|route|hike|mountain/.test(searchable);
+          if (categoryId === "safari") return /safari|serengeti|ngorongoro|tarangire|wildlife|migration|zanzibar|beach|game drive/.test(searchable);
           if (categoryId === "other") {
             const isTrekking = /trek|trekking|kilimanjaro|climb|summit|route|hike|mountain/.test(searchable);
             const isSafari = /safari|serengeti|ngorongoro|tarangire|wildlife|migration|zanzibar|beach|game drive/.test(searchable);
             return !isTrekking && !isSafari;
           }
-          // Default fall-through for any string match
           return (blog.category || "").toLowerCase() === categoryId.toLowerCase();
         });
-        setBlogs(filtered);
+        setBlogs(filteredBlogs);
+
+        // Filter tours
+        const filteredTours = toursRes.data.filter((tour) => {
+          const searchable = `${tour.category || ""} ${tour.tourType || ""} ${tour.title || ""} ${tour.location || ""}`.toLowerCase();
+          if (categoryId === "trekking") return /trek|trekking|kilimanjaro|climb|mountain/.test(searchable);
+          if (categoryId === "safari") return /safari|serengeti|wildlife|national park|game drive/.test(searchable);
+          return false;
+        });
+        setMatchingTours(filteredTours.slice(0, 3));
+
       } catch (error) {
-        console.error("Error fetching category blogs:", error);
+        console.error("Error fetching category data:", error);
       } finally {
         setLoading(false);
       }
     };
-    getBlogs();
+    getData();
     window.scrollTo(0, 0);
   }, [categoryId]);
 
@@ -60,9 +71,9 @@ const BlogCategory = () => {
     },
   };
 
-  const currentMeta = categoryMeta[categoryId] || {
-    title: `${categoryId.charAt(0).toUpperCase() + categoryId.slice(1)} Articles`,
-    image: "https://images.unsplash.com/photo-1533130061792-64b345e4a833?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80", // Standard hero image
+  const currentMeta = (categoryId && categoryMeta[categoryId.toLowerCase()]) || {
+    title: `${(categoryId || "Category").charAt(0).toUpperCase() + (categoryId || "Category").slice(1)} Articles`,
+    image: "https://images.unsplash.com/photo-1533130061792-64b345e4a833?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
   };
 
   return (
@@ -91,7 +102,13 @@ const BlogCategory = () => {
         </div>
       </div>
 
-      <div className="container px-4 max-w-7xl mx-auto py-20 pb-24">
+      <div className="container px-4 max-w-7xl mx-auto py-16 pb-20">
+        <div className="mb-12">
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-gray-900 border-l-4 border-safari-green pl-4">
+             Archive <span className="text-safari-gold font-normal">Articles</span>
+          </h2>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-safari-green"></div>
@@ -109,6 +126,35 @@ const BlogCategory = () => {
           </div>
         )}
       </div>
+
+      {/* Matching Tour Packages Section */}
+      {!loading && matchingTours.length > 0 && (
+        <section className="bg-gray-50 py-16 md:py-24">
+          <div className="container px-4 max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+              <div>
+                <span className="text-safari-gold font-oswald uppercase tracking-widest text-sm mb-2 block">Premium Experiences</span>
+                <h2 className="text-3xl md:text-5xl font-heading font-black text-gray-900 uppercase tracking-tighter leading-none">
+                  Top Recommended <br />
+                  <span className="text-safari-green">{categoryId === "trekking" ? "Mountain Treks" : "Wildlife Safaris"}</span>
+                </h2>
+              </div>
+              <Link 
+                to="/packages" 
+                className="bg-white px-6 py-3 rounded-full border border-gray-200 font-bold uppercase text-[10px] tracking-widest hover:border-safari-green hover:text-safari-green transition-all shadow-sm"
+              >
+                View All Packages
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {matchingTours.map((tour) => (
+                <PackageCard key={tour._id} {...tour} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Footer Content */}
       <Testimonial />
