@@ -45,32 +45,32 @@ const PackageCard = (props) => {
             loading="lazy"
             className="w-full h-full object-fill transition-transform duration-1000 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/10 opacity-80 group-hover:opacity-95 transition-opacity duration-500" />
 
-          <div className="absolute top-6 left-6 flex flex-wrap gap-2">
-            <Badge variant="luxury" className="backdrop-blur-md bg-white/10 border-white/20 text-white uppercase font-black text-[9px] tracking-widest px-3 py-1">
+          <div className="absolute top-4 left-4 md:top-6 md:left-6 flex flex-wrap gap-2">
+            <Badge variant="luxury" className="backdrop-blur-md bg-white/10 border-white/20 text-white uppercase font-black text-[8px] md:text-[9px] tracking-widest px-2 py-0.5 md:px-3 md:py-1">
               {tourType || "Safari"}
             </Badge>
-            <Badge variant="secondary" className="backdrop-blur-md bg-primary/20 border-primary/20 text-white uppercase font-black text-[9px] tracking-widest px-3 py-1">
+            <Badge variant="secondary" className="backdrop-blur-md bg-primary/20 border-primary/20 text-white uppercase font-black text-[8px] md:text-[9px] tracking-widest px-2 py-0.5 md:px-3 md:py-1">
               {category || "Luxury"}
             </Badge>
           </div>
 
-          <div className="absolute bottom-6 left-6 right-6">
-            <div className="flex items-center gap-1.5 text-white/90 mb-2">
-              <IoLocationSharp className="text-primary text-sm" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+          <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6">
+            <div className="flex items-center gap-1 text-white/90 mb-1.5 md:mb-2">
+              <IoLocationSharp className="text-primary text-[10px] md:text-sm" />
+              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] line-clamp-1">
                 {location}
               </span>
             </div>
-            <h3 className="text-lg md:text-2xl font-black text-white uppercase tracking-tighter leading-none group-hover:text-primary transition-colors duration-300">
+            <h3 className="text-sm md:text-xl font-black text-white uppercase tracking-tight leading-snug md:leading-none group-hover:text-primary transition-colors duration-300 line-clamp-2">
               {title}
             </h3>
           </div>
 
-          <div className="absolute top-4 right-4 md:top-6 md:right-6 bg-white/95 backdrop-blur shadow-xl rounded-2xl px-3 py-1 md:px-4 md:py-2 text-center transform group-hover:scale-110 transition-transform duration-500">
-            <p className="text-[7px] md:text-[9px] font-black text-gray-400 uppercase tracking-tighter leading-none mb-1">From</p>
-            <p className="text-sm md:text-xl font-black text-primary leading-none">${price}</p>
+          <div className="absolute top-4 right-4 md:top-6 md:right-6 bg-white/95 backdrop-blur shadow-xl rounded-xl md:rounded-2xl px-2 py-1 md:px-4 md:py-2 text-center transform group-hover:scale-105 transition-transform duration-500 flex flex-col items-center">
+            <p className="text-[6px] md:text-[9px] font-black text-gray-400 uppercase tracking-tighter leading-none mb-0.5 md:mb-1">From</p>
+            <p className="text-xs md:text-xl font-black text-primary leading-none">${price}</p>
           </div>
         </div>
 

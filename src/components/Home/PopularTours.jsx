@@ -71,11 +71,11 @@ const PopularTours = () => {
                     className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
                   />
                   {/* Gradient Overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10 opacity-90 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
 
                 {/* Rating (Top Left) */}
-                <div className="absolute top-3 left-3 flex gap-1 text-yellow-400 text-sm drop-shadow-md">
+                <div className="absolute top-2 left-2 md:top-3 md:left-3 flex gap-0.5 md:gap-1 text-yellow-400 text-[10px] md:text-sm drop-shadow-md">
                   <FaStar />
                   <FaStar />
                   <FaStar />
@@ -84,13 +84,13 @@ const PopularTours = () => {
                 </div>
 
                 {/* Price (Top Right) */}
-                <div className="absolute top-3 right-3 bg-safari-green text-white text-sm font-bold px-3 py-1.5 rounded shadow-lg">
+                <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-safari-green text-white text-xs md:text-sm font-bold px-2 py-1 md:px-3 md:py-1.5 rounded shadow-lg">
                   from ${item.price}
                 </div>
 
                 {/* Title (Bottom Center) */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 text-center">
-                  <h3 className="font-oswald text-white text-[18px] leading-snug drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                <div className="absolute bottom-0 left-0 right-0 p-3 pb-3 md:p-4 md:pb-5 text-center">
+                  <h3 className="font-oswald text-white text-[13px] md:text-[18px] leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] line-clamp-2">
                     {item.title}
                   </h3>
                 </div>
