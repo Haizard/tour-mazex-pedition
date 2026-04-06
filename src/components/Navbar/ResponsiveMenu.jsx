@@ -1,5 +1,5 @@
 import React from "react";
-import { FaUserCircle, FaFacebookF, FaTwitter, FaInstagram, FaWhatsapp, FaYoutube, FaRedditAlien, FaChevronDown } from "react-icons/fa";
+import { FaUserCircle, FaFacebookF, FaTwitter, FaInstagram, FaWhatsapp, FaYoutube, FaRedditAlien, FaChevronDown, FaPhone, FaEnvelope } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -45,7 +45,7 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
                       {data.label}
                     </Link>
                     {hasChildren && (
-                      <button 
+                      <button
                         onClick={() => toggleSubmenu(data._id || data.label)}
                         className={`p-2 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
                       >
@@ -53,11 +53,11 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
                       </button>
                     )}
                   </div>
-                  
+
                   {/* Dropdown Content */}
                   <AnimatePresence>
                     {hasChildren && isOpen && (
-                      <motion.ul 
+                      <motion.ul
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
@@ -85,7 +85,7 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
 
         {/* Action Button */}
         <div className="mt-2 pb-6">
-          <button 
+          <button
             className="w-full bg-safari-green text-white py-3 rounded-lg font-bold uppercase tracking-wider text-xs shadow-lg hover:bg-green-800 transition-all"
             onClick={() => {
               handleOrderPopup();
@@ -107,9 +107,20 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
           <a href="#" className="hover:text-white transition-colors"><FaYoutube /></a>
           <a href="#" className="hover:text-white transition-colors"><FaRedditAlien /></a>
         </div>
-        <div className="text-[10px] text-white/40 uppercase flex flex-col gap-1 items-center font-oswald">
+        <div className="text-[10px] text-white/40 uppercase flex flex-col gap-1 items-center font-oswald text-center">
           <span>&copy; 2026 MAZ Expeditions</span>
-          <span>Crafted for premium expeditions</span>
+          <div className="mt-2 pt-2 border-t border-white/5 w-full flex flex-col gap-1">
+            <span className="text-safari-gold font-bold tracking-widest uppercase">Developed by:</span>
+            <span className="text-white font-black text-xs">haizard@misape</span>
+            <div className="flex items-center justify-center gap-3 mt-1">
+              <a href="tel:0781071061" className="flex items-center gap-1 text-white/70 hover:text-safari-gold transition-colors text-[9px] lowercase">
+                <FaPhone size={8} className="text-safari-gold" /> 0781071061
+              </a>
+              <a href="mailto:haithammisape@gmail.com" className="flex items-center gap-1 text-white/70 hover:text-safari-gold transition-colors text-[9px] lowercase">
+                <FaEnvelope size={8} className="text-safari-gold" /> haithammisape@gmail.co
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

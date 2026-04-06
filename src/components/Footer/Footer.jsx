@@ -273,16 +273,19 @@ const Footer = () => {
             Copyright &copy;2025 MAZ Expeditions | All rights reserved
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-gray-300 text-[11px] sm:text-sm order-1 md:order-2">
-            <span className="font-bold flex items-center gap-2 border-r-0 md:border-r border-white/10 md:pr-4">
-              Design by haizard@misape
+          <div className="flex flex-col items-center md:items-end gap-1 text-gray-300">
+            <span className="font-bold text-[10px] md:text-sm uppercase tracking-widest text-[#4ade80]">
+              Developed by:
             </span>
-            <div className="flex items-center gap-5">
-              <a href="tel:0781071061" className="flex items-center gap-2 text-[#4ade80] hover:text-white transition-colors font-bold">
-                <FaPhone size={14} /> 0781071061
+            <span className="font-black text-xs md:text-base">
+              haizard@misape
+            </span>
+            <div className="flex items-center gap-4 text-[10px] md:text-xs font-bold mt-1">
+              <a href="tel:0781071061" className="text-[#4ade80] hover:text-white transition-colors flex items-center gap-1.5 bg-white/5 py-1 px-2 rounded-full border border-white/5">
+                 <FaPhone size={10} className="text-[#4ade80]" /> 0781071061
               </a>
-              <a href="mailto:haithammisape@gmail.com" className="flex items-center gap-2 text-[#4ade80] hover:text-white transition-colors font-bold">
-                <FaEnvelope size={14} /> haithammisape@gmail.com
+              <a href="mailto:haithammisape@gmail.com" className="text-[#4ade80] hover:text-white transition-colors flex items-center gap-1.5 bg-white/5 py-1 px-2 rounded-full border border-white/5">
+                 <FaEnvelope size={10} className="text-[#4ade80]" /> haithammisape@gmail.co
               </a>
             </div>
           </div>
