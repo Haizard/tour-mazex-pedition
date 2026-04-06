@@ -207,7 +207,7 @@ const Contact = () => {
                         <img
                           src={operator.image}
                           alt={operator.name}
-                          className="relative z-10 h-20 w-20 rounded-full border-2 border-white object-contain bg-gray-50 shadow-md transition-transform group-hover:scale-105"
+                          className="relative z-10 h-20 w-20 rounded-full border-2 border-white object-fill shadow-md transition-transform group-hover:scale-105"
                         />
                       </div>
                       <div>

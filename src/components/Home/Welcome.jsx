@@ -94,7 +94,7 @@ const Welcome = () => {
                 <img
                   src={KiliImg}
                   alt="Kilimanjaro Trekking"
-                  className="absolute inset-0 w-full h-full object-contain bg-gray-50 transition-transform duration-700 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-fill transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
             </Link>
@@ -116,7 +116,7 @@ const Welcome = () => {
                 <img
                   src={SafariImg}
                   alt="Safari Adventures"
-                  className="absolute inset-0 w-full h-full object-contain bg-gray-50 transition-transform duration-700 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-fill transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
               <div>
@@ -149,7 +149,7 @@ const Welcome = () => {
                 <img
                   src={AboutImg}
                   alt="About Us"
-                  className="absolute inset-0 w-full h-full object-contain bg-gray-50 transition-transform duration-700 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-fill transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
               <div>
@@ -193,7 +193,7 @@ const Welcome = () => {
                 <img
                   src={FamilyImg}
                   alt="Family Safaris"
-                  className="absolute inset-0 w-full h-full object-contain bg-gray-50 transition-transform duration-700 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-fill transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
             </Link>

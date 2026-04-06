@@ -238,7 +238,7 @@ const PackageDetail = () => {
         type="article"
       />
       <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 h-[280px] md:h-[420px] lg:h-[520px] overflow-hidden mb-10 md:mb-14">
-        <img src={activeImage} alt={title} className="w-full h-full object-contain bg-gray-50" />
+        <img src={activeImage} alt={title} className="w-full h-full object-fill" />
         <div className="absolute inset-0 bg-black/25 flex items-center justify-center px-6">
           <div className="text-center">
             <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
@@ -282,7 +282,7 @@ const PackageDetail = () => {
                     galleryImage === activeImage ? "border-primary shadow-lg scale-[1.02]" : "border-transparent hover:border-primary/30"
                   }`}
                 >
-                  <img src={galleryImage} alt={`${title} gallery ${index + 1}`} className="w-full h-28 object-contain bg-gray-50" />
+                  <img src={galleryImage} alt={`${title} gallery ${index + 1}`} className="w-full h-28 object-fill" />
                 </button>
               ))}
             </div>
@@ -348,7 +348,7 @@ const PackageDetail = () => {
                 <img
                   src={galleryImages[1] || image}
                   alt={`${title} feature`}
-                  className="w-full h-full object-contain bg-gray-50"
+                  className="w-full h-full object-fill"
                 />
               </div>
               <div className="p-6 md:p-8 lg:p-10 bg-[#fcfaf7] border-t border-[#8b5e34]/10">
@@ -373,7 +373,7 @@ const PackageDetail = () => {
                       ),
                       img: ({ node, ...props }) => (
                         <img
-                          className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-contain bg-gray-50 shadow-lg"
+                          className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-fill shadow-lg"
                           loading="lazy"
                           {...props}
                         />
@@ -479,7 +479,7 @@ const PackageDetail = () => {
                             ),
                             img: ({ node, ...props }) => (
                               <img
-                                className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-contain bg-gray-50 shadow-lg"
+                                className="mx-auto my-10 max-h-[420px] w-full max-w-2xl rounded-[24px] object-fill shadow-lg"
                                 loading="lazy"
                                 {...props}
                               />

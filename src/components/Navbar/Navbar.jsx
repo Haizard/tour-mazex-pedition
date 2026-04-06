@@ -244,7 +244,7 @@ const Navbar = ({ handleOrderPopup }) => {
                               <img
                                 src={MENU_IMAGE_BY_KEY[item.imageKey] || MENU_IMAGE_BY_KEY.tembo}
                                 alt={item.label}
-                                className="absolute inset-0 w-full h-full object-contain bg-gray-50"
+                                className="absolute inset-0 w-full h-full object-fill"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                             </div>

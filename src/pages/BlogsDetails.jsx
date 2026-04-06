@@ -13,7 +13,7 @@ const BlogsDetails = (props) => {
         <img
           src={image}
           alt={title}
-          className="mx-auto h-full w-full object-contain bg-gray-50 transition duration-700 hover:scale-110"
+          className="mx-auto h-full w-full object-fill transition duration-700 hover:scale-110"
         />
       </div>
 

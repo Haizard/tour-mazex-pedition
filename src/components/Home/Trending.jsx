@@ -86,7 +86,7 @@ const Trending = () => {
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="absolute inset-0 w-full h-full object-contain bg-gray-50 transition-transform duration-700"
+                      className="absolute inset-0 w-full h-full object-fill transition-transform duration-700"
                     />
                     
                     {/* Dark Overlay mapped from highlighted-product::before */}

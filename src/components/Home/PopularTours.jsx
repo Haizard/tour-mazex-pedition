@@ -68,7 +68,7 @@ const PopularTours = () => {
                     src={item.image}
                     alt={item.title}
                     loading="lazy"
-                    className="w-full h-full object-contain bg-gray-50 transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
                   />
                   {/* Gradient Overlay for text readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

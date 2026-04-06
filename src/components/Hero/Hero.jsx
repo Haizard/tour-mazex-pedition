@@ -24,7 +24,7 @@ const Hero = () => {
           loop
           muted
           playsInline
-          className="w-full h-full object-contain bg-gray-50"
+          className="w-full h-full object-fill"
         >
           <source src={MainVideo} type="video/mp4" />
         </video>
