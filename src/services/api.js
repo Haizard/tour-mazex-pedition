@@ -68,6 +68,7 @@ export const deleteContactMessage = (id) => API.delete(`/contact-messages/${id}`
 // Menu Items
 export const fetchMenuItems = () => API.get("/menu-items");
 export const createMenuItem = (data) => API.post("/menu-items", data);
+export const updateMenuItem = (id, data) => API.put(`/menu-items/${id}`, data);
 export const deleteMenuItem = (id) => API.delete(`/menu-items/${id}`);
 export const resetMenuItemsToDefaults = () => API.post("/menu-items/reset-defaults");
 

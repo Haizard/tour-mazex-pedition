@@ -28,6 +28,7 @@ import {
   deleteContactMessage,
   fetchMenuItems,
   createMenuItem,
+  updateMenuItem,
   deleteMenuItem,
   resetMenuItemsToDefaults,
   fetchFaqs,
@@ -168,6 +169,7 @@ const AdminDashboard = () => {
 
   const [editingTourId, setEditingTourId] = useState(null);
   const [editingBlogId, setEditingBlogId] = useState(null);
+  const [editingMenuId, setEditingMenuId] = useState(null);
   const [editingVisionaryId, setEditingVisionaryId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isAiRegeneratingTour, setIsAiRegeneratingTour] = useState(false);
@@ -2483,7 +2485,7 @@ const AdminDashboard = () => {
                   className="space-y-6"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    const children = menuFormData.childrenText
+                    const children = (menuFormData.childrenText || "")
                       .split("\n")
                       .map((line, index) => {
                         const [label, link] = line.split("|").map((part) => part?.trim());
@@ -2492,7 +2494,7 @@ const AdminDashboard = () => {
                       })
                       .filter(Boolean);
 
-                    createMenuItem({
+                    const menuPayload = {
                       label: menuFormData.label,
                       link: menuFormData.link,
                       itemType: menuFormData.itemType,
@@ -2504,7 +2506,13 @@ const AdminDashboard = () => {
                           : undefined,
                       sortOrder: Number(menuFormData.sortOrder || 0),
                       children,
-                    }).then(() => {
+                    };
+
+                    const saveAction = editingMenuId
+                      ? updateMenuItem(editingMenuId, menuPayload)
+                      : createMenuItem(menuPayload);
+
+                    saveAction.then(() => {
                       setMenuFormData({
                         label: "",
                         link: "",
@@ -2515,7 +2523,9 @@ const AdminDashboard = () => {
                         sortOrder: "",
                         childrenText: "",
                       });
+                      setEditingMenuId(null);
                       loadMenuItems();
+                      alert("Menu item saved!");
                     });
                   }}
                 >
@@ -2600,9 +2610,29 @@ const AdminDashboard = () => {
                     />
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-3">
+                    {editingMenuId && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingMenuId(null);
+                          setMenuFormData({
+                            label: "",
+                            link: "",
+                            itemType: "link",
+                            categoryKey: "",
+                            menuTitle: "",
+                            imageKey: "tembo",
+                            sortOrder: "",
+                            childrenText: "",
+                          });
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    )}
                     <Button type="submit" variant="primary">
-                      Save Menu Item
+                      {editingMenuId ? "Update Menu Item" : "Save Menu Item"}
                     </Button>
                   </div>
                 </form>
@@ -2621,12 +2651,33 @@ const AdminDashboard = () => {
                         <p className="text-sm text-primary font-bold break-all">{item.link}</p>
                       </div>
                       {item._id && (
-                        <button
-                          onClick={() => deleteMenuItem(item._id).then(loadMenuItems)}
-                          className="text-[10px] text-red-500 font-black uppercase hover:underline"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => {
+                              setMenuFormData({
+                                label: item.label,
+                                link: item.link,
+                                itemType: item.itemType,
+                                categoryKey: item.categoryKey || "",
+                                menuTitle: item.menuTitle || "",
+                                imageKey: item.imageKey || "tembo",
+                                sortOrder: item.sortOrder || "",
+                                childrenText: item.children?.map(c => `${c.label} | ${c.link}`).join("\n") || ""
+                              });
+                              setEditingMenuId(item._id);
+                              window.scrollTo(0, 0);
+                            }}
+                            className="text-[10px] text-primary font-black uppercase hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteMenuItem(item._id).then(loadMenuItems)}
+                            className="text-[10px] text-red-500 font-black uppercase hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </div>
                     {item.menuTitle && (

@@ -51,3 +51,14 @@ export const resetMenuItems = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const updateMenuItem = async (req, res) => {
+  try {
+    const updated = await MenuItem.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+    });
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
