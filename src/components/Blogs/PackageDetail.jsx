@@ -264,7 +264,7 @@ const PackageDetail = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto bg-white rounded-[40px] shadow-2xl overflow-hidden border">
+      <div className="max-w-7xl mx-auto bg-white rounded-[40px] shadow-2xl border">
 
         {galleryImages.length > 1 && (
           <div className="px-8 md:px-12 pt-8">
@@ -341,8 +341,8 @@ const PackageDetail = () => {
           </div>
         </div>
 
-        <div className="p-8 md:p-12 grid grid-cols-1 xl:grid-cols-[minmax(0,1.5fr)_420px] gap-12">
-          <div className="space-y-10">
+        <div className="p-8 md:p-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="space-y-10 lg:col-span-8">
             <div className="overflow-hidden rounded-[32px] border border-[#8b5e34]/15 bg-white shadow-sm">
               <div className="w-full h-[280px] md:h-[380px] lg:h-[460px]">
                 <img
@@ -732,7 +732,7 @@ const PackageDetail = () => {
             </div>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-8 lg:col-span-4 sticky top-32 self-start h-fit">
             <div className="bg-gray-900 text-white p-8 rounded-[32px] shadow-xl">
               <p className="text-gray-400 font-black uppercase text-xs mb-2 tracking-widest">
                 Starting From

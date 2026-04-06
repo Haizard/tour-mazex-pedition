@@ -225,7 +225,7 @@ const BlogDetail = () => {
             </div>
           </div>
 
-          <aside className="lg:col-span-4 space-y-10">
+          <aside className="lg:col-span-4 space-y-10 sticky top-32 self-start h-fit">
             {sectionHeadings.length > 0 && (
               <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
                 <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 border-b pb-4">
