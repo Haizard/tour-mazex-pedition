@@ -81,8 +81,11 @@ const GroupTours = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group flex flex-col md:flex-row gap-4 md:gap-6 items-stretch p-4 md:p-4 border border-gray-100 md:border-gray-200 rounded-2xl md:rounded-[20px] bg-white hover:border-safari-green hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden"
+              className="group flex flex-col md:flex-row gap-4 md:gap-6 items-stretch p-4 md:p-4 border border-transparent rounded-2xl md:rounded-[20px] bg-[#f4fbf6] hover:bg-white hover:border-safari-green hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 relative overflow-hidden"
             >
+              {/* Beeping animated border effect */}
+              <div className="absolute inset-0 border-[2px] border-safari-green/30 rounded-[20px] animate-pulse pointer-events-none z-0" />
+
               {/* Image Section & Price Badge */}
               <div className="flex-shrink-0 w-full md:w-[240px] h-[200px] md:h-[160px] relative rounded-xl md:rounded-[16px] overflow-hidden shadow-sm">
                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />

@@ -32,33 +32,45 @@ const BlogCard = ({
         to={`/blogs/${slug}`}
         onClick={() => window.scrollTo(0, 0)}
         state={{ image, date, title, content, author, category, views }}
-        className="block h-full overflow-hidden bg-white transition-all duration-300 hover:-translate-y-1"
+        className="flex flex-col h-full bg-white rounded-xl md:rounded-[20px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-safari-green transition-all duration-300 hover:-translate-y-1 relative"
       >
-        <div className="overflow-hidden">
+        {/* Image Container */}
+        <div className="relative overflow-hidden shrink-0">
+          <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors z-10" />
           <img
             src={image}
             alt={title}
             loading="lazy"
-            className="h-[140px] md:h-[250px] w-full object-fill transition-transform duration-700 ease-out group-hover:scale-105"
+            className="h-[150px] md:h-[200px] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
+          {/* Internal Category Badge */}
+          {category && (
+            <div className="absolute top-2 left-2 z-20 bg-white/95 backdrop-blur-sm px-2 md:px-3 py-1 rounded-full shadow-sm">
+              <span className="text-[9px] md:text-[10px] font-oswald font-bold tracking-widest text-safari-green uppercase">
+                {category}
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="flex min-h-[130px] md:min-h-[160px] flex-col px-1 pt-3 md:pt-4">
-          <div className="mb-2 md:mb-3 flex items-center gap-1.5 md:gap-2 text-[11px] md:text-[13px] font-medium text-[#7b776e]">
-            <FaCalendarAlt className="text-[10px] md:text-[12px] text-[#6d4a1f]" />
+        {/* Content Container */}
+        <div className="flex flex-col flex-1 p-3 md:p-5 relative bg-white">
+          <div className="mb-1 md:mb-2 flex items-center gap-1.5 text-[10px] md:text-xs font-medium text-gray-500">
+            <FaCalendarAlt className="text-safari-green" />
             <span>{formattedDate}</span>
           </div>
 
-          <h2 className="mb-3 md:mb-4 line-clamp-3 text-[14px] md:text-[20px] font-semibold uppercase leading-snug text-[#2a2a2a] transition-colors duration-300 group-hover:text-[#8d5a1a]">
+          <h2 className="mb-2 md:mb-3 line-clamp-2 text-sm md:text-lg font-heading font-bold leading-tight text-gray-900 transition-colors duration-300 group-hover:text-[#6e3710]">
             {title}
           </h2>
 
-          <div className="mt-auto flex items-center justify-between gap-2 md:gap-4 pt-1 md:pt-2">
-            <span className="text-[11px] md:text-[13px] font-semibold text-[#6d4a1f] transition-colors duration-300 group-hover:text-[#8d5a1a]">
-              Read More
+          <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-50">
+            <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-[#8B4513] transition-all duration-300 group-hover:text-[#6e3710] flex items-center gap-1">
+              Read Story 
+              <span className="transform transition-transform duration-300 group-hover:translate-x-1">→</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm font-medium text-[#6c675d]">
-              <FaEye className="text-[#6d4a1f]" />
+            <span className="inline-flex items-center gap-1 text-[9px] md:text-[11px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+              <FaEye />
               {views}
             </span>
           </div>

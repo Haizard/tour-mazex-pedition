@@ -11,78 +11,80 @@ const destinations = [
 
 const AfricanDestinations = () => {
   return (
-    <div className="bg-[#fafafa] py-24 pb-32">
-      <div className="container px-4 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+    <div className="bg-[#fafafa] py-12 md:py-24 pb-16 md:pb-32 overflow-hidden">
+      <div className="container px-2 sm:px-4 max-w-7xl mx-auto">
+        {/* Main Grid: Forces 2 columns even on mobile */}
+        <div className="grid grid-cols-2 gap-4 sm:gap-8 md:gap-24 items-start">
           
-          {/* Left Side: Header and Content */}
+          {/* Left Column: Header and Content */}
           <motion.div 
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
             className="flex flex-col"
           >
-            <h2 className="text-[40px] md:text-[56px] font-heading text-gray-900 leading-[1.1] mb-10 tracking-tight">
-              Our African Safari <br className="hidden md:block" />
-              <em className="font-signature text-safari-green text-[70px] md:text-[90px] lowercase px-1 relative inline-block -mt-4 md:-mt-6">Destinations</em>
+            <h2 className="text-[20px] sm:text-[32px] md:text-[56px] font-heading text-gray-900 leading-tight mb-4 md:mb-10 tracking-tight">
+              Our <span className="md:hidden">Safari</span> <br className="hidden md:block" />
+              <span className="hidden md:inline">African Safari</span>
+              <em className="font-signature text-safari-green text-[28px] sm:text-[50px] md:text-[90px] lowercase block md:inline-block -mt-1 md:-mt-6">Destinations</em>
             </h2>
             
-            <div className="bg-white border-l-4 border-safari-green p-6 md:p-8 mb-10 shadow-sm rounded-r-xl">
-              <p className="italic text-gray-700 font-sans text-lg md:text-xl leading-relaxed">
-                “Africa's wildlife is so unique that there is nothing else like it anywhere on Earth. It's the world's greatest theatre, the greatest show on Earth.” 
-                <span className="block mt-4 text-sm font-bold text-gray-900 tracking-wider uppercase">— Sir David Attenborough</span>
+            <div className="bg-white border-l-2 md:border-l-4 border-safari-green p-3 md:p-8 mb-4 md:mb-10 shadow-sm rounded-r-lg md:rounded-r-xl">
+              <p className="italic text-gray-700 font-sans text-[10px] sm:text-base md:text-xl leading-snug md:leading-relaxed">
+                “Africa's wildlife is... the greatest show on Earth.” 
+                <span className="block mt-2 text-[8px] md:text-sm font-bold text-gray-900 uppercase tracking-tighter md:tracking-widest">— Attenborough</span>
               </p>
             </div>
             
-            <p className="text-gray-600 font-sans text-lg leading-[1.8] mb-6">
-              Experience the epitome of Africa's opulent travel, meticulously crafted to match your preferences. Whether your heart yearns for the enchanting allure of a deluxe safari in Tanzania, the captivating gorilla tracking escapade in Rwanda, or an immersive journey through Zanzibar's cultural tapestry and serene beaches, we specialize in curating unparalleled experiences in the realm of your aspirations.
-            </p>
-            
-            <p className="text-gray-600 font-sans text-lg leading-[1.8]">
-              Each nation presents unparalleled and awe-inspiring interactions with wildlife, nature, and indigenous traditions. Delve into the intricacies of our destinations, unveiling the facets that resonate with your desires, and unearth your ultimate African luxury travel escapade.
-            </p>
+            <div className="space-y-3 md:space-y-6">
+              <p className="text-gray-600 font-sans text-[11px] sm:text-[15px] md:text-lg leading-relaxed">
+                Experience the epitome of Africa's travel, crafted for you. Deluxe safari in Tanzania or beaches in Zanzibar.
+              </p>
+            </div>
           </motion.div>
 
-          {/* Right Side: Destination Links Matrix */}
+          {/* Right Column: Side-by-Side Country List */}
           <motion.div 
-            initial={{ opacity: 0, x: 30 }}
+            initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-col gap-8 md:pl-10 pt-10 lg:pt-0"
+            className="flex flex-col gap-2 md:gap-8 pt-2 md:pt-0"
           >
             {destinations.map((dest, index) => (
               <motion.div
                 key={dest.name}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 + (index * 0.1) }}
+                transition={{ duration: 0.5, delay: 0.1 + (index * 0.1) }}
               >
                 <Link 
                   to={dest.link} 
                   onClick={() => window.scrollTo(0, 0)}
-                  className="relative block py-6 border-b border-gray-200 group overflow-hidden"
+                  className="relative block py-2 md:py-6 border-b border-gray-100 md:border-gray-200 group"
                 >
-                  <div className="relative z-10 flex items-center justify-between">
-                    <h2 className="text-4xl md:text-[44px] font-heading text-gray-900 group-hover:text-safari-green transition-colors duration-500">
+                  <div className="relative z-10 flex items-center justify-between gap-2">
+                    <h2 className="text-[14px] sm:text-[24px] md:text-[44px] font-heading text-gray-900 group-hover:text-safari-green transition-colors duration-500 font-bold md:font-normal uppercase md:capitalize tracking-tight md:tracking-normal">
                       {dest.name}
                     </h2>
-                    {/* Optional Arrow for UX, not in original HTML but nice for React */}
-                    <span className="text-safari-green opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-500 text-2xl">
+                    <span className="text-safari-green text-xs md:text-2xl">
                       →
                     </span>
                   </div>
                   
-                  {/* The Massive Background Signature Font from HTML */}
-                  <span className="absolute top-1/2 -translate-y-1/2 left-8 md:left-12 -z-10 text-[80px] md:text-[110px] font-signature text-gray-100 group-hover:text-safari-green/5 transition-colors duration-500 pointer-events-none select-none">
+                  {/* Subtle Background Signature - Only for Tablet/Desktop as it crowds mobile */}
+                  <span className="hidden md:block absolute top-1/2 -translate-y-1/2 left-4 md:left-12 -z-10 text-[60px] md:text-[110px] font-signature text-gray-100/60 group-hover:text-safari-green/10 pointer-events-none select-none">
                     {dest.name}
                   </span>
                 </Link>
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </div>
+    </div>
 
         </div>
       </div>
