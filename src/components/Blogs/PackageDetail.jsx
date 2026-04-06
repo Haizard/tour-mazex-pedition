@@ -63,6 +63,7 @@ const PackageDetail = () => {
     notes: "",
   });
   const [planSubmitting, setPlanSubmitting] = useState(false);
+  const [planSuccess, setPlanSuccess] = useState(false);
   const [relatedTours, setRelatedTours] = useState([]);
 
   useEffect(() => {
