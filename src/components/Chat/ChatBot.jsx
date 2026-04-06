@@ -50,9 +50,9 @@ const ChatBot = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[1000] flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 z-[1000] flex flex-col items-end">
       {isOpen && (
-        <div className="bg-white/90 backdrop-blur-xl w-[350px] md:w-[400px] h-[500px] rounded-[32px] shadow-2xl border border-white/20 mb-4 flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 duration-500">
+        <div className="bg-white/90 backdrop-blur-xl w-[320px] md:w-[400px] h-[450px] md:h-[500px] rounded-[24px] md:rounded-[32px] shadow-2xl border border-white/20 mb-3 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-500">
           {/* Header */}
           <div className="bg-gradient-to-r from-primary to-secondary p-6 text-white flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -131,9 +131,9 @@ const ChatBot = () => {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`bg-white p-4 rounded-full shadow-2xl border-4 border-primary text-primary hover:scale-110 transition-all duration-300 ${isOpen ? "rotate-90 opacity-0" : ""}`}
+        className={`bg-white p-3 rounded-full shadow-xl border-[3px] border-primary text-primary hover:scale-110 transition-all duration-300 ${isOpen ? "rotate-90 opacity-0 pointer-events-none" : ""}`}
       >
-        <IoChatbubbleEllipses size={32} />
+        <IoChatbubbleEllipses size={22} />
       </button>
     </div>
   );

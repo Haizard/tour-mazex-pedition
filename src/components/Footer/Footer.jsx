@@ -103,87 +103,82 @@ const Footer = () => {
     <footer className="bg-[#1a1a1a] text-white">
 
       {/* ─── TOP EXEBAR: Logo | Socials | CTA ─── */}
-      <div className="border-b border-white/10">
-        <div className="container max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="border-b border-white/10 overflow-hidden">
+        <div className="container max-w-7xl mx-auto px-4 py-3 flex flex-row items-center justify-between gap-2 md:gap-4 flex-wrap sm:flex-nowrap">
           {/* Logo */}
-          <Link to="/" onClick={() => window.scrollTo(0, 0)}>
-            <img src={FooterLogo} alt="MAZ Expeditions" className="h-16 w-auto object-contain" />
+          <Link to="/" onClick={() => window.scrollTo(0, 0)} className="shrink-0">
+            <img src={FooterLogo} alt="MAZ Expeditions" className="h-10 sm:h-14 md:h-16 w-auto object-contain" />
           </Link>
 
-          {/* Social Icons */}
-          <ul className="flex items-center gap-3">
-            {socialLinks.map((s) => (
-              <li key={s.label}>
-                <a
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={s.label}
-                  className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-gray-300 hover:text-white hover:border-safari-green hover:bg-safari-green/10 transition-all duration-300 text-sm"
-                >
-                  {s.icon}
-                </a>
-              </li>
-            ))}
-          </ul>
+          {/* Social Icons & Plan Button - Grouped for Mobile Flow */}
+          <div className="flex items-center gap-3 sm:gap-6">
+            <ul className="flex items-center gap-2">
+              {socialLinks.slice(0, 4).map((s) => ( // Show fewer on very small screens to fit
+                <li key={s.label}>
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white"
+                  >
+                    <span className="text-xs sm:text-sm">{s.icon}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
 
-          {/* Plan My Trip Button */}
-          <Link
-            to="/plan-my-trip"
-            onClick={() => window.scrollTo(0, 0)}
-            className="font-oswald uppercase tracking-widest text-sm bg-safari-green text-white px-6 py-2.5 rounded hover:bg-green-800 transition-colors duration-300 whitespace-nowrap"
-          >
-            Plan My Trip
-          </Link>
+            {/* Plan My Trip Button - Hidden on mobile if screen is tiny */}
+            <Link
+              to="/plan-my-trip"
+              onClick={() => window.scrollTo(0, 0)}
+              className="hidden sm:inline-block font-oswald uppercase tracking-widest text-[10px] md:text-sm bg-safari-green text-white px-4 md:px-6 py-2 rounded hover:bg-green-800 transition-colors"
+            >
+              Plan My Trip
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* ─── MAIN FOOTER BODY ─── */}
-      <div className="container max-w-7xl mx-auto px-4 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+      <div className="container max-w-7xl mx-auto px-4 py-10 md:py-14">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-y-12 md:gap-10">
 
           {/* Column 1: Brand / Contact */}
-          <div className="md:col-span-4 space-y-5">
-            <h5 className="text-white font-oswald font-semibold text-lg uppercase tracking-wide border-b border-safari-green pb-2">
+          <div className="md:col-span-4 space-y-4">
+            <h5 className="text-white font-oswald font-semibold text-base uppercase tracking-wide border-b border-safari-green pb-1">
               MAZ Expeditions
             </h5>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              MAZ Expeditions is a safari and expedition company based in Tanzania, dedicated to creating personalized African journeys with local expertise, trusted guides, and unforgettable wilderness experiences.
+            <p className="text-gray-400 text-xs sm:text-sm leading-relaxed max-w-sm">
+              Tanzania-based safari experts, creating personalized African journeys with local expertise and trusted guides.
             </p>
-            <div className="space-y-2.5 text-sm">
-              <a href="tel:+255762226648" className="flex items-center gap-3 text-gray-400 hover:text-safari-green transition-colors">
-                <FaPhone className="text-safari-green shrink-0" /> +255 762 226648
+            <div className="space-y-2 text-xs sm:text-sm">
+              <a href="tel:+255762226648" className="flex items-center gap-2 text-gray-400 hover:text-safari-green transition-colors">
+                <FaPhone className="text-safari-green shrink-0 text-xs" /> +255 762 226648
               </a>
-              <a href="https://maps.app.goo.gl/2u3z3m6BExXpdqpbA" target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-gray-400 hover:text-safari-green transition-colors">
-                <FaMapMarkerAlt className="text-safari-green shrink-0 mt-1" />
-                NSSF building 2nd Floor, Room no 14, Aga Khan Rd, Moshi, Kilimanjaro 25113
-              </a>
-              <a href="mailto:info@tanzaniainsideandsafari.com" className="flex items-center gap-3 text-gray-400 hover:text-safari-green transition-colors">
-                <FaEnvelope className="text-safari-green shrink-0" /> info@tanzaniainsideandsafari.com
-              </a>
-              <a href="/" className="flex items-center gap-3 text-gray-400 hover:text-safari-green transition-colors">
-                <FaGlobe className="text-safari-green shrink-0" /> MAZ Expeditions
+              <a href="mailto:info@tanzaniainsideandsafari.com" className="flex items-center gap-2 text-gray-400 hover:text-safari-green transition-colors">
+                <FaEnvelope className="text-safari-green shrink-0 text-xs" /> info@mazexpeditions.com
               </a>
             </div>
           </div>
 
           {/* Column 2: Two sub-columns — Important Links + Popular Tours */}
-          <div className="md:col-span-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="md:col-span-8 lg:col-span-5">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4 md:gap-8">
               {/* Important Links */}
               <div>
-                <h5 className="text-white font-oswald font-semibold text-lg uppercase tracking-wide border-b border-safari-green pb-2 mb-4">
-                  Important Links
+                <h5 className="text-white font-oswald font-semibold text-base uppercase tracking-wide border-b border-safari-green pb-1 mb-3">
+                  Links
                 </h5>
-                <ul className="space-y-2">
+                <ul className="space-y-1.5">
                   {importantLinks.map((link) => (
                     <li key={link.title}>
                       <Link
                         to={link.link}
                         onClick={() => window.scrollTo(0, 0)}
-                        className="text-gray-400 hover:text-safari-green transition-colors text-sm flex items-center gap-2 group"
+                        className="text-gray-400 hover:text-safari-green transition-colors text-xs sm:text-sm flex items-center gap-2 group"
                       >
-                        <span className="w-3 h-px bg-gray-600 group-hover:w-5 group-hover:bg-safari-green transition-all duration-300" />
+                        <span className="w-2 h-px bg-gray-600 group-hover:w-4 group-hover:bg-safari-green transition-all" />
                         {link.title}
                       </Link>
                     </li>
@@ -193,18 +188,18 @@ const Footer = () => {
 
               {/* Popular Tours */}
               <div>
-                <h5 className="text-white font-oswald font-semibold text-lg uppercase tracking-wide border-b border-safari-green pb-2 mb-4">
-                  Popular Tours
+                <h5 className="text-white font-oswald font-semibold text-base uppercase tracking-wide border-b border-safari-green pb-1 mb-3">
+                  Tours
                 </h5>
-                <ul className="space-y-2">
+                <ul className="space-y-1.5">
                   {popularTours.map((tour) => (
                     <li key={tour.title}>
                       <Link
                         to={tour.link}
                         onClick={() => window.scrollTo(0, 0)}
-                        className="text-gray-400 hover:text-safari-green transition-colors text-sm leading-snug flex items-start gap-2 group"
+                        className="text-gray-400 hover:text-safari-green transition-colors text-xs sm:text-sm leading-tight flex items-start gap-2 group"
                       >
-                        <span className="w-3 h-px bg-gray-600 group-hover:w-5 group-hover:bg-safari-green transition-all duration-300 mt-2 shrink-0" />
+                        <span className="w-2 h-px bg-gray-600 group-hover:w-4 group-hover:bg-safari-green transition-all mt-2 shrink-0" />
                         {tour.title}
                       </Link>
                     </li>
@@ -212,19 +207,19 @@ const Footer = () => {
                 </ul>
               </div>
 
-              <div>
-                <h5 className="text-white font-oswald font-semibold text-lg uppercase tracking-wide border-b border-safari-green pb-2 mb-4">
-                  Popular Blogs
+              <div className="col-span-2 lg:col-span-1">
+                <h5 className="text-white font-oswald font-semibold text-base uppercase tracking-wide border-b border-safari-green pb-1 mb-3">
+                  Blogs
                 </h5>
-                <ul className="space-y-2">
+                <ul className="space-y-1.5 flex flex-wrap lg:block gap-x-4 gap-y-1">
                   {popularBlogs.map((blog) => (
                     <li key={blog.title}>
                       <Link
                         to={blog.link}
                         onClick={() => window.scrollTo(0, 0)}
-                        className="text-gray-400 hover:text-safari-green transition-colors text-sm leading-snug flex items-start gap-2 group"
+                        className="text-gray-400 hover:text-safari-green transition-colors text-xs sm:text-sm leading-tight flex items-start gap-2 group"
                       >
-                        <span className="w-3 h-px bg-gray-600 group-hover:w-5 group-hover:bg-safari-green transition-all duration-300 mt-2 shrink-0" />
+                        <span className="w-2 h-px bg-gray-600 group-hover:w-4 group-hover:bg-safari-green transition-all mt-2 shrink-0" />
                         {blog.title}
                       </Link>
                     </li>
@@ -242,20 +237,20 @@ const Footer = () => {
             <p className="text-gray-400 text-sm leading-relaxed">
               All our custom itineraries are inspired by our travel experts. We're flexible and can tailor-make an itinerary just for you.
             </p>
-            <Link
-              to="/plan-my-trip"
-              onClick={() => window.scrollTo(0, 0)}
-              className="inline-block font-oswald uppercase tracking-wider text-sm bg-safari-green text-white px-5 py-2.5 rounded hover:bg-green-800 transition-colors duration-300"
-            >
-              Plan My Trip
-            </Link>
-            <div>
+            <div className="flex flex-row flex-wrap items-center gap-2 mt-4">
+              <Link
+                to="/plan-my-trip"
+                onClick={() => window.scrollTo(0, 0)}
+                className="font-oswald uppercase tracking-wider text-[10px] md:text-sm bg-safari-green text-white px-3 md:px-5 py-2 md:py-2.5 rounded hover:bg-green-800 transition-colors"
+              >
+                Plan My Trip
+              </Link>
               <Link
                 to="/blogs"
                 onClick={() => window.scrollTo(0, 0)}
-                className="inline-block font-oswald uppercase tracking-wider text-sm border border-safari-green text-safari-green px-5 py-2.5 rounded hover:bg-safari-green hover:text-white transition-all duration-300 mt-2"
+                className="font-oswald uppercase tracking-wider text-[10px] md:text-sm border border-green-400 text-green-400 px-3 md:px-5 py-2 md:py-2.5 rounded hover:bg-green-400 hover:text-black transition-all overflow-hidden whitespace-nowrap"
               >
-                Useful Articles
+                Articles
               </Link>
             </div>
           </div>
@@ -273,15 +268,30 @@ const Footer = () => {
 
       {/* ─── COPYRIGHT BOTTOM BAR ─── */}
       <div className="bg-black/40 border-t border-white/5">
-        <div className="container max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-3 text-center">
-          <p className="text-gray-500 text-xs font-medium">
+        <div className="container max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4 text-center">
+          <p className="text-gray-500 text-[10px] sm:text-xs font-medium order-2 md:order-1">
             Copyright &copy;2025 MAZ Expeditions | All rights reserved
           </p>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-gray-300 text-[11px] sm:text-sm order-1 md:order-2">
+            <span className="font-bold flex items-center gap-2 border-r-0 md:border-r border-white/10 md:pr-4">
+              Design by haizard@misape
+            </span>
+            <div className="flex items-center gap-5">
+              <a href="tel:0781071061" className="flex items-center gap-2 text-[#4ade80] hover:text-white transition-colors font-bold">
+                <FaPhone size={14} /> 0781071061
+              </a>
+              <a href="mailto:haithammisape@gmail.com" className="flex items-center gap-2 text-[#4ade80] hover:text-white transition-colors font-bold">
+                <FaEnvelope size={14} /> haithammisape@gmail.com
+              </a>
+            </div>
+          </div>
+
           <Link
             to="/login"
-            className="opacity-10 hover:opacity-40 transition-opacity"
+            className="opacity-5 hover:opacity-30 transition-opacity order-3"
           >
-            <FaShieldAlt size={12} className="text-gray-400" />
+            <FaShieldAlt size={10} className="text-gray-400" />
           </Link>
         </div>
       </div>

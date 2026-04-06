@@ -166,7 +166,7 @@ const Navbar = ({ handleOrderPopup }) => {
       </div>
 
       <div
-        className={`w-full py-5 border-b shadow-lg transition-all duration-300 ${
+        className={`w-full py-2.5 md:py-5 border-b shadow-lg transition-all duration-300 ${
           isScrolled
             ? "bg-[#f4ede3] border-[#d8c7b4]"
             : "bg-[#6f5336] border-white/10"
@@ -177,7 +177,7 @@ const Navbar = ({ handleOrderPopup }) => {
             <img
               src={Logo}
               alt="Logo"
-              className={`h-16 md:h-20 rounded-full shadow-2xl transition-all duration-300 ${
+              className={`h-12 sm:h-14 md:h-20 rounded-full shadow-2xl transition-all duration-300 ${
                 isScrolled ? "border-2 border-[#6f5336]/20" : "border-2 border-white/20"
               }`}
             />
