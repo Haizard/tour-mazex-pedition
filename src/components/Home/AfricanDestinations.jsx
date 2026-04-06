@@ -85,10 +85,6 @@ const AfricanDestinations = () => {
         </div>
       </div>
     </div>
-
-        </div>
-      </div>
-    </div>
   );
 };
 
