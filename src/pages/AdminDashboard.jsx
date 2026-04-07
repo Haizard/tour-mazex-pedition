@@ -175,6 +175,11 @@ const AdminDashboard = () => {
   const [editingVisionaryId, setEditingVisionaryId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Sub-tab States for cleaner UI
+  const [packageView, setPackageView] = useState("list"); // "list" or "form"
+  const [blogView, setBlogView] = useState("list"); // "list" or "form"
+  const [visionaryView, setVisionaryView] = useState("list"); // "list" or "form"
   const [isAiRegeneratingTour, setIsAiRegeneratingTour] = useState(false);
   const [isAiRegeneratingBlog, setIsAiRegeneratingBlog] = useState(false);
   const [isGeneratingFullTour, setIsGeneratingFullTour] = useState(false);
@@ -606,6 +611,7 @@ const AdminDashboard = () => {
           seoSchema: "",
         });
       setEditingTourId(null);
+      setPackageView("list");
       loadTours();
       alert("Tour saved!");
     } catch (e) {
@@ -653,6 +659,7 @@ const AdminDashboard = () => {
       });
       setBodyImageUrl("");
       setEditingBlogId(null);
+      setBlogView("list");
       loadBlogs();
       alert("Blog saved!");
     } catch (e) {
@@ -688,6 +695,7 @@ const AdminDashboard = () => {
       else await createVisionary(visionaryFormData);
       setVisionaryFormData({ name: "", duty: "", image: "" });
       setEditingVisionaryId(null);
+      setVisionaryView("list");
       loadVisionaries();
       alert("Visionary saved!");
     } catch (e) {
@@ -716,6 +724,7 @@ const AdminDashboard = () => {
     });
     setEditingVisionaryId(visionary._id);
     setActiveTab("visionaries");
+    setVisionaryView("form");
     window.scrollTo(0, 0);
   };
 
@@ -831,7 +840,72 @@ const AdminDashboard = () => {
                 <Badge variant="primary" className="scale-75 md:scale-100">{tours.length} Active</Badge>
               </div>
 
-              <Card className="p-3 md:p-8 mb-12 border-none shadow-none md:shadow-xl w-full rounded-none md:rounded-3xl">
+              {/* Sub-tab Toggle */}
+              <div className="flex gap-2 mb-8 bg-slate-100/50 p-1 rounded-2xl w-fit border border-slate-200/50 backdrop-blur-sm mx-2 md:mx-0">
+                <button
+                  onClick={() => setPackageView("list")}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    packageView === "list" 
+                      ? "bg-white text-slate-900 shadow-sm scale-100" 
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50 scale-95"
+                  }`}
+                >
+                  Inventory List
+                </button>
+                <button
+                  onClick={() => {
+                    setPackageView("form");
+                    if (!editingTourId) {
+                      setTourFormData({
+                        title: "",
+                        description: "",
+                        price: "",
+                        image: "",
+                        galleryImages: "",
+                        location: "",
+                        startLocation: "",
+                        endLocation: "",
+                        destinationsVisited: "",
+                        author: "Admin",
+                        date: "",
+                        duration: "",
+                        maxGroupSize: "",
+                        tourType: "Safari",
+                        category: "Luxury",
+                        accommodationType: "",
+                        inclusions: "",
+                        exclusions: "",
+                        itinerary: [{ day: 1, events: "", accommodation: "" }],
+                        faqs: [{ question: "", answer: "" }],
+                        pricingTable: { greenSeason: "", highSeason: "", peakSeason: "" },
+                        tripAdvisorUrl: "",
+                        tripAdvisorRating: "",
+                        tripAdvisorReviewCount: "",
+                        isGroupTour: false,
+                        maxCapacity: 12,
+                        currentBookings: 0,
+                        launchDate: "",
+                        seoTitle: "",
+                        seoDescription: "",
+                        seoKeywords: "",
+                        seoOgImage: "",
+                        seoCanonicalUrl: "",
+                        seoSchema: "",
+                      });
+                    }
+                  }}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    packageView === "form" 
+                      ? "bg-white text-slate-900 shadow-sm scale-100" 
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50 scale-95"
+                  }`}
+                >
+                  {editingTourId ? "Edit Package" : "Create New Adventure"}
+                </button>
+              </div>
+
+              {packageView === "form" ? (
+                <Card className="p-3 md:p-8 mb-12 border-none shadow-none md:shadow-xl w-full rounded-none md:rounded-3xl">
                 <h3 className="text-xl font-bold mb-8 flex items-center gap-2">
                   <span className="w-2 h-8 bg-primary rounded-full" />
                   {editingTourId
@@ -1486,6 +1560,7 @@ const AdminDashboard = () => {
                             inclusions: tourFormData.inclusions || "",
                             exclusions: tourFormData.exclusions || "",
                           });
+                          setPackageView("list");
                         }}
                         className="w-full md:w-auto py-3 md:py-2 rounded-xl text-xs font-bold order-2 md:order-1"
                       >
@@ -1502,7 +1577,7 @@ const AdminDashboard = () => {
                   </div>
                 </form>
               </Card>
-
+            ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                 {tours.map((t) => (
                   <Card
@@ -1559,6 +1634,7 @@ const AdminDashboard = () => {
                               seoCanonicalUrl: t.seo?.canonicalUrl || "",
                               seoSchema: t.seo?.schema || "",
                             });
+                            setPackageView("form");
                             window.scrollTo(0, 0);
                           }}
                           className="p-2 bg-white/90 backdrop-blur-sm rounded-lg text-blue-600 hover:bg-blue-600 hover:text-white transition shadow-sm"
@@ -1604,6 +1680,7 @@ const AdminDashboard = () => {
                   </Card>
                 ))}
               </div>
+              )}
             </div>
           )}
 
@@ -1617,7 +1694,49 @@ const AdminDashboard = () => {
                 <Badge variant="secondary" className="scale-75 md:scale-100">{blogs.length} Stories</Badge>
               </div>
 
-              <Card className="p-3 md:p-8 mb-12 border-none shadow-none md:shadow-xl w-full rounded-none md:rounded-3xl">
+              {/* Sub-tab Toggle for Blogs */}
+              <div className="flex gap-2 mb-8 bg-slate-100/50 p-1 rounded-2xl w-fit border border-slate-200/50 backdrop-blur-sm mx-2 md:mx-0">
+                <button
+                  onClick={() => setBlogView("list")}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    blogView === "list" 
+                      ? "bg-white text-slate-900 shadow-sm scale-100" 
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50 scale-95"
+                  }`}
+                >
+                  Content Hub
+                </button>
+                <button
+                  onClick={() => {
+                    setBlogView("form");
+                    if (!editingBlogId) {
+                      setBlogFormData({
+                        title: "",
+                        content: "",
+                        image: "",
+                        category: getPreferredTaxonomyName(taxonomies, "blogCategory", "Safari Articles", "Travel Tips"),
+                        author: "Admin",
+                        seoTitle: "",
+                        seoDescription: "",
+                        seoKeywords: "",
+                        seoOgImage: "",
+                        seoCanonicalUrl: "",
+                        seoSchema: "",
+                      });
+                    }
+                  }}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    blogView === "form" 
+                      ? "bg-white text-slate-900 shadow-sm scale-100" 
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50 scale-95"
+                  }`}
+                >
+                  {editingBlogId ? "Refine Story" : "Compose New Story"}
+                </button>
+              </div>
+
+              {blogView === "form" ? (
+                <Card className="p-3 md:p-8 mb-12 border-none shadow-none md:shadow-xl w-full rounded-none md:rounded-3xl">
                 <h3 className="text-xl font-bold mb-8 flex items-center gap-2 text-secondary">
                   <span className="w-2 h-8 bg-secondary rounded-full" />
                   {editingBlogId ? "Refine Story" : "Compose New Story"}
@@ -1851,7 +1970,7 @@ const AdminDashboard = () => {
                   </div>
                 </form>
               </Card>
-
+            ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                 {blogs.map((b) => (
                   <Card
@@ -1887,6 +2006,7 @@ const AdminDashboard = () => {
                               seoCanonicalUrl: b.seo?.canonicalUrl || "",
                               seoSchema: b.seo?.schema || "",
                             });
+                            setBlogView("form");
                             window.scrollTo(0, 0);
                           }}
                           className="p-1.5 md:p-2 bg-white/90 backdrop-blur-sm rounded-lg text-blue-600 hover:bg-blue-600 hover:text-white transition shadow-sm"
@@ -1921,6 +2041,7 @@ const AdminDashboard = () => {
                   </Card>
                 ))}
               </div>
+              )}
             </div>
           )}
 
@@ -2855,7 +2976,37 @@ const AdminDashboard = () => {
                 <Badge variant="primary">{visionaries.length} Team Members</Badge>
               </div>
 
-              <Card className="p-8 mb-12 border-none shadow-xl">
+              {/* Sub-tab Toggle for Visionaries */}
+              <div className="flex gap-2 mb-8 bg-slate-100/50 p-1 rounded-2xl w-fit border border-slate-200/50 backdrop-blur-sm mx-2 md:mx-0">
+                <button
+                  onClick={() => setVisionaryView("list")}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    visionaryView === "list" 
+                      ? "bg-white text-slate-900 shadow-sm scale-100" 
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50 scale-95"
+                  }`}
+                >
+                  Our Team
+                </button>
+                <button
+                  onClick={() => {
+                    setVisionaryView("form");
+                    if (!editingVisionaryId) {
+                      setVisionaryFormData({ name: "", duty: "", image: "" });
+                    }
+                  }}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    visionaryView === "form" 
+                      ? "bg-white text-slate-900 shadow-sm scale-100" 
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50 scale-95"
+                  }`}
+                >
+                  {editingVisionaryId ? "Update Member" : "Add New Visionary"}
+                </button>
+              </div>
+
+              {visionaryView === "form" ? (
+                <Card className="p-8 mb-12 border-none shadow-xl">
                 <h3 className="text-xl font-bold mb-8 italic">
                   {editingVisionaryId ? "Update Member" : "Add New Visionary"}
                 </h3>
@@ -2917,7 +3068,7 @@ const AdminDashboard = () => {
                   </div>
                 </form>
               </Card>
-
+            ) : (
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                 {visionaries.map((v) => (
                   <Card key={v._id} className="p-3 md:p-6 border-none shadow-lg bg-white group flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-6">
@@ -2953,6 +3104,7 @@ const AdminDashboard = () => {
                   </Card>
                 ))}
               </div>
+              )}
             </div>
           )}
         </div>
