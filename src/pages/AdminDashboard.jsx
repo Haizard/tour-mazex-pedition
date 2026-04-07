@@ -11,6 +11,7 @@ import {
   createGallery,
   deleteGallery,
   fetchBookings,
+  updateBookingStatus,
   deleteBooking,
   fetchBlogs,
   createBlog,
@@ -838,9 +839,9 @@ const AdminDashboard = () => {
                     : "Create New Adventure"}
                 </h3>
                 <form onSubmit={handleTourSubmit} className="space-y-8">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="md:col-span-2 space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                  <div className="grid grid-cols-2 gap-3 md:gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Package Title
                       </label>
                       <input
@@ -848,13 +849,13 @@ const AdminDashboard = () => {
                         name="title"
                         value={tourFormData.title}
                         onChange={handleTourInputChange}
-                        placeholder="e.g. Serengeti Luxury Escape"
+                        placeholder="e.g. Serengeti Escape"
                         className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Location
                       </label>
                       <input
@@ -867,8 +868,8 @@ const AdminDashboard = () => {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Price ($)
                       </label>
                       <input
@@ -881,11 +882,24 @@ const AdminDashboard = () => {
                         required
                       />
                     </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
+                        Duration
+                      </label>
+                      <input
+                        type="text"
+                        name="duration"
+                        value={tourFormData.duration}
+                        onChange={handleTourInputChange}
+                        placeholder="e.g. 5 Days"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary text-xs font-bold"
+                      />
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                  <div className="grid grid-cols-2 gap-3 md:gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Adventure Type
                       </label>
                       <select
@@ -903,8 +917,8 @@ const AdminDashboard = () => {
                           ))}
                       </select>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Style Category
                       </label>
                       <select
@@ -922,21 +936,8 @@ const AdminDashboard = () => {
                           ))}
                       </select>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
-                        Duration
-                      </label>
-                      <input
-                        type="text"
-                        name="duration"
-                        value={tourFormData.duration}
-                        onChange={handleTourInputChange}
-                        placeholder="e.g. 5 Days"
-                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary text-xs"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                    <div className="col-span-2 space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Image URL
                       </label>
                       <input
@@ -951,9 +952,9 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                  <div className="grid grid-cols-2 gap-3 md:gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Start Location
                       </label>
                       <input
@@ -962,11 +963,11 @@ const AdminDashboard = () => {
                         value={tourFormData.startLocation}
                         onChange={handleTourInputChange}
                         placeholder="e.g. Arusha"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-medium"
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-medium text-xs"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         End Location
                       </label>
                       <input
@@ -978,8 +979,8 @@ const AdminDashboard = () => {
                         className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-medium text-xs"
                       />
                     </div>
-                    <div className="md:col-span-2 space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                    <div className="col-span-2 space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Accommodation Type
                       </label>
                       <input
@@ -993,29 +994,29 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-gray-400 ml-2">
-                        Gallery Images (One URL per line)
+                  <div className="grid grid-cols-2 gap-3 md:gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
+                        Gallery (One URL per line)
                       </label>
                       <textarea
                         name="galleryImages"
                         value={tourFormData.galleryImages}
                         onChange={handleTourInputChange}
-                        placeholder="https://...&#10;https://..."
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none h-32 outline-none focus:ring-2 focus:ring-primary font-medium"
+                        placeholder="https://..."
+                        className="w-full bg-gray-50 p-3 rounded-xl border-none h-32 outline-none focus:ring-2 focus:ring-primary font-medium text-xs"
                       ></textarea>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-gray-400 ml-2">
-                        Destinations Visited (One per line)
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
+                        Destinations (One per line)
                       </label>
                       <textarea
                         name="destinationsVisited"
                         value={tourFormData.destinationsVisited}
                         onChange={handleTourInputChange}
-                        placeholder="Tarangire&#10;Ngorongoro&#10;Serengeti"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none h-32 outline-none focus:ring-2 focus:ring-primary font-medium"
+                        placeholder="Serengeti..."
+                        className="w-full bg-gray-50 p-3 rounded-xl border-none h-32 outline-none focus:ring-2 focus:ring-primary font-medium text-xs"
                       ></textarea>
                     </div>
                   </div>
@@ -1431,9 +1432,9 @@ const AdminDashboard = () => {
                         className="w-full bg-white p-2.5 rounded-xl border-none h-24 focus:ring-2 focus:ring-primary font-medium shadow-sm text-xs"
                       ></textarea>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Focus Keywords (Comma separated)</label>
+                    <div className="grid grid-cols-2 gap-3 md:gap-6">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Focus Keywords</label>
                         <input
                           type="text"
                           name="seoKeywords"
@@ -1443,8 +1444,8 @@ const AdminDashboard = () => {
                           className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold shadow-sm text-xs"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">OG Image URL (Social Sharing)</label>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Social Preview</label>
                         <input
                           type="text"
                           name="seoOgImage"
@@ -1621,10 +1622,10 @@ const AdminDashboard = () => {
                   <span className="w-2 h-8 bg-secondary rounded-full" />
                   {editingBlogId ? "Refine Story" : "Compose New Story"}
                 </h3>
-                <form onSubmit={handleBlogSubmit} className="space-y-8">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="md:col-span-2 space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                <form onSubmit={handleBlogSubmit} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-3 md:gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Story Title
                       </label>
                       <input
@@ -1637,8 +1638,8 @@ const AdminDashboard = () => {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
                         Category
                       </label>
                       <select
@@ -1656,23 +1657,23 @@ const AdminDashboard = () => {
                           ))}
                       </select>
                     </div>
+                    <div className="col-span-2 space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
+                        Cover Image URL
+                      </label>
+                      <input
+                        type="text"
+                        name="image"
+                        value={blogFormData.image}
+                        onChange={handleBlogInputChange}
+                        placeholder="https://..."
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary text-xs"
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
-                      Cover Image URL
-                    </label>
-                    <input
-                      type="text"
-                      name="image"
-                      value={blogFormData.image}
-                      onChange={handleBlogInputChange}
-                      placeholder="https://..."
-                      className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary text-xs"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
                         Story Content
                       </label>
@@ -1695,7 +1696,7 @@ const AdminDashboard = () => {
                         </Button>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 md:flex-row md:items-end">
+                    <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-3 md:p-4 md:flex-row md:items-end">
                       <div className="flex-1 space-y-2">
                         <label className="text-[10px] font-black uppercase text-gray-400">
                           Body Image URL
@@ -1705,19 +1706,19 @@ const AdminDashboard = () => {
                           value={bodyImageUrl}
                           onChange={(e) => setBodyImageUrl(e.target.value)}
                           placeholder="https://... image to place inside the article"
-                          className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary"
+                          className="w-full bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-secondary text-xs"
                         />
                       </div>
                       <Button
                         type="button"
                         onClick={handleInsertBodyImage}
-                        className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white"
+                        className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white text-xs py-2 rounded-xl"
                       >
                         Insert Image
                       </Button>
                     </div>
-                    <p className="text-xs text-gray-400 px-2">
-                      Body images use markdown format like `![Body image](https://...)`. The insert button adds that syntax at your cursor position.
+                    <p className="text-[10px] text-gray-400 px-2 leading-tight">
+                      Body images use markdown format like `![Body image](link)`. The insert button adds that syntax at your cursor position.
                     </p>
                     <textarea
                       ref={blogContentTextareaRef}
@@ -1725,16 +1726,16 @@ const AdminDashboard = () => {
                       value={blogFormData.content}
                       onChange={handleBlogInputChange}
                       placeholder="Write your epic travel story here..."
-                      className="w-full bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-secondary h-64 text-xs md:text-sm font-medium leading-relaxed"
+                      className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-secondary h-64 md:h-80 text-xs md:text-sm font-medium leading-relaxed"
                       required
                     ></textarea>
                   </div>
                   {/* Blog SEO Optimization */}
-                  <div className="bg-secondary/5 p-8 rounded-2xl border border-secondary/10 space-y-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-xl font-bold text-gray-900 uppercase tracking-tighter flex items-center gap-3">
+                  <div className="bg-secondary/5 p-4 md:p-8 rounded-2xl border border-secondary/10 space-y-6">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+                      <h3 className="text-lg md:text-xl font-bold text-gray-900 uppercase tracking-tighter flex items-center gap-3">
                         <span className="w-2 h-6 bg-secondary rounded-full"></span>
-                        Search Engine Optimization
+                        Search Optimization
                       </h3>
                       <Button
                         type="button"
@@ -1745,54 +1746,54 @@ const AdminDashboard = () => {
                         {isGeneratingBlogSeo ? "Analyzing..." : "Auto-SEO AI"}
                       </Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">SEO Page Title</label>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">SEO Page Title</label>
                         <input
                           type="text"
                           name="seoTitle"
                           value={blogFormData.seoTitle}
                           onChange={handleBlogInputChange}
-                          placeholder="Max 60 characters..."
+                          placeholder="Max 60 chars..."
                           className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm text-xs"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Canonical Link</label>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Canonical Link</label>
                         <input
                           type="text"
                           name="seoCanonicalUrl"
                           value={blogFormData.seoCanonicalUrl}
                           onChange={handleBlogInputChange}
-                          placeholder="Specific URL link..."
+                          placeholder="Specific URL..."
                           className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm text-xs"
                         />
                       </div>
+                      <div className="col-span-2 space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">SEO Meta Description</label>
+                        <textarea
+                          name="seoDescription"
+                          value={blogFormData.seoDescription}
+                          onChange={handleBlogInputChange}
+                          placeholder="Snippet for search engines..."
+                          className="w-full bg-white p-2.5 rounded-xl border-none h-20 focus:ring-2 focus:ring-secondary font-medium shadow-sm text-xs"
+                        ></textarea>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">SEO Meta Description</label>
-                      <textarea
-                        name="seoDescription"
-                        value={blogFormData.seoDescription}
-                        onChange={handleBlogInputChange}
-                        placeholder="Write a compelling snippet for search engines..."
-                        className="w-full bg-white p-2.5 rounded-xl border-none h-24 focus:ring-2 focus:ring-secondary font-medium shadow-sm text-xs"
-                      ></textarea>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Keywords (Comma separated)</label>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Keywords</label>
                         <input
                           type="text"
                           name="seoKeywords"
                           value={blogFormData.seoKeywords}
                           onChange={handleBlogInputChange}
-                          placeholder="e.g. Travel, Africa, Tourism"
+                          placeholder="Travel, Africa..."
                           className="w-full bg-white p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold shadow-sm text-xs"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Social Preview Image (OG Image)</label>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Social Image</label>
                         <input
                           type="text"
                           name="seoOgImage"
@@ -1851,66 +1852,70 @@ const AdminDashboard = () => {
                 </form>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                 {blogs.map((b) => (
                   <Card
                     key={b._id}
-                    className="group relative overflow-hidden flex flex-col md:flex-row h-64 border-none shadow-lg hover:shadow-2xl"
+                    className="group relative overflow-hidden flex flex-col h-full border-none shadow-lg hover:shadow-2xl"
                   >
-                    <div className="w-full md:w-48 h-full overflow-hidden shrink-0">
+                    <div className="h-32 md:h-48 overflow-hidden shrink-0">
                       <img
                         src={b.image}
                         className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
                       />
+                      <div className="absolute top-2 md:top-4 right-2 md:right-4 flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingBlogId(b._id);
+                            setBlogFormData({
+                              title: b.title || "",
+                              content: b.content || "",
+                              image: b.image || "",
+                              category:
+                                b.category ||
+                                getPreferredTaxonomyName(
+                                  taxonomies,
+                                  "blogCategory",
+                                  "Safari Articles",
+                                  "Travel Tips"
+                                ),
+                              author: b.author || "Admin",
+                              seoTitle: b.seo?.title || "",
+                              seoDescription: b.seo?.description || "",
+                              seoKeywords: b.seo?.keywords?.join(", ") || "",
+                              seoOgImage: b.seo?.ogImage || "",
+                              seoCanonicalUrl: b.seo?.canonicalUrl || "",
+                              seoSchema: b.seo?.schema || "",
+                            });
+                            window.scrollTo(0, 0);
+                          }}
+                          className="p-1.5 md:p-2 bg-white/90 backdrop-blur-sm rounded-lg text-blue-600 hover:bg-blue-600 hover:text-white transition shadow-sm"
+                        >
+                          <span className="text-[8px] md:text-xs font-black uppercase tracking-widest">
+                            Edit
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => deleteBlog(b._id).then(loadBlogs)}
+                          className="p-1.5 md:p-2 bg-white/90 backdrop-blur-sm rounded-lg text-red-600 hover:bg-red-600 hover:text-white transition shadow-sm"
+                        >
+                          <span className="text-[8px] md:text-xs font-black uppercase tracking-widest">
+                            Del
+                          </span>
+                        </button>
+                      </div>
                     </div>
-                    <div className="p-8 flex-1 flex flex-col justify-between">
+                    <div className="p-3 md:p-6 flex-1 flex flex-col justify-between">
                       <div>
                         <div className="flex justify-between items-start mb-2">
-                          <Badge variant="secondary">{b.category}</Badge>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingBlogId(b._id);
-                                setBlogFormData({
-                                  title: b.title || "",
-                                  content: b.content || "",
-                                  image: b.image || "",
-                                  category:
-                                    b.category ||
-                                    getPreferredTaxonomyName(
-                                      taxonomies,
-                                      "blogCategory",
-                                      "Safari Articles",
-                                      "Travel Tips"
-                                    ),
-                                  author: b.author || "Admin",
-                                  seoTitle: b.seo?.title || "",
-                                  seoDescription: b.seo?.description || "",
-                                  seoKeywords: b.seo?.keywords?.join(", ") || "",
-                                  seoOgImage: b.seo?.ogImage || "",
-                                  seoCanonicalUrl: b.seo?.canonicalUrl || "",
-                                  seoSchema: b.seo?.schema || "",
-                                });
-                                window.scrollTo(0, 0);
-                              }}
-                              className="text-blue-500 hover:text-blue-700 transition font-black text-[10px] uppercase"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => deleteBlog(b._id).then(loadBlogs)}
-                              className="text-red-500 hover:text-red-700 transition font-black text-[10px] uppercase"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          <Badge variant="secondary" className="scale-75 origin-left">{b.category}</Badge>
                         </div>
-                        <h4 className="font-black text-xl text-gray-900 leading-tight mb-4 line-clamp-2">
+                        <h4 className="font-black text-sm md:text-xl text-gray-900 leading-tight mb-2 line-clamp-2">
                           {b.title}
                         </h4>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-400 text-[10px] font-black tracking-widest uppercase italic">
-                        <span>Published by {b.author || "Admin"}</span>
+                      <div className="flex items-center gap-2 text-gray-400 text-[8px] md:text-[10px] font-black tracking-widest uppercase italic">
+                        <span>By {b.author || "Admin"}</span>
                       </div>
                     </div>
                   </Card>
@@ -1928,51 +1933,69 @@ const AdminDashboard = () => {
                 </h2>
                 <Badge variant="accent">{bookings.length} New Bookings</Badge>
               </div>
-              <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-4">
                 {bookings.map((b) => (
-                  <Card
+                  <div
                     key={b._id}
-                    className="p-8 border-none shadow-md hover:shadow-xl flex flex-col md:flex-row justify-between items-center gap-8"
+                    className="flex flex-col md:flex-row items-stretch md:items-center justify-between p-6 md:p-6 bg-white border border-slate-100 rounded-[2.5rem] group shadow-sm hover:shadow-2xl transition-all duration-500"
                   >
-                    <div className="flex items-center gap-6">
-                      <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary text-2xl font-black">
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-5 w-full">
+                      {/* Avatar with dynamic initials background */}
+                      <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center text-2xl font-black text-slate-800 shadow-inner group-hover:rotate-6 transition-transform duration-500 shrink-0">
                         {b.name.charAt(0)}
                       </div>
-                      <div>
-                        <h4 className="font-black text-xl text-gray-900">
-                          {b.name}
-                        </h4>
-                        <p className="text-gray-500 font-bold mb-1">{b.email}</p>
-                        <div className="flex gap-4">
-                          <Badge variant="primary" className="text-[10px]">
-                            {b.packageTour || b.tourTitle}
-                          </Badge>
-                          <span className="text-[10px] font-black uppercase text-gray-400">
-                            Date:{" "}
-                            {new Date(
-                              b.bookingDate || b.createdAt,
-                            ).toLocaleDateString()}
-                          </span>
+                      
+                      <div className="flex-1 text-left overflow-hidden">
+                        <div className="flex flex-wrap items-center justify-start gap-3 mb-1">
+                          <h4 className="text-xl md:text-xl font-black text-slate-900 tracking-tight uppercase truncate">
+                            {b.name}
+                          </h4>
+                          <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${b.status?.toLowerCase() === 'confirmed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-orange-50 text-orange-600 border border-orange-100'}`}>
+                            {b.status}
+                          </div>
+                        </div>
+                        <p className="text-slate-400 font-bold text-xs mb-4 truncate">{b.email}</p>
+                        
+                        <div className="flex flex-wrap items-center justify-start gap-3">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100/50">
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                            <span className="text-[9px] font-black uppercase text-slate-600 tracking-tight">{b.packageTour || b.tourTitle}</span>
+                          </div>
+                          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100/50">
+                            <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z" />
+                            </svg>
+                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{new Date(b.bookingDate || b.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          </div>
                         </div>
                       </div>
+                      
+                      <div className="mt-8 md:mt-0 pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-slate-100 flex flex-row md:flex-col items-start md:items-end justify-between md:justify-center gap-2 px-2 md:px-6 w-full md:w-auto shrink-0">
+                         <div className="flex flex-col items-start md:items-end">
+                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Bill</span>
+                           <div className="flex items-baseline gap-1">
+                             <span className="text-lg font-black text-primary">$</span>
+                             <p className="text-3xl md:text-4xl font-black text-slate-900 leading-none tracking-tighter">{b.totalPrice}</p>
+                           </div>
+                         </div>
+                         <button 
+                           onClick={() => {
+                             const newStatus = b.status?.toLowerCase() === "confirmed" ? "Pending" : "Confirmed";
+                             updateBookingStatus(b._id, newStatus).then(loadBookings);
+                           }} 
+                           className={`mt-2 text-[9px] font-black uppercase tracking-widest transition-colors ${b.status?.toLowerCase() === "confirmed" ? "text-slate-400 hover:text-orange-500 underline underline-offset-4" : "text-emerald-500 hover:text-emerald-700 font-black"}`}
+                         >
+                           {b.status?.toLowerCase() === "confirmed" ? "Set to Pending" : "Confirm Booking"}
+                         </button>
+                         <button 
+                           onClick={() => deleteBooking(b._id).then(loadBookings)} 
+                           className="mt-1 text-[8px] font-black text-slate-200 hover:text-red-500 uppercase tracking-widest transition-colors"
+                         >
+                           Archive Record
+                         </button>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <p className="text-2xl font-black text-gray-900">
-                        ${b.totalPrice}
-                      </p>
-                      <Badge
-                        variant={b.status === "confirmed" ? "primary" : "accent"}
-                      >
-                        {b.status}
-                      </Badge>
-                      <button
-                        onClick={() => deleteBooking(b._id).then(loadBookings)}
-                        className="text-[10px] text-red-500 font-black uppercase hover:underline"
-                      >
-                        Clear Record
-                      </button>
-                    </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1989,101 +2012,115 @@ const AdminDashboard = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {inquiries.map((i) => (
-                  <Card key={i._id} className="p-6 border-none shadow-lg hover:shadow-xl transition-all group flex flex-col justify-between h-72">
+                  <div 
+                    key={i._id} 
+                    className="p-6 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 group flex flex-col justify-between min-h-[320px] relative overflow-hidden"
+                  >
+                    {/* Background Accent Gradient */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl transition-all group-hover:bg-primary/10" />
+
                     <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-black text-lg uppercase">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-primary font-black text-xl shadow-inner uppercase tracking-tighter">
                           {i.name.charAt(0)}
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <Badge variant="primary" className="text-[8px]">Inquiry</Badge>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="px-2.5 py-1 bg-slate-900 text-white rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg">
+                            Request
+                          </div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteInquiry(i._id).then(loadInquiries);
                             }}
-                            className="text-[9px] text-red-400 opacity-0 group-hover:opacity-100 transition uppercase font-black hover:text-red-600"
+                            className="text-[9px] text-slate-300 hover:text-red-500 transition-colors uppercase font-black tracking-widest"
                           >
-                            Delete
+                            Dismiss
                           </button>
                         </div>
                       </div>
-                      <h4 className="font-black text-lg text-gray-900 truncate">
+
+                      <h4 className="font-black text-xl text-slate-900 leading-tight mb-1 truncate">
                         {i.name || `${i.firstName || ""} ${i.lastName || ""}`.trim()}
                       </h4>
-                      <p className="text-primary font-bold text-xs truncate mb-4">
+                      <p className="text-primary font-bold text-xs truncate mb-5 opacity-80 decoration-primary/30 group-hover:underline">
                         {i.email}
                       </p>
-                      <div className="bg-gray-50/50 p-4 rounded-xl mb-4 border border-gray-100">
-                        <p className="text-gray-600 text-sm italic line-clamp-2 leading-relaxed">
+
+                      <div className="bg-slate-50/80 backdrop-blur-sm p-4 rounded-2xl mb-4 border border-slate-100 group-hover:bg-white transition-colors duration-500">
+                        <p className="text-slate-600 text-xs italic line-clamp-3 leading-relaxed">
                           "{i.message}"
                         </p>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center mt-auto">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        {new Date(i.createdAt).toLocaleDateString()}
-                      </span>
+
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-50">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Received</span>
+                        <span className="text-[10px] font-black text-slate-400">
+                          {new Date(i.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
                       <Button
-                        variant="outline"
-                        className="py-1.5 px-4 text-[10px] rounded-lg border-primary/30"
+                        variant="primary"
+                        className="py-2.5 px-5 text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all"
                         onClick={() => setSelectedInquiry(i)}
                       >
-                        View Full Detail
+                        Details
                       </Button>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
 
               {/* Inquiry Detail Modal Overlay */}
               {selectedInquiry && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative"
+                    className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
                   >
                     <button
                       onClick={() => setSelectedInquiry(null)}
-                      className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors z-10"
+                      className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 flex"
                     >
-                      <span className="text-2xl">&times;</span>
+                      <span className="text-xl md:text-2xl">&times;</span>
                     </button>
 
-                    <div className="p-8 md:p-12">
+                    <div className="overflow-y-auto p-6 md:p-12">
                       <Badge variant="primary" className="mb-4">Message Details</Badge>
                       <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-8 italic">
                         Inquiry from <span className="text-primary">{selectedInquiry.name || `${selectedInquiry.firstName || ""} ${selectedInquiry.lastName || ""}`.trim()}</span>
                       </h2>
 
-                      <div className="grid grid-cols-1 gap-8 mb-8 pb-8 border-b border-slate-100 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-8 pb-8 border-b border-slate-100">
                         <div className="space-y-4">
                           <div>
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Traveler Name</p>
-                            <p className="font-bold text-slate-900 break-words">
+                            <p className="font-bold text-slate-900 break-words text-sm">
                               {[selectedInquiry.firstName, selectedInquiry.lastName].filter(Boolean).join(" ") || selectedInquiry.name}
                             </p>
                           </div>
                           {selectedInquiry.familyName && (
                             <div>
                               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Family Name</p>
-                              <p className="font-bold text-slate-900 break-words">{selectedInquiry.familyName}</p>
+                              <p className="font-bold text-slate-900 break-words text-sm">{selectedInquiry.familyName}</p>
                             </div>
                           )}
                           <div>
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Email Address</p>
-                            <p className="font-bold text-slate-900 break-all">{selectedInquiry.email}</p>
+                            <p className="font-bold text-slate-900 break-all text-sm">{selectedInquiry.email}</p>
                           </div>
                           <div>
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Phone Number</p>
-                            <p className="font-bold text-slate-900 break-words">{selectedInquiry.phone || "Not provided"}</p>
+                            <p className="font-bold text-slate-900 break-words text-sm">{selectedInquiry.phone || "Not provided"}</p>
                           </div>
                         </div>
                         <div className="space-y-4">
                           <div>
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Destinations</p>
-                            <p className="font-bold text-slate-900 break-words">
+                            <p className="font-bold text-slate-900 break-words text-sm">
                               {Array.isArray(selectedInquiry.destinations)
                                 ? selectedInquiry.destinations.join(", ")
                                 : selectedInquiry.destinations || "General Interest"}
@@ -2091,7 +2128,7 @@ const AdminDashboard = () => {
                           </div>
                           <div>
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Trip Length</p>
-                            <p className="font-bold text-slate-900 break-words">
+                            <p className="font-bold text-slate-900 break-words text-sm">
                               {selectedInquiry.tripLengthDays
                                 ? `${selectedInquiry.tripLengthDays} days`
                                 : selectedInquiry.duration || "TBD"}
@@ -2099,7 +2136,7 @@ const AdminDashboard = () => {
                           </div>
                           <div>
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Travel Window</p>
-                            <p className="font-bold text-slate-900 break-words">{selectedInquiry.travelWhen || "TBD"}</p>
+                            <p className="font-bold text-slate-900 break-words text-sm">{selectedInquiry.travelWhen || "TBD"}</p>
                           </div>
                         </div>
                         <div className="space-y-4">
@@ -2235,20 +2272,20 @@ const AdminDashboard = () => {
               </div>
 
               {selectedContactMessage && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in shadow-2xl">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative"
+                    className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
                   >
                     <button
                       onClick={() => setSelectedContactMessage(null)}
-                      className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors z-10"
+                      className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 shadow-sm"
                     >
-                      <span className="text-2xl">&times;</span>
+                      <span className="text-xl md:text-2xl">&times;</span>
                     </button>
 
-                    <div className="p-8 md:p-12">
+                    <div className="overflow-y-auto p-6 md:p-12">
                       <Badge variant="primary" className="mb-4">Contact Message</Badge>
                       <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-8 italic">
                         Message from <span className="text-primary">{selectedContactMessage.name}</span>
@@ -2397,14 +2434,14 @@ const AdminDashboard = () => {
               <Card className="p-8 mb-12 border-none shadow-xl">
                 <h3 className="text-xl font-bold mb-8">Add New Asset</h3>
                 <form onSubmit={handleGallerySubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 gap-3 md:gap-6">
                     <input
                       type="text"
                       name="location"
                       value={galleryFormData.location}
                       onChange={handleGalleryInputChange}
                       placeholder="Location"
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                       required
                     />
                     <input
@@ -2413,7 +2450,7 @@ const AdminDashboard = () => {
                       value={galleryFormData.caption}
                       onChange={handleGalleryInputChange}
                       placeholder="Caption"
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold md:col-span-2"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                       required
                     />
                   </div>
@@ -2534,14 +2571,14 @@ const AdminDashboard = () => {
                     });
                   }}
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                     <input
                       type="text"
                       name="label"
                       value={menuFormData.label}
                       onChange={handleMenuInputChange}
                       placeholder="Label"
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                       required
                     />
                     <input
@@ -2549,17 +2586,17 @@ const AdminDashboard = () => {
                       name="link"
                       value={menuFormData.link}
                       onChange={handleMenuInputChange}
-                      placeholder="/packages?type=Safari"
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                      placeholder="Link"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                       required
                     />
                     <select
                       name="itemType"
                       value={menuFormData.itemType}
                       onChange={handleMenuInputChange}
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-black uppercase text-xs"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-black uppercase text-[10px]"
                     >
-                      <option value="link">Simple Link</option>
+                      <option value="link">Link</option>
                       <option value="dropdown">Dropdown</option>
                       <option value="megamenu">Megamenu</option>
                     </select>
@@ -2568,33 +2605,33 @@ const AdminDashboard = () => {
                       name="sortOrder"
                       value={menuFormData.sortOrder}
                       onChange={handleMenuInputChange}
-                      placeholder="Sort Order"
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                      placeholder="Sort"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     <input
                       type="text"
                       name="categoryKey"
                       value={menuFormData.categoryKey}
                       onChange={handleMenuInputChange}
-                      placeholder="category key (e.g. safari)"
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                      placeholder="Key (safari)"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                     />
                     <input
                       type="text"
                       name="menuTitle"
                       value={menuFormData.menuTitle}
                       onChange={handleMenuInputChange}
-                      placeholder="Megamenu title"
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                      placeholder="Megamenu Title"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                     />
                     <select
                       name="imageKey"
                       value={menuFormData.imageKey}
                       onChange={handleMenuInputChange}
-                      className="bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-black uppercase text-xs"
+                      className="bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-black uppercase text-[10px] col-span-2 lg:col-span-1"
                     >
                       <option value="tembo">Tembo</option>
                       <option value="kilimanjaro">Kilimanjaro</option>
@@ -2823,40 +2860,40 @@ const AdminDashboard = () => {
                   {editingVisionaryId ? "Update Member" : "Add New Visionary"}
                 </h3>
                 <form onSubmit={handleVisionarySubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Member Name</label>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Member Name</label>
                       <input
                         type="text"
                         name="name"
                         value={visionaryFormData.name}
                         onChange={handleVisionaryInputChange}
                         placeholder="e.g. John Doe"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                        className="w-full bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Role / Duty</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Role / Duty</label>
                       <input
                         type="text"
                         name="duty"
                         value={visionaryFormData.duty}
                         onChange={handleVisionaryInputChange}
-                        placeholder="e.g. CEO & Founder"
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                        placeholder="CEO"
+                        className="w-full bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Image URL</label>
+                    <div className="col-span-2 lg:col-span-1 space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Image URL</label>
                       <input
                         type="text"
                         name="image"
                         value={visionaryFormData.image}
                         onChange={handleVisionaryInputChange}
                         placeholder="https://..."
-                        className="w-full bg-gray-50 p-4 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold"
+                        className="w-full bg-gray-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
                         required
                       />
                     </div>
@@ -2881,33 +2918,33 @@ const AdminDashboard = () => {
                 </form>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                 {visionaries.map((v) => (
-                  <Card key={v._id} className="p-6 border-none shadow-lg bg-white group flex items-center gap-6">
-                    <div className="relative">
+                  <Card key={v._id} className="p-3 md:p-6 border-none shadow-lg bg-white group flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-6">
+                    <div className="relative shrink-0">
                       <img
                         src={v.image}
                         alt={v.name}
-                        className="w-20 h-20 rounded-full object-fill border-2 border-white shadow-md group-hover:scale-105 transition-transform"
+                        className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform"
                       />
                     </div>
-                    <div className="flex-1">
-                      <h4 className="text-lg font-black text-gray-900 leading-tight uppercase tracking-tight mb-1">
+                    <div className="flex-1 text-left">
+                      <h4 className="text-sm md:text-lg font-black text-gray-900 leading-tight uppercase tracking-tight mb-1">
                         {v.name}
                       </h4>
-                      <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-4">
+                      <p className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-3">
                         {v.duty}
                       </p>
-                      <div className="flex gap-4">
+                      <div className="flex justify-start gap-4">
                         <button
                           onClick={() => handleEditVisionary(v)}
-                          className="text-primary font-black text-[10px] uppercase hover:underline"
+                          className="text-primary font-black text-[9px] uppercase hover:underline"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDeleteVisionary(v._id)}
-                          className="text-red-500 font-black text-[10px] uppercase hover:underline"
+                          className="text-red-500 font-black text-[9px] uppercase hover:underline"
                         >
                           Delete
                         </button>
