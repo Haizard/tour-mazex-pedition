@@ -67,145 +67,145 @@ const Welcome = () => {
 
       <div className="container px-4">
         <div className="flex flex-col gap-8 md:gap-16 max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="flex flex-col group cursor-pointer"
-          >
-            <Link
-              to="/packages"
-              className="flex flex-row w-full bg-surface hover:bg-white transition-colors duration-500 rounded-[20px] md:rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl"
-            >
-              {/* Content Box */}
-              <div className="flex-1 flex flex-col justify-center w-1/2 p-3 sm:p-6 md:p-12 lg:p-16">
-                <h3 className="text-base sm:text-xl md:text-3xl lg:text-5xl font-heading font-semibold text-gray-900 mb-2 md:mb-6 transition-colors group-hover:text-safari-green leading-tight">
-                  Explore Our Kilimanjaro Packages
-                </h3>
-                <p className="text-[10px] sm:text-xs md:text-lg text-gray-600 font-sans leading-relaxed line-clamp-4 md:line-clamp-none">
-                  Conquer Africa's highest peak with our Kilimanjaro trekking
-                  packages. Whether you're a seasoned climber or a beginner, our
-                  expert guides ensure a safe, unforgettable journey to the
-                  summit. Choose your route and start your adventure today.
-                </p>
-              </div>
-              {/* Image Box */}
-              <div className="w-1/2 relative min-h-[160px] sm:min-h-[200px] md:min-h-full">
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
-                <img
-                  src={KiliImg}
-                  alt="Kilimanjaro Trekking"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </div>
-            </Link>
-          </motion.div>
+           <motion.div
+             initial={{ opacity: 0, y: 40 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ duration: 0.8 }}
+             className="flex flex-col group cursor-pointer"
+           >
+             <Link
+               to="/packages?type=Trekking"
+               className="flex flex-row w-full bg-surface hover:bg-white transition-colors duration-500 rounded-[20px] md:rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl"
+             >
+               {/* Content Box */}
+               <div className="flex-1 flex flex-col justify-center w-1/2 p-3 sm:p-6 md:p-12 lg:p-16">
+                 <h3 className="text-base sm:text-xl md:text-3xl lg:text-5xl font-heading font-semibold text-gray-900 mb-2 md:mb-6 transition-colors group-hover:text-safari-green leading-tight">
+                   Explore Our Kilimanjaro Packages
+                 </h3>
+                 <p className="text-[10px] sm:text-xs md:text-lg text-gray-600 font-sans leading-relaxed line-clamp-4 md:line-clamp-none">
+                   Conquer Africa's highest peak with our Kilimanjaro trekking
+                   packages. Whether you're a seasoned climber or a beginner, our
+                   expert guides ensure a safe, unforgettable journey to the
+                   summit. Choose your route and start your adventure today.
+                 </p>
+               </div>
+               {/* Image Box */}
+               <div className="w-1/2 relative min-h-[160px] sm:min-h-[200px] md:min-h-full">
+                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
+                 <img
+                   src={KiliImg}
+                   alt="Kilimanjaro Trekking"
+                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                 />
+               </div>
+             </Link>
+           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-col group cursor-pointer"
-          >
-            <Link
-              to="/packages"
-              className="flex flex-row-reverse w-full bg-surface hover:bg-white transition-colors duration-500 rounded-[20px] md:rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl"
-            >
-              {/* Content Box */}
-              <div className="flex-1 flex flex-col justify-center w-1/2 p-3 sm:p-6 md:p-12 lg:p-16">
-                <h3 className="text-base sm:text-xl md:text-3xl lg:text-5xl font-heading font-semibold text-gray-900 mb-2 md:mb-6 transition-colors group-hover:text-safari-green leading-tight">
-                  Explore Our Safari Packages
-                </h3>
-                <p className="text-[10px] sm:text-xs md:text-lg text-gray-600 font-sans leading-relaxed line-clamp-4 md:line-clamp-none">
-                  Join us on an unforgettable safari adventure. Discover
-                  Africa's wildlife and stunning landscapes, from the Serengeti
-                  to the Ngorongoro Crater. Our tailored safari packages promise
-                  an experience you'll never forget.
-                </p>
-              </div>
-              {/* Image Box */}
-              <div className="w-1/2 relative min-h-[160px] sm:min-h-[200px] md:min-h-full">
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
-                <img
-                  src={SafariImg}
-                  alt="Safari Adventures"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </div>
-            </Link>
-          </motion.div>
+           <motion.div
+             initial={{ opacity: 0, y: 40 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ duration: 0.8, delay: 0.2 }}
+             className="flex flex-col group cursor-pointer"
+           >
+             <Link
+               to="/packages?type=Safari"
+               className="flex flex-row-reverse w-full bg-surface hover:bg-white transition-colors duration-500 rounded-[20px] md:rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl"
+             >
+               {/* Content Box */}
+               <div className="flex-1 flex flex-col justify-center w-1/2 p-3 sm:p-6 md:p-12 lg:p-16">
+                 <h3 className="text-base sm:text-xl md:text-3xl lg:text-5xl font-heading font-semibold text-gray-900 mb-2 md:mb-6 transition-colors group-hover:text-safari-green leading-tight">
+                   Explore Our Safari Packages
+                 </h3>
+                 <p className="text-[10px] sm:text-xs md:text-lg text-gray-600 font-sans leading-relaxed line-clamp-4 md:line-clamp-none">
+                   Join us on an unforgettable safari adventure. Discover
+                   Africa's wildlife and stunning landscapes, from the Serengeti
+                   to the Ngorongoro Crater. Our tailored safari packages promise
+                   an experience you'll never forget.
+                 </p>
+               </div>
+               {/* Image Box */}
+               <div className="w-1/2 relative min-h-[160px] sm:min-h-[200px] md:min-h-full">
+                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
+                 <img
+                   src={SafariImg}
+                   alt="Safari Adventures"
+                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                 />
+               </div>
+             </Link>
+           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="flex flex-col group cursor-pointer"
-          >
-            <Link
-              to="/about"
-              className="flex flex-row w-full bg-surface hover:bg-white transition-colors duration-500 rounded-[20px] md:rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl"
-            >
-              {/* Content Box */}
-              <div className="flex-1 flex flex-col justify-center w-1/2 p-3 sm:p-6 md:p-12 lg:p-16">
-                <h2 className="font-signature text-3xl sm:text-4xl md:text-6xl text-safari-green mb-1 sm:mb-2 md:mb-4 transition-colors">
-                  About us
-                </h2>
-                <h3 className="text-sm sm:text-base md:text-3xl font-heading font-semibold text-gray-900 mb-2 sm:mb-3 md:mb-4 leading-tight">
-                  Experience, Expertise, and Research
-                </h3>
-                <p className="text-[10px] sm:text-xs md:text-lg text-gray-600 font-sans leading-relaxed line-clamp-4 md:line-clamp-none">
-                  Born from a passion for travel and shaped by deep local
-                  experience, MAZ Expeditions creates meaningful African journeys
-                  with a strong focus on authenticity, care, and unforgettable
-                  memories for every traveler.
-                </p>
-              </div>
-              {/* Image Box */}
-              <div className="w-1/2 relative min-h-[160px] sm:min-h-[200px] md:min-h-full">
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
-                <img
-                  src={AboutImg}
-                  alt="About Us"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </div>
-            </Link>
-          </motion.div>
+           <motion.div
+             initial={{ opacity: 0, y: 40 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ duration: 0.8, delay: 0.3 }}
+             className="flex flex-col group cursor-pointer"
+           >
+             <Link
+               to="/about"
+               className="flex flex-row w-full bg-surface hover:bg-white transition-colors duration-500 rounded-[20px] md:rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl"
+             >
+               {/* Content Box */}
+               <div className="flex-1 flex flex-col justify-center w-1/2 p-3 sm:p-6 md:p-12 lg:p-16">
+                 <h2 className="font-signature text-3xl sm:text-4xl md:text-6xl text-safari-green mb-1 sm:mb-2 md:mb-4 transition-colors">
+                   About us
+                 </h2>
+                 <h3 className="text-sm sm:text-base md:text-3xl font-heading font-semibold text-gray-900 mb-2 sm:mb-3 md:mb-4 leading-tight">
+                   Experience, Expertise, and Research
+                 </h3>
+                 <p className="text-[10px] sm:text-xs md:text-lg text-gray-600 font-sans leading-relaxed line-clamp-4 md:line-clamp-none">
+                   Born from a passion for travel and shaped by deep local
+                   experience, MAZ Expeditions creates meaningful African journeys
+                   with a strong focus on authenticity, care, and unforgettable
+                   memories for every traveler.
+                 </p>
+               </div>
+               {/* Image Box */}
+               <div className="w-1/2 relative min-h-[160px] sm:min-h-[200px] md:min-h-full">
+                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
+                 <img
+                   src={AboutImg}
+                   alt="About Us"
+                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                 />
+               </div>
+             </Link>
+           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col group cursor-pointer"
-          >
-            <Link
-              to="/packages"
-              className="flex flex-row-reverse w-full bg-surface hover:bg-white transition-colors duration-500 rounded-[20px] md:rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl"
-            >
-              {/* Content Box */}
-              <div className="flex-1 flex flex-col justify-center w-1/2 p-3 sm:p-6 md:p-12 lg:p-16">
-                <h2 className="font-signature text-3xl sm:text-4xl md:text-6xl text-safari-green mb-1 md:mb-4 transition-colors">
-                  Family Safaris
-                </h2>
-                <h3 className="text-sm sm:text-base md:text-3xl font-heading font-semibold text-gray-900 leading-tight">
-                  Best African safari with kids
-                </h3>
-              </div>
-              {/* Image Box */}
-              <div className="w-1/2 relative min-h-[160px] sm:min-h-[200px] md:min-h-full">
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
-                <img
-                  src={FamilyImg}
-                  alt="Family Safaris"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </div>
-            </Link>
-          </motion.div>
+           <motion.div
+             initial={{ opacity: 0, y: 40 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ duration: 0.8, delay: 0.4 }}
+             className="flex flex-col group cursor-pointer"
+           >
+             <Link
+               to="/packages?category=Family Friendly"
+               className="flex flex-row-reverse w-full bg-surface hover:bg-white transition-colors duration-500 rounded-[20px] md:rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl"
+             >
+               {/* Content Box */}
+               <div className="flex-1 flex flex-col justify-center w-1/2 p-3 sm:p-6 md:p-12 lg:p-16">
+                 <h2 className="font-signature text-3xl sm:text-4xl md:text-6xl text-safari-green mb-1 md:mb-4 transition-colors">
+                   Family Safaris
+                 </h2>
+                 <h3 className="text-sm sm:text-base md:text-3xl font-heading font-semibold text-gray-900 leading-tight">
+                   Best African safari with kids
+                 </h3>
+               </div>
+               {/* Image Box */}
+               <div className="w-1/2 relative min-h-[160px] sm:min-h-[200px] md:min-h-full">
+                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
+                 <img
+                   src={FamilyImg}
+                   alt="Family Safaris"
+                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                 />
+               </div>
+             </Link>
+           </motion.div>
         </div>
       </div>
     </div>
