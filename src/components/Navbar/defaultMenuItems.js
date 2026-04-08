@@ -1,12 +1,16 @@
 import SafariImg from "../../assets/tembo.jpg";
 import TrekkingImg from "../../assets/Kilimanjaro.jpg";
 import DayTripImg from "../../assets/momentlion.jpg";
+import PrimateImg from "../../assets/primate.png";
+
 
 export const MENU_IMAGE_BY_KEY = {
   tembo: SafariImg,
   kilimanjaro: TrekkingImg,
   momentlion: DayTripImg,
+  primate: PrimateImg,
 };
+
 
 export const FRONTEND_MENU_DEFAULTS = [
   {
@@ -20,9 +24,10 @@ export const FRONTEND_MENU_DEFAULTS = [
     label: "Chimpanzee Trekking",
     link: "/packages?type=Chimpanzee",
     itemType: "megamenu",
-    categoryKey: "trekking",
+    categoryKey: "chimpanzee",
     menuTitle: "Primate Trekking Tours",
-    imageKey: "kilimanjaro",
+    imageKey: "primate",
+
     sortOrder: 2,
     children: [
       { label: "7-Day Gombe Chimpanzee", link: "/packages/gombe-7-day", sortOrder: 1 },

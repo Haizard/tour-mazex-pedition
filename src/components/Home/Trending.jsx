@@ -31,7 +31,8 @@ const Trending = () => {
         // Get the first 6 latest tours for top rated
         setTours(res.data.slice(0, 6));
       } catch (error) {
-        console.error("Error loading top rated tours:", error);
+        console.error("Error loading popular expeditions:", error);
+
       }
     };
     loadTours();
@@ -65,10 +66,11 @@ const Trending = () => {
   return (
     <div className="py-20 bg-white overflow-hidden">
       <div className="container px-4">
-        {/* Title area mapped to the EmmlouSignature "Top Rated Tours" */}
+        {/* Title area mapped to the EmmlouSignature "Our Popular Expeditions" */}
+
         <div className="text-center mb-8 md:mb-16">
           <h2 className="font-signature text-5xl md:text-[78px] text-gray-800 leading-none drop-shadow-sm">
-            Top Rated Tours
+            Our Popular Expeditions
           </h2>
         </div>
 

@@ -52,9 +52,34 @@ const getToursForMenuItem = (item, tours) => {
   if (!isPackageMenu) return [];
 
   return tours.filter((tour) => {
-    const tourType = normalizeValue(tour.tourType);
-    const tourCategory = normalizeValue(tour.category);
+    const tourType = normalizeValue(tour.tourType || "");
+    const tourCategory = normalizeValue(tour.category || "");
+    const tourTitle = normalizeValue(tour.title || "");
 
+    // Check if it's a Chimpanzee or Primate tour
+    const isChimpTour =
+      tourTitle.includes("chimpanzee") ||
+      tourTitle.includes("gombe") ||
+      tourTitle.includes("mahale") ||
+      tourType.includes("chimpanzee") ||
+      tourCategory.includes("chimpanzee");
+
+    // Check if it's a Kilimanjaro tour
+    const isKiliTour =
+      tourTitle.includes("kilimanjaro") ||
+      tourTitle.includes("route") ||
+      tourType.includes("kilimanjaro") ||
+      tourCategory.includes("kilimanjaro");
+
+    const itemLabel = normalizeValue(item.label);
+    const isChimpMenu = itemKey.includes("chimpanzee") || itemLabel.includes("chimpanzee");
+    const isKiliMenu = itemKey.includes("kilimanjaro") || itemLabel.includes("kilimanjaro");
+
+    // Enforce strict separation
+    if (isChimpMenu) return isChimpTour;
+    if (isKiliMenu) return isKiliTour;
+
+    // Normal logic for other categories (Safari, Day Trips, etc.)
     if (typeFromLink && (tourType === typeFromLink || tourCategory === typeFromLink)) {
       return true;
     }
@@ -242,7 +267,11 @@ const Navbar = ({ handleOrderPopup }) => {
                             </div>
                             <div className="w-1/2 relative">
                               <img
-                                src={MENU_IMAGE_BY_KEY[item.imageKey] || MENU_IMAGE_BY_KEY.tembo}
+                                src={
+                                  normalizeValue(item.label).includes("chimpanzee")
+                                    ? MENU_IMAGE_BY_KEY.primate
+                                    : MENU_IMAGE_BY_KEY[item.imageKey] || MENU_IMAGE_BY_KEY.tembo
+                                }
                                 alt={item.label}
                                 className="absolute inset-0 w-full h-full object-fill"
                               />
