@@ -5,7 +5,7 @@ const taxonomySchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['tourCategory', 'tourType', 'blogCategory']
+        enum: ['tourCategory', 'tourType', 'blogCategory', 'destination']
     },
     slug: { type: String, unique: true }
 }, { timestamps: true });

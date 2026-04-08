@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
+import { FaEdit } from "react-icons/fa";
 import { motion } from "framer-motion";
 import {
   fetchTours,
@@ -22,6 +23,8 @@ import {
   generateBlogSeo,
   generateTourSeo,
   generateFullTourPackage,
+  fetchHomeContent,
+  updateHomeContent,
   fetchInquiries,
   updateInquiryStatus,
   deleteInquiry,
@@ -70,6 +73,15 @@ const AdminDashboard = () => {
   const [faqs, setFaqs] = useState([]);
   const [taxonomies, setTaxonomies] = useState([]);
   const [visionaries, setVisionaries] = useState([]);
+  const [homeSections, setHomeSections] = useState([]);
+  const [activeSection, setActiveSection] = useState("destinations");
+  const [sectionFormData, setSectionFormData] = useState({
+    title: "",
+    subtitle: "",
+    description: "",
+    quote: "",
+    quoteAuthor: "",
+  });
 
   // Auth Check
   useEffect(() => {
@@ -141,6 +153,28 @@ const AdminDashboard = () => {
     location: "",
     caption: "",
   });
+  
+  // Sync section form when section changes
+  useEffect(() => {
+    const current = homeSections.find(s => s.section === activeSection);
+    if (current) {
+      setSectionFormData({
+        title: current.title || "",
+        subtitle: current.subtitle || "",
+        description: current.description || "",
+        quote: current.quote || "",
+        quoteAuthor: current.quoteAuthor || "",
+      });
+    } else {
+        setSectionFormData({
+            title: "",
+            subtitle: "",
+            description: "",
+            quote: "",
+            quoteAuthor: "",
+        });
+    }
+  }, [activeSection, homeSections]);
   const [taxFormData, setTaxFormData] = useState({
     name: "",
     type: "tourType",
@@ -374,6 +408,28 @@ const AdminDashboard = () => {
       console.error(e);
     }
   };
+
+  const loadHomeContent = async () => {
+    try {
+      const res = await fetchHomeContent();
+      setHomeSections(res.data);
+      const current = res.data.find(s => s.section === activeSection);
+      if (current) {
+        setSectionFormData({
+          title: current.title || "",
+          subtitle: current.subtitle || "",
+          description: current.description || "",
+          quote: current.quote || "",
+          quoteAuthor: current.quoteAuthor || "",
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load home content:", e);
+    }
+  };
+
+  // Load home content on mount (placed here after the function definition)
+  useEffect(() => { loadHomeContent(); }, []); // eslint-disable-line
 
   const handleTourInputChange = (e) =>
     setTourFormData({ ...tourFormData, [e.target.name]: e.target.value });
@@ -680,6 +736,25 @@ const AdminDashboard = () => {
       alert("Photo added to gallery!");
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Section Submit
+  const handleSectionSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await updateHomeContent({
+        section: activeSection,
+        ...sectionFormData
+      });
+      alert("Home content updated successfully!");
+      loadHomeContent();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to update home content.");
     } finally {
       setLoading(false);
     }
@@ -2921,6 +2996,7 @@ const AdminDashboard = () => {
                     <option value="tourType">Adventure Type</option>
                     <option value="tourCategory">Tour Category</option>
                     <option value="blogCategory">Blog Category</option>
+                    <option value="destination">Safari Destination</option>
                   </select>
                   <Button type="submit" disabled={loading} className="px-10">
                     Create Filter
@@ -2928,15 +3004,17 @@ const AdminDashboard = () => {
                 </form>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {["tourType", "tourCategory", "blogCategory"].map((type) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {["tourType", "tourCategory", "blogCategory", "destination"].map((type) => (
                   <Card key={type} className="p-6 border-none shadow-md bg-white">
                     <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-6 border-b pb-2">
                       {type === "tourType"
                         ? "Adventure Types"
                         : type === "tourCategory"
                           ? "Tour Categories"
-                          : "Blog Categories"}
+                          : type === "blogCategory"
+                            ? "Blog Categories"
+                            : "Safari Destinations"}
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {taxonomies
@@ -3104,6 +3182,157 @@ const AdminDashboard = () => {
                   </Card>
                 ))}
               </div>
+              )}
+            </div>
+          )}
+          {/* Site Editor Section */}
+          {activeTab === "site-editor" && (
+            <div className="animate-fade-in max-w-5xl">
+              <div className="flex justify-between items-center mb-10">
+                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
+                  Homepage Editor
+                </h2>
+                <div className="flex items-center gap-4">
+                  <select 
+                    value={activeSection}
+                    onChange={(e) => setActiveSection(e.target.value)}
+                    className="bg-white px-6 py-2 rounded-full border-none shadow-sm font-black uppercase text-xs focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="destinations">African Destinations Section</option>
+                  </select>
+                </div>
+              </div>
+
+              <Card className="p-8 border-none shadow-2xl bg-white overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                    <FaEdit size={120} />
+                </div>
+                
+                <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center not-italic">1</span>
+                  Editing: {activeSection === "destinations" ? "African Safari Destinations" : activeSection}
+                </h3>
+
+                <form onSubmit={handleSectionSubmit} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">
+                        Main Title
+                      </label>
+                      <input
+                        type="text"
+                        value={sectionFormData.title}
+                        onChange={(e) => setSectionFormData({ ...sectionFormData, title: e.target.value })}
+                        className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+                        placeholder="e.g., Our African Safari Destinations"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">
+                          Mini Label / Subtitle
+                        </label>
+                        <input
+                          type="text"
+                          value={sectionFormData.subtitle}
+                          onChange={(e) => setSectionFormData({ ...sectionFormData, subtitle: e.target.value })}
+                          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+                          placeholder="e.g., Safari / African Safari"
+                        />
+                      </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">
+                      Section Description
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={sectionFormData.description}
+                      onChange={(e) => setSectionFormData({ ...sectionFormData, description: e.target.value })}
+                      className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700 leading-relaxed"
+                      placeholder="Enter the section introduction text..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-100">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">
+                        Inspirational Quote
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={sectionFormData.quote}
+                        onChange={(e) => setSectionFormData({ ...sectionFormData, quote: e.target.value })}
+                        className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium italic text-slate-700"
+                        placeholder="e.g., Africa's wildlife is..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">
+                        Quote Author
+                      </label>
+                      <input
+                        type="text"
+                        value={sectionFormData.quoteAuthor}
+                        onChange={(e) => setSectionFormData({ ...sectionFormData, quoteAuthor: e.target.value })}
+                        className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+                        placeholder="e.g., David Attenborough"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-4 pt-6">
+                    <Button 
+                      type="submit" 
+                      disabled={loading}
+                      className="px-12 py-4 rounded-2xl shadow-lg shadow-primary/25"
+                    >
+                      {loading ? "Saving Changes..." : "Publish Changes"}
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+
+              {activeSection === "destinations" && (
+                <div className="mt-12 bg-primary/5 p-8 rounded-[32px] border border-primary/10">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">2</div>
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-900">Manage Destination Countries</h3>
+                            <p className="text-sm text-slate-500 font-medium">Add or remove the destinations listed on the right side of this section.</p>
+                        </div>
+                    </div>
+                    <Card className="p-6 border-none shadow-xl bg-white">
+                        <div className="flex flex-wrap gap-2">
+                        {taxonomies
+                            .filter((t) => t.type === "destination")
+                            .map((tax) => (
+                            <div
+                                key={tax._id}
+                                className="flex items-center gap-2 bg-slate-50 pl-5 pr-3 py-3 rounded-2xl border border-slate-100 group hover:border-red-200 transition"
+                            >
+                                <span className="text-sm font-bold text-slate-800">
+                                {tax.name}
+                                </span>
+                                <button
+                                onClick={() =>
+                                    deleteTaxonomy(tax._id).then(loadTaxonomies)
+                                }
+                                className="w-6 h-6 rounded-full bg-slate-200 text-slate-400 group-hover:bg-red-500 group-hover:text-white flex items-center justify-center text-[10px] transition-all"
+                            >
+                                ×
+                            </button>
+                            </div>
+                            ))}
+                        <button 
+                            onClick={() => setActiveTab("filters")}
+                            className="px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold text-xs uppercase tracking-widest hover:bg-black transition-colors"
+                        >
+                            + Add New Country
+                        </button>
+                        </div>
+                    </Card>
+                </div>
               )}
             </div>
           )}

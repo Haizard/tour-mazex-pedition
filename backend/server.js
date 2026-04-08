@@ -15,6 +15,7 @@ import visionaryRoutes from './routes/visionaryRoutes.js';
 import faqRoutes from './routes/faqRoutes.js';
 import contactMessageRoutes from './routes/contactMessageRoutes.js';
 import menuRoutes from './routes/menuRoutes.js';
+import homeContentRoutes from './routes/homeContentRoutes.js';
 import seoRoutes from './routes/seoRoutes.js';
 
 const app = express();
@@ -39,6 +40,7 @@ app.use('/api/visionaries', visionaryRoutes);
 app.use('/api/faqs', faqRoutes);
 app.use('/api/contact-messages', contactMessageRoutes);
 app.use('/api/menu-items', menuRoutes);
+app.use('/api/home-content', homeContentRoutes);
 
 // Root SEO routes (for indexing)
 app.use('/', seoRoutes);

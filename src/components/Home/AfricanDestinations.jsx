@@ -1,15 +1,65 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { fetchTaxonomies, fetchHomeContent } from "../../services/api";
 
-const destinations = [
-  { name: "Kenya", link: "/packages?location=Kenya" },
-  { name: "Uganda", link: "/packages?location=Uganda" },
-  { name: "Tanzania", link: "/packages?location=Tanzania" },
-  { name: "Rwanda", link: "/packages?location=Rwanda" },
+const defaultDestinations = [
+  { name: "Kenya", slug: "kenya" },
+  { name: "Uganda", slug: "uganda" },
+  { name: "Tanzania", slug: "tanzania" },
+  { name: "Rwanda", slug: "rwanda" },
 ];
 
 const AfricanDestinations = () => {
+  const [destinations, setDestinations] = useState([]);
+  const [content, setContent] = useState({
+    title: "Our African Safari Destinations",
+    subtitle: "Safari / African Safari",
+    description: "Experience the epitome of Africa's travel, crafted for you. Deluxe safari in Tanzania or beaches in Zanzibar.",
+    quote: "Africa's wildlife is... the greatest show on Earth.",
+    quoteAuthor: "Attenborough"
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [taxRes, contentRes] = await Promise.all([
+          fetchTaxonomies("destination"),
+          fetchHomeContent()
+        ]);
+
+        if (taxRes.data && taxRes.data.length > 0) {
+          setDestinations(taxRes.data);
+        } else {
+          setDestinations(defaultDestinations);
+        }
+
+        const destContent = contentRes.data.find(s => s.section === "destinations");
+        if (destContent) {
+          setContent({
+            title: destContent.title || content.title,
+            subtitle: destContent.subtitle || content.subtitle,
+            description: destContent.description || content.description,
+            quote: destContent.quote || content.quote,
+            quoteAuthor: destContent.quoteAuthor || content.quoteAuthor
+          });
+        }
+      } catch (error) {
+        console.error("Error loading destinations data:", error);
+        setDestinations(defaultDestinations);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  // Split title if it contains spaces to handle the hidden/inline logic
+  const titleParts = content.title.split(" ");
+  const mainTitlePart = titleParts.slice(1).join(" ");
+  const firstTitlePart = titleParts[0];
+
   return (
     <div className="bg-[#fafafa] py-12 md:py-24 pb-16 md:pb-32 overflow-hidden">
       <div className="container px-2 sm:px-4 max-w-7xl mx-auto">
@@ -25,21 +75,21 @@ const AfricanDestinations = () => {
             className="flex flex-col"
           >
             <h2 className="text-[20px] sm:text-[32px] md:text-[56px] font-heading text-gray-900 leading-tight mb-4 md:mb-10 tracking-tight">
-              Our <span className="md:hidden">Safari</span> <br className="hidden md:block" />
-              <span className="hidden md:inline">African Safari</span>
+              {firstTitlePart} <span className="md:hidden">Safari</span> <br className="hidden md:block" />
+              <span className="hidden md:inline">{content.subtitle}</span>
               <em className="font-signature text-safari-green text-[28px] sm:text-[50px] md:text-[90px] lowercase block md:inline-block -mt-1 md:-mt-6">Destinations</em>
             </h2>
             
             <div className="bg-white border-l-2 md:border-l-4 border-safari-green p-3 md:p-8 mb-4 md:mb-10 shadow-sm rounded-r-lg md:rounded-r-xl">
               <p className="italic text-gray-700 font-sans text-[10px] sm:text-base md:text-xl leading-snug md:leading-relaxed">
-                “Africa's wildlife is... the greatest show on Earth.” 
-                <span className="block mt-2 text-[8px] md:text-sm font-bold text-gray-900 uppercase tracking-tighter md:tracking-widest">— Attenborough</span>
+                “{content.quote}” 
+                <span className="block mt-2 text-[8px] md:text-sm font-bold text-gray-900 uppercase tracking-tighter md:tracking-widest">— {content.quoteAuthor}</span>
               </p>
             </div>
             
             <div className="space-y-3 md:space-y-6">
               <p className="text-gray-600 font-sans text-[11px] sm:text-[15px] md:text-lg leading-relaxed">
-                Experience the epitome of Africa's travel, crafted for you. Deluxe safari in Tanzania or beaches in Zanzibar.
+                {content.description}
               </p>
             </div>
           </motion.div>
@@ -61,7 +111,7 @@ const AfricanDestinations = () => {
                 transition={{ duration: 0.5, delay: 0.1 + (index * 0.1) }}
               >
                 <Link 
-                  to={dest.link} 
+                  to={`/packages?location=${dest.name}`} 
                   onClick={() => window.scrollTo(0, 0)}
                   className="relative block py-2 md:py-6 border-b border-gray-100 md:border-gray-200 group"
                 >

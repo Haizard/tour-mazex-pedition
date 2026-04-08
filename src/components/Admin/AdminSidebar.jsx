@@ -11,6 +11,7 @@ import {
     FaTags,
     FaUsers,
     FaSignOutAlt,
+    FaEdit
 } from "react-icons/fa";
 import Logo from "../../assets/mazex-pedition-logo.png";
 
@@ -18,6 +19,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen
     const menuItems = [
         { id: "packages", label: "Packages", icon: <FaBox /> },
         { id: "blogs", label: "Blogs", icon: <FaBlog /> },
+        { id: "site-editor", label: "Site Editor", icon: <FaEdit /> },
         { id: "navigation", label: "Navigation", icon: <FaBars /> },
         { id: "gallery", label: "Gallery", icon: <FaImages /> },
         { id: "bookings", label: "Bookings", icon: <FaCalendarCheck /> },
