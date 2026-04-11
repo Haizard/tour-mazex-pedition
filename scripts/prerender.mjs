@@ -47,8 +47,7 @@ const { render } = await import(pathToFileUrl(path.join(rootDir, "dist", "server
 
 const template = sanitizeTemplate(await fs.readFile(path.join(distDir, "index.html"), "utf8"));
 
-const blogs = await fetchBlogs();
-const tours = await fetchTours();
+const { blogs, tours } = await fetchCmsContent();
 const destinations = Object.values(DESTINATION_META);
 const routes = [...new Set([...baseRoutes, ...buildDynamicRoutes({ blogs, tours, destinations })])];
 
@@ -83,19 +82,30 @@ async function ensureDbConnection() {
   if (mongoose.connection.readyState >= 1) return;
   const mongoUri = process.env.MONGODB_URI;
   if (!mongoUri) {
-    throw new Error("MONGODB_URI is required for prerendering dynamic CMS pages.");
+    throw new Error("MONGODB_URI is not configured for build-time CMS prerendering.");
   }
-  await mongoose.connect(mongoUri);
+  await mongoose.connect(mongoUri, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
 }
 
-async function fetchBlogs() {
-  await ensureDbConnection();
-  return Blog.find({}).sort({ createdAt: -1 }).lean();
-}
+async function fetchCmsContent() {
+  try {
+    await ensureDbConnection();
+    const [blogs, tours] = await Promise.all([
+      Blog.find({}).sort({ createdAt: -1 }).lean(),
+      TourPackage.find({}).sort({ createdAt: -1 }).lean(),
+    ]);
 
-async function fetchTours() {
-  await ensureDbConnection();
-  return TourPackage.find({}).sort({ createdAt: -1 }).lean();
+    return { blogs, tours };
+  } catch (error) {
+    console.warn(
+      `[prerender] Continuing without build-time CMS content: ${error.message}`
+    );
+
+    return { blogs: [], tours: [] };
+  }
 }
 
 function buildRouteData(route, { blogs, tours, destinations }) {
