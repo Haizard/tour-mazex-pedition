@@ -31,6 +31,7 @@ const tourPackageSchema = new mongoose.Schema({
   maxGroupSize: { type: Number },
   tourType: { type: String }, // e.g., Safari, Trekking
   category: { type: String }, // e.g., Luxury, Budget
+  destinationSlug: { type: String, trim: true, default: "" },
   accommodationType: { type: String }, // e.g., Lodge, Camp, Budget Camp
   tripAdvisorUrl: { type: String },
   tripAdvisorRating: { type: Number },

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
 import { FaStar } from "react-icons/fa";
 
+const badgeLabels = ["Best Seller", "Traveller Choice", "Our Choice"];
+
 const slugifyTitle = (value = "") =>
   value
     .toString()
@@ -43,7 +45,7 @@ const PopularTours = () => {
           <h2 className="text-3xl md:text-5xl font-heading text-gray-900 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4">
             <span className="uppercase tracking-wide text-2xl md:text-4xl">Our</span>
             <span className="font-signature text-6xl md:text-[88px] text-safari-green leading-none lowercase -mt-2 md:mt-0">popular</span>
-            <span className="uppercase tracking-wide text-2xl md:text-4xl">Tours</span>
+            <span className="uppercase tracking-wide text-2xl md:text-4xl">Expeditions</span>
           </h2>
         </div>
 
@@ -81,6 +83,10 @@ const PopularTours = () => {
                   <FaStar />
                   <FaStar />
                   <FaStar />
+                </div>
+
+                <div className="absolute left-2 top-8 md:left-3 md:top-12 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-slate-900 shadow-lg md:px-3">
+                  {badgeLabels[index % badgeLabels.length]}
                 </div>
 
                 {/* Price (Top Right) */}

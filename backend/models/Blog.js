@@ -6,6 +6,7 @@ const blogSchema = new mongoose.Schema({
     image: { type: String, required: true },
     author: { type: String, default: "Admin" },
     category: { type: String },
+    destinationSlug: { type: String, trim: true, default: "" },
     date: { type: String, default: () => new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) },
     views: { type: Number, default: 0, min: 0 },
     seo: {

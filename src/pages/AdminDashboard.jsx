@@ -55,6 +55,15 @@ import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import AdminSidebar from "../components/Admin/AdminSidebar";
 
+const slugifyValue = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 const AdminDashboard = () => {
   const getPreferredTaxonomyName = (items, type, preferredName, fallbackName) =>
     items.find((item) => item.type === type && item.name === preferredName)?.name ||
@@ -113,6 +122,7 @@ const AdminDashboard = () => {
     maxGroupSize: "",
     tourType: "Safari",
     category: "Luxury",
+    destinationSlug: "",
     accommodationType: "",
     inclusions: "",
     exclusions: "",
@@ -139,6 +149,7 @@ const AdminDashboard = () => {
     content: "",
     image: "",
     category: "Safari Articles",
+    destinationSlug: "",
     author: "Admin",
     seoTitle: "",
     seoDescription: "",
@@ -315,6 +326,7 @@ const AdminDashboard = () => {
   const [isGeneratingBlogSeo, setIsGeneratingBlogSeo] = useState(false);
   const [bodyImageUrl, setBodyImageUrl] = useState("");
   const blogContentTextareaRef = useRef(null);
+  const destinationTaxonomies = taxonomies.filter((t) => t.type === "destination");
 
   useEffect(() => {
     loadTours();
@@ -602,6 +614,7 @@ const AdminDashboard = () => {
     setLoading(true);
     const processed = {
       ...tourFormData,
+      destinationSlug: tourFormData.destinationSlug || "",
       price: Number(tourFormData.price),
       galleryImages: tourFormData.galleryImages
         .split("\n")
@@ -651,6 +664,7 @@ const AdminDashboard = () => {
           startLocation: "",
           endLocation: "",
           destinationsVisited: "",
+          destinationSlug: "",
           accommodationType: "",
           inclusions: "",
           exclusions: "",
@@ -684,6 +698,7 @@ const AdminDashboard = () => {
     setLoading(true);
     const processed = {
       ...blogFormData,
+      destinationSlug: blogFormData.destinationSlug || "",
       seo: {
         title: blogFormData.seoTitle,
         description: blogFormData.seoDescription,
@@ -706,6 +721,7 @@ const AdminDashboard = () => {
           "Safari Articles",
           "Travel Tips"
         ),
+        destinationSlug: "",
         author: "Admin",
         seoTitle: "",
         seoDescription: "",
@@ -851,12 +867,20 @@ const AdminDashboard = () => {
         category: prev.category && taxonomies.some((t) => t.type === "tourCategory" && t.name === prev.category)
           ? prev.category
           : firstCat,
+        destinationSlug:
+          prev.destinationSlug && taxonomies.some((t) => t.type === "destination" && slugifyValue(t.name) === prev.destinationSlug)
+            ? prev.destinationSlug
+            : prev.destinationSlug,
       }));
       setBlogFormData((prev) => ({
         ...prev,
         category: prev.category && taxonomies.some((t) => t.type === "blogCategory" && t.name === prev.category)
           ? prev.category
           : firstBlogCat,
+        destinationSlug:
+          prev.destinationSlug && taxonomies.some((t) => t.type === "destination" && slugifyValue(t.name) === prev.destinationSlug)
+            ? prev.destinationSlug
+            : prev.destinationSlug,
       }));
     }
   }, [taxonomies]);
@@ -1064,7 +1088,7 @@ const AdminDashboard = () => {
                             <option key={ext._id} value={ext.name}>
                               {ext.name}
                             </option>
-                          ))}
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-1.5">
@@ -1083,7 +1107,25 @@ const AdminDashboard = () => {
                             <option key={ext._id} value={ext.name}>
                               {ext.name}
                             </option>
-                          ))}
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-2 space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
+                        Destination Page Tag
+                      </label>
+                      <select
+                        name="destinationSlug"
+                        value={tourFormData.destinationSlug}
+                        onChange={handleTourInputChange}
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-primary font-bold text-xs"
+                      >
+                        <option value="">Not assigned to a destination page</option>
+                        {destinationTaxonomies.map((destination) => (
+                          <option key={destination._id} value={slugifyValue(destination.name)}>
+                            {destination.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="col-span-2 space-y-1.5">
@@ -1628,6 +1670,7 @@ const AdminDashboard = () => {
                             ...tourFormData,
                             title: "",
                             description: "",
+                            destinationSlug: "",
                             image: tourFormData.image || "",
                             location: tourFormData.location || "",
                             startLocation: tourFormData.startLocation || "",
@@ -1675,6 +1718,7 @@ const AdminDashboard = () => {
                               description: t.description || "",
                               price: t.price ?? "",
                               image: t.image || "",
+                              destinationSlug: t.destinationSlug || "",
                               location: t.location || "",
                               startLocation: t.startLocation || "",
                               endLocation: t.endLocation || "",
@@ -1791,6 +1835,7 @@ const AdminDashboard = () => {
                         content: "",
                         image: "",
                         category: getPreferredTaxonomyName(taxonomies, "blogCategory", "Safari Articles", "Travel Tips"),
+                        destinationSlug: "",
                         author: "Admin",
                         seoTitle: "",
                         seoDescription: "",
@@ -1849,7 +1894,25 @@ const AdminDashboard = () => {
                             <option key={ext._id} value={ext.name}>
                               {ext.name}
                             </option>
-                          ))}
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-2 space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-gray-400 ml-1">
+                        Destination Page Tag
+                      </label>
+                      <select
+                        name="destinationSlug"
+                        value={blogFormData.destinationSlug}
+                        onChange={handleBlogInputChange}
+                        className="w-full bg-gray-50 p-2.5 rounded-xl border-none focus:ring-2 focus:ring-secondary font-bold uppercase text-[10px]"
+                      >
+                        <option value="">Not assigned to a destination page</option>
+                        {destinationTaxonomies.map((destination) => (
+                          <option key={destination._id} value={slugifyValue(destination.name)}>
+                            {destination.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="col-span-2 space-y-1.5">
@@ -2027,6 +2090,7 @@ const AdminDashboard = () => {
                               "Safari Articles",
                               "Travel Tips"
                             ),
+                            destinationSlug: "",
                             author: "Admin",
                           });
                         }}
@@ -2066,6 +2130,7 @@ const AdminDashboard = () => {
                               title: b.title || "",
                               content: b.content || "",
                               image: b.image || "",
+                              destinationSlug: b.destinationSlug || "",
                               category:
                                 b.category ||
                                 getPreferredTaxonomyName(

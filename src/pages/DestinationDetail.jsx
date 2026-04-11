@@ -13,8 +13,6 @@ import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
 import LogoSlider from "../components/Home/LogoSlider";
 
-const normalize = (value = "") => value.toString().toLowerCase();
-
 const slugify = (text = "") =>
   text
     .toString()
@@ -23,25 +21,24 @@ const slugify = (text = "") =>
     .replace(/\s+/g, "-")
     .replace(/[^\w-]+/g, "");
 
-const scoreMatch = (text, aliases) =>
-  aliases.reduce((score, alias) => (text.includes(alias) ? score + alias.length : score), 0);
+const normalize = (value = "") =>
+  value
+    .toString()
+    .toLowerCase()
+    .trim();
 
-const buildFallbackMarkdown = (destination, tours) => {
-  const packageNames = tours.slice(0, 5).map((tour) => `- ${tour.title}`).join("\n");
+const buildCmsFallbackMarkdown = (destination) => `#### Destination Content Coming Soon
 
-  return `#### Why Visit ${destination.title}
+This page is now CMS-driven for strict destination accuracy.
 
-${destination.intro}
+#### What This Means
 
-#### Tours We Recommend Here
+Only blogs and tours explicitly assigned to **${destination.title}** will appear on this page. This avoids unrelated safari copy, tours, or FAQs from showing up here.
 
-${packageNames || "- Tailor-made destination itineraries are available on request."}
+#### Next Step In Admin
 
-#### How This Destination Fits Your Safari
-
-${destination.title} works well for travelers who want a focused experience built around wildlife, scenery, and route efficiency. We can combine it with nearby parks or shape a slower, more exclusive stay depending on travel style, season, and accommodation preference.
+Assign a destination tag to the correct blog article and destination tours in the admin panel to publish the final destination guide for ${destination.title}.
 `;
-};
 
 const DestinationDetail = () => {
   const { destinationSlug } = useParams();
@@ -66,61 +63,70 @@ const DestinationDetail = () => {
       setLoading(true);
       try {
         const [blogsRes, toursRes] = await Promise.all([fetchBlogs(), fetchTours()]);
-        const aliases = destination.aliases.map(normalize);
+
+        const exactDestinationName = normalize(destination.title);
+
+        const matchedBlog =
+          blogsRes.data.find((entry) => entry.destinationSlug === destination.slug) ||
+          blogsRes.data.find((entry) => {
+            const title = normalize(entry.title);
+            return (
+              title.includes(exactDestinationName) &&
+              /guide|destination|travel|park|crater|lake/.test(title)
+            );
+          }) ||
+          null;
 
         const matchedTours = toursRes.data.filter((tour) => {
-          const searchable = normalize(
-            `${tour.title || ""} ${tour.location || ""} ${tour.description || ""} ${(tour.destinationsVisited || []).join(" ")} ${tour.tourType || ""} ${tour.category || ""}`,
+          if (tour.destinationSlug === destination.slug) {
+            return true;
+          }
+
+          const location = normalize(tour.location);
+          const title = normalize(tour.title);
+          const destinationsVisited = (tour.destinationsVisited || []).map(normalize);
+
+          return (
+            location.includes(exactDestinationName) ||
+            title.includes(exactDestinationName) ||
+            destinationsVisited.includes(exactDestinationName)
           );
-
-          return aliases.some((alias) => searchable.includes(alias));
         });
-
-        const bestBlog = [...blogsRes.data]
-          .map((entry) => {
-            const searchable = normalize(
-              `${entry.title || ""} ${entry.category || ""} ${entry.content || ""}`,
-            );
-
-            return {
-              entry,
-              score: scoreMatch(searchable, aliases),
-            };
-          })
-          .filter((item) => item.score > 0)
-          .sort((a, b) => b.score - a.score)[0]?.entry || null;
 
         const destinationFaqs = matchedTours
           .flatMap((tour) => tour.faqs || [])
-          .filter((faq) => faq?.question && faq?.answer)
+          .filter((faq) => faq?.question?.trim() && faq?.answer?.trim())
           .filter(
             (faq, index, arr) =>
               arr.findIndex(
-                (item) => normalize(item.question) === normalize(faq.question),
+                (item) =>
+                  item.question.trim().toLowerCase() === faq.question.trim().toLowerCase(),
               ) === index,
           )
           .slice(0, 8);
 
-        setBlog(bestBlog);
-        setRelatedTours(matchedTours.slice(0, 6));
-        setFaqs(destinationFaqs.length ? destinationFaqs : destination.fallbackFaqs);
+        setBlog(matchedBlog);
+        setRelatedTours(matchedTours);
+        setFaqs(destinationFaqs);
+        setOpenFaqIndex(destinationFaqs.length ? 0 : -1);
       } catch (error) {
         console.error("Destination page load failed:", error);
         setBlog(null);
         setRelatedTours([]);
-        setFaqs(destination.fallbackFaqs);
+        setFaqs([]);
+        setOpenFaqIndex(-1);
       } finally {
         setLoading(false);
       }
     };
 
     loadDestinationPage();
-  }, [destination, destinationSlug]);
+  }, [destination]);
 
   const articleContent = useMemo(() => {
     if (!destination) return "";
-    return blog?.content || buildFallbackMarkdown(destination, relatedTours);
-  }, [blog, destination, relatedTours]);
+    return blog?.content || buildCmsFallbackMarkdown(destination);
+  }, [blog, destination]);
 
   if (loading) {
     return <div className="py-24 text-center">Loading destination...</div>;
@@ -136,7 +142,7 @@ const DestinationDetail = () => {
         title={blog?.seo?.title || destination.title}
         description={blog?.seo?.description || destination.intro}
         keywords={blog?.seo?.keywords || destination.aliases}
-        ogImage={blog?.seo?.ogImage || destination.image}
+        ogImage={blog?.seo?.ogImage || blog?.image || destination.image}
         canonicalUrl={window.location.href}
         schema={blog?.seo?.schema}
         type="article"
@@ -146,16 +152,16 @@ const DestinationDetail = () => {
         className="relative flex min-h-[360px] items-center overflow-hidden bg-cover bg-center md:min-h-[460px]"
         style={{ backgroundImage: `url('${blog?.image || destination.image}')` }}
       >
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/68 to-black/55" />
         <div className="container relative z-10 mx-auto px-4 lg:px-12">
           <div className="max-w-4xl">
-            <Badge variant="luxury" className="mb-4">
+            <Badge variant="luxury" className="mb-4 border border-white/20 bg-white/15 text-white shadow-xl backdrop-blur-md">
               Destination Guide
             </Badge>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-white md:text-6xl">
+            <h1 className="text-3xl font-black uppercase tracking-tight text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)] md:text-6xl">
               {destination.title}
             </h1>
-            <p className="mt-5 max-w-3xl text-sm font-medium leading-7 text-white/85 md:text-lg md:leading-8">
+            <p className="mt-5 max-w-3xl text-sm font-semibold leading-7 text-white md:text-lg md:leading-8 drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
               {blog?.seo?.description || destination.intro}
             </p>
           </div>
@@ -215,43 +221,49 @@ const DestinationDetail = () => {
               </div>
 
               <div className="space-y-4">
-                {faqs.map((faq, index) => {
-                  const isOpen = openFaqIndex === index;
+                {faqs.length > 0 ? (
+                  faqs.map((faq, index) => {
+                    const isOpen = openFaqIndex === index;
 
-                  return (
-                    <div
-                      key={`${faq.question}-${index}`}
-                      className="overflow-hidden rounded-3xl border border-gray-100 bg-gray-50"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
-                        className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left md:px-6"
+                    return (
+                      <div
+                        key={`${faq.question}-${index}`}
+                        className="overflow-hidden rounded-3xl border border-gray-100 bg-gray-50"
                       >
-                        <span className="text-sm font-black uppercase tracking-wide text-gray-900 md:text-base">
-                          {faq.question}
-                        </span>
-                        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-                          <IoChevronDownOutline className="text-xl text-primary" />
-                        </motion.div>
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {isOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <p className="px-5 pb-5 text-sm font-medium leading-7 text-gray-600 md:px-6">
-                              {faq.answer}
-                            </p>
+                        <button
+                          type="button"
+                          onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
+                          className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left md:px-6"
+                        >
+                          <span className="text-sm font-black uppercase tracking-wide text-gray-900 md:text-base">
+                            {faq.question}
+                          </span>
+                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+                            <IoChevronDownOutline className="text-xl text-primary" />
                           </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })}
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <p className="px-5 pb-5 text-sm font-medium leading-7 text-gray-600 md:px-6">
+                                {faq.answer}
+                              </p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 px-5 py-6 text-sm font-medium leading-7 text-gray-600 md:px-6">
+                    No destination-specific FAQs have been assigned yet. Add FAQs to tours tagged for {destination.title} in the CMS to populate this section.
+                  </div>
+                )}
               </div>
             </div>
           </main>
@@ -293,7 +305,7 @@ const DestinationDetail = () => {
                     ))
                   ) : (
                     <p className="text-sm font-medium leading-7 text-gray-600">
-                      We can still build a tailor-made itinerary around {destination.title}. Use Plan My Trip and we will shape the route around this destination.
+                      No tours are assigned to this destination page yet. Add destination-tagged tours in the CMS to show only the correct itineraries here.
                     </p>
                   )}
                 </div>

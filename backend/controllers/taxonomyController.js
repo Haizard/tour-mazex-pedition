@@ -18,6 +18,23 @@ const sortTaxonomies = (taxonomies) =>
         return a.type.localeCompare(b.type);
     });
 
+const mergeWithDefaults = (existingTaxonomies, type) => {
+    const defaultItems = withSlugs(defaultTaxonomies.filter((item) => !type || item.type === type));
+    const existing = existingTaxonomies.map((item) => item.toObject ? item.toObject() : item);
+    const existingKeys = new Set(
+        existing.map((item) => `${item.type}::${item.name}`.toLowerCase())
+    );
+
+    const merged = [
+        ...existing,
+        ...defaultItems.filter(
+            (item) => !existingKeys.has(`${item.type}::${item.name}`.toLowerCase())
+        ),
+    ];
+
+    return sortTaxonomies(withSlugs(merged));
+};
+
 export const getTaxonomies = async (req, res) => {
     try {
         const { type } = req.query;
@@ -31,7 +48,7 @@ export const getTaxonomies = async (req, res) => {
             return res.status(200).json(fallbackTaxonomies);
         }
 
-        res.status(200).json(taxonomies);
+        res.status(200).json(mergeWithDefaults(taxonomies, type));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
