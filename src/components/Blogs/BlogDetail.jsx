@@ -22,15 +22,19 @@ import {
   resolveCanonicalUrl,
   slugifySeo,
 } from "../../utils/seo";
+import { buildBlogSidebarData } from "../../utils/contentMatchers";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 const BlogDetail = () => {
   const { title: blogSlug } = useParams();
   const location = useLocation();
-  const [blog, setBlog] = useState(location.state || null);
-  const [latestBlogs, setLatestBlogs] = useState([]);
-  const [featuredTours, setFeaturedTours] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const routeData = useRouteData();
+  const initialBlog = routeData.blogDetail?.blog || location.state || null;
+  const [blog, setBlog] = useState(initialBlog);
+  const [latestBlogs, setLatestBlogs] = useState(routeData.blogDetail?.latestBlogs || []);
+  const [featuredTours, setFeaturedTours] = useState(routeData.blogDetail?.featuredTours || []);
+  const [categories, setCategories] = useState(routeData.blogDetail?.categories || []);
+  const [isLoading, setIsLoading] = useState(!initialBlog);
 
   const { image, date, title, content, author, category } = blog || {};
   const sectionHeadings = [...(content?.matchAll(/^####\s+(.+)$/gm) || [])].map(
@@ -43,6 +47,13 @@ const BlogDetail = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     const initPage = async () => {
+      if (routeData.blogDetail?.blog) {
+        if (!routeData.blogDetail?.latestBlogs?.length) {
+          loadSidebarData(routeData.blogDetail.blog);
+        }
+        return;
+      }
+
       const currentBlog = await loadBlog();
       if (currentBlog) {
         loadSidebarData(currentBlog);
@@ -70,47 +81,10 @@ const BlogDetail = () => {
     try {
       const blogsRes = await fetchBlogs();
       const toursRes = await fetchTours();
-
-      setLatestBlogs(blogsRes.data.slice(0, 5));
-      
-      // Smart filter for featured tours based on blog context
-      const blogCat = (currentBlog?.category || "").toLowerCase();
-      const blogTitle = (currentBlog?.title || "").toLowerCase();
-      const blogContent = (currentBlog?.content || "").toLowerCase();
-      const blogFullContext = `${blogCat} ${blogTitle} ${blogContent}`;
-      
-      const isTrekking = /trek|trekking|kilimanjaro|climb|summit|route|hike|mountain/.test(blogFullContext);
-      const isSafari = /safari|serengeti|ngorongoro|tarangire|wildlife|migration|game drive/.test(blogFullContext);
-      
-      const filteredTours = toursRes.data.filter((tour) => {
-        const tourType = (tour.tourType || "").toLowerCase();
-        const tourCat = (tour.category || "").toLowerCase();
-        const tourTitle = (tour.title || "").toLowerCase();
-        const tourLocation = (tour.location || "").toLowerCase();
-        const tourFullContext = `${tourType} ${tourCat} ${tourTitle} ${tourLocation}`;
-
-        // STRICT: If trek blog, ONLY show trek tours
-        if (isTrekking) {
-          return /trek|trekking|kilimanjaro|climb|mountain/.test(tourFullContext);
-        }
-        
-        // STRICT: If safari blog, ONLY show safari tours
-        if (isSafari) {
-          return /safari|serengeti|wildlife|national park|game drive/.test(tourFullContext) && 
-                 !/kilimanjaro|mountain|trekking/.test(tourFullContext); // Extra safeguard
-        }
-        
-        // Fallback or other
-        return false;
-      });
-      
-      setFeaturedTours(filteredTours.slice(0, 3));
-
-      const counts = {};
-      blogsRes.data.forEach((b) => {
-        counts[b.category] = (counts[b.category] || 0) + 1;
-      });
-      setCategories(Object.entries(counts));
+      const sidebarData = buildBlogSidebarData(currentBlog, blogsRes.data, toursRes.data);
+      setLatestBlogs(sidebarData.latestBlogs);
+      setFeaturedTours(sidebarData.featuredTours);
+      setCategories(sidebarData.categories);
     } catch (error) {
       console.error("Sidebar data load fail:", error);
     }
@@ -325,7 +299,7 @@ const BlogDetail = () => {
                   .map((b) => (
                     <Link
                       key={b._id}
-                      to={`/blogs/${slugify(b.title)}`}
+                      to={`/blogs/${slugifySeo(b.title)}`}
                       state={b}
                       className="flex gap-4 group"
                     >

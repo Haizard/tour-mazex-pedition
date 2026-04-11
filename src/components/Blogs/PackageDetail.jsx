@@ -34,6 +34,8 @@ import {
   buildTourSchema,
   resolveCanonicalUrl,
 } from "../../utils/seo";
+import { buildPackageRelatedTours } from "../../utils/contentMatchers";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 
 const slugifyTitle = (value = "") =>
@@ -50,8 +52,10 @@ const PackageDetail = () => {
   const { title: slug } = useParams();
   const [searchParams] = useSearchParams();
   const tourId = searchParams.get("tourId");
-  const [tourData, setTourData] = useState(location.state || null);
-  const [isPageLoading, setIsPageLoading] = useState(!location.state);
+  const routeData = useRouteData();
+  const initialTour = routeData.packageDetail?.tour || location.state || null;
+  const [tourData, setTourData] = useState(initialTour);
+  const [isPageLoading, setIsPageLoading] = useState(!initialTour);
   const [loadError, setLoadError] = useState("");
   const [selectedGalleryImage, setSelectedGalleryImage] = useState("");
 
@@ -75,23 +79,29 @@ const PackageDetail = () => {
   });
   const [planSubmitting, setPlanSubmitting] = useState(false);
   const [planSuccess, setPlanSuccess] = useState(false);
-  const [relatedTours, setRelatedTours] = useState([]);
+  const [relatedTours, setRelatedTours] = useState(routeData.packageDetail?.relatedTours || []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     const loadRelated = async () => {
       try {
         const res = await fetchTours();
-        setRelatedTours(res.data.filter(t => t._id !== tourData?._id).slice(0, 3));
+        setRelatedTours(buildPackageRelatedTours(tourData, res.data));
       } catch (err) {
         console.error("Related tours load fail:", err);
       }
     };
-    if (tourData) loadRelated();
+    if (tourData && !routeData.packageDetail?.relatedTours?.length) loadRelated();
   }, [tourData?._id]);
 
   useEffect(() => {
     const loadTour = async () => {
+      if (routeData.packageDetail?.tour && !tourId) {
+        setIsPageLoading(false);
+        setLoadError("");
+        return;
+      }
+
       if (!slug && !tourId) return;
 
       setIsPageLoading(true);

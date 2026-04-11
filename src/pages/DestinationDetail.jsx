@@ -18,6 +18,12 @@ import {
   buildFaqSchema,
   resolveCanonicalUrl,
 } from "../utils/seo";
+import {
+  buildDestinationFaqs,
+  matchDestinationBlog,
+  matchDestinationTours,
+} from "../utils/contentMatchers";
+import { useRouteData } from "../utils/routeData.jsx";
 
 const slugify = (text = "") =>
   text
@@ -26,12 +32,6 @@ const slugify = (text = "") =>
     .trim()
     .replace(/\s+/g, "-")
     .replace(/[^\w-]+/g, "");
-
-const normalize = (value = "") =>
-  value
-    .toString()
-    .toLowerCase()
-    .trim();
 
 const buildCmsFallbackMarkdown = (destination) => `#### Destination Content Coming Soon
 
@@ -49,11 +49,14 @@ Assign a destination tag to the correct blog article and destination tours in th
 const DestinationDetail = () => {
   const { destinationSlug } = useParams();
   const destination = getDestinationBySlug(destinationSlug);
-  const [blog, setBlog] = useState(null);
-  const [relatedTours, setRelatedTours] = useState([]);
-  const [faqs, setFaqs] = useState([]);
+  const routeData = useRouteData();
+  const [blog, setBlog] = useState(routeData.destinationDetail?.blog || null);
+  const [relatedTours, setRelatedTours] = useState(routeData.destinationDetail?.relatedTours || []);
+  const [faqs, setFaqs] = useState(routeData.destinationDetail?.faqs || []);
   const [loading, setLoading] = useState(!destination);
-  const [openFaqIndex, setOpenFaqIndex] = useState(0);
+  const [openFaqIndex, setOpenFaqIndex] = useState(
+    routeData.destinationDetail?.faqs?.length ? 0 : -1,
+  );
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -69,47 +72,9 @@ const DestinationDetail = () => {
       setLoading(true);
       try {
         const [blogsRes, toursRes] = await Promise.all([fetchBlogs(), fetchTours()]);
-
-        const exactDestinationName = normalize(destination.title);
-
-        const matchedBlog =
-          blogsRes.data.find((entry) => entry.destinationSlug === destination.slug) ||
-          blogsRes.data.find((entry) => {
-            const title = normalize(entry.title);
-            return (
-              title.includes(exactDestinationName) &&
-              /guide|destination|travel|park|crater|lake/.test(title)
-            );
-          }) ||
-          null;
-
-        const matchedTours = toursRes.data.filter((tour) => {
-          if (tour.destinationSlug === destination.slug) {
-            return true;
-          }
-
-          const location = normalize(tour.location);
-          const title = normalize(tour.title);
-          const destinationsVisited = (tour.destinationsVisited || []).map(normalize);
-
-          return (
-            location.includes(exactDestinationName) ||
-            title.includes(exactDestinationName) ||
-            destinationsVisited.includes(exactDestinationName)
-          );
-        });
-
-        const destinationFaqs = matchedTours
-          .flatMap((tour) => tour.faqs || [])
-          .filter((faq) => faq?.question?.trim() && faq?.answer?.trim())
-          .filter(
-            (faq, index, arr) =>
-              arr.findIndex(
-                (item) =>
-                  item.question.trim().toLowerCase() === faq.question.trim().toLowerCase(),
-              ) === index,
-          )
-          .slice(0, 8);
+        const matchedBlog = matchDestinationBlog(blogsRes.data, destination);
+        const matchedTours = matchDestinationTours(toursRes.data, destination);
+        const destinationFaqs = buildDestinationFaqs(matchedTours);
 
         setBlog(matchedBlog);
         setRelatedTours(matchedTours);
@@ -126,7 +91,9 @@ const DestinationDetail = () => {
       }
     };
 
-    loadDestinationPage();
+    if (!routeData.destinationDetail?.blog && !routeData.destinationDetail?.relatedTours?.length) {
+      loadDestinationPage();
+    }
   }, [destination]);
 
   const articleContent = useMemo(() => {

@@ -1,4 +1,9 @@
-const rawSiteUrl = import.meta.env.VITE_SITE_URL || "https://mazexpeditions.com";
+const viteEnv =
+  typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {};
+const processEnv =
+  typeof process !== "undefined" && process.env ? process.env : {};
+const rawSiteUrl =
+  viteEnv.VITE_SITE_URL || processEnv.VITE_SITE_URL || processEnv.SITE_URL || "https://mazexpeditions.com";
 
 export const SITE_URL = rawSiteUrl.replace(/\/+$/, "");
 

@@ -3,14 +3,17 @@ import { renderToString } from "react-dom/server";
 import { HelmetProvider } from "react-helmet-async";
 import { StaticRouter } from "react-router-dom/server";
 import AppRoutes from "./AppRoutes";
+import { RouteDataProvider } from "./utils/routeData.jsx";
 
-export const render = (url) => {
+export const render = (url, routeData = {}) => {
   const helmetContext = {};
   const appHtml = renderToString(
     <HelmetProvider context={helmetContext}>
-      <StaticRouter location={url}>
-        <AppRoutes />
-      </StaticRouter>
+      <RouteDataProvider data={routeData}>
+        <StaticRouter location={url}>
+          <AppRoutes />
+        </StaticRouter>
+      </RouteDataProvider>
     </HelmetProvider>,
   );
 

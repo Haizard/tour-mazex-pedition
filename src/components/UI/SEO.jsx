@@ -21,8 +21,9 @@ const SEO = ({
   const defaultDescription = 'Experience the best luxury safaris and adventure tours in Tanzania with MAZ Expeditions. Explore the Serengeti, Ngorongoro, Kilimanjaro, and Zanzibar.';
   
   // Format title
-  const fullTitle = title 
-    ? `${title} | MAZ Expeditions` 
+  const hasBrandInTitle = typeof title === "string" && /maz expeditions/i.test(title);
+  const fullTitle = title
+    ? (hasBrandInTitle ? title : `${title} | MAZ Expeditions`)
     : siteName;
 
   const resolvedCanonicalUrl = resolveCanonicalUrl(canonicalUrl);
