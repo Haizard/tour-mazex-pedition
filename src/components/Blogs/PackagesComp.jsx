@@ -3,7 +3,7 @@ import PackageCard from "./PackageCard";
 import FilterSidebar from "./FilterSidebar";
 import { fetchTours, fetchTaxonomies } from "../../services/api";
 import { useSearchParams } from "react-router-dom";
-import { FaFilter, FaTimes } from "react-icons/fa";
+import { FaFilter, FaSearch, FaTimes } from "react-icons/fa";
 
 const uniqueSorted = (values = []) =>
   [...new Set(values.map((value) => (value || "").toString().trim()).filter(Boolean))].sort(
@@ -29,6 +29,7 @@ const PackagesComp = () => {
   const [categories, setCategories] = useState([]);
   const [tourTypes, setTourTypes] = useState([]);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
+  const [searchInput, setSearchInput] = useState(search);
   const [filters, setFilters] = useState({
     category: "",
     tourType: typeFromUrl,
@@ -89,14 +90,22 @@ const PackagesComp = () => {
   }, [typeFromUrl, searchParams]);
 
   useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
     let result = [...allTours];
 
-    // Search from URL
-    if (search) {
+    const query = (searchInput || search).trim().toLowerCase();
+
+    if (query) {
       result = result.filter(
         (t) =>
-          t.title.toLowerCase().includes(search.toLowerCase()) ||
-          t.location.toLowerCase().includes(search.toLowerCase()),
+          t.title.toLowerCase().includes(query) ||
+          t.location.toLowerCase().includes(query) ||
+          (t.description || "").toLowerCase().includes(query) ||
+          (t.tourType || "").toLowerCase().includes(query) ||
+          (t.category || "").toLowerCase().includes(query),
       );
     }
 
@@ -118,7 +127,7 @@ const PackagesComp = () => {
     }
 
     setFilteredTours(result);
-  }, [allTours, filters, search]);
+  }, [allTours, filters, search, searchInput]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -143,6 +152,30 @@ const PackagesComp = () => {
           >
             <FaFilter /> Filter Packages
           </button>
+        </div>
+
+        <div className="mb-8 rounded-[28px] border border-gray-100 bg-white p-4 shadow-sm md:p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="flex flex-1 items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <FaSearch className="text-gray-400" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search tours, destinations, styles, or keywords..."
+                className="w-full bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-400"
+              />
+            </div>
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput("")}
+                className="rounded-2xl bg-secondary px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:opacity-90"
+              >
+                Clear Search
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-8">

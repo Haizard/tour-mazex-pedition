@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaSearch } from "react-icons/fa";
 import { motion } from "framer-motion";
 import {
   fetchTours,
@@ -327,6 +327,20 @@ const AdminDashboard = () => {
   const [bodyImageUrl, setBodyImageUrl] = useState("");
   const blogContentTextareaRef = useRef(null);
   const destinationTaxonomies = taxonomies.filter((t) => t.type === "destination");
+  const [tourSearchQuery, setTourSearchQuery] = useState("");
+  const [blogSearchQuery, setBlogSearchQuery] = useState("");
+
+  const filteredAdminTours = tours.filter((tour) =>
+    `${tour.title || ""} ${tour.location || ""} ${tour.category || ""} ${tour.tourType || ""} ${tour.destinationSlug || ""}`
+      .toLowerCase()
+      .includes(tourSearchQuery.trim().toLowerCase()),
+  );
+
+  const filteredAdminBlogs = blogs.filter((blog) =>
+    `${blog.title || ""} ${blog.category || ""} ${blog.destinationSlug || ""} ${blog.author || ""}`
+      .toLowerCase()
+      .includes(blogSearchQuery.trim().toLowerCase()),
+  );
 
   useEffect(() => {
     loadTours();
@@ -939,6 +953,21 @@ const AdminDashboard = () => {
                 </h2>
                 <Badge variant="primary" className="scale-75 md:scale-100">{tours.length} Active</Badge>
               </div>
+
+              {packageView === "list" && (
+                <div className="mb-6 rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                  <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <FaSearch className="text-slate-400" />
+                    <input
+                      type="text"
+                      value={tourSearchQuery}
+                      onChange={(e) => setTourSearchQuery(e.target.value)}
+                      placeholder="Search tours by title, location, type, category, or destination tag..."
+                      className="w-full bg-transparent text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Sub-tab Toggle */}
               <div className="flex gap-2 mb-8 bg-slate-100/50 p-1 rounded-2xl w-fit border border-slate-200/50 backdrop-blur-sm mx-2 md:mx-0">
@@ -1698,7 +1727,7 @@ const AdminDashboard = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
-                {tours.map((t) => (
+                {filteredAdminTours.map((t) => (
                   <Card
                     key={t._id}
                     className="group relative overflow-hidden flex flex-col h-full border-none shadow-lg hover:shadow-2xl"
@@ -1799,9 +1828,16 @@ const AdminDashboard = () => {
                     </div>
                   </Card>
                 ))}
+                {filteredAdminTours.length === 0 && (
+                  <div className="col-span-full rounded-[28px] border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+                    <p className="text-lg font-black uppercase tracking-tight text-slate-900">
+                      No tours match that search
+                    </p>
+                  </div>
+                )}
               </div>
-              )}
-            </div>
+            )}
+          </div>
           )}
 
           {/* Blogs Section */}
@@ -1813,6 +1849,21 @@ const AdminDashboard = () => {
                 </h2>
                 <Badge variant="secondary" className="scale-75 md:scale-100">{blogs.length} Stories</Badge>
               </div>
+
+              {blogView === "list" && (
+                <div className="mb-6 rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                  <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <FaSearch className="text-slate-400" />
+                    <input
+                      type="text"
+                      value={blogSearchQuery}
+                      onChange={(e) => setBlogSearchQuery(e.target.value)}
+                      placeholder="Search blogs by title, category, author, or destination tag..."
+                      className="w-full bg-transparent text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Sub-tab Toggle for Blogs */}
               <div className="flex gap-2 mb-8 bg-slate-100/50 p-1 rounded-2xl w-fit border border-slate-200/50 backdrop-blur-sm mx-2 md:mx-0">
@@ -2112,7 +2163,7 @@ const AdminDashboard = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
-                {blogs.map((b) => (
+                {filteredAdminBlogs.map((b) => (
                   <Card
                     key={b._id}
                     className="group relative overflow-hidden flex flex-col h-full border-none shadow-lg hover:shadow-2xl"
@@ -2181,9 +2232,16 @@ const AdminDashboard = () => {
                     </div>
                   </Card>
                 ))}
+                {filteredAdminBlogs.length === 0 && (
+                  <div className="col-span-full rounded-[28px] border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+                    <p className="text-lg font-black uppercase tracking-tight text-slate-900">
+                      No stories match that search
+                    </p>
+                  </div>
+                )}
               </div>
-              )}
-            </div>
+            )}
+          </div>
           )}
 
           {/* Bookings Section */}

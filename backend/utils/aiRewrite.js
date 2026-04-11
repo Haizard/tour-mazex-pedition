@@ -95,8 +95,9 @@ export const rewriteContentWithAi = async ({ text, contentType = "blog", context
 
 export const generateSeoWithAi = async ({ title, description, content, contentType = "tour" }) => {
   const ai = getClient();
+  const pathPrefix = contentType === "blog" ? "/blogs/" : "/packages/";
   const prompt = `
-Generate SEO metadata (Title, Meta Description, Keywords) for the following ${contentType.toUpperCase()}:
+Generate SEO metadata for the following ${contentType.toUpperCase()}:
 Title: ${title}
 Description/Content: ${ (description || content || '').substring(0, 1200) }...
 
@@ -104,7 +105,13 @@ Rules:
 - SEO Title: Max 60 chars, catchy, includes primary keywords and brand name "MAZ Expeditions".
 - Meta Description: 150-160 chars, includes a compelling call to action.
 - Keywords: Top 5-8 relevant keywords, comma separated.
-- Return ONLY a JSON object with: { "title": "...", "description": "...", "keywords": "..." }
+- Canonical URL: Use this path format exactly: ${pathPrefix}[slug-from-title]
+- JSON-LD Schema: Return a valid compact JSON string for this content.
+  - Use "@context":"https://schema.org"
+  - For blogs use "@type":"BlogPosting"
+  - For tours use "@type":"TouristTrip"
+- Return ONLY a JSON object with:
+  { "title": "...", "description": "...", "keywords": "...", "canonicalUrl": "...", "schema": "..." }
 - No markdown formatting, just the raw JSON.
 `.trim();
 
@@ -117,7 +124,14 @@ Rules:
         config: { temperature: 0.4, responseMimeType: "application/json" }
       });
       const text = response?.text?.trim().replace(/```json|```/g, "").trim();
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      return {
+        title: parsed.title || "",
+        description: parsed.description || "",
+        keywords: parsed.keywords || "",
+        canonicalUrl: parsed.canonicalUrl || "",
+        schema: parsed.schema || "",
+      };
     } catch (error) {
       lastError = error;
       console.error(`AI SEO failed for model ${model}:`, error.message);

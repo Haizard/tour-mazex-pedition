@@ -2,6 +2,7 @@ import React from "react";
 import BlogCard from "./BlogCard";
 import { Link } from "react-router-dom";
 import { fetchBlogs } from "../../services/api";
+import { FaSearch } from "react-icons/fa";
 
 const getBlogGroups = (blogs) => {
   const safari = [];
@@ -67,6 +68,7 @@ const SectionHeading = ({ title, accent }) => (
 
 const BlogsComp = ({ maxPerCategory = null }) => {
   const [blogsData, setBlogsData] = React.useState([]);
+  const [searchInput, setSearchInput] = React.useState("");
 
   React.useEffect(() => {
     const getBlogs = async () => {
@@ -80,13 +82,37 @@ const BlogsComp = ({ maxPerCategory = null }) => {
     getBlogs();
   }, []);
 
-  const blogGroups = getBlogGroups(blogsData);
+  const visibleBlogs = React.useMemo(() => {
+    const query = searchInput.trim().toLowerCase();
+    if (!query) return blogsData;
+
+    return blogsData.filter((blog) =>
+      `${blog.title || ""} ${blog.category || ""} ${blog.content || ""}`
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [blogsData, searchInput]);
+
+  const blogGroups = getBlogGroups(visibleBlogs);
 
   return (
     <div className="bg-white py-20 pb-24">
       <section className="container px-4 max-w-7xl mx-auto">
         {blogsData.length > 0 ? (
           <div className="space-y-16">
+            <div className="mx-auto max-w-3xl rounded-[28px] border border-gray-100 bg-white p-4 shadow-sm md:p-5">
+              <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <FaSearch className="text-gray-400" />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Search blogs, destinations, parks, or travel topics..."
+                  className="w-full bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+
             {blogGroups.map((group) => {
               const visibleBlogs =
                 typeof maxPerCategory === "number" && maxPerCategory > 0
@@ -113,6 +139,17 @@ const BlogsComp = ({ maxPerCategory = null }) => {
               </section>
               );
             })}
+
+            {visibleBlogs.length === 0 && (
+              <div className="rounded-[28px] border border-dashed border-gray-200 bg-gray-50 px-6 py-16 text-center">
+                <p className="text-lg font-black uppercase tracking-tight text-gray-900">
+                  No stories match that search
+                </p>
+                <p className="mt-3 text-sm font-medium text-gray-500">
+                  Try a destination name, travel style, or wildlife topic.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <p className="py-20 text-center font-sans text-lg text-gray-500">
