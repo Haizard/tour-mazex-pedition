@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_URL = window.location.hostname === "localhost"
+const isBrowser = typeof window !== "undefined";
+const API_URL = isBrowser && window.location.hostname === "localhost"
   ? "http://localhost:5000/api"
   : "/api";
 

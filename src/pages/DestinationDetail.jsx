@@ -12,6 +12,12 @@ import PackageCard from "../components/Blogs/PackageCard";
 import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
 import LogoSlider from "../components/Home/LogoSlider";
+import {
+  buildBreadcrumbSchema,
+  buildDestinationSchema,
+  buildFaqSchema,
+  resolveCanonicalUrl,
+} from "../utils/seo";
 
 const slugify = (text = "") =>
   text
@@ -46,7 +52,7 @@ const DestinationDetail = () => {
   const [blog, setBlog] = useState(null);
   const [relatedTours, setRelatedTours] = useState([]);
   const [faqs, setFaqs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!destination);
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
   useEffect(() => {
@@ -127,6 +133,25 @@ const DestinationDetail = () => {
     if (!destination) return "";
     return blog?.content || buildCmsFallbackMarkdown(destination);
   }, [blog, destination]);
+  const canonicalPath = destination ? `/destinations/${destination.slug}` : "/destinations";
+  const destinationFaqs = faqs.length ? faqs : destination?.fallbackFaqs || [];
+  const canonicalUrl = resolveCanonicalUrl(blog?.seo?.canonicalUrl, canonicalPath);
+  const pageSchema = destination
+    ? [
+        buildBreadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Destinations", path: "/destinations" },
+          { name: destination.title, path: canonicalPath },
+        ]),
+        buildDestinationSchema(
+          destination,
+          canonicalPath,
+          blog?.seo?.description || destination.intro,
+          blog?.seo?.ogImage || blog?.image || destination.image,
+        ),
+        buildFaqSchema(destinationFaqs),
+      ]
+    : [];
 
   if (loading) {
     return <div className="py-24 text-center">Loading destination...</div>;
@@ -143,8 +168,8 @@ const DestinationDetail = () => {
         description={blog?.seo?.description || destination.intro}
         keywords={blog?.seo?.keywords || destination.aliases}
         ogImage={blog?.seo?.ogImage || blog?.image || destination.image}
-        canonicalUrl={window.location.href}
-        schema={blog?.seo?.schema}
+        canonicalUrl={canonicalUrl}
+        schema={[...pageSchema, blog?.seo?.schema]}
         type="article"
       />
 
@@ -221,8 +246,8 @@ const DestinationDetail = () => {
               </div>
 
               <div className="space-y-4">
-                {faqs.length > 0 ? (
-                  faqs.map((faq, index) => {
+                {destinationFaqs.length > 0 ? (
+                  destinationFaqs.map((faq, index) => {
                     const isOpen = openFaqIndex === index;
 
                     return (

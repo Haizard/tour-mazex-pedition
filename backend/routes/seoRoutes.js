@@ -4,7 +4,14 @@ import Blog from '../models/Blog.js';
 
 const router = express.Router();
 
-const BASE_URL = 'https://mazexpeditions.com';
+const BASE_URL = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://mazexpeditions.com').replace(/\/+$/, '');
+const DESTINATION_PAGES = [
+  { slug: 'serengeti', updatedAt: '2026-01-01' },
+  { slug: 'ngorongoro', updatedAt: '2026-01-01' },
+  { slug: 'tarangire', updatedAt: '2026-01-01' },
+  { slug: 'manyara', updatedAt: '2026-01-01' },
+  { slug: 'natron', updatedAt: '2026-01-01' },
+];
 
 const slugify = (text) =>
   text
@@ -17,7 +24,13 @@ const slugify = (text) =>
 router.get('/sitemap.xml', async (req, res) => {
   try {
     const tours = await TourPackage.find({}, 'title updatedAt');
-    const blogs = await Blog.find({}, 'title updatedAt');
+    const blogs = await Blog.find({}, 'title category updatedAt');
+    const blogCategories = [...new Set(
+      blogs
+        .map((blog) => blog.category)
+        .filter(Boolean)
+        .map((category) => slugify(category)),
+    )];
 
     const staticPages = [
       '',
@@ -27,6 +40,9 @@ router.get('/sitemap.xml', async (req, res) => {
       '/plan-my-trip',
       '/packages',
       '/blogs',
+      '/destinations',
+      '/privacy-policy',
+      '/terms',
     ];
 
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -67,9 +83,31 @@ router.get('/sitemap.xml', async (req, res) => {
   </url>`;
     });
 
+    // Destination pages
+    DESTINATION_PAGES.forEach((destination) => {
+      sitemap += `
+  <url>
+    <loc>${BASE_URL}/destinations/${destination.slug}</loc>
+    <lastmod>${destination.updatedAt}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>`;
+    });
+
+    // Blog category pages
+    blogCategories.forEach((category) => {
+      sitemap += `
+  <url>
+    <loc>${BASE_URL}/blogs/category/${category}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>`;
+    });
+
     sitemap += '\n</urlset>';
 
     res.header('Content-Type', 'application/xml');
+    res.header('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
     res.send(sitemap);
   } catch (error) {
     console.error('Sitemap generation error:', error);
@@ -82,8 +120,10 @@ router.get('/robots.txt', (req, res) => {
 Allow: /
 
 Sitemap: ${BASE_URL}/sitemap.xml
+Host: ${BASE_URL}
 `;
   res.header('Content-Type', 'text/plain');
+  res.header('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
   res.send(robots);
 });
 

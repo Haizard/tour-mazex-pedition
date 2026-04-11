@@ -28,6 +28,12 @@ import LogoSlider from "../Home/LogoSlider";
 import SEO from "../UI/SEO";
 import PackageCard from "./PackageCard";
 import { COUNTRIES, getCountryCode } from "../../data/countries";
+import {
+  buildBreadcrumbSchema,
+  buildFaqSchema,
+  buildTourSchema,
+  resolveCanonicalUrl,
+} from "../../utils/seo";
 
 
 const slugifyTitle = (value = "") =>
@@ -186,6 +192,17 @@ const PackageDetail = () => {
   const validFaqs = (faqs || []).filter(
     (faq) => faq?.question?.trim() && faq?.answer?.trim(),
   );
+  const canonicalPath = `/packages/${slugifyTitle(title)}`;
+  const canonicalUrl = resolveCanonicalUrl(tourData.seo?.canonicalUrl, canonicalPath);
+  const pageSchema = [
+    buildBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Packages", path: "/packages" },
+      { name: title, path: canonicalPath },
+    ]),
+    buildTourSchema(tourData, canonicalPath),
+    buildFaqSchema(validFaqs),
+  ];
 
   const handlePlanFieldChange = (event) => {
     const { name, value } = event.target;
@@ -248,8 +265,8 @@ const PackageDetail = () => {
         description={tourData.seo?.description || tourData.description}
         keywords={tourData.seo?.keywords}
         ogImage={tourData.seo?.ogImage || tourData.image}
-        canonicalUrl={tourData.seo?.canonicalUrl || window.location.href}
-        schema={tourData.seo?.schema}
+        canonicalUrl={canonicalUrl}
+        schema={[...pageSchema, tourData.seo?.schema]}
         type="article"
       />
       <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 h-[280px] md:h-[420px] lg:h-[520px] overflow-hidden mb-10 md:mb-14">

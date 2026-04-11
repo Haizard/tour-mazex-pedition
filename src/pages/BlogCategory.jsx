@@ -7,6 +7,8 @@ import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
 import { motion, AnimatePresence } from "framer-motion";
 import LogoSlider from "../components/Home/LogoSlider";
+import SEO from "../components/UI/SEO";
+import { buildBreadcrumbSchema } from "../utils/seo";
 
 const BlogCategory = () => {
   const { categoryId } = useParams();
@@ -78,6 +80,18 @@ const BlogCategory = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title={currentMeta.title}
+        description={`Browse ${currentMeta.title.toLowerCase()} from MAZ Expeditions, with related Tanzania travel stories and matching tour ideas.`}
+        keywords={[currentMeta.title, "Tanzania blog category", "MAZ Expeditions"]}
+        canonicalUrl={`/blogs/category/${categoryId}`}
+        schema={buildBreadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Blogs", path: "/blogs" },
+          { name: currentMeta.title, path: `/blogs/category/${categoryId}` },
+        ])}
+        type="website"
+      />
       {/* Dynamic Hero Section */}
       <div className="relative overflow-hidden bg-[#1a1a1a]">
         <div

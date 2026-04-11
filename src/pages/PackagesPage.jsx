@@ -4,10 +4,23 @@ import Badge from "../components/UI/Badge";
 import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
 import LogoSlider from "../components/Home/LogoSlider";
+import SEO from "../components/UI/SEO";
+import { buildBreadcrumbSchema } from "../utils/seo";
 
 const PackagesPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO
+        title="Tanzania Safari Packages"
+        description="Browse MAZ Expeditions safari packages, private Tanzania tours, and curated wildlife expeditions across Serengeti, Ngorongoro, Tarangire, and beyond."
+        keywords={["Tanzania safari packages", "private safari tours", "Serengeti tours", "Ngorongoro safari", "MAZ Expeditions"]}
+        canonicalUrl="/packages"
+        schema={buildBreadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Packages", path: "/packages" },
+        ])}
+        type="website"
+      />
       {/* Cinematic Header */}
       <div className="relative h-[40vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-black/60 z-10" />

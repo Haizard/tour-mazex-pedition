@@ -16,6 +16,12 @@ import Testimonial from "../Testimonial/Testimonial";
 import TripCTA from "../Home/TripCTA";
 import LogoSlider from "../Home/LogoSlider";
 import SEO from "../UI/SEO";
+import {
+  buildBlogPostingSchema,
+  buildBreadcrumbSchema,
+  resolveCanonicalUrl,
+  slugifySeo,
+} from "../../utils/seo";
 
 const BlogDetail = () => {
   const { title: blogSlug } = useParams();
@@ -116,13 +122,16 @@ const BlogDetail = () => {
   if (!blog)
     return <div className="text-center py-20">No blog data found</div>;
 
-  const slugify = (text) =>
-    text
-      .toString()
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w-]+/g, "");
+  const canonicalPath = `/blogs/${slugifySeo(blog.title)}`;
+  const canonicalUrl = resolveCanonicalUrl(blog.seo?.canonicalUrl, canonicalPath);
+  const pageSchema = [
+    buildBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Blogs", path: "/blogs" },
+      { name: blog.title, path: canonicalPath },
+    ]),
+    buildBlogPostingSchema(blog, canonicalPath),
+  ];
 
   let headingIndex = -1;
 
@@ -133,8 +142,8 @@ const BlogDetail = () => {
         description={blog.seo?.description || (blog.content?.substring(0, 160))}
         keywords={blog.seo?.keywords}
         ogImage={blog.seo?.ogImage || blog.image}
-        canonicalUrl={blog.seo?.canonicalUrl || window.location.href}
-        schema={blog.seo?.schema}
+        canonicalUrl={canonicalUrl}
+        schema={[...pageSchema, blog.seo?.schema]}
         type="article"
       />
       <div
@@ -167,10 +176,10 @@ const BlogDetail = () => {
       <div className="container mx-auto px-0 md:px-4 lg:px-12 pt-8 md:pt-12">
         <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50 hidden xl:flex flex-col gap-4">
           <div className="bg-white p-3 rounded-full shadow-2xl border border-gray-100 flex flex-col gap-6">
-            <ShareButton icon={<FaFacebookF />} url={`https://www.facebook.com/sharer/sharer.php?u=${window.location.href}`} color="hover:text-[#1877F2]" />
-            <ShareButton icon={<FaXTwitter />} url={`https://twitter.com/intent/tweet?url=${window.location.href}&text=${title}`} color="hover:text-[#000000]" />
-            <ShareButton icon={<FaWhatsapp />} url={`https://wa.me/?text=${title}%20${window.location.href}`} color="hover:text-[#25D366]" />
-            <ShareButton icon={<FaLinkedinIn />} url={`https://www.linkedin.com/sharing/share-offsite/?url=${window.location.href}`} color="hover:text-[#0A66C2]" />
+            <ShareButton icon={<FaFacebookF />} url={`https://www.facebook.com/sharer/sharer.php?u=${canonicalUrl}`} color="hover:text-[#1877F2]" />
+            <ShareButton icon={<FaXTwitter />} url={`https://twitter.com/intent/tweet?url=${canonicalUrl}&text=${title}`} color="hover:text-[#000000]" />
+            <ShareButton icon={<FaWhatsapp />} url={`https://wa.me/?text=${title}%20${canonicalUrl}`} color="hover:text-[#25D366]" />
+            <ShareButton icon={<FaLinkedinIn />} url={`https://www.linkedin.com/sharing/share-offsite/?url=${canonicalUrl}`} color="hover:text-[#0A66C2]" />
           </div>
           <button className="bg-white p-4 rounded-full shadow-xl border border-gray-100 text-gray-400 hover:text-primary transition-colors">
             <FaRegBookmark className="text-xl" />
@@ -253,10 +262,10 @@ const BlogDetail = () => {
                       <span className="text-sm font-black uppercase tracking-widest text-gray-900">Share this story</span>
                     </div>
                     <div className="flex gap-4">
-                      <SocialIcon icon={<FaFacebookF />} url={`https://www.facebook.com/sharer/sharer.php?u=${window.location.href}`} label="Facebook" />
-                      <SocialIcon icon={<FaXTwitter />} url={`https://twitter.com/intent/tweet?url=${window.location.href}&text=${title}`} label="X (Twitter)" />
-                      <SocialIcon icon={<FaWhatsapp />} url={`https://wa.me/?text=${title}%20${window.location.href}`} label="WhatsApp" />
-                      <SocialIcon icon={<FaLinkedinIn />} url={`https://www.linkedin.com/sharing/share-offsite/?url=${window.location.href}`} label="LinkedIn" />
+                      <SocialIcon icon={<FaFacebookF />} url={`https://www.facebook.com/sharer/sharer.php?u=${canonicalUrl}`} label="Facebook" />
+                      <SocialIcon icon={<FaXTwitter />} url={`https://twitter.com/intent/tweet?url=${canonicalUrl}&text=${title}`} label="X (Twitter)" />
+                      <SocialIcon icon={<FaWhatsapp />} url={`https://wa.me/?text=${title}%20${canonicalUrl}`} label="WhatsApp" />
+                      <SocialIcon icon={<FaLinkedinIn />} url={`https://www.linkedin.com/sharing/share-offsite/?url=${canonicalUrl}`} label="LinkedIn" />
                     </div>
                   </div>
                 </div>

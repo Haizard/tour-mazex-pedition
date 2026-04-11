@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm run frontend\" \"npm run server\"",
     "frontend": "vite",
     "server": "node --watch backend/server.js",
-    "build": "vite build",
+    "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist/server && node scripts/prerender.mjs",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

@@ -27,7 +27,11 @@ const testimonialData = [
   },
 ];
 
+const StaticSlider = ({ children }) => <div>{React.Children.toArray(children)[0] || null}</div>;
+
 const Testimonial = () => {
+  const SliderComponent =
+    typeof window === "undefined" || typeof Slider !== "function" ? StaticSlider : Slider;
   const settings = {
     dots: false,
     arrows: true,
@@ -79,7 +83,7 @@ const Testimonial = () => {
 
         {/* User Reviews Slider Area - EXTREME HEIGHT REDUCTION */}
         <div className="pb-3 pt-1">
-          <Slider {...settings}>
+          <SliderComponent {...settings}>
             {testimonialData.map((review) => (
               <div key={review.id} className="outline-none px-4 md:px-6 py-2">
                 <div className="flex flex-row items-center text-left gap-3">
@@ -113,7 +117,7 @@ const Testimonial = () => {
                 </div>
               </div>
             ))}
-          </Slider>
+          </SliderComponent>
         </div>
       </motion.div>
     </div>

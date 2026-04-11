@@ -5,10 +5,23 @@ import TripCTA from "../components/Home/TripCTA";
 import LogoSlider from "../components/Home/LogoSlider";
 import { Link } from "react-router-dom";
 import { FaChevronRight } from "react-icons/fa";
+import SEO from "../components/UI/SEO";
+import { buildBreadcrumbSchema } from "../utils/seo";
 
 const Blogs = () => {
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Tanzania Safari Blog"
+        description="Explore MAZ Expeditions blog guides, safari planning advice, destination stories, and Tanzania travel insights."
+        keywords={["Tanzania safari blog", "Serengeti travel guide", "safari planning", "MAZ Expeditions blog"]}
+        canonicalUrl="/blogs"
+        schema={buildBreadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Blogs", path: "/blogs" },
+        ])}
+        type="website"
+      />
       <div className="relative overflow-hidden bg-[#1a1a1a]">
         <div
           className="relative flex min-h-[320px] items-center justify-center bg-cover bg-center bg-no-repeat sm:min-h-[360px] md:min-h-[400px]"

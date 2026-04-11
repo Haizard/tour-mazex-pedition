@@ -15,7 +15,9 @@ const slugifyTitle = (value = "") =>
 const Trending = () => {
   const [tours, setTours] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
