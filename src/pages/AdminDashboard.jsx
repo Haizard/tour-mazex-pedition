@@ -202,6 +202,7 @@ const AdminDashboard = () => {
 
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [selectedContactMessage, setSelectedContactMessage] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   const [editingTourId, setEditingTourId] = useState(null);
   const [editingBlogId, setEditingBlogId] = useState(null);
@@ -2174,15 +2175,21 @@ const AdminDashboard = () => {
                              <p className="text-3xl md:text-4xl font-black text-slate-900 leading-none tracking-tighter">{b.totalPrice}</p>
                            </div>
                          </div>
-                         <button 
-                           onClick={() => {
-                             const newStatus = b.status?.toLowerCase() === "confirmed" ? "Pending" : "Confirmed";
-                             updateBookingStatus(b._id, newStatus).then(loadBookings);
-                           }} 
-                           className={`mt-2 text-[9px] font-black uppercase tracking-widest transition-colors ${b.status?.toLowerCase() === "confirmed" ? "text-slate-400 hover:text-orange-500 underline underline-offset-4" : "text-emerald-500 hover:text-emerald-700 font-black"}`}
-                         >
-                           {b.status?.toLowerCase() === "confirmed" ? "Set to Pending" : "Confirm Booking"}
-                         </button>
+                        <button 
+                          onClick={() => setSelectedBooking(b)}
+                          className="mt-2 text-[9px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
+                        >
+                          View Booking Details
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const newStatus = b.status?.toLowerCase() === "confirmed" ? "Pending" : "Confirmed";
+                            updateBookingStatus(b._id, newStatus).then(loadBookings);
+                          }} 
+                          className={`mt-1 text-[9px] font-black uppercase tracking-widest transition-colors ${b.status?.toLowerCase() === "confirmed" ? "text-slate-400 hover:text-orange-500 underline underline-offset-4" : "text-emerald-500 hover:text-emerald-700 font-black"}`}
+                        >
+                          {b.status?.toLowerCase() === "confirmed" ? "Set to Pending" : "Confirm Booking"}
+                        </button>
                          <button 
                            onClick={() => deleteBooking(b._id).then(loadBookings)} 
                            className="mt-1 text-[8px] font-black text-slate-200 hover:text-red-500 uppercase tracking-widest transition-colors"
@@ -2194,6 +2201,116 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {selectedBooking && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
+              >
+                <button
+                  onClick={() => setSelectedBooking(null)}
+                  className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 flex"
+                >
+                  <span className="text-xl md:text-2xl">&times;</span>
+                </button>
+
+                <div className="overflow-y-auto p-6 md:p-12">
+                  <Badge variant="accent" className="mb-4">Booking Details</Badge>
+                  <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-8 italic">
+                    Booking for <span className="text-primary">{selectedBooking.packageTour || "Custom Request"}</span>
+                  </h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 pb-8 border-b border-slate-100">
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Client Name</p>
+                        <p className="font-bold text-slate-900 break-words text-sm">{selectedBooking.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Email Address</p>
+                        <p className="font-bold text-slate-900 break-all text-sm">{selectedBooking.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Phone Number</p>
+                        <p className="font-bold text-slate-900 break-words text-sm">{selectedBooking.phone || "Not provided"}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Country</p>
+                        <p className="font-bold text-slate-900 break-words text-sm">{selectedBooking.address || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Travel Date</p>
+                        <p className="font-bold text-slate-900 break-words text-sm">
+                          {selectedBooking.travelDate
+                            ? new Date(selectedBooking.travelDate).toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })
+                            : "Flexible / Not provided"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Created</p>
+                        <p className="font-bold text-slate-900 break-words text-sm">
+                          {new Date(selectedBooking.createdAt || selectedBooking.date).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Travelers</p>
+                        <p className="font-bold text-slate-900 break-words text-sm">
+                          {`${selectedBooking.adults || 0} adults, ${selectedBooking.children || 0} children`}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Pax Total</p>
+                        <p className="font-bold text-slate-900 break-words text-sm">{selectedBooking.pax || 1}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Status</p>
+                        <Badge variant="secondary" className="mt-1">{selectedBooking.status}</Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6">
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Booked Package</p>
+                      <p className="text-lg font-black text-slate-900 leading-tight">
+                        {selectedBooking.packageTour || "Custom Request"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6">
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Estimated Total</p>
+                      <p className="text-3xl font-black text-primary leading-none">
+                        ${selectedBooking.totalPrice || 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-100 bg-white p-6">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Client Notes</p>
+                    <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-sm">
+                      {selectedBooking.notes || "No extra notes were included with this booking."}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           )}
 

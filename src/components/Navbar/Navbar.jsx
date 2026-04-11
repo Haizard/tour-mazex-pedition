@@ -259,7 +259,7 @@ const Navbar = ({ handleOrderPopup }) => {
                                 <Link
                                   key={`${child.label}-${child.link}`}
                                   to={child.link}
-                                  className="text-sm font-medium hover:text-safari-green hover:pl-2 transition-all duration-300"
+                                  className="text-[13px] xl:text-[14px] font-bold uppercase tracking-wider hover:text-safari-green hover:pl-2 transition-all duration-300"
                                 >
                                   {child.label}
                                 </Link>
@@ -284,7 +284,7 @@ const Navbar = ({ handleOrderPopup }) => {
                               <Link
                                 key={`${child.label}-${child.link}`}
                                 to={child.link}
-                                className="text-sm font-medium hover:text-safari-green transition-all"
+                                className="text-[13px] xl:text-[14px] font-bold uppercase tracking-wider hover:text-safari-green transition-all"
                               >
                                 {child.label}
                               </Link>

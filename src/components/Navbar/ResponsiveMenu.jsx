@@ -68,7 +68,7 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
                             <Link
                               to={child.link}
                               onClick={() => setShowMenu(false)}
-                              className="block py-3 px-4 text-[11px] font-medium text-white/80 hover:text-safari-gold border-l-2 border-transparent hover:border-safari-gold transition-all"
+                              className="block py-3 px-4 text-sm sm:text-base font-bold uppercase tracking-wider text-white/80 hover:text-safari-gold border-l-2 border-transparent hover:border-safari-gold transition-all"
                             >
                               {child.label}
                             </Link>

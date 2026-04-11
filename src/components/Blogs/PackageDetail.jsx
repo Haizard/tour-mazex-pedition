@@ -27,6 +27,7 @@ import TripCTA from "../Home/TripCTA";
 import LogoSlider from "../Home/LogoSlider";
 import SEO from "../UI/SEO";
 import PackageCard from "./PackageCard";
+import { COUNTRIES, getCountryCode } from "../../data/countries";
 
 
 const slugifyTitle = (value = "") =>
@@ -60,6 +61,7 @@ const PackageDetail = () => {
     email: "",
     phone: "",
     address: "",
+    countryCode: "",
     travelDate: "",
     adults: 2,
     children: 0,
@@ -190,6 +192,17 @@ const PackageDetail = () => {
     setPlanForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleCountryChange = (event) => {
+    const country = event.target.value;
+    const code = getCountryCode(country);
+    setPlanForm((prev) => ({
+      ...prev,
+      address: country,
+      countryCode: code,
+      phone: prev.phone.startsWith(code) ? prev.phone : code,
+    }));
+  };
+
   const handlePlanSubmit = async (event) => {
     event.preventDefault();
     setPlanSubmitting(true);
@@ -197,6 +210,7 @@ const PackageDetail = () => {
     try {
       await createBooking({
         ...planForm,
+        phone: planForm.phone.trim(),
         packageTour: title,
         pax: travelerCount || 1,
         adults: Number(planForm.adults || 0),
@@ -210,6 +224,7 @@ const PackageDetail = () => {
         email: "",
         phone: "",
         address: "",
+        countryCode: "",
         travelDate: "",
         adults: 2,
         children: 0,
@@ -804,24 +819,34 @@ const PackageDetail = () => {
                     required
                   />
                   <div className="grid grid-cols-2 gap-3 md:gap-4">
-                    <input
-                      type="text"
-                      name="phone"
-                      value={planForm.phone}
-                      onChange={handlePlanFieldChange}
-                      placeholder="Phone"
-                      className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
-                      required
-                    />
-                    <input
-                      type="text"
+                    <select
                       name="address"
                       value={planForm.address}
-                      onChange={handlePlanFieldChange}
-                      placeholder="Country"
+                      onChange={handleCountryChange}
                       className="w-full bg-white p-3 md:p-4 text-sm md:text-base rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary/20 font-medium"
                       required
-                    />
+                    >
+                      <option value="">Select Country</option>
+                      {COUNTRIES.map((country) => (
+                        <option key={country.name} value={country.name}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex overflow-hidden rounded-xl md:rounded-2xl border border-gray-100 focus-within:ring-2 focus-within:ring-primary/20">
+                      <span className="flex items-center bg-[#faf6f1] px-3 text-xs md:text-sm font-black text-primary border-r border-gray-100">
+                        {planForm.countryCode || "+Code"}
+                      </span>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={planForm.phone}
+                        onChange={handlePlanFieldChange}
+                        placeholder="Phone Number"
+                        className="w-full bg-white p-3 md:p-4 text-sm md:text-base outline-none font-medium"
+                        required
+                      />
+                    </div>
                   </div>
                   <input
                     type="date"

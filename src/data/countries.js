@@ -1,0 +1,31 @@
+export const COUNTRIES = [
+  { name: "Australia", code: "+61" },
+  { name: "Belgium", code: "+32" },
+  { name: "Canada", code: "+1" },
+  { name: "China", code: "+86" },
+  { name: "Denmark", code: "+45" },
+  { name: "France", code: "+33" },
+  { name: "Germany", code: "+49" },
+  { name: "India", code: "+91" },
+  { name: "Ireland", code: "+353" },
+  { name: "Italy", code: "+39" },
+  { name: "Japan", code: "+81" },
+  { name: "Kenya", code: "+254" },
+  { name: "Netherlands", code: "+31" },
+  { name: "New Zealand", code: "+64" },
+  { name: "Norway", code: "+47" },
+  { name: "South Africa", code: "+27" },
+  { name: "Spain", code: "+34" },
+  { name: "Sweden", code: "+46" },
+  { name: "Switzerland", code: "+41" },
+  { name: "Tanzania", code: "+255" },
+  { name: "Uganda", code: "+256" },
+  { name: "United Arab Emirates", code: "+971" },
+  { name: "United Kingdom", code: "+44" },
+  { name: "United States", code: "+1" },
+  { name: "Zambia", code: "+260" },
+  { name: "Zimbabwe", code: "+263" },
+];
+
+export const getCountryCode = (countryName = "") =>
+  COUNTRIES.find((country) => country.name === countryName)?.code || "";

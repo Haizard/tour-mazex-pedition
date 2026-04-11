@@ -13,7 +13,6 @@ import {
 const initialFormData = {
   firstName: "",
   lastName: "",
-  familyName: "",
   email: "",
   phone: "",
   destinations: [],
@@ -35,9 +34,16 @@ const destinationOptions = [
 ];
 
 const accommodationOptions = [
+  "Luxury Lodge",
+  "Boutique Lodge",
   "5 Stars Property",
   "4 Stars Property",
   "3 Stars Property",
+  "Tented Camp",
+  "Private Villa",
+  "Family-Friendly Stay",
+  "Honeymoon Setup",
+  "Budget-Friendly Stay",
 ];
 
 const stepConfig = [
@@ -375,12 +381,6 @@ const PlanMyTripWizard = ({
                   </div>
                   <div className="space-y-1">
                     <label className="ml-1 text-[9px] md:text-[10px] font-black uppercase text-gray-400">
-                      Family Name
-                    </label>
-                    <input type="text" value={formData.familyName} onChange={(e) => setField("familyName", e.target.value)} className="w-full rounded-xl md:rounded-2xl border bg-gray-50 p-3.5 md:p-4 text-sm font-bold outline-none focus:border-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="ml-1 text-[9px] md:text-[10px] font-black uppercase text-gray-400">
                       E-mail
                     </label>
                     <input required type="email" value={formData.email} onChange={(e) => setField("email", e.target.value)} className="w-full rounded-xl md:rounded-2xl border bg-gray-50 p-3.5 md:p-4 text-sm font-bold outline-none focus:border-primary" />
@@ -461,7 +461,7 @@ const PlanMyTripWizard = ({
                     <div className="flex flex-wrap gap-2 md:gap-3">
                       {accommodationOptions.map((option) => (
                         <button key={option} type="button" onClick={() => toggleListValue("accommodationPreferences", option)} className={`rounded-xl border px-3 py-2.5 md:px-4 md:py-3 text-[10px] md:text-xs font-black uppercase tracking-wide transition-all ${formData.accommodationPreferences.includes(option) ? "border-primary bg-primary text-white shadow-lg" : "border-gray-200 bg-white text-slate-600 hover:border-primary/30"}`}>
-                          {option.split(' ')[0]} Star
+                          {option}
                         </button>
                       ))}
                     </div>

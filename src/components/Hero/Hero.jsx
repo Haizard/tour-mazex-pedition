@@ -50,7 +50,7 @@ const Hero = () => {
               Tanzania Safari
             </h1>
             <div className="font-signature text-safari-gold text-6xl sm:text-8xl lg:text-9xl px-4 pb-4 -mt-4 drop-shadow-2xl transform">
-              Experience
+              Expeditions
             </div>
           </motion.div>
 

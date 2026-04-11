@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Blogs from "./pages/Blogs";
 import NoPage from "./pages/NoPage";
 import PlacesRoute from "./pages/PlacesRoute";
+import DestinationDetail from "./pages/DestinationDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Gallery from "./pages/Gallery";
@@ -45,6 +46,8 @@ const App = () => {
             <Route path="packages" element={<PackagesPage />} />
             <Route path="packages/:title" element={<PackageDetail />} />
             <Route path="best-places" element={<PlacesRoute />} />
+            <Route path="destinations" element={<PlacesRoute />} />
+            <Route path="destinations/:destinationSlug" element={<DestinationDetail />} />
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
             <Route path="gallery" element={<Gallery />} />
