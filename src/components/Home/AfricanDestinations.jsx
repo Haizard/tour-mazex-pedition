@@ -113,7 +113,7 @@ const AfricanDestinations = () => {
                 transition={{ duration: 0.5, delay: 0.1 + (index * 0.1) }}
               >
                 <Link 
-                  to={`/packages?location=${dest.name}`} 
+                  to={`/packages?search=${dest.name}`} 
                   onClick={() => window.scrollTo(0, 0)}
                   className="relative block py-2 md:py-6 border-b border-gray-100 md:border-gray-200 group"
                 >

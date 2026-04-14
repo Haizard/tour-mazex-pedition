@@ -12,7 +12,11 @@ const slugifyTitle = (value = "") =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const badgeLabels = ["Best Seller", "Traveller Choice", "Our Choice"];
+const badgeOptions = [
+  { label: "Best Seller", icon: "⭐" },
+  { label: "Traveller Choice", icon: "❤️" },
+  { label: "Our Choice", icon: "💎" },
+];
 
 const Trending = () => {
   const [tours, setTours] = useState([]);
@@ -107,9 +111,9 @@ const Trending = () => {
                     <div className="absolute inset-0 bg-black/20 transition-colors duration-400 ease-out group-hover:bg-black/40 z-0" />
 
                     {/* Badge (bestseller/travelerschoice) - mapped as text badge */}
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[70px] h-[70px] bg-white/90 backdrop-blur-sm text-safari-green rounded-full flex flex-col items-center justify-center text-[9px] font-black uppercase tracking-wider text-center shadow-[0_4px_10px_rgba(0,0,0,0.3)] border-2 border-safari-gold/50 z-20 px-1 leading-[1.1]">
-                      <span className="text-[16px] mb-[1px]">🏆</span>
-                      <span className="scale-[0.85] w-[75px] block">{badgeLabels[i % badgeLabels.length]}</span>
+                    <div className="absolute top-3 right-3 w-[70px] h-[70px] bg-white/90 backdrop-blur-sm text-safari-green rounded-full flex flex-col items-center justify-center text-[9px] font-black uppercase tracking-wider text-center shadow-[0_4px_10px_rgba(0,0,0,0.3)] border-2 border-safari-gold/50 z-20 px-1 leading-[1.1]">
+                      <span className="text-[16px] mb-[1px]">{badgeOptions[i % badgeOptions.length].icon}</span>
+                      <span className="scale-[0.85] w-[75px] block">{badgeOptions[i % badgeOptions.length].label}</span>
                     </div>
 
                     {/* Title mapped from highlighted-product-title */}
