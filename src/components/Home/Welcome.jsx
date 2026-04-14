@@ -31,8 +31,9 @@ const Welcome = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-xl md:text-3xl font-heading text-gray-800 mb-6 md:mb-8 max-w-4xl mx-auto leading-relaxed"
         >
-          Travel's capacity to change you is just as significant as its capacity
-          to benefit others, including the environment, communities, and
+          Experience the transformative power of travel with MAZ Expeditions—a
+          journey that enriches your soul while fostering the preservation of
+          Africa’s vibrant communities, pristine environments, and majestic
           wildlife.
         </motion.h2>
 
