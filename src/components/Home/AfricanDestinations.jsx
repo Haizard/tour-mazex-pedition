@@ -76,8 +76,10 @@ const AfricanDestinations = () => {
           >
             <h2 className="text-[20px] sm:text-[32px] md:text-[56px] font-heading text-gray-900 leading-tight mb-4 md:mb-10 tracking-tight">
               {firstTitlePart} <span className="md:hidden">Safari</span> <br className="hidden md:block" />
-              <span className="hidden md:inline">{content.subtitle}</span>
-              <em className="font-signature text-safari-green text-[28px] sm:text-[50px] md:text-[90px] lowercase block md:inline-block -mt-1 md:-mt-6">Destinations</em>
+              <span className="hidden md:inline">{content.subtitle} </span>
+              {!content.subtitle.toLowerCase().includes("destinations") && (
+                <em className="font-signature text-safari-green text-[28px] sm:text-[50px] md:text-[90px] lowercase block md:inline-block -mt-1 md:-mt-6">Destinations</em>
+              )}
             </h2>
             
             <div className="bg-white border-l-2 md:border-l-4 border-safari-green p-3 md:p-8 mb-4 md:mb-10 shadow-sm rounded-r-lg md:rounded-r-xl">
