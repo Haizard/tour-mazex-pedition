@@ -2,7 +2,7 @@ import axios from "axios";
 
 const isBrowser = typeof window !== "undefined";
 const API_URL = isBrowser && window.location.hostname === "localhost"
-  ? "http://localhost:5000/api"
+  ? "http://127.0.0.1:5000/api"
   : "/api";
 
 const API = axios.create({ baseURL: API_URL });
