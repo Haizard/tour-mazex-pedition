@@ -3,7 +3,7 @@ import { FaUserCircle, FaFacebookF, FaTwitter, FaInstagram, FaWhatsapp, FaYoutub
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [] }) => {
+const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [], settings }) => {
   const [openSubmenu, setOpenSubmenu] = React.useState(null);
 
   const toggleSubmenu = (id) => {
@@ -100,12 +100,12 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
       {/* Footer / Socials */}
       <div className="flex flex-col gap-4 border-t border-white/10 pt-6">
         <div className="flex justify-between items-center text-xl text-safari-gold">
-          <a href="#" className="hover:text-white transition-colors"><FaFacebookF /></a>
-          <a href="#" className="hover:text-white transition-colors"><FaTwitter /></a>
-          <a href="#" className="hover:text-white transition-colors"><FaInstagram /></a>
-          <a href="#" className="hover:text-white transition-colors"><FaWhatsapp /></a>
-          <a href="#" className="hover:text-white transition-colors"><FaYoutube /></a>
-          <a href="#" className="hover:text-white transition-colors"><FaRedditAlien /></a>
+          {settings?.facebook && <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaFacebookF /></a>}
+          {settings?.twitter && <a href={settings.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaTwitter /></a>}
+          {settings?.instagram && <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaInstagram /></a>}
+          {settings?.whatsapp && <a href={`https://wa.me/${settings.whatsapp.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaWhatsapp /></a>}
+          {settings?.youtube && <a href={settings.youtube} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaYoutube /></a>}
+          {settings?.reddit && <a href={settings.reddit} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaRedditAlien /></a>}
         </div>
         <div className="text-[10px] text-white/40 uppercase flex flex-col gap-1 items-center font-oswald text-center">
           <span>&copy; 2026 MAZ Expeditions</span>

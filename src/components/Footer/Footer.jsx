@@ -1,5 +1,6 @@
 import React from "react";
-import FooterLogo from "../../assets/mazex-pedition-logo.png";
+import FooterLogo from "../../assets/maz-logo.jpeg";
+
 import {
   FaFacebook,
   FaTwitter,
@@ -16,7 +17,8 @@ import {
   FaShieldAlt,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { fetchBlogs, fetchTours } from "../../services/api";
+import { fetchBlogs, fetchTours, fetchSiteSettings } from "../../services/api";
+
 
 const importantLinks = [
   { title: "Home", link: "/" },
@@ -65,11 +67,22 @@ const socialLinks = [
 const Footer = () => {
   const [popularTours, setPopularTours] = React.useState(FALLBACK_TOURS);
   const [popularBlogs, setPopularBlogs] = React.useState(FALLBACK_BLOGS);
+  const [settings, setSettings] = React.useState(null);
+
 
   React.useEffect(() => {
     const loadFooterLinks = async () => {
       try {
-        const [toursRes, blogsRes] = await Promise.all([fetchTours(), fetchBlogs()]);
+        const [toursRes, blogsRes, settingsRes] = await Promise.all([
+          fetchTours(),
+          fetchBlogs(),
+          fetchSiteSettings()
+        ]);
+        
+        if (settingsRes.data) {
+          setSettings(settingsRes.data);
+        }
+
 
         const tours = Array.isArray(toursRes.data) ? toursRes.data : [];
         const blogs = Array.isArray(blogsRes.data) ? blogsRes.data : [];
@@ -113,7 +126,14 @@ const Footer = () => {
           {/* Social Icons & Plan Button - Grouped for Mobile Flow */}
           <div className="flex items-center gap-3 sm:gap-6">
             <ul className="flex items-center gap-2">
-              {socialLinks.slice(0, 4).map((s) => ( // Show fewer on very small screens to fit
+              {[
+                { icon: <FaFacebook />, href: settings?.facebook, label: "Facebook" },
+                { icon: <FaTwitter />, href: settings?.twitter, label: "Twitter" },
+                { icon: <FaInstagram />, href: settings?.instagram, label: "Instagram" },
+                { icon: <FaWhatsapp />, href: settings?.whatsapp ? `https://wa.me/${settings.whatsapp.replace(/\+/g, '')}` : "", label: "WhatsApp" },
+                { icon: <FaYoutube />, href: settings?.youtube, label: "YouTube" },
+                { icon: <FaReddit />, href: settings?.reddit, label: "Reddit" },
+              ].filter(s => s.href).slice(0, 4).map((s) => (
                 <li key={s.label}>
                   <a
                     href={s.href}
@@ -127,6 +147,7 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
+
 
             {/* Plan My Trip Button - Hidden on mobile if screen is tiny */}
             <Link

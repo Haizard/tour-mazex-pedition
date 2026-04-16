@@ -11,9 +11,12 @@ import {
     FaTags,
     FaUsers,
     FaSignOutAlt,
-    FaEdit
+    FaEdit,
+    FaCog
 } from "react-icons/fa";
-import Logo from "../../assets/mazex-pedition-logo.png";
+
+import Logo from "../../assets/maz-logo.jpeg";
+
 
 const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen }) => {
     const menuItems = [
@@ -29,7 +32,9 @@ const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen
         { id: "faqs", label: "FAQs", icon: <FaQuestionCircle /> },
         { id: "visionaries", label: "Visionaries", icon: <FaUsers /> },
         { id: "filters", label: "Filters", icon: <FaTags /> },
+        { id: "settings", label: "Site Settings", icon: <FaCog /> },
     ];
+
 
     return (
         <>

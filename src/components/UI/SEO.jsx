@@ -37,7 +37,7 @@ const SEO = ({
       "name": "MAZ Expeditions",
       "alternateName": "MAZ Expeditions Luxury Safaris",
       "url": SITE_URL,
-      "logo": `${SITE_URL}/logo.png`,
+      "logo": `${SITE_URL}/maz-logo.jpeg`,
       "contactPoint": {
         "@type": "ContactPoint",
         "telephone": "+255-752-000-000",

@@ -1,7 +1,6 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import Button from "../UI/Button";
 import MainVideo from "../../assets/video/main.mp4";
 
 const Hero = () => {
@@ -47,7 +46,7 @@ const Hero = () => {
             className="mb-12"
           >
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-light tracking-[0.3em] uppercase mb-4 text-white/90 drop-shadow-xl">
-              Tanzania Safari
+              Karibu Maz
             </h1>
             <div className="font-signature text-safari-gold text-6xl sm:text-8xl lg:text-9xl px-4 pb-4 -mt-4 drop-shadow-2xl transform">
               Expeditions
@@ -88,8 +87,5 @@ const Hero = () => {
     </div>
   );
 };
-
-// Internal Link helper if react-router Link is needed
-import { Link } from "react-router-dom";
 
 export default Hero;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
-import { FaEdit, FaSearch } from "react-icons/fa";
+import { FaEdit, FaSearch, FaCog } from "react-icons/fa";
+
 import { motion } from "framer-motion";
 import {
   fetchTours,
@@ -26,6 +27,7 @@ import {
   fetchHomeContent,
   updateHomeContent,
   fetchInquiries,
+
   updateInquiryStatus,
   deleteInquiry,
   fetchContactMessages,
@@ -39,10 +41,10 @@ import {
   fetchFaqs,
   createFaq,
   deleteFaq,
-    fetchTaxonomies,
-    createTaxonomy,
-    resetTaxonomiesToDefaults,
-    deleteTaxonomy,
+  fetchTaxonomies,
+  createTaxonomy,
+  resetTaxonomiesToDefaults,
+  deleteTaxonomy,
   fetchVisionaries,
   createVisionary,
   updateVisionary,
@@ -54,6 +56,8 @@ import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import AdminSidebar from "../components/Admin/AdminSidebar";
+import SiteSettings from "../components/Admin/SiteSettings";
+
 
 const slugifyValue = (value = "") =>
   value
@@ -91,6 +95,10 @@ const AdminDashboard = () => {
     quote: "",
     quoteAuthor: "",
   });
+
+
+
+
 
   // Auth Check
   useEffect(() => {
@@ -353,6 +361,8 @@ const AdminDashboard = () => {
     loadFaqs();
     loadTaxonomies();
     loadVisionaries();
+
+
   }, []);
 
   const loadTours = async () => {
@@ -3576,6 +3586,9 @@ const AdminDashboard = () => {
               )}
             </div>
           )}
+
+          {activeTab === "settings" && <SiteSettings />}
+
         </div>
       </div>
     </div>

@@ -92,6 +92,10 @@ export const deleteVisionary = (id) => API.delete(`/visionaries/${id}`);
 export const fetchHomeContent = () => API.get("/home-content");
 export const updateHomeContent = (data) => API.post("/home-content", data);
 
+// Site Settings (Social Links, etc.)
+export const fetchSiteSettings = () => API.get("/site-settings");
+export const updateSiteSettings = (data) => API.put("/site-settings", data);
+
 // Chat
 export const sendChatMessage = (data) => API.post("/chat", data);
 

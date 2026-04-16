@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Logo from "../../assets/mazex-pedition-logo.png";
+import Logo from "../../assets/maz-logo.jpeg";
+
 import { NavLink, Link } from "react-router-dom";
 import {
   FaCaretDown,
@@ -13,7 +14,8 @@ import {
 import { HiMenuAlt3, HiMenuAlt1 } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import ResponsiveMenu from "./ResponsiveMenu";
-import { fetchMenuItems, fetchTours } from "../../services/api";
+import { fetchMenuItems, fetchTours, fetchSiteSettings } from "../../services/api";
+
 import { FRONTEND_MENU_DEFAULTS, MENU_IMAGE_BY_KEY } from "./defaultMenuItems";
 
 const slugifyTitle = (value = "") =>
@@ -114,6 +116,7 @@ const Navbar = ({ handleOrderPopup }) => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuItems, setMenuItems] = useState(FRONTEND_MENU_DEFAULTS);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -128,7 +131,16 @@ const Navbar = ({ handleOrderPopup }) => {
   useEffect(() => {
     const loadMenuItems = async () => {
       try {
-        const [menuRes, toursRes] = await Promise.all([fetchMenuItems(), fetchTours()]);
+        const [menuRes, toursRes, settingsRes] = await Promise.all([
+          fetchMenuItems(),
+          fetchTours(),
+          fetchSiteSettings()
+        ]);
+        
+        if (settingsRes.data) {
+          setSettings(settingsRes.data);
+        }
+
         const menuData =
           Array.isArray(menuRes.data) && menuRes.data.length > 0
             ? menuRes.data
@@ -157,12 +169,12 @@ const Navbar = ({ handleOrderPopup }) => {
       >
         <div className="container mx-auto flex justify-between items-center px-4">
           <div className="flex items-center gap-4 text-sm">
-            <a href="#" className="hover:text-safari-gold transition-colors"><FaFacebookF /></a>
-            <a href="#" className="hover:text-safari-gold transition-colors"><FaTwitter /></a>
-            <a href="#" className="hover:text-safari-gold transition-colors"><FaInstagram /></a>
-            <a href="#" className="hover:text-safari-gold transition-colors"><FaWhatsapp /></a>
-            <a href="#" className="hover:text-safari-gold transition-colors"><FaYoutube /></a>
-            <a href="#" className="hover:text-safari-gold transition-colors"><FaRedditAlien /></a>
+            {settings?.facebook && <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-safari-gold transition-colors"><FaFacebookF /></a>}
+            {settings?.twitter && <a href={settings.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-safari-gold transition-colors"><FaTwitter /></a>}
+            {settings?.instagram && <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-safari-gold transition-colors"><FaInstagram /></a>}
+            {settings?.whatsapp && <a href={`https://wa.me/${settings.whatsapp.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-safari-gold transition-colors"><FaWhatsapp /></a>}
+            {settings?.youtube && <a href={settings.youtube} target="_blank" rel="noopener noreferrer" className="hover:text-safari-gold transition-colors"><FaYoutube /></a>}
+            {settings?.reddit && <a href={settings.reddit} target="_blank" rel="noopener noreferrer" className="hover:text-safari-gold transition-colors"><FaRedditAlien /></a>}
           </div>
 
           <div className="flex-1 flex justify-center">
@@ -200,7 +212,7 @@ const Navbar = ({ handleOrderPopup }) => {
         <div className="container mx-auto flex justify-between items-center px-4">
           <Link to="/" className="flex items-center" onClick={() => window.scrollTo(0, 0)}>
             <img
-              src={Logo}
+              src={settings?.logoUrl || Logo}
               alt="Logo"
               className={`h-12 sm:h-14 md:h-20 rounded-full shadow-2xl transition-all duration-300 ${
                 isScrolled ? "border-2 border-[#6f5336]/20" : "border-2 border-white/20"
@@ -319,6 +331,7 @@ const Navbar = ({ handleOrderPopup }) => {
         showMenu={showMenu}
         handleOrderPopup={handleOrderPopup}
         menuItems={menuItems}
+        settings={settings}
       />
     </nav>
   );
