@@ -383,6 +383,175 @@ const SectionContentFields = ({ section, onChange }) => {
     );
   }
 
+  if (section.type === "groupTours") {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+        <input
+          type="text"
+          value={content.prefixLabel || ""}
+          onChange={(e) => onChange("contentConfig", "prefixLabel", e.target.value)}
+          placeholder="Prefix label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.scriptLabel || ""}
+          onChange={(e) => onChange("contentConfig", "scriptLabel", e.target.value)}
+          placeholder="Script label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.suffixLabel || ""}
+          onChange={(e) => onChange("contentConfig", "suffixLabel", e.target.value)}
+          placeholder="Suffix label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.capacityLabel || ""}
+          onChange={(e) => onChange("contentConfig", "capacityLabel", e.target.value)}
+          placeholder="Capacity label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.bookingLabel || ""}
+          onChange={(e) => onChange("contentConfig", "bookingLabel", e.target.value)}
+          placeholder="Booking button label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.itineraryLabel || ""}
+          onChange={(e) => onChange("contentConfig", "itineraryLabel", e.target.value)}
+          placeholder="Itinerary button label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+      </div>
+    );
+  }
+
+  if (section.type === "testimonials") {
+    const items = content.testimonials || [];
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+        <input
+          type="text"
+          value={content.ratingLabel || ""}
+          onChange={(e) => onChange("contentConfig", "ratingLabel", e.target.value)}
+          placeholder="Rating label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.reviewCountLabel || ""}
+          onChange={(e) => onChange("contentConfig", "reviewCountLabel", e.target.value)}
+          placeholder="Review count label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.providerLabel || ""}
+          onChange={(e) => onChange("contentConfig", "providerLabel", e.target.value)}
+          placeholder="Provider label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.backgroundImage || ""}
+          onChange={(e) => onChange("contentConfig", "backgroundImage", e.target.value)}
+          placeholder="Background image URL"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        {items.slice(0, 3).map((item, index) => (
+          <React.Fragment key={`testimonial-${index}`}>
+            <input
+              type="text"
+              value={item.name || ""}
+              onChange={(e) =>
+                onChange(
+                  "contentConfig",
+                  "testimonials",
+                  items.map((current, currentIndex) =>
+                    currentIndex === index ? { ...current, name: e.target.value } : current
+                  )
+                )
+              }
+              placeholder={`Testimonial ${index + 1} name`}
+              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+            />
+            <input
+              type="text"
+              value={item.date || ""}
+              onChange={(e) =>
+                onChange(
+                  "contentConfig",
+                  "testimonials",
+                  items.map((current, currentIndex) =>
+                    currentIndex === index ? { ...current, date: e.target.value } : current
+                  )
+                )
+              }
+              placeholder={`Testimonial ${index + 1} date`}
+              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+            />
+            <textarea
+              rows={3}
+              value={item.text || ""}
+              onChange={(e) =>
+                onChange(
+                  "contentConfig",
+                  "testimonials",
+                  items.map((current, currentIndex) =>
+                    currentIndex === index ? { ...current, text: e.target.value } : current
+                  )
+                )
+              }
+              placeholder={`Testimonial ${index + 1} text`}
+              className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+            />
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === "logoCloud") {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+        <input
+          type="text"
+          value={content.title || ""}
+          onChange={(e) => onChange("contentConfig", "title", e.target.value)}
+          placeholder="Logo section label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.backgroundColor || ""}
+          onChange={(e) => onChange("contentConfig", "backgroundColor", e.target.value)}
+          placeholder="Background color"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <textarea
+          rows={4}
+          value={(content.logos || []).join("\n")}
+          onChange={(e) =>
+            onChange(
+              "contentConfig",
+              "logos",
+              e.target.value.split("\n").map((item) => item.trim()).filter(Boolean)
+            )
+          }
+          placeholder="One logo URL or path per line"
+          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400">
       No editable content fields yet for this section.

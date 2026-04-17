@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
@@ -13,7 +13,14 @@ const slugifyTitle = (value = "") =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const GroupTours = () => {
+const GroupTours = ({
+  prefixLabel = "Our",
+  scriptLabel = "Group",
+  suffixLabel = "Tours",
+  bookingLabel = "Book Now",
+  itineraryLabel = "See Itinerary",
+  capacityLabel = "Capacity",
+}) => {
   const [groupTours, setGroupTours] = useState([]);
   const navigate = useNavigate();
 
@@ -21,9 +28,7 @@ const GroupTours = () => {
     const loadGroupTours = async () => {
       try {
         const res = await fetchTours();
-        // Filter out tours that are explicitly marked as group tours in the CMS
-        const filteredGroups = res.data.filter((tour) => tour.isGroupTour);
-        setGroupTours(filteredGroups);
+        setGroupTours(res.data.filter((tour) => tour.isGroupTour));
       } catch (error) {
         console.error("Error loading group tours:", error);
       }
@@ -32,21 +37,21 @@ const GroupTours = () => {
   }, []);
 
   const handleItinerary = (item) => {
-    navigate(`/packages/${slugifyTitle(item.title)}?tourId=${item._id}`, { state: item });
+    navigate(`/packages/${slugifyTitle(item.title)}?tourId=${item._id}`, {
+      state: item,
+    });
     window.scrollTo(0, 0);
   };
 
   const handleBooking = () => {
-    // Assuming there is a general contact/booking page
     navigate("/contact");
     window.scrollTo(0, 0);
   };
 
-  // Helper to safely format CMS date strings
   const formatDate = (dateString) => {
     if (!dateString) return "Dates Flexible";
     const date = new Date(dateString);
-    if (isNaN(date)) return "Dates Flexible";
+    if (Number.isNaN(date.getTime())) return "Dates Flexible";
     return date.toLocaleDateString("en-US", {
       month: "long",
       day: "2-digit",
@@ -55,24 +60,26 @@ const GroupTours = () => {
   };
 
   if (groupTours.length === 0) {
-    return null; // Do not render section if no group tours are active
+    return null;
   }
 
   return (
     <div className="bg-white py-12 md:py-16">
       <div className="container px-4 max-w-6xl mx-auto">
-        {/* Title Area matching Popular Tours custom header structure */}
         <div className="text-center mb-10 md:mb-16 px-4">
           <h2 className="text-3xl md:text-5xl font-heading text-gray-900 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4">
-            <span className="uppercase tracking-wide text-2xl md:text-4xl">Our</span>
-            <span className="font-signature text-6xl md:text-[88px] text-safari-green leading-none -mt-2 md:mt-0">
-              Group
+            <span className="uppercase tracking-wide text-2xl md:text-4xl">
+              {prefixLabel}
             </span>
-            <span className="uppercase tracking-wide text-2xl md:text-4xl">Tours</span>
+            <span className="font-signature text-6xl md:text-[88px] text-safari-green leading-none -mt-2 md:mt-0">
+              {scriptLabel}
+            </span>
+            <span className="uppercase tracking-wide text-2xl md:text-4xl">
+              {suffixLabel}
+            </span>
           </h2>
         </div>
 
-        {/* Group Tours List Rows */}
         <div className="space-y-4 md:space-y-4">
           {groupTours.map((item, index) => (
             <motion.div
@@ -83,10 +90,8 @@ const GroupTours = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="group flex flex-col md:flex-row gap-4 md:gap-6 items-stretch p-4 md:p-4 border border-transparent rounded-2xl md:rounded-[20px] bg-[#f4fbf6] hover:bg-white hover:border-safari-green hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 relative overflow-hidden"
             >
-              {/* Beeping animated border effect */}
               <div className="absolute inset-0 border-[2px] border-safari-green/30 rounded-[20px] animate-pulse pointer-events-none z-0" />
 
-              {/* Image Section & Price Badge */}
               <div className="flex-shrink-0 w-full md:w-[240px] h-[200px] md:h-[160px] relative rounded-xl md:rounded-[16px] overflow-hidden shadow-sm">
                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10" />
                 <img
@@ -94,8 +99,7 @@ const GroupTours = () => {
                   alt={item.title}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                
-                {/* Price Badge Overlay */}
+
                 <div className="absolute bottom-0 right-0 bg-safari-green/95 backdrop-blur shadow-lg text-white py-1.5 px-3 md:py-2 md:px-4 rounded-tl-[16px] md:rounded-tl-[20px] z-20 flex flex-col items-center justify-center transform group-hover:bg-safari-green transition-colors">
                   <span className="text-[9px] md:text-[10px] uppercase tracking-wider font-semibold text-green-100 mb-0.5">
                     Starting From
@@ -109,7 +113,6 @@ const GroupTours = () => {
                 </div>
               </div>
 
-              {/* Content Section (Expands to fill middle) */}
               <div className="flex-1 flex flex-col justify-center py-2 md:py-4 px-2 md:px-0 text-center md:text-left">
                 <h3 className="font-heading text-lg lg:text-2xl font-bold text-gray-900 leading-tight group-hover:text-safari-green transition-colors">
                   {item.title}
@@ -120,24 +123,23 @@ const GroupTours = () => {
                     {formatDate(item.launchDate)}
                   </span>
                   <span className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-[11px] md:text-xs font-semibold tracking-wide">
-                    🔥 Capacity: {item.currentBookings || 0}/{item.maxCapacity || 10}
+                    {capacityLabel}: {item.currentBookings || 0}/{item.maxCapacity || 10}
                   </span>
                 </div>
               </div>
 
-              {/* Action Buttons Section (Fixed Width Right Align) */}
               <div className="flex flex-col sm:flex-row md:flex-col justify-center items-center gap-2 md:gap-3 md:w-[180px] md:border-l md:border-gray-100 md:pl-6 py-2 md:py-4">
                 <button
                   onClick={handleBooking}
                   className="w-full sm:flex-1 md:w-full bg-green-700 text-white font-oswald font-medium py-3 md:py-2.5 px-4 rounded-xl md:rounded-[8px] hover:bg-green-800 transition-colors uppercase tracking-widest text-[13px] md:text-sm shadow-sm"
                 >
-                  Book Now
+                  {bookingLabel}
                 </button>
                 <button
                   onClick={() => handleItinerary(item)}
                   className="w-full sm:flex-1 md:w-full bg-[#8B4513] text-white font-oswald font-medium py-3 md:py-2.5 px-4 rounded-xl md:rounded-[8px] hover:bg-[#6e3710] transition-colors uppercase tracking-widest text-[13px] md:text-sm shadow-sm"
                 >
-                  See Itinerary
+                  {itineraryLabel}
                 </button>
               </div>
             </motion.div>

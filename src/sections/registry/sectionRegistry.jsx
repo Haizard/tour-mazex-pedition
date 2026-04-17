@@ -78,6 +78,17 @@ const buildSectionProps = (section) => {
     };
   }
 
+  if (section.type === "groupTours") {
+    return {
+      prefixLabel: contentConfig.prefixLabel,
+      scriptLabel: contentConfig.scriptLabel,
+      suffixLabel: contentConfig.suffixLabel,
+      bookingLabel: contentConfig.bookingLabel,
+      itineraryLabel: contentConfig.itineraryLabel,
+      capacityLabel: contentConfig.capacityLabel,
+    };
+  }
+
   if (section.type === "featuredPackages") {
     return {
       prefixLabel: contentConfig.prefixLabel || "Our",
@@ -107,6 +118,24 @@ const buildSectionProps = (section) => {
       description: contentConfig.description,
       quote: contentConfig.quote,
       quoteAuthor: contentConfig.quoteAuthor,
+    };
+  }
+
+  if (section.type === "testimonials") {
+    return {
+      backgroundImage: contentConfig.backgroundImage,
+      ratingLabel: contentConfig.ratingLabel,
+      reviewCountLabel: contentConfig.reviewCountLabel,
+      providerLabel: contentConfig.providerLabel,
+      testimonials: contentConfig.testimonials,
+    };
+  }
+
+  if (section.type === "logoCloud") {
+    return {
+      logos: contentConfig.logos,
+      backgroundColor: contentConfig.backgroundColor,
+      title: contentConfig.title,
     };
   }
 

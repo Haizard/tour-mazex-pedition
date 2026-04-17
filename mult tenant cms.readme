@@ -35,11 +35,14 @@ The original architecture brief below is preserved as the product vision.
   - implemented editable builder-backed content for:
     - hero
     - featured packages
+    - group tours
     - CTA
     - destinations
     - about/welcome
     - trending heading
     - blog preview labels/search empty state
+    - testimonials
+    - logo cloud
 - Legacy homepage editor has been phased out from active admin navigation
 
 [Partially implemented]

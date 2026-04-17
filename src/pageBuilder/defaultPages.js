@@ -102,7 +102,14 @@ export const legacyHomePage = {
       order: 5,
       enabled: true,
       dataConfig: { source: "group-tours" },
-      contentConfig: {},
+      contentConfig: {
+        prefixLabel: "Our",
+        scriptLabel: "Group",
+        suffixLabel: "Tours",
+        bookingLabel: "Book Now",
+        itineraryLabel: "See Itinerary",
+        capacityLabel: "Capacity",
+      },
       styleConfig: {},
     },
     {
@@ -145,7 +152,38 @@ export const legacyHomePage = {
       },
       styleConfig: {},
     },
-    { type: "testimonials", variant: "default", order: 8, enabled: true, dataConfig: {}, contentConfig: {}, styleConfig: {} },
+    {
+      type: "testimonials",
+      variant: "default",
+      order: 8,
+      enabled: true,
+      dataConfig: {},
+      contentConfig: {
+        backgroundImage:
+          "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+        ratingLabel: "EXCELLENT",
+        reviewCountLabel: "Based on 30 reviews",
+        providerLabel: "Tripadvisor",
+        testimonials: [
+          {
+            name: "Roderick P",
+            date: "2025-01-21",
+            text: "My family and I had an amazing combination of a safari and a Kilimanjaro trek with MAZ Expeditions. Our safari guide, Laurent, was fantastic...",
+          },
+          {
+            name: "Jane R",
+            date: "2025-01-10",
+            text: "The safari was absolutely stunning! Every detail was managed perfectly, and the wildlife was breathtaking. I will never forget the Serengeti.",
+          },
+          {
+            name: "William J",
+            date: "2025-01-12",
+            text: "Our Kilimanjaro trek via the Lemosho Route was beyond incredible! From the moment we arrived, the team made us feel safe and well-prepared...",
+          },
+        ],
+      },
+      styleConfig: {},
+    },
     {
       type: "cta",
       variant: "trip-cta",
@@ -166,6 +204,23 @@ export const legacyHomePage = {
       },
       styleConfig: {},
     },
-    { type: "logoCloud", variant: "default", order: 10, enabled: true, dataConfig: {}, contentConfig: {}, styleConfig: {} },
+    {
+      type: "logoCloud",
+      variant: "default",
+      order: 10,
+      enabled: true,
+      dataConfig: {},
+      contentConfig: {
+        title: "",
+        backgroundColor: "#ffffff",
+        logos: [
+          "/assets/images/tanapa.png",
+          "/assets/images/tanapalogo.png",
+          "/assets/images/ttblogo.png",
+          "/assets/images/tatologo.png",
+        ],
+      },
+      styleConfig: {},
+    },
   ],
 };
