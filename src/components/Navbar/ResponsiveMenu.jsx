@@ -1,13 +1,25 @@
 import React from "react";
 import { FaUserCircle, FaFacebookF, FaTwitter, FaInstagram, FaWhatsapp, FaYoutube, FaRedditAlien, FaChevronDown, FaPhone, FaEnvelope } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [], settings }) => {
+const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [], settings, navigationConfig = {} }) => {
+  const navigate = useNavigate();
   const [openSubmenu, setOpenSubmenu] = React.useState(null);
 
   const toggleSubmenu = (id) => {
     setOpenSubmenu(openSubmenu === id ? null : id);
+  };
+
+  const handlePrimaryCta = () => {
+    const href = navigationConfig.ctaHref || "/plan-my-trip";
+    if (href === "popup") {
+      handleOrderPopup();
+    } else {
+      navigate(href);
+      window.scrollTo(0, 0);
+    }
+    setShowMenu(false);
   };
 
   return (
@@ -87,12 +99,9 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
         <div className="mt-2 pb-6">
           <button
             className="w-full bg-safari-green text-white py-3 rounded-lg font-bold uppercase tracking-wider text-xs shadow-lg hover:bg-green-800 transition-all"
-            onClick={() => {
-              handleOrderPopup();
-              setShowMenu(false);
-            }}
+            onClick={handlePrimaryCta}
           >
-            Plan My Trip
+            {navigationConfig.ctaLabel || "Plan My Trip"}
           </button>
         </div>
       </div>
@@ -108,7 +117,7 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
           {settings?.reddit && <a href={settings.reddit} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaRedditAlien /></a>}
         </div>
         <div className="text-[10px] text-white/40 uppercase flex flex-col gap-1 items-center font-oswald text-center">
-          <span>&copy; 2026 MAZ Expeditions</span>
+          <span>{navigationConfig.mobileCopyrightLabel || "© 2026 MAZ Expeditions"}</span>
           <div className="mt-2 pt-2 border-t border-white/5 w-full flex flex-col gap-1">
             <span className="text-safari-gold font-bold tracking-widest uppercase">Developed by:</span>
             <span className="text-white font-black text-xs">haizard@misape</span>

@@ -7,6 +7,11 @@ const itinerarySchema = new mongoose.Schema({
 });
 
 const tourPackageSchema = new mongoose.Schema({
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tenant',
+    index: true,
+  },
   title: { type: String, required: true },
   description: { type: String, required: true },
   price: { type: Number, required: true }, // Numeric price for search/filters

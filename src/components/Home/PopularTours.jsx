@@ -15,7 +15,12 @@ const slugifyTitle = (value = "") =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const PopularTours = () => {
+const PopularTours = ({
+  prefixLabel = "Our",
+  scriptLabel = "popular",
+  suffixLabel = "Expeditions",
+  limit = 6,
+}) => {
   const [tours, setTours] = useState([]);
   const navigate = useNavigate();
 
@@ -24,13 +29,13 @@ const PopularTours = () => {
       try {
         const res = await fetchTours();
         // Skip the first 6 used in Top Rated, take the next 6
-        setTours(res.data.slice(-6).reverse()); // Using the last 6 items assuming there are enough in CMS
+        setTours(res.data.slice(-Math.max(limit, 1)).reverse()); // Using the last items assuming there are enough in CMS
       } catch (error) {
         console.error("Error loading popular tours:", error);
       }
     };
     loadTours();
-  }, []);
+  }, [limit]);
 
   const handleNavigate = (item) => {
     navigate(`/packages/${slugifyTitle(item.title)}?tourId=${item._id}`, { state: item });
@@ -43,9 +48,9 @@ const PopularTours = () => {
         {/* Title Area */}
         <div className="text-center mb-10 md:mb-16 px-4">
           <h2 className="text-3xl md:text-5xl font-heading text-gray-900 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4">
-            <span className="uppercase tracking-wide text-2xl md:text-4xl">Our</span>
-            <span className="font-signature text-6xl md:text-[88px] text-safari-green leading-none lowercase -mt-2 md:mt-0">popular</span>
-            <span className="uppercase tracking-wide text-2xl md:text-4xl">Expeditions</span>
+            <span className="uppercase tracking-wide text-2xl md:text-4xl">{prefixLabel}</span>
+            <span className="font-signature text-6xl md:text-[88px] text-safari-green leading-none lowercase -mt-2 md:mt-0">{scriptLabel}</span>
+            <span className="uppercase tracking-wide text-2xl md:text-4xl">{suffixLabel}</span>
           </h2>
         </div>
 

@@ -15,6 +15,7 @@ import BlogDetail from "./components/Blogs/BlogDetail";
 import BlogCategory from "./pages/BlogCategory";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
+import AdminRoute from "./components/Admin/AdminRoute";
 import PlanMyTrip from "./pages/PlanMyTrip";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
@@ -34,7 +35,14 @@ const AppRoutes = () => (
       <Route path="about" element={<About />} />
       <Route path="contact" element={<Contact />} />
       <Route path="gallery" element={<Gallery />} />
-      <Route path="admin" element={<AdminDashboard />} />
+      <Route
+        path="admin"
+        element={(
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        )}
+      />
       <Route path="login" element={<AdminLogin />} />
       <Route path="plan-my-trip" element={<PlanMyTrip />} />
       <Route path="tailor-made" element={<PlanMyTrip />} />

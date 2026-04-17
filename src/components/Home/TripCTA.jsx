@@ -2,13 +2,21 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
-const TripCTA = () => {
+const TripCTA = ({
+  heading = "Let's talk about your",
+  subheading = "Trip to Africa!",
+  description = "All our custom itineraries are inspired by our travel experts and positive feedback from past travelers. We're sharing them so you can get a taste of the experience. However, we're flexible and can tailor-make an itinerary just for you. Let us know your preferences, and our safari experts will create a personalized proposal.",
+  primaryLabel = "Useful Articles",
+  primaryHref = "/blogs",
+  secondaryLabel = "Plan My Trip",
+  secondaryHref = "/contact",
+  backgroundImage = "https://images.unsplash.com/photo-1547970810-dc1eac37d174?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+}) => {
   return (
     <section
       className="relative w-full bg-cover bg-center bg-no-repeat py-8 md:py-20 lg:py-24"
       style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1547970810-dc1eac37d174?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
+        backgroundImage: `url('${backgroundImage}')`,
       }}
     >
       {/* Gradient overlay matching HTML's linear-gradient(to top, rgba(139,69,19,...)) */}
@@ -26,10 +34,10 @@ const TripCTA = () => {
             className="md:w-[38%] text-center md:text-right shrink-0 md:pr-8"
           >
             <h2 className="text-white font-heading text-2xl md:text-5xl font-bold leading-tight">
-              Let's talk about your
+              {heading}
             </h2>
             <h4 className="text-safari-green font-heading text-xl md:text-4xl font-light mt-0.5 md:mt-2">
-              Trip to Africa!
+              {subheading}
             </h4>
           </motion.div>
 
@@ -45,23 +53,23 @@ const TripCTA = () => {
             className="md:w-[62%] md:pl-8"
           >
             <p className="text-white/80 font-sans text-xs md:text-lg leading-relaxed md:leading-7 mb-4 md:mb-8 line-clamp-3 md:line-clamp-none">
-              All our custom itineraries are inspired by our travel experts and positive feedback from past travelers. We're sharing them so you can get a taste of the experience. However, we're flexible and can tailor-make an itinerary just for you. Let us know your preferences, and our safari experts will create a personalized proposal.
+              {description}
             </p>
 
             <div className="flex flex-wrap gap-2 md:gap-4">
               <Link
-                to="/blogs"
+                to={primaryHref}
                 onClick={() => window.scrollTo(0, 0)}
                 className="font-oswald uppercase tracking-wider text-[10px] md:text-sm bg-safari-green text-white px-4 md:px-8 py-2 md:py-3.5 rounded-md hover:bg-green-800 transition-colors duration-300"
               >
-                Useful Articles
+                {primaryLabel}
               </Link>
               <Link
-                to="/contact"
+                to={secondaryHref}
                 onClick={() => window.scrollTo(0, 0)}
                 className="font-oswald uppercase tracking-wider text-[10px] md:text-sm bg-safari-green text-white px-4 md:px-8 py-2 md:py-3.5 rounded-md hover:bg-green-800 transition-colors duration-300"
               >
-                Plan My Trip
+                {secondaryLabel}
               </Link>
             </div>
           </motion.div>

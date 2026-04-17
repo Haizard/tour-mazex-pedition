@@ -1,4 +1,5 @@
 import express from 'express';
+import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
 import { getAllBlogs, getBlogById, getBlogBySlug, createBlog, updateBlog, deleteBlog, regenerateBlogContent, generateBlogSeo } from '../controllers/blogController.js';
 import { generateDailyBlog } from '../controllers/blogAutomationController.js';
 
@@ -6,8 +7,8 @@ const router = express.Router();
 
 // Auto-generate blog
 router.post('/auto-generate', generateDailyBlog);
-router.post('/regenerate-content', regenerateBlogContent);
-router.post('/generate-seo', generateBlogSeo);
+router.post('/regenerate-content', requireTenantAdmin, regenerateBlogContent);
+router.post('/generate-seo', requireTenantAdmin, generateBlogSeo);
 
 // Get all blogs
 router.get('/', getAllBlogs);
@@ -19,12 +20,12 @@ router.get('/slug/:slug', getBlogBySlug);
 router.get('/:id', getBlogById);
 
 // Create blog
-router.post('/', createBlog);
+router.post('/', requireTenantAdmin, createBlog);
 
 // Update blog
-router.put('/:id', updateBlog);
+router.put('/:id', requireTenantAdmin, updateBlog);
 
 // Delete blog
-router.delete('/:id', deleteBlog);
+router.delete('/:id', requireTenantAdmin, deleteBlog);
 
 export default router;

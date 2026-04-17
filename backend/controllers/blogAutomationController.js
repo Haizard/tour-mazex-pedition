@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import Blog from "../models/Blog.js";
 import TourPackage from "../models/TourPackage.js";
+import { buildTenantFilter } from "../utils/tenantContext.js";
 
 const generateAiImage = async (ai, prompt) => {
     const imageModels = [
@@ -88,17 +89,18 @@ export const generateDailyBlog = async (req, res) => {
             apiKey: process.env.GEMINI_API_KEY,
         });
 
-        const availableTours = await TourPackage.find({}).select("title").limit(10);
+        const availableTours = await TourPackage.find(buildTenantFilter(req)).select("title").limit(10);
         const tourContext = availableTours.map((tour) => `- ${tour.title}`).join("\n");
 
         const Taxonomy = (await import("../models/Taxonomy.js")).default;
-        const blogCats = await Taxonomy.find({ type: "blogCategory" }).select("name");
+        const blogCats = await Taxonomy.find(buildTenantFilter(req, { type: "blogCategory" })).select("name");
+        const brandName = req.tenant?.name || "MAZ Expeditions";
         const categoryList = blogCats.length > 0
             ? blogCats.map((category) => category.name).join(" | ")
             : "Safari News | Trekking Tips | Cultural Insights";
 
         const systemInstruction = `
-            Act as a Senior Tanzanian Travel Journalist and Luxury Safari Architect for "MAZ Expeditions".
+            Act as a Senior Tanzanian Travel Journalist and Luxury Safari Architect for "${brandName}".
             Your goal is to write a weekly "Expert Insight" blog that feels handcrafted, authoritative, and deeply knowledgeable. Avoid generic AI phrasing.
 
             Internal Linking (CRITICAL):
@@ -184,11 +186,12 @@ Every blog must end with a strong closing CTA that encourages booking a package 
         }
 
         const newBlog = new Blog({
+            tenantId: req.tenantId,
             title: blogData.title,
             content: blogData.content,
             category: blogData.category,
             image: imageUrl,
-            author: "MAZ Expeditions Expert"
+            author: `${brandName} Expert`
         });
 
         await newBlog.save();

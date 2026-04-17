@@ -3,11 +3,18 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainVideo from "../../assets/video/main.mp4";
 
-const Hero = () => {
+const Hero = ({
+  eyebrow = "Karibu Maz",
+  headlineScript = "Expeditions",
+  primaryCtaLabel = "START PLANNING NOW",
+  primaryCtaHref = "/plan-my-trip",
+  secondaryCtaLabel = "Explore All Packages",
+  secondaryCtaHref = "/packages",
+}) => {
   const navigate = useNavigate();
 
   const handleStartPlanning = () => {
-    navigate("/plan-my-trip");
+    navigate(primaryCtaHref);
     window.scrollTo(0, 0);
   };
 
@@ -46,10 +53,10 @@ const Hero = () => {
             className="mb-12"
           >
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-light tracking-[0.3em] uppercase mb-4 text-white/90 drop-shadow-xl">
-              Karibu Maz
+              {eyebrow}
             </h1>
             <div className="font-signature text-safari-gold text-6xl sm:text-8xl lg:text-9xl px-4 pb-4 -mt-4 drop-shadow-2xl transform">
-              Expeditions
+              {headlineScript}
             </div>
           </motion.div>
 
@@ -64,12 +71,12 @@ const Hero = () => {
               onClick={handleStartPlanning}
               className="group relative bg-safari-green text-white px-12 py-5 rounded-xl font-oswald font-bold text-xl uppercase tracking-[0.2em] shadow-2xl transition-all duration-500 hover:bg-safari-gold hover:text-black overflow-hidden active:scale-95"
             >
-              <span className="relative z-10">START PLANNING NOW</span>
+              <span className="relative z-10">{primaryCtaLabel}</span>
               <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
             </button>
             
-            <Link to="/packages" className="text-white/80 font-oswald text-sm uppercase tracking-widest hover:text-safari-gold transition-colors underline underline-offset-8 decoration-white/20 hover:decoration-safari-gold">
-              Explore All Packages
+            <Link to={secondaryCtaHref} className="text-white/80 font-oswald text-sm uppercase tracking-widest hover:text-safari-gold transition-colors underline underline-offset-8 decoration-white/20 hover:decoration-safari-gold">
+              {secondaryCtaLabel}
             </Link>
           </motion.div>
         </motion.div>

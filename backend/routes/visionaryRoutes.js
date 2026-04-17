@@ -1,12 +1,14 @@
 import express from 'express';
 import Visionary from '../models/Visionary.js';
+import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
+import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
 
 const router = express.Router();
 
 // GET all visionaries
 router.get('/', async (req, res) => {
     try {
-        const visionaries = await Visionary.find().sort({ createdAt: -1 });
+        const visionaries = await Visionary.find(buildTenantFilter(req)).sort({ createdAt: -1 });
         res.json(visionaries);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -16,19 +18,19 @@ router.get('/', async (req, res) => {
 // GET a single visionary
 router.get('/:id', async (req, res) => {
     try {
-        const visionary = await Visionary.findById(req.params.id);
+        const visionary = await Visionary.findOne(buildTenantFilter(req, { _id: req.params.id }));
         res.json(visionary);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-router.post('/', async (req, res) => {
-    const visionary = new Visionary({
+router.post('/', requireTenantAdmin, async (req, res) => {
+    const visionary = new Visionary(withTenantId(req, {
         name: req.body.name,
         duty: req.body.duty,
         image: req.body.image
-    });
+    }));
 
     try {
         const newVisionary = await visionary.save();
@@ -39,10 +41,10 @@ router.post('/', async (req, res) => {
 });
 
 // PUT to update a visionary
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireTenantAdmin, async (req, res) => {
     try {
-        const updatedVisionary = await Visionary.findByIdAndUpdate(
-            req.params.id,
+        const updatedVisionary = await Visionary.findOneAndUpdate(
+            buildTenantFilter(req, { _id: req.params.id }),
             req.body,
             { new: true }
         );
@@ -53,9 +55,9 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE a visionary
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireTenantAdmin, async (req, res) => {
     try {
-        await Visionary.findByIdAndDelete(req.params.id);
+        await Visionary.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id }));
         res.json({ message: 'Visionary deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -1,12 +1,13 @@
 import SiteSettings from '../models/SiteSettings.js';
+import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 
 // Get site settings
 export const getSettings = async (req, res) => {
     try {
-        let settings = await SiteSettings.findOne();
+        let settings = await SiteSettings.findOne(buildTenantFilter(req));
         if (!settings) {
             // Create default settings if none exist
-            settings = await SiteSettings.create({
+            settings = await SiteSettings.create(withTenantId(req, {
                 facebook: '',
                 twitter: '',
                 instagram: '',
@@ -14,7 +15,7 @@ export const getSettings = async (req, res) => {
                 youtube: '',
                 reddit: '',
                 logoUrl: ''
-            });
+            }));
         }
         res.json(settings);
     } catch (error) {
@@ -26,7 +27,7 @@ export const getSettings = async (req, res) => {
 export const updateSettings = async (req, res) => {
     try {
         const { facebook, twitter, instagram, whatsapp, youtube, reddit, logoUrl } = req.body;
-        let settings = await SiteSettings.findOne();
+        let settings = await SiteSettings.findOne(buildTenantFilter(req));
         
         if (settings) {
             settings.facebook = facebook !== undefined ? facebook : settings.facebook;
@@ -38,9 +39,9 @@ export const updateSettings = async (req, res) => {
             settings.logoUrl = logoUrl !== undefined ? logoUrl : settings.logoUrl;
             await settings.save();
         } else {
-            settings = await SiteSettings.create({
+            settings = await SiteSettings.create(withTenantId(req, {
                 facebook, twitter, instagram, whatsapp, youtube, reddit, logoUrl
-            });
+            }));
         }
         res.json(settings);
     } catch (error) {

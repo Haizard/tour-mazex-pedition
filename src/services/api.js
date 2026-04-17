@@ -7,6 +7,60 @@ const API_URL = isBrowser && window.location.hostname === "localhost"
 
 const API = axios.create({ baseURL: API_URL });
 
+const getTenantHeaders = () => {
+  if (!isBrowser) {
+    return {};
+  }
+
+  const hostname = window.location.hostname.toLowerCase();
+  const storedTenantSlug = window.localStorage.getItem("activeTenantSlug");
+
+  if (storedTenantSlug) {
+    return { "x-tenant-slug": storedTenantSlug };
+  }
+
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return { "x-tenant-slug": "maz-expeditions" };
+  }
+
+  return {};
+};
+
+const getAdminHeaders = () => {
+  if (!isBrowser) {
+    return {};
+  }
+
+  const token = window.localStorage.getItem("adminAuthToken");
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
+
+API.interceptors.request.use((config) => {
+  config.headers = {
+    ...(config.headers || {}),
+    ...getTenantHeaders(),
+    ...getAdminHeaders(),
+  };
+  return config;
+});
+
+export const loginAdmin = (data) => API.post("/auth/login", data);
+export const fetchAdminSession = () => API.get("/auth/me");
+export const fetchTenantBootstrap = () => API.get("/tenant/bootstrap");
+export const fetchTenantSiteConfig = () => API.get("/tenant/site-config");
+export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", data);
+export const fetchPageConfig = (pageType = "home") =>
+  API.get(`/page-config/${encodeURIComponent(pageType)}`);
+export const updatePageConfig = (pageType = "home", data) =>
+  API.put(`/page-config/${encodeURIComponent(pageType)}`, data);
+
 // Tour Packages
 export const fetchTours = (params = "") => API.get(`/tours${params}`);
 export const fetchTour = (id) => API.get(`/tours/${id}`);

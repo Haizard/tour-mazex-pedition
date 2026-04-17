@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
@@ -7,33 +8,40 @@ const AdminLogin = () => {
     password: "",
   });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isAuthenticated, loading } = useAdminAuth();
+
+  const redirectPath = location.state?.from?.pathname || "/admin";
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(redirectPath, { replace: true });
+    }
+  }, [isAuthenticated, navigate, redirectPath]);
 
   const handleChange = (e) => {
+    setError("");
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      if (
-        credentials.username === "admin" &&
-        credentials.password === "admin123"
-      ) {
-        localStorage.setItem("adminAuth", "true");
-        navigate("/admin");
-      } else {
-        setError("Invalid credentials. Access denied.");
-        setLoading(false);
-      }
-    }, 800);
+    setSubmitting(true);
+
+    try {
+      await login(credentials);
+      navigate(redirectPath, { replace: true });
+    } catch (loginError) {
+      setError(loginError.response?.data?.message || "Invalid credentials. Access denied.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end p-16">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
@@ -53,7 +61,6 @@ const AdminLogin = () => {
         </div>
       </div>
 
-      {/* Right Panel - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center px-8 py-20">
         <div className="w-full max-w-md space-y-8">
           <div>
@@ -64,13 +71,13 @@ const AdminLogin = () => {
               Sign In
             </h2>
             <p className="text-gray-500 text-sm mt-2 font-medium">
-              Enter your credentials to proceed.
+              Enter your tenant admin credentials to proceed.
             </p>
           </div>
 
           {error && (
             <div className="bg-accent/10 border border-accent/30 text-accent p-4 rounded-2xl text-sm font-bold flex items-center gap-3">
-              <span className="text-lg">⚠</span> {error}
+              <span className="text-lg">!</span> {error}
             </div>
           )}
 
@@ -99,16 +106,16 @@ const AdminLogin = () => {
                 value={credentials.password}
                 onChange={handleChange}
                 className="bg-white/5 border border-white/10 text-white p-4 rounded-2xl outline-none focus:border-primary/60 focus:bg-white/10 transition font-medium placeholder:text-gray-600"
-                placeholder="••••••••"
+                placeholder="Enter password"
                 required
               />
             </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitting || loading}
               className="w-full bg-gradient-to-r from-primary to-[#00aeaf] text-white font-black py-4 rounded-2xl uppercase tracking-widest hover:opacity-90 transition shadow-2xl shadow-primary/20 disabled:opacity-50 mt-4"
             >
-              {loading ? "Authenticating..." : "Access Dashboard →"}
+              {submitting || loading ? "Authenticating..." : "Access Dashboard ->"}
             </button>
           </form>
 
@@ -116,7 +123,7 @@ const AdminLogin = () => {
             onClick={() => navigate("/")}
             className="w-full text-center text-sm text-gray-600 hover:text-primary transition font-bold"
           >
-            ← Return to Main Site
+            {"<- Return to Main Site"}
           </button>
         </div>
       </div>

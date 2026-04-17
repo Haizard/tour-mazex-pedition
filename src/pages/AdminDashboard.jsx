@@ -56,7 +56,10 @@ import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import AdminSidebar from "../components/Admin/AdminSidebar";
+import NavigationManager from "../components/Admin/NavigationManager";
+import PageBuilderManager from "../components/Admin/PageBuilderManager";
 import SiteSettings from "../components/Admin/SiteSettings";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 
 const slugifyValue = (value = "") =>
@@ -75,6 +78,7 @@ const AdminDashboard = () => {
     fallbackName;
 
   const navigate = useNavigate();
+  const { logout } = useAdminAuth();
   const [activeTab, setActiveTab] = useState("packages");
   const [tours, setTours] = useState([]);
   const [gallery, setGallery] = useState([]);
@@ -95,21 +99,8 @@ const AdminDashboard = () => {
     quote: "",
     quoteAuthor: "",
   });
-
-
-
-
-
-  // Auth Check
-  useEffect(() => {
-    const auth = localStorage.getItem("adminAuth");
-    if (auth !== "true") {
-      navigate("/login");
-    }
-  }, [navigate]);
-
   const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
+    logout();
     navigate("/login");
   };
 
@@ -2948,7 +2939,9 @@ const AdminDashboard = () => {
           )}
 
           {/* Navigation Section */}
-          {activeTab === "navigation" && (
+          {activeTab === "navigation" && <NavigationManager />}
+
+          {activeTab === "navigation-legacy" && (
             <div className="animate-fade-in">
               <div className="flex justify-between items-center mb-10">
                 <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
@@ -3586,6 +3579,8 @@ const AdminDashboard = () => {
               )}
             </div>
           )}
+
+          {activeTab === "page-builder" && <PageBuilderManager />}
 
           {activeTab === "settings" && <SiteSettings />}
 

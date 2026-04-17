@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const faqSchema = new mongoose.Schema(
   {
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      index: true,
+    },
     question: { type: String, required: true, trim: true },
     answer: { type: String, required: true, trim: true },
     category: { type: String, default: "Safari Frequently Asked Questions", trim: true },

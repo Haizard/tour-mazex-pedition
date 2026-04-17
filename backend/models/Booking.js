@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema({
+    tenantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tenant',
+        index: true,
+    },
     name: { type: String, required: true },
     email: { type: String, required: true },
     address: { type: String, required: true },

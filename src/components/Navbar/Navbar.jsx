@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Logo from "../../assets/maz-logo.jpeg";
 
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import {
   FaCaretDown,
   FaFacebookF,
@@ -15,6 +15,7 @@ import { HiMenuAlt3, HiMenuAlt1 } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import ResponsiveMenu from "./ResponsiveMenu";
 import { fetchMenuItems, fetchTours, fetchSiteSettings } from "../../services/api";
+import { useTenant } from "../../context/TenantContext";
 
 import { FRONTEND_MENU_DEFAULTS, MENU_IMAGE_BY_KEY } from "./defaultMenuItems";
 
@@ -112,6 +113,8 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
   });
 
 const Navbar = ({ handleOrderPopup }) => {
+  const navigate = useNavigate();
+  const { siteConfig } = useTenant();
   const [showMenu, setShowMenu] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -158,6 +161,19 @@ const Navbar = ({ handleOrderPopup }) => {
     loadMenuItems();
   }, []);
 
+  const navigationConfig = siteConfig?.navigationConfig || {};
+
+  const handlePrimaryCta = () => {
+    const href = navigationConfig.ctaHref || "/plan-my-trip";
+    if (href === "popup") {
+      handleOrderPopup();
+      return;
+    }
+
+    navigate(href);
+    window.scrollTo(0, 0);
+  };
+
   const toggleMenu = () => setShowMenu(!showMenu);
 
   return (
@@ -179,10 +195,10 @@ const Navbar = ({ handleOrderPopup }) => {
 
           <div className="flex-1 flex justify-center">
             <button
-              onClick={handleOrderPopup}
+              onClick={handlePrimaryCta}
               className="bg-safari-green text-white px-8 py-1.5 rounded-lg text-sm font-medium tracking-wider hover:bg-opacity-90 transition-all shadow-md transform hover:scale-105 active:scale-95"
             >
-              PLAN MY TRIP
+              {navigationConfig.ctaLabel || "PLAN MY TRIP"}
             </button>
           </div>
 
@@ -191,7 +207,9 @@ const Navbar = ({ handleOrderPopup }) => {
               <option>English UK</option>
               <option>Germany DE</option>
             </select>
-            <Link to="/about" className="hover:text-safari-gold transition-colors">About Us</Link>
+            <Link to={navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
+              {navigationConfig.aboutLabel || "About Us"}
+            </Link>
             <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 max-w-[150px] text-white" defaultValue="Practical Info">
               <option disabled>Practical Info</option>
               <option>Privacy Policy</option>
@@ -332,6 +350,7 @@ const Navbar = ({ handleOrderPopup }) => {
         handleOrderPopup={handleOrderPopup}
         menuItems={menuItems}
         settings={settings}
+        navigationConfig={navigationConfig}
       />
     </nav>
   );

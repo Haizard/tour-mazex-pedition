@@ -1,4 +1,5 @@
 import express from "express";
+import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import {
   getMenuItems,
   createMenuItem,
@@ -10,9 +11,9 @@ import {
 const router = express.Router();
 
 router.get("/", getMenuItems);
-router.post("/", createMenuItem);
-router.put("/:id", updateMenuItem);
-router.post("/reset-defaults", resetMenuItems);
-router.delete("/:id", deleteMenuItem);
+router.post("/", requireTenantAdmin, createMenuItem);
+router.put("/:id", requireTenantAdmin, updateMenuItem);
+router.post("/reset-defaults", requireTenantAdmin, resetMenuItems);
+router.delete("/:id", requireTenantAdmin, deleteMenuItem);
 
 export default router;

@@ -1,5 +1,6 @@
 import Taxonomy from '../models/Taxonomy.js';
 import { defaultTaxonomies } from '../data/defaultTaxonomies.js';
+import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 
 const buildSlug = (name, type) =>
     `${type}-${name}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -38,7 +39,7 @@ const mergeWithDefaults = (existingTaxonomies, type) => {
 export const getTaxonomies = async (req, res) => {
     try {
         const { type } = req.query;
-        const filter = type ? { type } : {};
+        const filter = buildTenantFilter(req, type ? { type } : {});
         const taxonomies = await Taxonomy.find(filter).sort({ name: 1 });
 
         if (!taxonomies.length) {
@@ -56,7 +57,7 @@ export const getTaxonomies = async (req, res) => {
 
 export const createTaxonomy = async (req, res) => {
     try {
-        const taxonomy = new Taxonomy(req.body);
+        const taxonomy = new Taxonomy(withTenantId(req, req.body));
         await taxonomy.save();
         res.status(201).json(taxonomy);
     } catch (error) {
@@ -67,7 +68,7 @@ export const createTaxonomy = async (req, res) => {
 export const deleteTaxonomy = async (req, res) => {
     try {
         const { id } = req.params;
-        await Taxonomy.findByIdAndDelete(id);
+        await Taxonomy.findOneAndDelete(buildTenantFilter(req, { _id: id }));
         res.status(200).json({ message: "Deleted successfully" });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -76,8 +77,10 @@ export const deleteTaxonomy = async (req, res) => {
 
 export const resetTaxonomies = async (req, res) => {
     try {
-        await Taxonomy.deleteMany({});
-        const created = await Taxonomy.insertMany(withSlugs(defaultTaxonomies));
+        await Taxonomy.deleteMany(buildTenantFilter(req));
+        const created = await Taxonomy.insertMany(
+            withSlugs(defaultTaxonomies).map((item) => withTenantId(req, item))
+        );
         res.status(200).json(sortTaxonomies(created.map((taxonomy) => taxonomy.toObject())));
     } catch (error) {
         res.status(500).json({ message: error.message });

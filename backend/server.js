@@ -4,6 +4,7 @@ dotenv.config();
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import { tenantMiddleware } from './middleware/tenantMiddleware.js';
 import tourRoutes from './routes/tourRoutes.js';
 import galleryRoutes from './routes/galleryRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
@@ -18,6 +19,10 @@ import menuRoutes from './routes/menuRoutes.js';
 import homeContentRoutes from './routes/homeContentRoutes.js';
 import seoRoutes from './routes/seoRoutes.js';
 import siteSettingsRoutes from './routes/siteSettingsRoutes.js';
+import tenantRoutes from './routes/tenantRoutes.js';
+import pageConfigRoutes from './routes/pageConfigRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import { ensureLegacyTenantFoundation } from './utils/tenantBootstrap.js';
 
 
 const app = express();
@@ -31,6 +36,10 @@ app.use(cors({
 }));
 
 // Routes
+app.use(tenantMiddleware);
+app.use('/api/auth', authRoutes);
+app.use('/api/tenant', tenantRoutes);
+app.use('/api/page-config', pageConfigRoutes);
 app.use('/api/tours', tourRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -73,6 +82,8 @@ const connectDB = async () => {
     try {
         await mongoose.connect(MONGODB_URI);
         console.log('✅ Connected to MongoDB');
+        await ensureLegacyTenantFoundation();
+        console.log('✅ Legacy tenant foundation ready');
     } catch (error) {
         console.error('❌ MongoDB connection error:', error.message);
     }

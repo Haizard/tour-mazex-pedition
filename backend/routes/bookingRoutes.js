@@ -1,13 +1,15 @@
 import express from 'express';
 import Booking from '../models/Booking.js';
 import TourPackage from '../models/TourPackage.js';
+import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
+import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
 
 const router = express.Router();
 
 // Get all bookings (Admin)
-router.get('/', async (req, res) => {
+router.get('/', requireTenantAdmin, async (req, res) => {
     try {
-        const bookings = await Booking.find().sort({ createdAt: -1 });
+        const bookings = await Booking.find(buildTenantFilter(req)).sort({ createdAt: -1 });
         res.status(200).json(bookings);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -31,7 +33,7 @@ router.post('/', async (req, res) => {
 
     try {
         // If it's a specific package booking, check for group capacity
-        const tour = await TourPackage.findOne({ title: bookingData.packageTour });
+        const tour = await TourPackage.findOne(buildTenantFilter(req, { title: bookingData.packageTour }));
 
         if (tour && tour.isGroupTour) {
             if (tour.currentBookings + bookingData.pax > tour.maxCapacity) {
@@ -45,7 +47,7 @@ router.post('/', async (req, res) => {
             await tour.save();
         }
 
-        const newBooking = new Booking(bookingData);
+        const newBooking = new Booking(withTenantId(req, bookingData));
         await newBooking.save();
         res.status(201).json(newBooking);
     } catch (error) {
@@ -54,11 +56,11 @@ router.post('/', async (req, res) => {
 });
 
 // Update a booking status (Admin)
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireTenantAdmin, async (req, res) => {
     try {
         const { status } = req.body;
-        const updatedBooking = await Booking.findByIdAndUpdate(
-            req.params.id,
+        const updatedBooking = await Booking.findOneAndUpdate(
+            buildTenantFilter(req, { _id: req.params.id }),
             { status },
             { new: true }
         );
@@ -72,9 +74,9 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete a booking (Admin)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireTenantAdmin, async (req, res) => {
     try {
-        await Booking.findByIdAndDelete(req.params.id);
+        await Booking.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id }));
         res.status(200).json({ message: 'Booking deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -93,7 +93,7 @@ export const rewriteContentWithAi = async ({ text, contentType = "blog", context
   throw new Error(lastError?.message || "AI rewrite failed.");
 };
 
-export const generateSeoWithAi = async ({ title, description, content, contentType = "tour" }) => {
+export const generateSeoWithAi = async ({ title, description, content, contentType = "tour", brandName = "MAZ Expeditions" }) => {
   const ai = getClient();
   const pathPrefix = contentType === "blog" ? "/blogs/" : "/packages/";
   const prompt = `
@@ -102,7 +102,7 @@ Title: ${title}
 Description/Content: ${ (description || content || '').substring(0, 1200) }...
 
 Rules:
-- SEO Title: Max 60 chars, catchy, includes primary keywords and brand name "MAZ Expeditions".
+- SEO Title: Max 60 chars, catchy, includes primary keywords and brand name "${brandName}".
 - Meta Description: 150-160 chars, includes a compelling call to action.
 - Keywords: Top 5-8 relevant keywords, comma separated.
 - Canonical URL: Use this path format exactly: ${pathPrefix}[slug-from-title]
@@ -140,12 +140,12 @@ Rules:
   throw new Error(lastError?.message || "AI SEO generation failed.");
 };
 
-export const generateFullTourPackageWithAi = async ({ title, description, tourType, category, location, durationDays, availableBlogs = [] }) => {
+export const generateFullTourPackageWithAi = async ({ title, description, tourType, category, location, durationDays, availableBlogs = [], brandName = "MAZ Expeditions" }) => {
   const ai = getClient();
   const blogListStr = availableBlogs.map(b => `- ${b.title} (Slug: ${b.slug})`).join("\n");
   
   const prompt = `
-Generate a COMPLETE, LUXURY safari tour package for "MAZ Expeditions" based on the following:
+Generate a COMPLETE, LUXURY safari tour package for "${brandName}" based on the following:
 Title: ${title}
 Initial Idea: ${description}
 Type: ${tourType}

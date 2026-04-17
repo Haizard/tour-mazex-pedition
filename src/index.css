@@ -4,20 +4,38 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --tenant-color-primary: #0d9488;
+  --tenant-color-secondary: #eab308;
+  --tenant-color-accent: #f97316;
+  --tenant-color-background: #ffffff;
+  --tenant-color-surface: #f8fafc;
+  --tenant-color-text: #1e293b;
+  --tenant-color-heading: #0f172a;
+  --tenant-font-heading: "Playfair Display", serif;
+  --tenant-font-body: "Montserrat", sans-serif;
+  --tenant-radius-base: 1rem;
+  --tenant-radius-card: 1.5rem;
+  --tenant-radius-button: 9999px;
+  --tenant-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --tenant-spacing-scale: 1;
+}
+
 @layer base {
   body {
-    font-family: "Montserrat", sans-serif;
-    background-color: #ffffff;
+    font-family: var(--tenant-font-body);
+    background-color: var(--tenant-color-background);
     @apply text-slate-800 transition-colors duration-300;
+    color: var(--tenant-color-text);
   }
 
   /* Only use serif on marketing headings — not every h tag */
   .font-heading {
-    font-family: "Playfair Display", serif;
+    font-family: var(--tenant-font-heading);
   }
 
   .active {
-    @apply text-primary;
+    color: var(--tenant-color-primary);
   }
 }
 

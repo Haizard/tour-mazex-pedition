@@ -23,6 +23,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen
         { id: "packages", label: "Packages", icon: <FaBox /> },
         { id: "blogs", label: "Blogs", icon: <FaBlog /> },
         { id: "site-editor", label: "Site Editor", icon: <FaEdit /> },
+        { id: "page-builder", label: "Page Builder", icon: <FaEdit /> },
         { id: "navigation", label: "Navigation", icon: <FaBars /> },
         { id: "gallery", label: "Gallery", icon: <FaImages /> },
         { id: "bookings", label: "Bookings", icon: <FaCalendarCheck /> },

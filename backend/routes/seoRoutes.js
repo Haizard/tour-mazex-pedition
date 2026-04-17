@@ -1,10 +1,10 @@
 import express from 'express';
 import TourPackage from '../models/TourPackage.js';
 import Blog from '../models/Blog.js';
+import { buildTenantFilter, resolveTenantBaseUrl } from '../utils/tenantContext.js';
 
 const router = express.Router();
 
-const BASE_URL = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://mazexpeditions.com').replace(/\/+$/, '');
 const DESTINATION_PAGES = [
   { slug: 'serengeti', updatedAt: '2026-01-01' },
   { slug: 'ngorongoro', updatedAt: '2026-01-01' },
@@ -23,8 +23,9 @@ const slugify = (text) =>
 
 router.get('/sitemap.xml', async (req, res) => {
   try {
-    const tours = await TourPackage.find({}, 'title updatedAt');
-    const blogs = await Blog.find({}, 'title category updatedAt');
+    const baseUrl = resolveTenantBaseUrl(req).replace(/\/+$/, '');
+    const tours = await TourPackage.find(buildTenantFilter(req), 'title updatedAt');
+    const blogs = await Blog.find(buildTenantFilter(req), 'title category updatedAt');
     const blogCategories = [...new Set(
       blogs
         .map((blog) => blog.category)
@@ -53,7 +54,7 @@ router.get('/sitemap.xml', async (req, res) => {
     staticPages.forEach((page) => {
       sitemap += `
   <url>
-    <loc>${BASE_URL}${page}</loc>
+    <loc>${baseUrl}${page}</loc>
     <changefreq>weekly</changefreq>
     <priority>${page === '' ? '1.0' : '0.8'}</priority>
   </url>`;
@@ -64,7 +65,7 @@ router.get('/sitemap.xml', async (req, res) => {
       const slug = slugify(tour.title);
       sitemap += `
   <url>
-    <loc>${BASE_URL}/packages/${slug}</loc>
+        <loc>${baseUrl}/packages/${slug}</loc>
     <lastmod>${tour.updatedAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -76,7 +77,7 @@ router.get('/sitemap.xml', async (req, res) => {
       const slug = slugify(blog.title);
       sitemap += `
   <url>
-    <loc>${BASE_URL}/blogs/${slug}</loc>
+    <loc>${baseUrl}/blogs/${slug}</loc>
     <lastmod>${blog.updatedAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -87,7 +88,7 @@ router.get('/sitemap.xml', async (req, res) => {
     DESTINATION_PAGES.forEach((destination) => {
       sitemap += `
   <url>
-    <loc>${BASE_URL}/destinations/${destination.slug}</loc>
+    <loc>${baseUrl}/destinations/${destination.slug}</loc>
     <lastmod>${destination.updatedAt}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
@@ -98,7 +99,7 @@ router.get('/sitemap.xml', async (req, res) => {
     blogCategories.forEach((category) => {
       sitemap += `
   <url>
-    <loc>${BASE_URL}/blogs/category/${category}</loc>
+    <loc>${baseUrl}/blogs/category/${category}</loc>
     <changefreq>weekly</changefreq>
     <priority>0.65</priority>
   </url>`;
@@ -116,11 +117,12 @@ router.get('/sitemap.xml', async (req, res) => {
 });
 
 router.get('/robots.txt', (req, res) => {
+  const baseUrl = resolveTenantBaseUrl(req).replace(/\/+$/, '');
   const robots = `User-agent: *
 Allow: /
 
-Sitemap: ${BASE_URL}/sitemap.xml
-Host: ${BASE_URL}
+Sitemap: ${baseUrl}/sitemap.xml
+Host: ${baseUrl}
 `;
   res.header('Content-Type', 'text/plain');
   res.header('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');

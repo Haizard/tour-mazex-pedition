@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const customInquirySchema = new mongoose.Schema({
+    tenantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tenant',
+        index: true,
+    },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     familyName: { type: String, trim: true },

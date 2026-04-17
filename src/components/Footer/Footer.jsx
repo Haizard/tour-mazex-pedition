@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { fetchBlogs, fetchTours, fetchSiteSettings } from "../../services/api";
+import { useTenant } from "../../context/TenantContext";
 
 
 const importantLinks = [
@@ -65,6 +66,7 @@ const socialLinks = [
 ];
 
 const Footer = () => {
+  const { siteConfig } = useTenant();
   const [popularTours, setPopularTours] = React.useState(FALLBACK_TOURS);
   const [popularBlogs, setPopularBlogs] = React.useState(FALLBACK_BLOGS);
   const [settings, setSettings] = React.useState(null);
@@ -112,6 +114,12 @@ const Footer = () => {
     loadFooterLinks();
   }, []);
 
+  const footerConfig = siteConfig?.footerConfig || {};
+  const footerBrandName = footerConfig.brandName || "MAZ Expeditions";
+  const footerBrandDescription =
+    footerConfig.brandDescription ||
+    "Tanzania-based safari experts, creating personalized African journeys with local expertise and trusted guides.";
+
   return (
     <footer className="bg-[#1a1a1a] text-white">
 
@@ -120,7 +128,7 @@ const Footer = () => {
         <div className="container max-w-7xl mx-auto px-4 py-3 flex flex-row items-center justify-between gap-2 md:gap-4 flex-wrap sm:flex-nowrap">
           {/* Logo */}
           <Link to="/" onClick={() => window.scrollTo(0, 0)} className="shrink-0">
-            <img src={FooterLogo} alt="MAZ Expeditions" className="h-10 sm:h-14 md:h-16 w-auto object-contain" />
+            <img src={settings?.logoUrl || FooterLogo} alt={footerBrandName} className="h-10 sm:h-14 md:h-16 w-auto object-contain" />
           </Link>
 
           {/* Social Icons & Plan Button - Grouped for Mobile Flow */}
@@ -151,11 +159,11 @@ const Footer = () => {
 
             {/* Plan My Trip Button - Hidden on mobile if screen is tiny */}
             <Link
-              to="/plan-my-trip"
+              to={footerConfig.primaryCtaHref || "/plan-my-trip"}
               onClick={() => window.scrollTo(0, 0)}
               className="hidden sm:inline-block font-oswald uppercase tracking-widest text-[10px] md:text-sm bg-safari-green text-white px-4 md:px-6 py-2 rounded hover:bg-green-800 transition-colors"
             >
-              Plan My Trip
+              {footerConfig.primaryCtaLabel || "Plan My Trip"}
             </Link>
           </div>
         </div>
@@ -168,10 +176,10 @@ const Footer = () => {
           {/* Column 1: Brand / Contact */}
           <div className="md:col-span-4 space-y-4">
             <h5 className="text-white font-oswald font-semibold text-base uppercase tracking-wide border-b border-safari-green pb-1">
-              MAZ Expeditions
+              {footerBrandName}
             </h5>
             <p className="text-gray-400 text-xs sm:text-sm leading-relaxed max-w-sm">
-              Tanzania-based safari experts, creating personalized African journeys with local expertise and trusted guides.
+              {footerBrandDescription}
             </p>
             <div className="space-y-2 text-xs sm:text-sm">
               <a href="tel:+255762226648" className="flex items-center gap-2 text-gray-400 hover:text-safari-green transition-colors">
@@ -260,18 +268,18 @@ const Footer = () => {
             </p>
             <div className="flex flex-row flex-wrap items-center gap-2 mt-4">
               <Link
-                to="/plan-my-trip"
+                to={footerConfig.primaryCtaHref || "/plan-my-trip"}
                 onClick={() => window.scrollTo(0, 0)}
                 className="font-oswald uppercase tracking-wider text-[10px] md:text-sm bg-safari-green text-white px-3 md:px-5 py-2 md:py-2.5 rounded hover:bg-green-800 transition-colors"
               >
-                Plan My Trip
+                {footerConfig.primaryCtaLabel || "Plan My Trip"}
               </Link>
               <Link
-                to="/blogs"
+                to={footerConfig.secondaryCtaHref || "/blogs"}
                 onClick={() => window.scrollTo(0, 0)}
                 className="font-oswald uppercase tracking-wider text-[10px] md:text-sm border border-green-400 text-green-400 px-3 md:px-5 py-2 md:py-2.5 rounded hover:bg-green-400 hover:text-black transition-all overflow-hidden whitespace-nowrap"
               >
-                Articles
+                {footerConfig.secondaryCtaLabel || "Articles"}
               </Link>
             </div>
           </div>
@@ -291,7 +299,7 @@ const Footer = () => {
       <div className="bg-black/40 border-t border-white/5">
         <div className="container max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4 text-center">
           <p className="text-gray-500 text-[10px] sm:text-xs font-medium order-2 md:order-1">
-            Copyright &copy;2025 MAZ Expeditions | All rights reserved
+            {footerConfig.copyrightLabel || "Copyright ©2025 MAZ Expeditions | All rights reserved"}
           </p>
 
           <div className="flex flex-col items-center md:items-end gap-1 text-gray-300">
