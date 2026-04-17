@@ -1,5 +1,14 @@
 import React from "react";
-import { FaArrowDown, FaArrowUp, FaEye, FaEyeSlash, FaGripVertical, FaSave } from "react-icons/fa";
+import {
+  FaArrowDown,
+  FaArrowUp,
+  FaEye,
+  FaEyeSlash,
+  FaGripVertical,
+  FaPlus,
+  FaSave,
+  FaTrash,
+} from "react-icons/fa";
 import Card from "../UI/Card";
 import Button from "../UI/Button";
 import { fetchPageConfig, updatePageConfig } from "../../services/api";
@@ -12,6 +21,36 @@ const getSectionLabel = (type) =>
 const getSectionVariants = (type) =>
   sectionRegistry.metadata?.[type]?.supportedVariants || ["default"];
 
+const getSectionPresets = (type) =>
+  sectionRegistry.metadata?.[type]?.presets ||
+  getSectionVariants(type).map((variant) => ({
+    value: variant,
+    label: variant,
+  }));
+
+const getDefaultSectionTemplate = (type, variant) => {
+  const fromLegacy = legacyHomePage.sections.find((section) => section.type === type);
+
+  if (fromLegacy) {
+    return {
+      ...fromLegacy,
+      variant: variant || fromLegacy.variant,
+      dataConfig: { ...(fromLegacy.dataConfig || {}) },
+      contentConfig: { ...(fromLegacy.contentConfig || {}) },
+      styleConfig: { ...(fromLegacy.styleConfig || {}) },
+    };
+  }
+
+  return {
+    type,
+    variant: variant || getSectionVariants(type)[0] || "default",
+    enabled: true,
+    dataConfig: {},
+    contentConfig: {},
+    styleConfig: {},
+  };
+};
+
 const normalizeSections = (sections = []) =>
   [...sections]
     .filter((section) => section?.type)
@@ -21,540 +60,173 @@ const normalizeSections = (sections = []) =>
       order: index + 1,
     }));
 
+const INPUT_CLASS =
+  "w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900";
+const TEXTAREA_CLASS =
+  "w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700";
+
+const getValueAtPath = (source, path) =>
+  String(path || "")
+    .split(".")
+    .filter(Boolean)
+    .reduce((current, part) => (current == null ? undefined : current[part]), source);
+
+const setValueAtPath = (source, path, value) => {
+  const keys = String(path || "").split(".").filter(Boolean);
+
+  if (!keys.length) {
+    return value;
+  }
+
+  const next = Array.isArray(source) ? [...source] : { ...(source || {}) };
+  let cursor = next;
+
+  keys.forEach((key, index) => {
+    if (index === keys.length - 1) {
+      cursor[key] = value;
+      return;
+    }
+
+    const currentValue = cursor[key];
+    cursor[key] = Array.isArray(currentValue)
+      ? [...currentValue]
+      : { ...(currentValue || {}) };
+    cursor = cursor[key];
+  });
+
+  return next;
+};
+
+const parseFieldValue = (rawValue, field) => {
+  if (field.type === "number") {
+    if (rawValue === "") {
+      return field.fallbackValue ?? 0;
+    }
+
+    return Number(rawValue);
+  }
+
+  if (field.type === "stringList") {
+    return String(rawValue)
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return rawValue;
+};
+
+const getFieldClassName = (field) =>
+  `${field.type === "textarea" || field.type === "stringList" ? TEXTAREA_CLASS : INPUT_CLASS} ${
+    field.colSpan === 2 ? "md:col-span-2" : ""
+  }`.trim();
+
+const SimpleEditorField = ({ field, value, onChange, inputIdPrefix }) => {
+  const commonProps = {
+    placeholder: field.placeholder,
+    className: getFieldClassName(field),
+  };
+
+  if (field.type === "textarea" || field.type === "stringList") {
+    return (
+      <textarea
+        rows={field.rows || 3}
+        value={field.type === "stringList" ? (Array.isArray(value) ? value.join("\n") : "") : value || ""}
+        onChange={(e) => onChange(parseFieldValue(e.target.value, field))}
+        {...commonProps}
+      />
+    );
+  }
+
+  return (
+    <input
+      id={`${inputIdPrefix}-${field.path}`}
+      type={field.type === "number" ? "number" : "text"}
+      min={field.min}
+      max={field.max}
+      value={value ?? field.fallbackValue ?? ""}
+      onChange={(e) => onChange(parseFieldValue(e.target.value, field))}
+      {...commonProps}
+    />
+  );
+};
+
+const ObjectListEditorField = ({ field, items, onChange, inputIdPrefix }) => (
+  <div className="md:col-span-2 mt-2 rounded-3xl border border-slate-100 bg-slate-50/60 p-4">
+    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">
+      {field.itemLabel || "Items"}
+    </p>
+    <div className="space-y-4">
+      {items.slice(0, field.limit || items.length).map((item, itemIndex) => (
+        <div
+          key={`${field.path}-${itemIndex}`}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl bg-white p-4 shadow-sm"
+        >
+          {field.fields.map((nestedField) => (
+            <SimpleEditorField
+              key={`${field.path}-${itemIndex}-${nestedField.path}`}
+              field={{
+                ...nestedField,
+                placeholder: `${field.itemLabel || "Item"} ${itemIndex + 1} ${nestedField.placeholder || nestedField.path}`,
+              }}
+              value={getValueAtPath(item, nestedField.path)}
+              inputIdPrefix={`${inputIdPrefix}-${field.path}-${itemIndex}`}
+              onChange={(nextValue) => {
+                const nextItems = items.map((currentItem, currentIndex) =>
+                  currentIndex === itemIndex
+                    ? setValueAtPath(currentItem || {}, nestedField.path, nextValue)
+                    : currentItem
+                );
+                onChange(nextItems);
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const SectionContentFields = ({ section, onChange }) => {
-  const content = section.contentConfig || {};
-  const data = section.dataConfig || {};
+  const schema = sectionRegistry.metadata?.[section.type]?.editorSchema || [];
 
-  if (section.type === "hero") {
+  if (!schema.length) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.eyebrow || ""}
-          onChange={(e) => onChange("contentConfig", "eyebrow", e.target.value)}
-          placeholder="Eyebrow text"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.headlineScript || ""}
-          onChange={(e) => onChange("contentConfig", "headlineScript", e.target.value)}
-          placeholder="Script headline"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.primaryCtaLabel || ""}
-          onChange={(e) => onChange("contentConfig", "primaryCtaLabel", e.target.value)}
-          placeholder="Primary CTA label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.primaryCtaHref || ""}
-          onChange={(e) => onChange("contentConfig", "primaryCtaHref", e.target.value)}
-          placeholder="Primary CTA link"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.secondaryCtaLabel || ""}
-          onChange={(e) => onChange("contentConfig", "secondaryCtaLabel", e.target.value)}
-          placeholder="Secondary CTA label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.secondaryCtaHref || ""}
-          onChange={(e) => onChange("contentConfig", "secondaryCtaHref", e.target.value)}
-          placeholder="Secondary CTA link"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-      </div>
-    );
-  }
-
-  if (section.type === "featuredPackages") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.prefixLabel || ""}
-          onChange={(e) => onChange("contentConfig", "prefixLabel", e.target.value)}
-          placeholder="Prefix label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.scriptLabel || ""}
-          onChange={(e) => onChange("contentConfig", "scriptLabel", e.target.value)}
-          placeholder="Script label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.suffixLabel || ""}
-          onChange={(e) => onChange("contentConfig", "suffixLabel", e.target.value)}
-          placeholder="Suffix label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="number"
-          min="1"
-          max="12"
-          value={data.limit ?? 6}
-          onChange={(e) => onChange("dataConfig", "limit", Number(e.target.value || 6))}
-          placeholder="Number of cards"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-      </div>
-    );
-  }
-
-  if (section.type === "cta") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.heading || ""}
-          onChange={(e) => onChange("contentConfig", "heading", e.target.value)}
-          placeholder="Heading"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.subheading || ""}
-          onChange={(e) => onChange("contentConfig", "subheading", e.target.value)}
-          placeholder="Subheading"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <textarea
-          rows={3}
-          value={content.description || ""}
-          onChange={(e) => onChange("contentConfig", "description", e.target.value)}
-          placeholder="Description"
-          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-        />
-        <input
-          type="text"
-          value={content.primaryLabel || ""}
-          onChange={(e) => onChange("contentConfig", "primaryLabel", e.target.value)}
-          placeholder="Primary button label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.primaryHref || ""}
-          onChange={(e) => onChange("contentConfig", "primaryHref", e.target.value)}
-          placeholder="Primary button link"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.secondaryLabel || ""}
-          onChange={(e) => onChange("contentConfig", "secondaryLabel", e.target.value)}
-          placeholder="Secondary button label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.secondaryHref || ""}
-          onChange={(e) => onChange("contentConfig", "secondaryHref", e.target.value)}
-          placeholder="Secondary button link"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.backgroundImage || ""}
-          onChange={(e) => onChange("contentConfig", "backgroundImage", e.target.value)}
-          placeholder="Background image URL"
-          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-      </div>
-    );
-  }
-
-  if (section.type === "destinations") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.title || ""}
-          onChange={(e) => onChange("contentConfig", "title", e.target.value)}
-          placeholder="Section title"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.subtitle || ""}
-          onChange={(e) => onChange("contentConfig", "subtitle", e.target.value)}
-          placeholder="Section subtitle"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <textarea
-          rows={3}
-          value={content.description || ""}
-          onChange={(e) => onChange("contentConfig", "description", e.target.value)}
-          placeholder="Section description"
-          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-        />
-        <textarea
-          rows={3}
-          value={content.quote || ""}
-          onChange={(e) => onChange("contentConfig", "quote", e.target.value)}
-          placeholder="Highlight quote"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-        />
-        <input
-          type="text"
-          value={content.quoteAuthor || ""}
-          onChange={(e) => onChange("contentConfig", "quoteAuthor", e.target.value)}
-          placeholder="Quote author"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-      </div>
-    );
-  }
-
-  if (section.type === "trending") {
-    return (
-      <div className="grid grid-cols-1 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.heading || ""}
-          onChange={(e) => onChange("contentConfig", "heading", e.target.value)}
-          placeholder="Trending heading"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-      </div>
-    );
-  }
-
-  if (section.type === "about") {
-    const cards = content.cards || [];
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.introLabel || ""}
-          onChange={(e) => onChange("contentConfig", "introLabel", e.target.value)}
-          placeholder="Intro label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.brandName || ""}
-          onChange={(e) => onChange("contentConfig", "brandName", e.target.value)}
-          placeholder="Brand name"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <textarea
-          rows={3}
-          value={content.leadHeading || ""}
-          onChange={(e) => onChange("contentConfig", "leadHeading", e.target.value)}
-          placeholder="Lead heading"
-          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-        />
-        <textarea
-          rows={5}
-          value={content.bodyText || ""}
-          onChange={(e) => onChange("contentConfig", "bodyText", e.target.value)}
-          placeholder="Body text"
-          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-        />
-        <textarea
-          rows={2}
-          value={content.closingHeading || ""}
-          onChange={(e) => onChange("contentConfig", "closingHeading", e.target.value)}
-          placeholder="Closing heading"
-          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-        />
-        {cards.slice(0, 4).map((card, index) => (
-          <React.Fragment key={`about-card-${index}`}>
-            <input
-              type="text"
-              value={card.scriptLabel || ""}
-              onChange={(e) =>
-                onChange("contentConfig", "cards", cards.map((item, itemIndex) =>
-                  itemIndex === index ? { ...item, scriptLabel: e.target.value } : item
-                ))
-              }
-              placeholder={`Card ${index + 1} script label`}
-              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-            />
-            <input
-              type="text"
-              value={card.title || ""}
-              onChange={(e) =>
-                onChange("contentConfig", "cards", cards.map((item, itemIndex) =>
-                  itemIndex === index ? { ...item, title: e.target.value } : item
-                ))
-              }
-              placeholder={`Card ${index + 1} title`}
-              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-            />
-            <textarea
-              rows={3}
-              value={card.description || ""}
-              onChange={(e) =>
-                onChange("contentConfig", "cards", cards.map((item, itemIndex) =>
-                  itemIndex === index ? { ...item, description: e.target.value } : item
-                ))
-              }
-              placeholder={`Card ${index + 1} description`}
-              className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-            />
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  }
-
-  if (section.type === "blogPreview") {
-    const labels = content.groupLabels || {};
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.searchPlaceholder || ""}
-          onChange={(e) => onChange("contentConfig", "searchPlaceholder", e.target.value)}
-          placeholder="Search placeholder"
-          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.emptyTitle || ""}
-          onChange={(e) => onChange("contentConfig", "emptyTitle", e.target.value)}
-          placeholder="Empty state title"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.emptyDescription || ""}
-          onChange={(e) => onChange("contentConfig", "emptyDescription", e.target.value)}
-          placeholder="Empty state description"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={labels.safariTitle || ""}
-          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, safariTitle: e.target.value })}
-          placeholder="Safari group title"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={labels.safariCta || ""}
-          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, safariCta: e.target.value })}
-          placeholder="Safari CTA"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={labels.trekkingTitle || ""}
-          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, trekkingTitle: e.target.value })}
-          placeholder="Trekking group title"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={labels.trekkingCta || ""}
-          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, trekkingCta: e.target.value })}
-          placeholder="Trekking CTA"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={labels.travelTitle || ""}
-          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, travelTitle: e.target.value })}
-          placeholder="Travel group title"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={labels.travelCta || ""}
-          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, travelCta: e.target.value })}
-          placeholder="Travel CTA"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-      </div>
-    );
-  }
-
-  if (section.type === "groupTours") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.prefixLabel || ""}
-          onChange={(e) => onChange("contentConfig", "prefixLabel", e.target.value)}
-          placeholder="Prefix label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.scriptLabel || ""}
-          onChange={(e) => onChange("contentConfig", "scriptLabel", e.target.value)}
-          placeholder="Script label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.suffixLabel || ""}
-          onChange={(e) => onChange("contentConfig", "suffixLabel", e.target.value)}
-          placeholder="Suffix label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.capacityLabel || ""}
-          onChange={(e) => onChange("contentConfig", "capacityLabel", e.target.value)}
-          placeholder="Capacity label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.bookingLabel || ""}
-          onChange={(e) => onChange("contentConfig", "bookingLabel", e.target.value)}
-          placeholder="Booking button label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.itineraryLabel || ""}
-          onChange={(e) => onChange("contentConfig", "itineraryLabel", e.target.value)}
-          placeholder="Itinerary button label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-      </div>
-    );
-  }
-
-  if (section.type === "testimonials") {
-    const items = content.testimonials || [];
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.ratingLabel || ""}
-          onChange={(e) => onChange("contentConfig", "ratingLabel", e.target.value)}
-          placeholder="Rating label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.reviewCountLabel || ""}
-          onChange={(e) => onChange("contentConfig", "reviewCountLabel", e.target.value)}
-          placeholder="Review count label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.providerLabel || ""}
-          onChange={(e) => onChange("contentConfig", "providerLabel", e.target.value)}
-          placeholder="Provider label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.backgroundImage || ""}
-          onChange={(e) => onChange("contentConfig", "backgroundImage", e.target.value)}
-          placeholder="Background image URL"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        {items.slice(0, 3).map((item, index) => (
-          <React.Fragment key={`testimonial-${index}`}>
-            <input
-              type="text"
-              value={item.name || ""}
-              onChange={(e) =>
-                onChange(
-                  "contentConfig",
-                  "testimonials",
-                  items.map((current, currentIndex) =>
-                    currentIndex === index ? { ...current, name: e.target.value } : current
-                  )
-                )
-              }
-              placeholder={`Testimonial ${index + 1} name`}
-              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-            />
-            <input
-              type="text"
-              value={item.date || ""}
-              onChange={(e) =>
-                onChange(
-                  "contentConfig",
-                  "testimonials",
-                  items.map((current, currentIndex) =>
-                    currentIndex === index ? { ...current, date: e.target.value } : current
-                  )
-                )
-              }
-              placeholder={`Testimonial ${index + 1} date`}
-              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-            />
-            <textarea
-              rows={3}
-              value={item.text || ""}
-              onChange={(e) =>
-                onChange(
-                  "contentConfig",
-                  "testimonials",
-                  items.map((current, currentIndex) =>
-                    currentIndex === index ? { ...current, text: e.target.value } : current
-                  )
-                )
-              }
-              placeholder={`Testimonial ${index + 1} text`}
-              className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-            />
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  }
-
-  if (section.type === "logoCloud") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-        <input
-          type="text"
-          value={content.title || ""}
-          onChange={(e) => onChange("contentConfig", "title", e.target.value)}
-          placeholder="Logo section label"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <input
-          type="text"
-          value={content.backgroundColor || ""}
-          onChange={(e) => onChange("contentConfig", "backgroundColor", e.target.value)}
-          placeholder="Background color"
-          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-        />
-        <textarea
-          rows={4}
-          value={(content.logos || []).join("\n")}
-          onChange={(e) =>
-            onChange(
-              "contentConfig",
-              "logos",
-              e.target.value.split("\n").map((item) => item.trim()).filter(Boolean)
-            )
-          }
-          placeholder="One logo URL or path per line"
-          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
-        />
+      <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400">
+        No editable content fields yet for this section.
       </div>
     );
   }
 
   return (
-    <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400">
-      No editable content fields yet for this section.
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+      {schema.map((field) => {
+        const source = section[field.group] || {};
+        const value = getValueAtPath(source, field.path);
+        const fieldKey = `${section.type}-${field.group}-${field.path}`;
+
+        if (field.type === "objectList") {
+          return (
+            <ObjectListEditorField
+              key={fieldKey}
+              field={field}
+              items={Array.isArray(value) ? value : []}
+              inputIdPrefix={section.type}
+              onChange={(nextValue) => onChange(field.group, field.path, nextValue)}
+            />
+          );
+        }
+
+        return (
+          <SimpleEditorField
+            key={fieldKey}
+            field={field}
+            value={value}
+            inputIdPrefix={section.type}
+            onChange={(nextValue) => onChange(field.group, field.path, nextValue)}
+          />
+        );
+      })}
     </div>
   );
 };
@@ -571,6 +243,13 @@ const PageBuilderManager = () => {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [message, setMessage] = React.useState("");
+  const [newSectionType, setNewSectionType] = React.useState(
+    Object.keys(sectionRegistry.metadata || {})[0] || "hero"
+  );
+  const [newSectionVariant, setNewSectionVariant] = React.useState(
+    getSectionPresets(Object.keys(sectionRegistry.metadata || {})[0] || "hero")[0]?.value ||
+      "default"
+  );
 
   React.useEffect(() => {
     let active = true;
@@ -648,6 +327,41 @@ const PageBuilderManager = () => {
     });
   };
 
+  const addSection = () => {
+    if (!newSectionType) {
+      return;
+    }
+
+    const meta = sectionRegistry.metadata?.[newSectionType];
+    const alreadyExists = pageConfig.sections.some(
+      (section) => section.type === newSectionType
+    );
+
+    if (meta?.allowMultiple === false && alreadyExists) {
+      setMessage(`${getSectionLabel(newSectionType)} is a singleton section and is already on the page.`);
+      return;
+    }
+
+    setPageConfig((current) => ({
+      ...current,
+      sections: normalizeSections([
+        ...current.sections,
+        getDefaultSectionTemplate(newSectionType, newSectionVariant),
+      ]),
+    }));
+    setMessage(`Added ${getSectionLabel(newSectionType)} section with ${newSectionVariant} preset.`);
+  };
+
+  const removeSection = (index) => {
+    setPageConfig((current) => ({
+      ...current,
+      sections: normalizeSections(
+        current.sections.filter((_, currentIndex) => currentIndex !== index)
+      ),
+    }));
+    setMessage("Section removed from homepage.");
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
@@ -673,20 +387,17 @@ const PageBuilderManager = () => {
     }
   };
 
-  const handleSectionFieldChange = (index, group, key, value) => {
+  const handleSectionFieldChange = (index, group, path, value) => {
     updateSection(index, (current) => ({
       ...current,
-      [group]: {
-        ...(current[group] || {}),
-        [key]: value,
-      },
+      [group]: setValueAtPath(current[group], path, value),
     }));
   };
 
   if (loading) {
     return (
       <Card className="p-8 border-none shadow-xl">
-        <p className="text-sm font-bold text-slate-500">Loading page builder…</p>
+        <p className="text-sm font-bold text-slate-500">Loading page builder...</p>
       </Card>
     );
   }
@@ -732,7 +443,7 @@ const PageBuilderManager = () => {
               onChange={(e) =>
                 setPageConfig((current) => ({ ...current, title: e.target.value }))
               }
-              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+              className={INPUT_CLASS}
             />
           </div>
           <div className="space-y-2">
@@ -745,7 +456,7 @@ const PageBuilderManager = () => {
               onChange={(e) =>
                 setPageConfig((current) => ({ ...current, slug: e.target.value }))
               }
-              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+              className={INPUT_CLASS}
             />
           </div>
           <div className="space-y-2 md:col-span-2">
@@ -764,8 +475,60 @@ const PageBuilderManager = () => {
                   },
                 }))
               }
-              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+              className={TEXTAREA_CLASS}
             />
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-8 mb-8 border-none shadow-xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 className="text-xl font-bold italic">Add Section</h3>
+            <p className="text-sm font-medium text-slate-500 mt-2">
+              Insert a new homepage section from the registry. You can reorder it after adding.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_auto] gap-4 w-full lg:w-auto lg:min-w-[680px]">
+            <select
+              value={newSectionType}
+              onChange={(e) => {
+                const nextType = e.target.value;
+                setNewSectionType(nextType);
+                setNewSectionVariant(getSectionPresets(nextType)[0]?.value || "default");
+              }}
+              className={INPUT_CLASS}
+            >
+              {Object.entries(sectionRegistry.metadata || {}).map(([type, meta]) => {
+                const exists = pageConfig.sections.some((section) => section.type === type);
+                const disabled = meta.allowMultiple === false && exists;
+
+                return (
+                  <option key={type} value={type} disabled={disabled}>
+                    {disabled ? `${meta.label} (Already Added)` : meta.label}
+                  </option>
+                );
+              })}
+            </select>
+            <select
+              value={newSectionVariant}
+              onChange={(e) => setNewSectionVariant(e.target.value)}
+              className={INPUT_CLASS}
+            >
+              {getSectionPresets(newSectionType).map((preset) => (
+                <option key={`${newSectionType}-${preset.value}`} value={preset.value}>
+                  {preset.label}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              onClick={addSection}
+              className="px-6 py-4 rounded-2xl inline-flex items-center gap-3"
+            >
+              <FaPlus />
+              Add Section
+            </Button>
           </div>
         </div>
       </Card>
@@ -794,7 +557,7 @@ const PageBuilderManager = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:min-w-[540px]">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 lg:min-w-[720px]">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
                     Variant
@@ -807,7 +570,7 @@ const PageBuilderManager = () => {
                         variant: e.target.value,
                       }))
                     }
-                    className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+                    className={INPUT_CLASS}
                   >
                     {getSectionVariants(section.type).map((variant) => (
                       <option key={variant} value={variant}>
@@ -870,6 +633,22 @@ const PageBuilderManager = () => {
                       </span>
                     </button>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
+                    Remove
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeSection(index)}
+                    className="w-full rounded-2xl px-4 py-4 text-sm font-black uppercase tracking-widest transition bg-rose-50 text-rose-700 hover:bg-rose-100"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <FaTrash />
+                      Delete
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>

@@ -28,6 +28,9 @@ The original architecture brief below is preserved as the product vision.
   - homepage renders from `PageConfig`
   - section registry, page renderer, and builder defaults added
   - admin can edit homepage section order, visibility, variants, and selected content fields
+  - admin can add and remove homepage section instances from the registry
+  - add-section flow now supports preset/variant selection and singleton duplicate protection
+  - page builder content controls are now driven by section registry field schemas instead of a growing hardcoded editor switch
 - Navigation/footer tenant config exists
   - navbar/footer consume tenant config
   - admin can edit navigation CTA/about links and footer brand/CTA/copyright fields
@@ -51,7 +54,8 @@ The original architecture brief below is preserved as the product vision.
   - full production custom-domain onboarding/management UX is not finished
 - Section builder
   - registry and page config exist
-  - only a subset of sections have rich content editing so far
+  - registry-driven editing schemas now power the homepage builder UI
+  - schema depth still varies by section, and style-control schemas are not fully exposed yet
 - Admin architecture
   - tenant admin path exists
   - super admin/platform admin layer is not yet implemented
