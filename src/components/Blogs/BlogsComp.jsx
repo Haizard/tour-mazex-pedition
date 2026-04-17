@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { fetchBlogs } from "../../services/api";
 import { FaSearch } from "react-icons/fa";
 
-const getBlogGroups = (blogs) => {
+const getBlogGroups = (blogs, labels) => {
   const safari = [];
   const trekking = [];
   const other = [];
@@ -12,20 +12,12 @@ const getBlogGroups = (blogs) => {
   blogs.forEach((blog) => {
     const searchable = `${blog.category || ""} ${blog.title || ""} ${blog.content || ""}`.toLowerCase();
 
-    if (
-      /trek|trekking|kilimanjaro|climb|summit|route|hike|mountain/.test(
-        searchable
-      )
-    ) {
+    if (/trek|trekking|kilimanjaro|climb|summit|route|hike|mountain/.test(searchable)) {
       trekking.push(blog);
       return;
     }
 
-    if (
-      /safari|serengeti|ngorongoro|tarangire|wildlife|migration|zanzibar|beach|game drive/.test(
-        searchable
-      )
-    ) {
+    if (/safari|serengeti|ngorongoro|tarangire|wildlife|migration|zanzibar|beach|game drive/.test(searchable)) {
       safari.push(blog);
       return;
     }
@@ -36,23 +28,23 @@ const getBlogGroups = (blogs) => {
   return [
     {
       key: "safari",
-      title: "Safari",
-      accent: "Articles",
-      cta: "View More Safari Articles",
+      title: labels?.safariTitle || "Safari",
+      accent: labels?.safariAccent || "Articles",
+      cta: labels?.safariCta || "View More Safari Articles",
       blogs: safari,
     },
     {
       key: "trekking",
-      title: "Trekking",
-      accent: "Articles",
-      cta: "View More Trekking Articles",
+      title: labels?.trekkingTitle || "Trekking",
+      accent: labels?.trekkingAccent || "Articles",
+      cta: labels?.trekkingCta || "View More Trekking Articles",
       blogs: trekking,
     },
     {
       key: "other",
-      title: "Travel",
-      accent: "Articles",
-      cta: "View More Travel Articles",
+      title: labels?.travelTitle || "Travel",
+      accent: labels?.travelAccent || "Articles",
+      cta: labels?.travelCta || "View More Travel Articles",
       blogs: other,
     },
   ].filter((group) => group.blogs.length > 0);
@@ -66,7 +58,13 @@ const SectionHeading = ({ title, accent }) => (
   </div>
 );
 
-const BlogsComp = ({ maxPerCategory = null }) => {
+const BlogsComp = ({
+  maxPerCategory = null,
+  searchPlaceholder = "Search blogs, destinations, parks, or travel topics...",
+  emptyTitle = "No stories match that search",
+  emptyDescription = "Try a destination name, travel style, or wildlife topic.",
+  groupLabels = {},
+}) => {
   const [blogsData, setBlogsData] = React.useState([]);
   const [searchInput, setSearchInput] = React.useState("");
 
@@ -89,11 +87,11 @@ const BlogsComp = ({ maxPerCategory = null }) => {
     return blogsData.filter((blog) =>
       `${blog.title || ""} ${blog.category || ""} ${blog.content || ""}`
         .toLowerCase()
-        .includes(query),
+        .includes(query)
     );
   }, [blogsData, searchInput]);
 
-  const blogGroups = getBlogGroups(visibleBlogs);
+  const blogGroups = getBlogGroups(visibleBlogs, groupLabels);
 
   return (
     <div className="bg-white py-20 pb-24">
@@ -107,46 +105,46 @@ const BlogsComp = ({ maxPerCategory = null }) => {
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Search blogs, destinations, parks, or travel topics..."
+                  placeholder={searchPlaceholder}
                   className="w-full bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-400"
                 />
               </div>
             </div>
 
             {blogGroups.map((group) => {
-              const visibleBlogs =
+              const limitedBlogs =
                 typeof maxPerCategory === "number" && maxPerCategory > 0
                   ? group.blogs.slice(0, maxPerCategory)
                   : group.blogs;
 
               return (
-              <section key={group.key} className="py-2">
-                <SectionHeading title={group.title} accent={group.accent} />
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 lg:gap-8 px-1 md:px-0">
-                  {visibleBlogs.map((item) => (
-                    <BlogCard key={item._id} {...item} />
-                  ))}
-                </div>
+                <section key={group.key} className="py-2">
+                  <SectionHeading title={group.title} accent={group.accent} />
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 lg:gap-8 px-1 md:px-0">
+                    {limitedBlogs.map((item) => (
+                      <BlogCard key={item._id} {...item} />
+                    ))}
+                  </div>
 
-                <div className="mt-10 flex justify-center">
-                  <Link
-                    to={`/blogs/category/${group.key}`}
-                    className="rounded-md bg-[#2a5d24] px-6 py-3 text-sm font-bold text-white transition-colors duration-300 hover:bg-[#1f471b]"
-                  >
-                    {group.cta}
-                  </Link>
-                </div>
-              </section>
+                  <div className="mt-10 flex justify-center">
+                    <Link
+                      to={`/blogs/category/${group.key}`}
+                      className="rounded-md bg-[#2a5d24] px-6 py-3 text-sm font-bold text-white transition-colors duration-300 hover:bg-[#1f471b]"
+                    >
+                      {group.cta}
+                    </Link>
+                  </div>
+                </section>
               );
             })}
 
             {visibleBlogs.length === 0 && (
               <div className="rounded-[28px] border border-dashed border-gray-200 bg-gray-50 px-6 py-16 text-center">
                 <p className="text-lg font-black uppercase tracking-tight text-gray-900">
-                  No stories match that search
+                  {emptyTitle}
                 </p>
                 <p className="mt-3 text-sm font-medium text-gray-500">
-                  Try a destination name, travel style, or wildlife topic.
+                  {emptyDescription}
                 </p>
               </div>
             )}

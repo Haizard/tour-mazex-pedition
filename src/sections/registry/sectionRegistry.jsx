@@ -54,6 +54,27 @@ const buildSectionProps = (section) => {
   if (section.type === "blogPreview") {
     return {
       maxPerCategory: dataConfig.maxPerCategory ?? 3,
+      searchPlaceholder: contentConfig.searchPlaceholder,
+      emptyTitle: contentConfig.emptyTitle,
+      emptyDescription: contentConfig.emptyDescription,
+      groupLabels: contentConfig.groupLabels,
+    };
+  }
+
+  if (section.type === "trending") {
+    return {
+      heading: contentConfig.heading,
+    };
+  }
+
+  if (section.type === "about") {
+    return {
+      introLabel: contentConfig.introLabel,
+      brandName: contentConfig.brandName,
+      leadHeading: contentConfig.leadHeading,
+      bodyText: contentConfig.bodyText,
+      closingHeading: contentConfig.closingHeading,
+      cards: contentConfig.cards,
     };
   }
 
@@ -76,6 +97,16 @@ const buildSectionProps = (section) => {
       secondaryLabel: contentConfig.secondaryLabel,
       secondaryHref: contentConfig.secondaryHref,
       backgroundImage: contentConfig.backgroundImage,
+    };
+  }
+
+  if (section.type === "destinations") {
+    return {
+      title: contentConfig.title,
+      subtitle: contentConfig.subtitle,
+      description: contentConfig.description,
+      quote: contentConfig.quote,
+      quoteAuthor: contentConfig.quoteAuthor,
     };
   }
 

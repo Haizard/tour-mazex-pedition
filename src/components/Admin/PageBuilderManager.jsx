@@ -174,6 +174,215 @@ const SectionContentFields = ({ section, onChange }) => {
     );
   }
 
+  if (section.type === "destinations") {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+        <input
+          type="text"
+          value={content.title || ""}
+          onChange={(e) => onChange("contentConfig", "title", e.target.value)}
+          placeholder="Section title"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.subtitle || ""}
+          onChange={(e) => onChange("contentConfig", "subtitle", e.target.value)}
+          placeholder="Section subtitle"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <textarea
+          rows={3}
+          value={content.description || ""}
+          onChange={(e) => onChange("contentConfig", "description", e.target.value)}
+          placeholder="Section description"
+          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+        />
+        <textarea
+          rows={3}
+          value={content.quote || ""}
+          onChange={(e) => onChange("contentConfig", "quote", e.target.value)}
+          placeholder="Highlight quote"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+        />
+        <input
+          type="text"
+          value={content.quoteAuthor || ""}
+          onChange={(e) => onChange("contentConfig", "quoteAuthor", e.target.value)}
+          placeholder="Quote author"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+      </div>
+    );
+  }
+
+  if (section.type === "trending") {
+    return (
+      <div className="grid grid-cols-1 gap-4 mt-5">
+        <input
+          type="text"
+          value={content.heading || ""}
+          onChange={(e) => onChange("contentConfig", "heading", e.target.value)}
+          placeholder="Trending heading"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+      </div>
+    );
+  }
+
+  if (section.type === "about") {
+    const cards = content.cards || [];
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+        <input
+          type="text"
+          value={content.introLabel || ""}
+          onChange={(e) => onChange("contentConfig", "introLabel", e.target.value)}
+          placeholder="Intro label"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.brandName || ""}
+          onChange={(e) => onChange("contentConfig", "brandName", e.target.value)}
+          placeholder="Brand name"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <textarea
+          rows={3}
+          value={content.leadHeading || ""}
+          onChange={(e) => onChange("contentConfig", "leadHeading", e.target.value)}
+          placeholder="Lead heading"
+          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+        />
+        <textarea
+          rows={5}
+          value={content.bodyText || ""}
+          onChange={(e) => onChange("contentConfig", "bodyText", e.target.value)}
+          placeholder="Body text"
+          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+        />
+        <textarea
+          rows={2}
+          value={content.closingHeading || ""}
+          onChange={(e) => onChange("contentConfig", "closingHeading", e.target.value)}
+          placeholder="Closing heading"
+          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+        />
+        {cards.slice(0, 4).map((card, index) => (
+          <React.Fragment key={`about-card-${index}`}>
+            <input
+              type="text"
+              value={card.scriptLabel || ""}
+              onChange={(e) =>
+                onChange("contentConfig", "cards", cards.map((item, itemIndex) =>
+                  itemIndex === index ? { ...item, scriptLabel: e.target.value } : item
+                ))
+              }
+              placeholder={`Card ${index + 1} script label`}
+              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+            />
+            <input
+              type="text"
+              value={card.title || ""}
+              onChange={(e) =>
+                onChange("contentConfig", "cards", cards.map((item, itemIndex) =>
+                  itemIndex === index ? { ...item, title: e.target.value } : item
+                ))
+              }
+              placeholder={`Card ${index + 1} title`}
+              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+            />
+            <textarea
+              rows={3}
+              value={card.description || ""}
+              onChange={(e) =>
+                onChange("contentConfig", "cards", cards.map((item, itemIndex) =>
+                  itemIndex === index ? { ...item, description: e.target.value } : item
+                ))
+              }
+              placeholder={`Card ${index + 1} description`}
+              className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700"
+            />
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === "blogPreview") {
+    const labels = content.groupLabels || {};
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+        <input
+          type="text"
+          value={content.searchPlaceholder || ""}
+          onChange={(e) => onChange("contentConfig", "searchPlaceholder", e.target.value)}
+          placeholder="Search placeholder"
+          className="w-full md:col-span-2 bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.emptyTitle || ""}
+          onChange={(e) => onChange("contentConfig", "emptyTitle", e.target.value)}
+          placeholder="Empty state title"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={content.emptyDescription || ""}
+          onChange={(e) => onChange("contentConfig", "emptyDescription", e.target.value)}
+          placeholder="Empty state description"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={labels.safariTitle || ""}
+          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, safariTitle: e.target.value })}
+          placeholder="Safari group title"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={labels.safariCta || ""}
+          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, safariCta: e.target.value })}
+          placeholder="Safari CTA"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={labels.trekkingTitle || ""}
+          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, trekkingTitle: e.target.value })}
+          placeholder="Trekking group title"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={labels.trekkingCta || ""}
+          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, trekkingCta: e.target.value })}
+          placeholder="Trekking CTA"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={labels.travelTitle || ""}
+          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, travelTitle: e.target.value })}
+          placeholder="Travel group title"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+        <input
+          type="text"
+          value={labels.travelCta || ""}
+          onChange={(e) => onChange("contentConfig", "groupLabels", { ...labels, travelCta: e.target.value })}
+          placeholder="Travel CTA"
+          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400">
       No editable content fields yet for this section.

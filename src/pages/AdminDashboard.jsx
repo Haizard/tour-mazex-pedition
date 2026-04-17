@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
-import { FaEdit, FaSearch, FaCog } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 
 import { motion } from "framer-motion";
 import {
@@ -24,8 +24,6 @@ import {
   generateBlogSeo,
   generateTourSeo,
   generateFullTourPackage,
-  fetchHomeContent,
-  updateHomeContent,
   fetchInquiries,
 
   updateInquiryStatus,
@@ -90,15 +88,6 @@ const AdminDashboard = () => {
   const [faqs, setFaqs] = useState([]);
   const [taxonomies, setTaxonomies] = useState([]);
   const [visionaries, setVisionaries] = useState([]);
-  const [homeSections, setHomeSections] = useState([]);
-  const [activeSection, setActiveSection] = useState("destinations");
-  const [sectionFormData, setSectionFormData] = useState({
-    title: "",
-    subtitle: "",
-    description: "",
-    quote: "",
-    quoteAuthor: "",
-  });
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -163,28 +152,6 @@ const AdminDashboard = () => {
     location: "",
     caption: "",
   });
-  
-  // Sync section form when section changes
-  useEffect(() => {
-    const current = homeSections.find(s => s.section === activeSection);
-    if (current) {
-      setSectionFormData({
-        title: current.title || "",
-        subtitle: current.subtitle || "",
-        description: current.description || "",
-        quote: current.quote || "",
-        quoteAuthor: current.quoteAuthor || "",
-      });
-    } else {
-        setSectionFormData({
-            title: "",
-            subtitle: "",
-            description: "",
-            quote: "",
-            quoteAuthor: "",
-        });
-    }
-  }, [activeSection, homeSections]);
   const [taxFormData, setTaxFormData] = useState({
     name: "",
     type: "tourType",
@@ -436,28 +403,6 @@ const AdminDashboard = () => {
       console.error(e);
     }
   };
-
-  const loadHomeContent = async () => {
-    try {
-      const res = await fetchHomeContent();
-      setHomeSections(res.data);
-      const current = res.data.find(s => s.section === activeSection);
-      if (current) {
-        setSectionFormData({
-          title: current.title || "",
-          subtitle: current.subtitle || "",
-          description: current.description || "",
-          quote: current.quote || "",
-          quoteAuthor: current.quoteAuthor || "",
-        });
-      }
-    } catch (e) {
-      console.error("Failed to load home content:", e);
-    }
-  };
-
-  // Load home content on mount (placed here after the function definition)
-  useEffect(() => { loadHomeContent(); }, []); // eslint-disable-line
 
   const handleTourInputChange = (e) =>
     setTourFormData({ ...tourFormData, [e.target.name]: e.target.value });
@@ -768,25 +713,6 @@ const AdminDashboard = () => {
       alert("Photo added to gallery!");
     } catch (e) {
       console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Section Submit
-  const handleSectionSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await updateHomeContent({
-        section: activeSection,
-        ...sectionFormData
-      });
-      alert("Home content updated successfully!");
-      loadHomeContent();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to update home content.");
     } finally {
       setLoading(false);
     }
@@ -3428,74 +3354,8 @@ const AdminDashboard = () => {
               )}
             </div>
           )}
-          {/* Site Editor Section */}
-          {activeTab === "site-editor" && (
-            <div className="animate-fade-in max-w-5xl">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
-                  Homepage Editor
-                </h2>
-                <div className="flex items-center gap-4">
-                  <select 
-                    value={activeSection}
-                    onChange={(e) => setActiveSection(e.target.value)}
-                    className="bg-white px-6 py-2 rounded-full border-none shadow-sm font-black uppercase text-xs focus:ring-2 focus:ring-primary"
-                  >
-                    <option value="destinations">African Destinations Section</option>
-                  </select>
-                </div>
-              </div>
-
-              <Card className="p-8 border-none shadow-2xl bg-white overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                    <FaEdit size={120} />
-                </div>
-                
-                <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center not-italic">1</span>
-                  Editing: {activeSection === "destinations" ? "African Safari Destinations" : activeSection}
-                </h3>
-
-                <form onSubmit={handleSectionSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">
-                        Main Title
-                      </label>
-                      <input
-                        type="text"
-                        value={sectionFormData.title}
-                        onChange={(e) => setSectionFormData({ ...sectionFormData, title: e.target.value })}
-                        className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-                        placeholder="e.g., Our African Safari Destinations"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">
-                          Mini Label / Subtitle
-                        </label>
-                        <input
-                          type="text"
-                          value={sectionFormData.subtitle}
-                          onChange={(e) => setSectionFormData({ ...sectionFormData, subtitle: e.target.value })}
-                          className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold text-slate-900"
-                          placeholder="e.g., Safari / African Safari"
-                        />
-                      </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">
-                      Section Description
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={sectionFormData.description}
-                      onChange={(e) => setSectionFormData({ ...sectionFormData, description: e.target.value })}
-                      className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700 leading-relaxed"
-                      placeholder="Enter the section introduction text..."
-                    />
-                  </div>
+          {/*
+          
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-100">
                     <div className="space-y-2">
@@ -3579,6 +3439,7 @@ const AdminDashboard = () => {
               )}
             </div>
           )}
+          */}
 
           {activeTab === "page-builder" && <PageBuilderManager />}
 

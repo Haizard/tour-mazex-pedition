@@ -43,7 +43,9 @@ export const HOME_PAGE_DEFAULT = {
       order: 2,
       enabled: true,
       dataConfig: {},
-      contentConfig: {},
+      contentConfig: {
+        heading: "Our Popular Expeditions",
+      },
       styleConfig: {},
     },
     {
@@ -52,7 +54,41 @@ export const HOME_PAGE_DEFAULT = {
       order: 3,
       enabled: true,
       dataConfig: {},
-      contentConfig: {},
+      contentConfig: {
+        introLabel: "Welcome to",
+        brandName: "MAZ Expeditions",
+        leadHeading:
+          "Experience the transformative power of travel with MAZ Expeditions, a journey that enriches your soul while fostering the preservation of Africa's vibrant communities, pristine environments, and majestic wildlife.",
+        bodyText:
+          "MAZ Expeditions is a locally rooted African safari company built around thoughtful planning, personal service, and tailor-made adventures. We shape each itinerary around your interests, carefully choosing the places, pace, and experiences that fit you best. On your private journey, we create a close, memorable experience led by knowledgeable local professionals who know these landscapes deeply. Traveling with MAZ Expeditions means exploring Tanzania with a team that values authenticity, safety, and lasting impact for both travelers and the communities connected to each journey.",
+        closingHeading:
+          "Experience the unmatched luxury of Africa's wilderness with MAZ Expeditions.",
+        cards: [
+          {
+            title: "Explore Our Kilimanjaro Packages",
+            description:
+              "Conquer Africa's highest peak with our Kilimanjaro trekking packages. Whether you're a seasoned climber or a beginner, our expert guides ensure a safe, unforgettable journey to the summit. Choose your route and start your adventure today.",
+            scriptLabel: "",
+          },
+          {
+            title: "Explore Our Safari Packages",
+            description:
+              "Join us on an unforgettable safari adventure. Discover Africa's wildlife and stunning landscapes, from the Serengeti to the Ngorongoro Crater. Our tailored safari packages promise an experience you'll never forget.",
+            scriptLabel: "",
+          },
+          {
+            title: "Experience, Expertise, and Research",
+            description:
+              "Born from a passion for travel and shaped by deep local experience, MAZ Expeditions creates meaningful African journeys with a strong focus on authenticity, care, and unforgettable memories for every traveler.",
+            scriptLabel: "About us",
+          },
+          {
+            title: "Best African safari with kids",
+            description: "",
+            scriptLabel: "Family Safaris",
+          },
+        ],
+      },
       styleConfig: {},
     },
     {
@@ -91,7 +127,22 @@ export const HOME_PAGE_DEFAULT = {
         source: "blogs",
         maxPerCategory: 3,
       },
-      contentConfig: {},
+      contentConfig: {
+        searchPlaceholder: "Search blogs, destinations, parks, or travel topics...",
+        emptyTitle: "No stories match that search",
+        emptyDescription: "Try a destination name, travel style, or wildlife topic.",
+        groupLabels: {
+          safariTitle: "Safari",
+          safariAccent: "Articles",
+          safariCta: "View More Safari Articles",
+          trekkingTitle: "Trekking",
+          trekkingAccent: "Articles",
+          trekkingCta: "View More Trekking Articles",
+          travelTitle: "Travel",
+          travelAccent: "Articles",
+          travelCta: "View More Travel Articles",
+        },
+      },
       styleConfig: {},
     },
     {
@@ -102,7 +153,14 @@ export const HOME_PAGE_DEFAULT = {
       dataConfig: {
         source: "taxonomy-destinations",
       },
-      contentConfig: {},
+      contentConfig: {
+        title: "Our African Safari Destinations",
+        subtitle: "Safari / African Safari",
+        description:
+          "Experience the epitome of Africa's travel, crafted for you. Deluxe safari in Tanzania or beaches in Zanzibar.",
+        quote: "Africa's wildlife is... the greatest show on Earth.",
+        quoteAuthor: "Attenborough",
+      },
       styleConfig: {},
     },
     {
