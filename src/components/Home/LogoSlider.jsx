@@ -8,12 +8,51 @@ const defaultLogos = [
 ];
 
 const LogoSlider = ({
+  variant = "default",
   logos = defaultLogos,
   backgroundColor = "#ffffff",
   title = "",
 }) => {
   const safeLogos = logos?.length ? logos : defaultLogos;
   const sliderLogos = [...safeLogos, ...safeLogos, ...safeLogos, ...safeLogos];
+
+  if (variant === "badge-grid") {
+    return (
+      <section className="py-12">
+        <div
+          className="container max-w-6xl mx-auto rounded-[28px] border border-slate-200 px-6 py-8"
+          style={{ backgroundColor }}
+        >
+          {title ? (
+            <div className="mb-6 text-center">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
+                {title}
+              </p>
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {safeLogos.map((logo, index) => (
+              <div
+                key={`${logo}-${index}`}
+                className="flex min-h-[110px] items-center justify-center rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <img
+                  src={logo}
+                  alt="Partner Logo"
+                  className="max-h-[56px] max-w-[120px] object-contain opacity-80"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://placehold.co/110x75/white/black?text=Partner";
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <div

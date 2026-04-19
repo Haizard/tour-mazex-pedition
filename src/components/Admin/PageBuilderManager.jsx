@@ -122,6 +122,23 @@ const getFieldClassName = (field) =>
   }`.trim();
 
 const SimpleEditorField = ({ field, value, onChange, inputIdPrefix }) => {
+  if (field.type === "select") {
+    return (
+      <select
+        id={`${inputIdPrefix}-${field.path}`}
+        value={value ?? field.fallbackValue ?? ""}
+        onChange={(e) => onChange(parseFieldValue(e.target.value, field))}
+        className={getFieldClassName(field)}
+      >
+        {(field.options || []).map((option) => (
+          <option key={`${field.path}-${option.value || "empty"}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   const commonProps = {
     placeholder: field.placeholder,
     className: getFieldClassName(field),
@@ -188,7 +205,8 @@ const ObjectListEditorField = ({ field, items, onChange, inputIdPrefix }) => (
 );
 
 const SectionContentFields = ({ section, onChange }) => {
-  const schema = sectionRegistry.metadata?.[section.type]?.editorSchema || [];
+  const schema =
+    sectionRegistry.getEditorSchema?.(section.type, section.variant) || [];
 
   if (!schema.length) {
     return (
@@ -223,6 +241,39 @@ const SectionContentFields = ({ section, onChange }) => {
             field={field}
             value={value}
             inputIdPrefix={section.type}
+            onChange={(nextValue) => onChange(field.group, field.path, nextValue)}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+const SectionStyleFields = ({ section, onChange }) => {
+  const schema =
+    sectionRegistry.getStyleSchema?.(section.type, section.variant) || [];
+
+  if (!schema.length) {
+    return (
+      <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400">
+        No style controls configured for this section.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+      {schema.map((field) => {
+        const source = section[field.group] || {};
+        const value = getValueAtPath(source, field.path);
+        const fieldKey = `${section.type}-${field.group}-${field.path}`;
+
+        return (
+          <SimpleEditorField
+            key={fieldKey}
+            field={field}
+            value={value}
+            inputIdPrefix={`${section.type}-style`}
             onChange={(nextValue) => onChange(field.group, field.path, nextValue)}
           />
         );
@@ -360,6 +411,20 @@ const PageBuilderManager = () => {
       ),
     }));
     setMessage("Section removed from homepage.");
+  };
+
+  const applySectionPreset = (index) => {
+    updateSection(index, (current) => {
+      const preset = getDefaultSectionTemplate(current.type, current.variant);
+
+      return {
+        ...current,
+        dataConfig: { ...(preset.dataConfig || {}) },
+        contentConfig: { ...(preset.contentConfig || {}) },
+        styleConfig: { ...(preset.styleConfig || {}) },
+      };
+    });
+    setMessage("Section defaults reapplied for the selected preset.");
   };
 
   const handleSave = async () => {
@@ -557,7 +622,7 @@ const PageBuilderManager = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 lg:min-w-[720px]">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 lg:min-w-[860px]">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
                     Variant
@@ -637,6 +702,19 @@ const PageBuilderManager = () => {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
+                    Preset
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => applySectionPreset(index)}
+                    className="w-full rounded-2xl bg-amber-50 px-4 py-4 text-sm font-black uppercase tracking-widest text-amber-800 transition hover:bg-amber-100"
+                  >
+                    Apply Defaults
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
                     Remove
                   </label>
                   <button
@@ -658,6 +736,18 @@ const PageBuilderManager = () => {
                 Content Controls
               </p>
               <SectionContentFields
+                section={section}
+                onChange={(group, key, value) =>
+                  handleSectionFieldChange(index, group, key, value)
+                }
+              />
+            </div>
+
+            <div className="mt-6 border-t border-slate-100 pt-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">
+                Style Controls
+              </p>
+              <SectionStyleFields
                 section={section}
                 onChange={(group, key, value) =>
                   handleSectionFieldChange(index, group, key, value)

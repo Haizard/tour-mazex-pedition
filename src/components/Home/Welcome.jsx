@@ -49,6 +49,7 @@ const defaultCards = [
 ];
 
 const Welcome = ({
+  variant = "welcome",
   introLabel = "Welcome to",
   brandName = "MAZ Expeditions",
   leadHeading = "Experience the transformative power of travel with MAZ Expeditions, a journey that enriches your soul while fostering the preservation of Africa's vibrant communities, pristine environments, and majestic wildlife.",
@@ -60,6 +61,69 @@ const Welcome = ({
     ...card,
     ...(cards?.[index] || {}),
   }));
+
+  if (variant === "editorial-mosaic") {
+    return (
+      <div className="bg-[#fcfaf6] py-14 md:py-24">
+        <div className="container px-4 max-w-6xl mx-auto">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_420px] lg:items-start">
+            <div>
+              <p className="font-oswald text-xs uppercase tracking-[0.3em] text-safari-green">
+                {introLabel}
+              </p>
+              <h2 className="mt-4 font-heading text-4xl leading-tight text-slate-900 md:text-6xl">
+                {brandName}
+              </h2>
+              <p className="mt-6 text-lg leading-8 text-slate-700 md:text-2xl">
+                {leadHeading}
+              </p>
+              <p className="mt-6 text-sm leading-8 text-slate-600 md:text-base">
+                {bodyText}
+              </p>
+              <p className="mt-8 font-heading text-2xl text-slate-900 md:text-3xl">
+                {closingHeading}
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {mergedCards.map((card, index) => (
+                <Link
+                  key={`${card.title}-${index}`}
+                  to={card.href}
+                  className={`group overflow-hidden rounded-[28px] border border-[#e8dfcf] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${
+                    index === 0 || index === 3 ? "sm:translate-y-8" : ""
+                  }`}
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={card.image}
+                      alt={card.alt}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-5">
+                    {card.scriptLabel ? (
+                      <p className="font-signature text-3xl text-safari-green">
+                        {card.scriptLabel}
+                      </p>
+                    ) : null}
+                    <h3 className="mt-2 font-heading text-xl leading-tight text-slate-900">
+                      {card.title}
+                    </h3>
+                    {card.description ? (
+                      <p className="mt-3 text-sm leading-7 text-slate-600 line-clamp-4">
+                        {card.description}
+                      </p>
+                    ) : null}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white py-12 md:py-24">

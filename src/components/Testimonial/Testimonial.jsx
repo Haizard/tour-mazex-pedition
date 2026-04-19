@@ -31,10 +31,14 @@ const StaticSlider = ({ children }) =>
   <div>{React.Children.toArray(children)[0] || null}</div>;
 
 const Testimonial = ({
+  variant = "default",
   backgroundImage = "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
   ratingLabel = "EXCELLENT",
   reviewCountLabel = "Based on 30 reviews",
   providerLabel = "Tripadvisor",
+  sectionEyebrow = "",
+  sectionTitle = "",
+  sectionDescription = "",
   testimonials = defaultTestimonials,
 }) => {
   const SliderComponent =
@@ -58,6 +62,69 @@ const Testimonial = ({
     ...item,
     ...(testimonials?.[index] || {}),
   }));
+
+  if (variant === "editorial-quotes") {
+    return (
+      <section className="bg-[linear-gradient(180deg,#fcfaf5_0%,#ffffff_100%)] py-20 md:py-24">
+        <div className="container px-4 max-w-6xl mx-auto">
+          <div className="mx-auto max-w-3xl text-center">
+            {sectionEyebrow ? (
+              <p className="mb-3 font-oswald text-xs uppercase tracking-[0.3em] text-safari-green">
+                {sectionEyebrow}
+              </p>
+            ) : null}
+            {sectionTitle ? (
+              <h2 className="font-heading text-4xl leading-tight text-slate-900 md:text-6xl">
+                {sectionTitle}
+              </h2>
+            ) : null}
+            {sectionDescription ? (
+              <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
+                {sectionDescription}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {mergedTestimonials.slice(0, 3).map((review, index) => (
+              <motion.article
+                key={review.id || `${review.name}-${index}`}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+                className="rounded-[28px] border border-[#e8dfcf] bg-white p-6 shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <img
+                    src={review.img}
+                    alt={review.name}
+                    className="h-14 w-14 rounded-2xl object-cover"
+                  />
+                  <div>
+                    <h3 className="font-heading text-lg text-slate-900">{review.name}</h3>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                      {review.date}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex gap-1 text-[#00af87]">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <FaStar key={`${review.name}-star-${star}`} />
+                  ))}
+                </div>
+
+                <p className="mt-5 text-sm leading-7 text-slate-600">
+                  "{review.text}"
+                </p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <div

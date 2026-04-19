@@ -28,10 +28,27 @@ export const HOME_PAGE_DEFAULT = {
       contentConfig: {
         eyebrow: "Karibu Maz",
         headlineScript: "Expeditions",
+        description:
+          "Private safaris, Kilimanjaro adventures, and custom East Africa journeys planned around your pace, style, and story.",
         primaryCtaLabel: "START PLANNING NOW",
         primaryCtaHref: "/plan-my-trip",
         secondaryCtaLabel: "Explore All Packages",
         secondaryCtaHref: "/packages",
+        panelEyebrow: "Tailor-Made Trips",
+        panelTitle: "Build a homepage that sells the journey before the itinerary.",
+        panelBody:
+          "Use the split-panel hero when you want more story, more trust signals, and a stronger premium call to action above the fold.",
+        panelHighlights: [
+          "Ideal for custom itinerary brands",
+          "Extra room for trust-building copy",
+          "Balances storytelling with strong CTAs",
+        ],
+        imageSlides: [
+          "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1600&q=80",
+          "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=1600&q=80",
+          "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
+          "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1600&q=80",
+        ],
       },
       styleConfig: {
         minHeight: "screen",
@@ -45,6 +62,9 @@ export const HOME_PAGE_DEFAULT = {
       dataConfig: {},
       contentConfig: {
         heading: "Our Popular Expeditions",
+        eyebrow: "Trending Now",
+        description:
+          "Use the magazine strip when you want current best-sellers to feel more editorial and premium above the fold.",
       },
       styleConfig: {},
     },
@@ -104,6 +124,8 @@ export const HOME_PAGE_DEFAULT = {
         prefixLabel: "Our",
         scriptLabel: "popular",
         suffixLabel: "Expeditions",
+        introText:
+          "Browse the itineraries travelers ask for most, from classic wildlife circuits to premium private journeys shaped around standout moments.",
       },
       styleConfig: {},
     },
@@ -119,6 +141,8 @@ export const HOME_PAGE_DEFAULT = {
         prefixLabel: "Our",
         scriptLabel: "Group",
         suffixLabel: "Tours",
+        sectionIntro:
+          "Perfect for travelers who want a fixed departure, shared energy, and a stronger sense of occasion around each itinerary.",
         bookingLabel: "Book Now",
         itineraryLabel: "See Itinerary",
         capacityLabel: "Capacity",
@@ -135,6 +159,10 @@ export const HOME_PAGE_DEFAULT = {
         maxPerCategory: 3,
       },
       contentConfig: {
+        sectionEyebrow: "Journal & Insights",
+        sectionTitle: "Stories that help travelers choose with confidence.",
+        sectionDescription:
+          "Use the editorial list when you want blog content to feel more premium, research-led, and destination-guided instead of card-heavy.",
         searchPlaceholder: "Search blogs, destinations, parks, or travel topics...",
         emptyTitle: "No stories match that search",
         emptyDescription: "Try a destination name, travel style, or wildlife topic.",
@@ -182,6 +210,10 @@ export const HOME_PAGE_DEFAULT = {
         ratingLabel: "EXCELLENT",
         reviewCountLabel: "Based on 30 reviews",
         providerLabel: "Tripadvisor",
+        sectionEyebrow: "Guest Reviews",
+        sectionTitle: "What travelers remember long after the journey ends.",
+        sectionDescription:
+          "Switch to the editorial quotes variant when you want testimonials to feel quieter, more premium, and more publication-like.",
         testimonials: [
           {
             name: "Roderick P",
@@ -217,6 +249,7 @@ export const HOME_PAGE_DEFAULT = {
         primaryHref: "/blogs",
         secondaryLabel: "Plan My Trip",
         secondaryHref: "/contact",
+        accentLabel: "Custom Itineraries",
         backgroundImage:
           "https://images.unsplash.com/photo-1547970810-dc1eac37d174?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
       },

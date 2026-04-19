@@ -31,6 +31,21 @@ The original architecture brief below is preserved as the product vision.
   - admin can add and remove homepage section instances from the registry
   - add-section flow now supports preset/variant selection and singleton duplicate protection
   - page builder content controls are now driven by section registry field schemas instead of a growing hardcoded editor switch
+  - page builder now supports registry-driven safe style controls for section wrapper background, text color, spacing, and alignment
+  - page builder now supports controlled layout presets for section container width, radius, shadow, and spacing density
+  - section editor and style schemas now resolve through a variant-aware registry API, ready for preset-specific admin controls
+  - hero now has a real multi-variant implementation with schema-specific controls and rendering for `cinematic`, `split-panel`, and `image-slideshow`
+  - featured packages now has a real multi-variant implementation with `popular-grid` and `featured-list`
+  - blog preview now has a real multi-variant implementation with `category-grid` and `editorial-list`
+  - group tours now has a real multi-variant implementation with `default` and `spotlight-cards`
+  - testimonials now has a real multi-variant implementation with `default` and `editorial-quotes`
+  - remaining homepage sections now also have real secondary variants:
+    - `trending`: `default` and `magazine-strip`
+    - `about`: `welcome` and `editorial-mosaic`
+    - `destinations`: `quote-list` and `destination-grid`
+    - `cta`: `trip-cta` and `split-invite`
+    - `logoCloud`: `default` and `badge-grid`
+  - page builder sections now include an admin action to reapply preset defaults after variant changes
 - Navigation/footer tenant config exists
   - navbar/footer consume tenant config
   - admin can edit navigation CTA/about links and footer brand/CTA/copyright fields
@@ -55,7 +70,8 @@ The original architecture brief below is preserved as the product vision.
 - Section builder
   - registry and page config exist
   - registry-driven editing schemas now power the homepage builder UI
-  - schema depth still varies by section, and style-control schemas are not fully exposed yet
+  - schema depth still varies by section, but style-control schemas are now exposed for safe wrapper-level and layout overrides
+  - variant-aware schema plumbing now exists, but most current homepage sections still use one shared schema per section
 - Admin architecture
   - tenant admin path exists
   - super admin/platform admin layer is not yet implemented

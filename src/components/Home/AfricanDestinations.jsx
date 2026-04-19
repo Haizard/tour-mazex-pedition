@@ -20,6 +20,7 @@ const defaultContent = {
 };
 
 const AfricanDestinations = ({
+  variant = "quote-list",
   title = defaultContent.title,
   subtitle = defaultContent.subtitle,
   description = defaultContent.description,
@@ -52,6 +53,63 @@ const AfricanDestinations = ({
 
   const titleParts = title.split(" ");
   const firstTitlePart = titleParts[0] || "Our";
+
+  if (variant === "destination-grid") {
+    return (
+      <div className="bg-[#faf7f1] py-14 md:py-24">
+        <div className="container px-4 max-w-7xl mx-auto">
+          <div className="mx-auto max-w-4xl text-center">
+            <p className="font-oswald text-xs uppercase tracking-[0.3em] text-safari-green">
+              {subtitle}
+            </p>
+            <h2 className="mt-4 font-heading text-4xl leading-tight text-slate-900 md:text-6xl">
+              {title}
+            </h2>
+            <p className="mx-auto mt-5 max-w-3xl text-sm leading-8 text-slate-600 md:text-base">
+              {description}
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {(loading ? defaultDestinations : destinations).map((dest, index) => (
+              <motion.div
+                key={dest.slug || dest.name}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+              >
+                <Link
+                  to={`/packages?search=${dest.name}`}
+                  onClick={() => window.scrollTo(0, 0)}
+                  className="group block rounded-[28px] border border-[#e7dcc8] bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-safari-green/40 hover:shadow-xl"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-safari-green">
+                    Destination
+                  </p>
+                  <h3 className="mt-4 font-heading text-3xl text-slate-900">
+                    {dest.name}
+                  </h3>
+                  <p className="mt-8 font-oswald text-sm uppercase tracking-[0.18em] text-slate-500 group-hover:text-safari-green">
+                    Explore destination
+                  </p>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mx-auto mt-12 max-w-3xl rounded-[28px] border border-[#e7dcc8] bg-white px-6 py-8 text-center shadow-sm">
+            <p className="italic text-slate-700 md:text-lg">
+              "{quote}"
+            </p>
+            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+              {quoteAuthor}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#fafafa] py-12 md:py-24 pb-16 md:pb-32 overflow-hidden">
