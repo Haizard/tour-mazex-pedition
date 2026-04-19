@@ -22,6 +22,9 @@ import siteSettingsRoutes from './routes/siteSettingsRoutes.js';
 import tenantRoutes from './routes/tenantRoutes.js';
 import pageConfigRoutes from './routes/pageConfigRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import platformAuthRoutes from './routes/platformAuthRoutes.js';
+import platformAdminRoutes from './routes/platformAdminRoutes.js';
+import emailRoutes from './routes/emailRoutes.js';
 import { ensureLegacyTenantFoundation } from './utils/tenantBootstrap.js';
 
 
@@ -38,8 +41,11 @@ app.use(cors({
 // Routes
 app.use(tenantMiddleware);
 app.use('/api/auth', authRoutes);
+app.use('/api/platform-auth', platformAuthRoutes);
+app.use('/api/platform-admin', platformAdminRoutes);
 app.use('/api/tenant', tenantRoutes);
 app.use('/api/page-config', pageConfigRoutes);
+app.use('/api/email', emailRoutes);
 app.use('/api/tours', tourRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/bookings', bookingRoutes);

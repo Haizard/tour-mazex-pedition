@@ -7,6 +7,7 @@ import "slick-carousel/slick/slick.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "slick-carousel/slick/slick-theme.css";
 import { AdminAuthProvider } from "./context/AdminAuthContext.jsx";
+import { PlatformAdminAuthProvider } from "./context/PlatformAdminAuthContext.jsx";
 import { TenantProvider } from "./context/TenantContext.jsx";
 import { getClientRouteData, RouteDataProvider } from "./utils/routeData.jsx";
 
@@ -17,9 +18,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <HelmetProvider>
       <TenantProvider>
         <AdminAuthProvider>
-          <RouteDataProvider data={routeData}>
-            <App />
-          </RouteDataProvider>
+          <PlatformAdminAuthProvider>
+            <RouteDataProvider data={routeData}>
+              <App />
+            </RouteDataProvider>
+          </PlatformAdminAuthProvider>
         </AdminAuthProvider>
       </TenantProvider>
     </HelmetProvider>

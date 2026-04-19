@@ -42,6 +42,22 @@ const getAdminHeaders = () => {
   };
 };
 
+const getPlatformAdminHeaders = () => {
+  if (!isBrowser) {
+    return {};
+  }
+
+  const token = window.localStorage.getItem("platformAdminAuthToken");
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 API.interceptors.request.use((config) => {
   config.headers = {
     ...(config.headers || {}),
@@ -53,6 +69,51 @@ API.interceptors.request.use((config) => {
 
 export const loginAdmin = (data) => API.post("/auth/login", data);
 export const fetchAdminSession = () => API.get("/auth/me");
+export const loginPlatformAdmin = (data) =>
+  API.post("/platform-auth/login", data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformAdminSession = () =>
+  API.get("/platform-auth/me", {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformSummary = () =>
+  API.get("/platform-admin/summary", {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenants = () =>
+  API.get("/platform-admin/tenants", {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantSupport = (tenantId, options = {}) =>
+  API.get(`/platform-admin/tenants/${tenantId}/support`, {
+    params: options.mode ? { mode: options.mode } : undefined,
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformTenant = (tenantId, data) =>
+  API.put(`/platform-admin/tenants/${tenantId}`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const markPlatformTenantDomainVerified = (tenantId, domain) =>
+  API.post(
+    `/platform-admin/tenants/${tenantId}/domains/${encodeURIComponent(domain)}/mark-verified`,
+    {},
+    {
+      headers: getPlatformAdminHeaders(),
+    }
+  );
+export const fetchEmailConnections = () => API.get("/email/connections");
+export const fetchEmailProviders = () => API.get("/email/providers");
+export const createEmailConnection = (data) => API.post("/email/connections", data);
+export const runEmailConnectionHealthCheck = (connectionId) =>
+  API.post(`/email/connections/${connectionId}/health-check`);
+export const fetchEmailSyncJobs = () => API.get("/email/sync-jobs");
+export const runEmailConnectionSync = (connectionId) =>
+  API.post(`/email/connections/${connectionId}/sync`);
+export const fetchEmailThreads = () => API.get("/email/threads");
+export const linkEmailThread = (threadId, data) =>
+  API.post(`/email/threads/${threadId}/link`, data);
+export const createEmailThread = (data) => API.post("/email/threads", data);
 export const fetchTenantBootstrap = () => API.get("/tenant/bootstrap");
 export const fetchTenantSiteConfig = () => API.get("/tenant/site-config");
 export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", data);

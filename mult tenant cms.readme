@@ -1,5 +1,5 @@
 ==================================================
-0. IMPLEMENTATION STATUS (UPDATED 2026-04-17)
+0. IMPLEMENTATION STATUS (UPDATED 2026-04-19)
 ==================================================
 
 This section reflects what has already been implemented in the codebase.
@@ -20,6 +20,17 @@ The original architecture brief below is preserved as the product vision.
   - signed admin token flow added
   - frontend admin route protection added
   - old localStorage-only boolean auth replaced with real backend-backed session checks
+- Platform admin backend foundation exists
+  - `PlatformAdmin` model added
+  - platform admin signed token flow and guarded backend routes added
+  - platform summary and tenant listing endpoints now exist for a future super-admin UI
+- First platform admin frontend screens exist
+  - separate platform admin auth context added
+  - platform login screen added
+  - first platform dashboard now shows summary metrics, tenant counts, capability flags, and tenant domain/feature controls
+  - super-admin aliases now exist at `/super-admin` and `/super-admin/login`
+  - platform dashboard now includes tenant support workload metrics
+  - platform dashboard now includes selected-tenant support detail for recent inquiries, contact messages, and inbox threads
 - Theme engine foundation exists
   - tenant theme data loads at bootstrap
   - frontend theme variables are applied through tenant context
@@ -62,6 +73,15 @@ The original architecture brief below is preserved as the product vision.
     - testimonials
     - logo cloud
 - Legacy homepage editor has been phased out from active admin navigation
+- Email integration architecture foundation exists
+  - tenant-scoped `EmailProviderConnection` and `EmailThread` models added
+  - guarded tenant email connection/thread routes added
+  - first tenant admin inbox screen now exists for provider registration and thread seeding
+  - backend email provider registry/service modules now define provider auth modes, scopes, readiness, and setup checklists
+  - provider connection health-check scaffolding now exists with per-connection readiness feedback and next-step guidance
+  - provider sync-job scaffolding now exists with stored sync runs, result summaries, and tenant-admin job history
+  - inbox threads can now suggest and link related inquiries/contact messages for tenant support workflow
+  - provider sync and full mailbox UX are still scaffolds, but the backend data model is now in place
 
 [Partially implemented]
 - Domain resolution layer
@@ -74,23 +94,28 @@ The original architecture brief below is preserved as the product vision.
   - variant-aware schema plumbing now exists, but most current homepage sections still use one shared schema per section
 - Admin architecture
   - tenant admin path exists
-  - super admin/platform admin layer is not yet implemented
+  - platform admin backend foundation and first console screens now exist
+  - full tenant operations, domain management, and support workflows are not yet implemented
 - AI tenant-awareness
   - AI/blog/tour/SEO services were refactored toward tenant context
   - deeper brand controls, usage controls, and platform-level AI management remain
 
 [Not implemented yet]
-- Full super-admin tenant management panel
+- Full super-admin tenant management panel UI
 - Complete custom-domain management flow
-- Full email integration architecture in code
-- Mailbox sync / provider connection UI
+- First custom-domain management layer exists in the platform console
+  - platform admins can now edit tenant subdomains, custom domains, and related feature flags
+  - stored domain verification records and generated TXT verification instructions now exist
+  - DNS verification automation, provisioning automation, and self-serve onboarding are still pending
+- Full provider sync implementation for email integration
+- Full mailbox sync / provider connection UI
 - Fully deleting the remaining commented legacy block in `AdminDashboard.jsx`
 - 40+ production sections / large variant library
 
 Recommended next phase:
-- finish builder-editable coverage for remaining home sections
-- add super-admin tenant management
-- document and scaffold future email/inbox provider architecture in code modules
+- add tenant actions and richer operations views to the platform console
+- turn email scaffolding into real provider service modules and admin UX
+- continue closing remaining platform-level management gaps
 
 You are a principal software architect, senior full-stack engineer, SaaS systems designer, CMS architect, and debugging expert.
 

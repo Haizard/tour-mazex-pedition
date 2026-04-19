@@ -120,6 +120,14 @@ const AdminLogin = () => {
           </form>
 
           <button
+            type="button"
+            onClick={() => navigate("/super-admin/login")}
+            className="w-full border border-cyan-400/30 text-cyan-300 font-black py-4 rounded-2xl uppercase tracking-widest hover:bg-cyan-400/10 transition"
+          >
+            Open Super Admin Panel
+          </button>
+
+          <button
             onClick={() => navigate("/")}
             className="w-full text-center text-sm text-gray-600 hover:text-primary transition font-bold"
           >

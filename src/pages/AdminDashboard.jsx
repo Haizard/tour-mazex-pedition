@@ -56,6 +56,7 @@ import Badge from "../components/UI/Badge";
 import AdminSidebar from "../components/Admin/AdminSidebar";
 import NavigationManager from "../components/Admin/NavigationManager";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
+import EmailInboxManager from "../components/Admin/EmailInboxManager";
 import SiteSettings from "../components/Admin/SiteSettings";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
@@ -2866,6 +2867,8 @@ const AdminDashboard = () => {
 
           {/* Navigation Section */}
           {activeTab === "navigation" && <NavigationManager />}
+
+          {activeTab === "email-inbox" && <EmailInboxManager />}
 
           {activeTab === "navigation-legacy" && (
             <div className="animate-fade-in">

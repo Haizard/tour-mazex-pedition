@@ -16,6 +16,9 @@ import BlogCategory from "./pages/BlogCategory";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import AdminRoute from "./components/Admin/AdminRoute";
+import PlatformAdminRoute from "./components/Admin/PlatformAdminRoute";
+import PlatformAdminDashboard from "./pages/PlatformAdminDashboard";
+import PlatformAdminLogin from "./pages/PlatformAdminLogin";
 import PlanMyTrip from "./pages/PlanMyTrip";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
@@ -44,6 +47,24 @@ const AppRoutes = () => (
         )}
       />
       <Route path="login" element={<AdminLogin />} />
+      <Route
+        path="platform"
+        element={(
+          <PlatformAdminRoute>
+            <PlatformAdminDashboard />
+          </PlatformAdminRoute>
+        )}
+      />
+      <Route path="platform/login" element={<PlatformAdminLogin />} />
+      <Route
+        path="super-admin"
+        element={(
+          <PlatformAdminRoute>
+            <PlatformAdminDashboard />
+          </PlatformAdminRoute>
+        )}
+      />
+      <Route path="super-admin/login" element={<PlatformAdminLogin />} />
       <Route path="plan-my-trip" element={<PlanMyTrip />} />
       <Route path="tailor-made" element={<PlanMyTrip />} />
       <Route path="privacy-policy" element={<PrivacyPolicy />} />

@@ -64,6 +64,28 @@ export const signAdminToken = ({
   return `${encodedPayload}.${signature}`;
 };
 
+export const signPlatformAdminToken = ({
+  adminId,
+  username,
+  role,
+  expiresInMs = TOKEN_TTL_MS,
+}) => {
+  const payload = {
+    adminId,
+    username,
+    role,
+    scope: "platform_admin",
+    exp: Date.now() + expiresInMs,
+  };
+  const encodedPayload = toBase64Url(JSON.stringify(payload));
+  const signature = crypto
+    .createHmac("sha256", getAuthSecret())
+    .update(encodedPayload)
+    .digest("base64url");
+
+  return `${encodedPayload}.${signature}`;
+};
+
 export const verifyAdminToken = (token) => {
   if (!token || !token.includes(".")) {
     throw new Error("Invalid token format.");
@@ -86,6 +108,16 @@ export const verifyAdminToken = (token) => {
 
   if (!payload.exp || payload.exp < Date.now()) {
     throw new Error("Token expired.");
+  }
+
+  return payload;
+};
+
+export const verifyPlatformAdminToken = (token) => {
+  const payload = verifyAdminToken(token);
+
+  if (payload.scope !== "platform_admin") {
+    throw new Error("Token is not a platform admin token.");
   }
 
   return payload;

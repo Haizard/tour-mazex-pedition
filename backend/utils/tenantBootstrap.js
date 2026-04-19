@@ -3,6 +3,7 @@ import TenantTheme from "../models/TenantTheme.js";
 import TenantSiteConfig from "../models/TenantSiteConfig.js";
 import PageConfig from "../models/PageConfig.js";
 import TenantAdmin from "../models/TenantAdmin.js";
+import PlatformAdmin from "../models/PlatformAdmin.js";
 import Blog from "../models/Blog.js";
 import Booking from "../models/Booking.js";
 import ContactMessage from "../models/ContactMessage.js";
@@ -134,6 +135,29 @@ export const ensureLegacyTenantFoundation = async () => {
         role: "owner",
         status: "active",
         ...passwordRecord,
+      },
+    },
+    { upsert: true, new: true }
+  );
+
+  const platformAdminUsername = (
+    process.env.PLATFORM_ADMIN_USERNAME || "platform-admin"
+  )
+    .trim()
+    .toLowerCase();
+  const platformAdminPassword =
+    process.env.PLATFORM_ADMIN_PASSWORD || adminPassword;
+  const platformPasswordRecord = await hashAdminPassword(platformAdminPassword);
+
+  await PlatformAdmin.findOneAndUpdate(
+    { username: platformAdminUsername },
+    {
+      $setOnInsert: {
+        username: platformAdminUsername,
+        displayName: "Platform Admin",
+        role: "super_admin",
+        status: "active",
+        ...platformPasswordRecord,
       },
     },
     { upsert: true, new: true }

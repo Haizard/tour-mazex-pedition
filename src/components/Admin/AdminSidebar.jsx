@@ -24,6 +24,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen
         { id: "blogs", label: "Blogs", icon: <FaBlog /> },
         { id: "page-builder", label: "Page Builder", icon: <FaEdit /> },
         { id: "navigation", label: "Navigation", icon: <FaBars /> },
+        { id: "email-inbox", label: "Email Inbox", icon: <FaEnvelopeOpenText /> },
         { id: "gallery", label: "Gallery", icon: <FaImages /> },
         { id: "bookings", label: "Bookings", icon: <FaCalendarCheck /> },
         { id: "inquiries", label: "Inquiries", icon: <FaQuestionCircle /> },
