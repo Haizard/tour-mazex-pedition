@@ -72,11 +72,27 @@ const getPlatformAdminHeaders = () => {
 };
 
 API.interceptors.request.use((config) => {
-  config.headers = {
-    ...(config.headers || {}),
-    ...getTenantHeaders(),
-    ...getAdminHeaders(),
-  };
+  const tenantHeaders = getTenantHeaders();
+  const adminHeaders = getAdminHeaders();
+  const platformHeaders = getPlatformAdminHeaders();
+
+  // Determine which authorization header to use based on the path
+  let authHeader = {};
+  if (config.url?.includes("/platform-") || config.url?.includes("/tenant/")) {
+     // For platform or cross-tenant operations, prioritize platform token
+     authHeader = platformHeaders.Authorization ? platformHeaders : adminHeaders;
+  } else {
+     // Standard behavior: prioritize tenant admin token
+     authHeader = adminHeaders.Authorization ? adminHeaders : platformHeaders;
+  }
+
+  config.headers = Object.assign(
+    {},
+    config.headers || {},
+    tenantHeaders,
+    authHeader
+  );
+
   return config;
 });
 

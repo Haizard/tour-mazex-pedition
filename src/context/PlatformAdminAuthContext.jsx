@@ -54,8 +54,11 @@ export const PlatformAdminAuthProvider = ({ children }) => {
       setToken(currentToken);
       setPlatformAdmin(response.data.admin || null);
       return response.data;
-    } catch (_error) {
-      clearSession();
+    } catch (error) {
+      // Only clear session if the server explicitly rejects the token
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        clearSession();
+      }
       return null;
     } finally {
       setLoading(false);
