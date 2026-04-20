@@ -42,6 +42,8 @@ The original architecture brief below is preserved as the product vision.
   - public prerender output now includes CMS-backed navbar/blog/package data for deployed static routes
   - public SSR markup no longer ships hidden `opacity: 0` / translateY motion states for core homepage, package, and blog-category views
   - tenant admin login now has a direct `/admin/login` route alias and prerendered output for deployment fallback
+  - public blogs/packages/navbar now preserve prerendered CMS data if a live browser fetch fails or returns unusable payloads in production
+  - super-admin access is now intended for direct URL use only, without a visible shortcut on the tenant admin login page
 - Page builder foundation exists
   - homepage renders from `PageConfig`
   - section registry, page renderer, and builder defaults added

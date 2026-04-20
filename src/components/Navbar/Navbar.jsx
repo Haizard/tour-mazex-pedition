@@ -169,7 +169,7 @@ const Navbar = ({ handleOrderPopup }) => {
           Array.isArray(menuRes.data) && menuRes.data.length > 0
             ? menuRes.data
             : FRONTEND_MENU_DEFAULTS;
-        const toursData = Array.isArray(toursRes.data) ? toursRes.data : [];
+        const toursData = Array.isArray(toursRes.data) ? toursRes.data : initialTours;
 
         if (menuData.length > 0) {
           setMenuItems(buildMenuWithLiveTours(menuData, toursData));
@@ -180,7 +180,7 @@ const Navbar = ({ handleOrderPopup }) => {
     };
 
     loadMenuItems();
-  }, []);
+  }, [initialTours]);
 
   const navigationConfig = siteConfig?.navigationConfig || {};
 

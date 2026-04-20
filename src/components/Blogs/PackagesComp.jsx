@@ -74,37 +74,46 @@ const PackagesComp = () => {
         const toursData =
           toursResult.status === "fulfilled" && Array.isArray(toursResult.value.data)
             ? toursResult.value.data
-            : [];
-        setAllTours(toursData);
+            : null;
+        if (toursData) {
+          setAllTours(toursData);
+        }
 
         const taxonomyCategories =
           catResult.status === "fulfilled" && Array.isArray(catResult.value.data)
             ? catResult.value.data.map((c) => c.name).filter(Boolean)
-            : [];
+            : null;
         const taxonomyTypes =
           typeResult.status === "fulfilled" && Array.isArray(typeResult.value.data)
             ? typeResult.value.data.map((t) => t.name).filter(Boolean)
-            : [];
+            : null;
 
-        const tourFallbackCategories = uniqueSorted(toursData.map((tour) => tour.category));
-        const tourFallbackTypes = uniqueSorted(toursData.map((tour) => tour.tourType));
+        const liveTours = toursData || initialTours;
+        const tourFallbackCategories = uniqueSorted(liveTours.map((tour) => tour.category));
+        const tourFallbackTypes = uniqueSorted(liveTours.map((tour) => tour.tourType));
 
         // Prefer real values from tours so selecting filters always maps to real data.
         // Fall back to taxonomy values only if tours do not provide them.
         setCategories(
           uniqueSorted(
-            tourFallbackCategories.length ? tourFallbackCategories : taxonomyCategories,
+            tourFallbackCategories.length
+              ? tourFallbackCategories
+              : (taxonomyCategories || initialTaxonomyCategories),
           ),
         );
         setTourTypes(
-          uniqueSorted(tourFallbackTypes.length ? tourFallbackTypes : taxonomyTypes),
+          uniqueSorted(
+            tourFallbackTypes.length
+              ? tourFallbackTypes
+              : (taxonomyTypes || initialTaxonomyTypes),
+          ),
         );
       } catch (error) {
         console.error("Error loading packages data:", error);
       }
     };
     loadInitialData();
-  }, []);
+  }, [initialTaxonomyCategories, initialTaxonomyTypes, initialTours]);
 
   // Sync filters with URL params (e.g. if type is null, reset to show ALL tours)
   useEffect(() => {

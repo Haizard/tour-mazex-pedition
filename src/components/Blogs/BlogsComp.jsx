@@ -92,7 +92,9 @@ const BlogsComp = ({
     const getBlogs = async () => {
       try {
         const response = await fetchBlogs();
-        setBlogsData(response.data);
+        if (Array.isArray(response.data)) {
+          setBlogsData(response.data);
+        }
       } catch (error) {
         console.error("Error fetching blogs:", error);
       }
