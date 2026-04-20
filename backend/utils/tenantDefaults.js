@@ -5,6 +5,7 @@ export const LEGACY_TENANT_DOMAINS = [
   "mazexpeditions.com",
   "www.mazexpeditions.com",
   "tourism-website-inky.vercel.app",
+  "mazexpeditions.vercel.app",
 ];
 
 export const DEFAULT_TENANT_THEME = {

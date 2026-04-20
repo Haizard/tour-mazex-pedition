@@ -17,7 +17,7 @@ export default defineConfig({
             return undefined;
           }
 
-          if (id.includes('react-dom') || id.includes('react-router') || id.includes('react-helmet-async')) {
+          if (id.includes('react-dom') || id.includes('react-router') || id.includes('react-helmet-async') || id.includes('react-slick') || id.includes('slick-carousel')) {
             return 'react-core';
           }
 
@@ -27,10 +27,6 @@ export default defineConfig({
 
           if (id.includes('react-icons') || id.includes('@fortawesome')) {
             return 'icons';
-          }
-
-          if (id.includes('react-slick') || id.includes('slick-carousel')) {
-            return 'carousel';
           }
 
           if (id.includes('react-markdown') || id.includes('remark-gfm')) {
