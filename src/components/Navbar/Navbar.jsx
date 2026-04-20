@@ -118,8 +118,14 @@ const Navbar = ({ handleOrderPopup }) => {
   const { siteConfig } = useTenant();
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
-  const initialTours = Array.isArray(sharedData.tours) ? sharedData.tours : [];
-  const initialSettings = sharedData.siteSettings || null;
+  const initialTours = React.useMemo(() => 
+    Array.isArray(sharedData.tours) ? sharedData.tours : [], 
+  [sharedData.tours]);
+
+  const initialSettings = React.useMemo(() => 
+    sharedData.siteSettings || null,
+  [sharedData.siteSettings]);
+
   const initialMenuItems = React.useMemo(() => {
     const menuData =
       Array.isArray(sharedData.menuItems) && sharedData.menuItems.length > 0
@@ -128,18 +134,22 @@ const Navbar = ({ handleOrderPopup }) => {
 
     return buildMenuWithLiveTours(menuData, initialTours);
   }, [initialTours, sharedData.menuItems]);
+
   const [showMenu, setShowMenu] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuItems, setMenuItems] = useState(initialMenuItems);
   const [settings, setSettings] = useState(initialSettings);
 
+  // Sync state with initial data when it changes (efficiently)
   useEffect(() => {
     setMenuItems(initialMenuItems);
   }, [initialMenuItems]);
 
   useEffect(() => {
-    setSettings(initialSettings);
+    if (initialSettings) {
+      setSettings(initialSettings);
+    }
   }, [initialSettings]);
 
   useEffect(() => {
@@ -179,8 +189,11 @@ const Navbar = ({ handleOrderPopup }) => {
       }
     };
 
-    loadMenuItems();
-  }, [initialTours]);
+    // Only load if we don't have enough initial data or on mount
+    if (menuItems.length === 0 || initialTours.length === 0) {
+       loadMenuItems();
+    }
+  }, []); // Run only on mount to prevent loops, let dependencies like tenant context handle refresh if needed
 
   const navigationConfig = siteConfig?.navigationConfig || {};
 

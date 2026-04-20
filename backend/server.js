@@ -1,6 +1,10 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import dns from "dns";
+// Explicitly set DNS servers to Google's to bypass local DNS issues with SRV records
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
