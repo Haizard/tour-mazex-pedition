@@ -4,6 +4,13 @@ const isBrowser = typeof window !== "undefined";
 const API_URL = isBrowser && window.location.hostname === "localhost"
   ? "http://127.0.0.1:5000/api"
   : "/api";
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
+const LEGACY_HOSTNAMES = new Set([
+  "mazexpeditions.com",
+  "www.mazexpeditions.com",
+  "tourism-website-inky.vercel.app",
+  "mazexpeditions.vercel.app",
+]);
 
 const API = axios.create({ baseURL: API_URL });
 
@@ -15,11 +22,17 @@ const getTenantHeaders = () => {
   const hostname = window.location.hostname.toLowerCase();
   const storedTenantSlug = window.localStorage.getItem("activeTenantSlug");
 
-  if (storedTenantSlug) {
+  if (storedTenantSlug && LOCAL_HOSTNAMES.has(hostname)) {
     return { "x-tenant-slug": storedTenantSlug };
   }
 
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
+  // On the default production domains, trust hostname-based tenant resolution
+  // instead of any stale localStorage override from local tenant testing.
+  if (storedTenantSlug && LEGACY_HOSTNAMES.has(hostname)) {
+    window.localStorage.removeItem("activeTenantSlug");
+  }
+
+  if (LOCAL_HOSTNAMES.has(hostname)) {
     return { "x-tenant-slug": "maz-expeditions" };
   }
 
