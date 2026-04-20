@@ -1,5 +1,5 @@
 ==================================================
-0. IMPLEMENTATION STATUS (UPDATED 2026-04-19)
+0. IMPLEMENTATION STATUS (UPDATED 2026-04-20)
 ==================================================
 
 This section reflects what has already been implemented in the codebase.
@@ -39,6 +39,9 @@ The original architecture brief below is preserved as the product vision.
   - client entry now hydrates prerendered HTML instead of replacing it with a fresh client-only root
   - server and client now share the same provider/app shell structure for prerender compatibility
   - backend Express entry no longer unconditionally opens a local listener inside the Vercel runtime
+  - public prerender output now includes CMS-backed navbar/blog/package data for deployed static routes
+  - public SSR markup no longer ships hidden `opacity: 0` / translateY motion states for core homepage, package, and blog-category views
+  - tenant admin login now has a direct `/admin/login` route alias and prerendered output for deployment fallback
 - Page builder foundation exists
   - homepage renders from `PageConfig`
   - section registry, page renderer, and builder defaults added

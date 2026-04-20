@@ -129,7 +129,7 @@ const Welcome = ({
     <div className="bg-white py-12 md:py-24">
       <div className="container px-4 max-w-5xl mx-auto text-center mb-12 md:mb-20">
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
@@ -143,7 +143,7 @@ const Welcome = ({
         </motion.h1>
 
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -153,7 +153,7 @@ const Welcome = ({
         </motion.h2>
 
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.4 }}
@@ -163,7 +163,7 @@ const Welcome = ({
         </motion.p>
 
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.6 }}
@@ -178,7 +178,7 @@ const Welcome = ({
           {mergedCards.map((card, index) => (
             <motion.div
               key={`${card.title}-${index}`}
-              initial={{ opacity: 0, y: 40 }}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: index * 0.1 }}

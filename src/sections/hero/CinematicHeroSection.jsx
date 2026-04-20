@@ -62,7 +62,7 @@ const CinematicHeroSection = ({
         <div className="container relative z-10 flex min-h-screen items-center px-4 py-24">
           <div className="max-w-3xl">
             <motion.p
-              initial={{ opacity: 0, y: 16 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: "easeOut" }}
               className="mb-4 font-oswald text-xs uppercase tracking-[0.35em] text-safari-gold/90"
@@ -71,7 +71,7 @@ const CinematicHeroSection = ({
             </motion.p>
 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.05 }}
               className="font-heading text-5xl leading-[0.95] text-white md:text-7xl"
@@ -80,7 +80,7 @@ const CinematicHeroSection = ({
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
               className="mt-6 max-w-2xl text-sm leading-8 text-white/82 md:text-lg"
@@ -90,7 +90,7 @@ const CinematicHeroSection = ({
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 18 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.15 }}
               className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center"
@@ -143,7 +143,7 @@ const CinematicHeroSection = ({
         <div className="container relative z-10 px-4 py-20 md:py-28">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_380px] lg:items-center">
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7, ease: "easeOut" }}
@@ -177,7 +177,7 @@ const CinematicHeroSection = ({
             </motion.div>
 
             <motion.aside
-              initial={{ opacity: 0, x: 24 }}
+              initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}

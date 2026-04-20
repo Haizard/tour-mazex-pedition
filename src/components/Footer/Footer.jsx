@@ -19,6 +19,7 @@ import {
 import { Link } from "react-router-dom";
 import { fetchBlogs, fetchTours, fetchSiteSettings } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 
 const importantLinks = [
@@ -67,9 +68,38 @@ const socialLinks = [
 
 const Footer = () => {
   const { siteConfig } = useTenant();
-  const [popularTours, setPopularTours] = React.useState(FALLBACK_TOURS);
-  const [popularBlogs, setPopularBlogs] = React.useState(FALLBACK_BLOGS);
-  const [settings, setSettings] = React.useState(null);
+  const routeData = useRouteData();
+  const sharedData = routeData.shared || {};
+  const initialTours =
+    Array.isArray(sharedData.tours) && sharedData.tours.length > 0
+      ? sharedData.tours.slice(0, 6).map((tour) => ({
+          title: tour.title,
+          link: `/packages/${slugifyTourTitle(tour.title)}?tourId=${tour._id}`,
+        }))
+      : FALLBACK_TOURS;
+  const initialBlogs =
+    Array.isArray(sharedData.blogs) && sharedData.blogs.length > 0
+      ? sharedData.blogs.slice(0, 6).map((blog) => ({
+          title: blog.title,
+          link: `/blogs/${slugifyBlogTitle(blog.title)}`,
+        }))
+      : FALLBACK_BLOGS;
+  const initialSettings = sharedData.siteSettings || null;
+  const [popularTours, setPopularTours] = React.useState(initialTours);
+  const [popularBlogs, setPopularBlogs] = React.useState(initialBlogs);
+  const [settings, setSettings] = React.useState(initialSettings);
+
+  React.useEffect(() => {
+    setPopularTours(initialTours);
+  }, [sharedData.tours]);
+
+  React.useEffect(() => {
+    setPopularBlogs(initialBlogs);
+  }, [sharedData.blogs]);
+
+  React.useEffect(() => {
+    setSettings(initialSettings);
+  }, [initialSettings]);
 
 
   React.useEffect(() => {

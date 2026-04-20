@@ -101,7 +101,7 @@ const BlogCategory = () => {
           <div className="absolute inset-0 bg-black/50" />
           <div className="container relative z-10 px-4 text-center">
              <motion.div
-               initial={{ opacity: 0, y: 20 }}
+               initial={false}
                animate={{ opacity: 1, y: 0 }}
              >
                 <span className="text-safari-gold font-oswald uppercase tracking-[0.3em] text-xs md:text-sm mb-4 block">

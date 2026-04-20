@@ -74,7 +74,7 @@ const AfricanDestinations = ({
             {(loading ? defaultDestinations : destinations).map((dest, index) => (
               <motion.div
                 key={dest.slug || dest.name}
-                initial={{ opacity: 0, y: 24 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45, delay: index * 0.08 }}
@@ -116,7 +116,7 @@ const AfricanDestinations = ({
       <div className="container px-2 sm:px-4 max-w-7xl mx-auto">
         <div className="grid grid-cols-2 gap-4 sm:gap-8 md:gap-24 items-start">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
@@ -150,7 +150,7 @@ const AfricanDestinations = ({
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -159,7 +159,7 @@ const AfricanDestinations = ({
             {(loading ? defaultDestinations : destinations).map((dest, index) => (
               <motion.div
                 key={dest.slug || dest.name}
-                initial={{ opacity: 0, y: 10 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.1 + index * 0.1 }}

@@ -3,6 +3,7 @@ import BlogCard from "./BlogCard";
 import { Link } from "react-router-dom";
 import { fetchBlogs } from "../../services/api";
 import { FaSearch } from "react-icons/fa";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 const slugifyTitle = (value = "") =>
   value
@@ -77,8 +78,15 @@ const BlogsComp = ({
   sectionDescription = "",
   groupLabels = {},
 }) => {
-  const [blogsData, setBlogsData] = React.useState([]);
+  const routeData = useRouteData();
+  const sharedData = routeData.shared || {};
+  const initialBlogs = Array.isArray(sharedData.blogs) ? sharedData.blogs : [];
+  const [blogsData, setBlogsData] = React.useState(initialBlogs);
   const [searchInput, setSearchInput] = React.useState("");
+
+  React.useEffect(() => {
+    setBlogsData(initialBlogs);
+  }, [sharedData.blogs]);
 
   React.useEffect(() => {
     const getBlogs = async () => {

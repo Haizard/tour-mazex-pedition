@@ -89,7 +89,7 @@ const Testimonial = ({
             {mergedTestimonials.slice(0, 3).map((review, index) => (
               <motion.article
                 key={review.id || `${review.name}-${index}`}
-                initial={{ opacity: 0, y: 24 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45, delay: index * 0.08 }}
@@ -134,7 +134,7 @@ const Testimonial = ({
       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={false}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}

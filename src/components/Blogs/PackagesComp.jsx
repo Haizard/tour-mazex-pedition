@@ -4,6 +4,7 @@ import FilterSidebar from "./FilterSidebar";
 import { fetchTours, fetchTaxonomies } from "../../services/api";
 import { useSearchParams } from "react-router-dom";
 import { FaFilter, FaSearch, FaTimes } from "react-icons/fa";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 const uniqueSorted = (values = []) =>
   [...new Set(values.map((value) => (value || "").toString().trim()).filter(Boolean))].sort(
@@ -20,14 +21,35 @@ const normalizeFilterValue = (value = "") =>
     .trim();
 
 const PackagesComp = () => {
-  const [allTours, setAllTours] = useState([]);
-  const [filteredTours, setFilteredTours] = useState([]);
+  const routeData = useRouteData();
+  const sharedData = routeData.shared || {};
+  const initialTours = Array.isArray(sharedData.tours) ? sharedData.tours : [];
+  const initialTaxonomyCategories = Array.isArray(sharedData.taxonomies?.categories)
+    ? sharedData.taxonomies.categories.map((item) => item.name).filter(Boolean)
+    : [];
+  const initialTaxonomyTypes = Array.isArray(sharedData.taxonomies?.tourTypes)
+    ? sharedData.taxonomies.tourTypes.map((item) => item.name).filter(Boolean)
+    : [];
+  const [allTours, setAllTours] = useState(initialTours);
+  const [filteredTours, setFilteredTours] = useState(initialTours);
   const [searchParams] = useSearchParams();
   const search = searchParams.get("search") || "";
   const typeFromUrl = searchParams.get("type") || "";
 
-  const [categories, setCategories] = useState([]);
-  const [tourTypes, setTourTypes] = useState([]);
+  const [categories, setCategories] = useState(
+    uniqueSorted(
+      initialTours.length
+        ? initialTours.map((tour) => tour.category)
+        : initialTaxonomyCategories,
+    ),
+  );
+  const [tourTypes, setTourTypes] = useState(
+    uniqueSorted(
+      initialTours.length
+        ? initialTours.map((tour) => tour.tourType)
+        : initialTaxonomyTypes,
+    ),
+  );
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [searchInput, setSearchInput] = useState(search);
   const [filters, setFilters] = useState({
@@ -35,6 +57,10 @@ const PackagesComp = () => {
     tourType: typeFromUrl,
     maxPrice: 10000,
   });
+
+  useEffect(() => {
+    setAllTours(initialTours);
+  }, [sharedData.tours]);
 
   useEffect(() => {
     const loadInitialData = async () => {

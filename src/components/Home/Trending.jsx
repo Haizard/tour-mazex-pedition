@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 const slugifyTitle = (value = "") =>
   value
@@ -24,12 +25,21 @@ const Trending = ({
   eyebrow = "",
   description = "",
 }) => {
-  const [tours, setTours] = useState([]);
+  const routeData = useRouteData();
+  const sharedData = routeData.shared || {};
+  const initialTours = Array.isArray(sharedData.tours)
+    ? sharedData.tours.slice(0, 6)
+    : [];
+  const [tours, setTours] = useState(initialTours);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setTours(initialTours);
+  }, [sharedData.tours]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -99,7 +109,7 @@ const Trending = ({
               {tours.slice(0, 3).map((item, i) => (
                 <motion.a
                   key={`${item._id}-${i}`}
-                  initial={{ opacity: 0, y: 24 }}
+                  initial={false}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.45, delay: i * 0.08 }}
@@ -133,7 +143,7 @@ const Trending = ({
                   <motion.div
                     key={`${item._id}-${currentIndex}-${i}`}
                     layout
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    initial={false}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.5, ease: "easeOut" }}

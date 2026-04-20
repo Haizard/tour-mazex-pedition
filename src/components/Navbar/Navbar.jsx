@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ResponsiveMenu from "./ResponsiveMenu";
 import { fetchMenuItems, fetchTours, fetchSiteSettings } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 import { FRONTEND_MENU_DEFAULTS, MENU_IMAGE_BY_KEY } from "./defaultMenuItems";
 
@@ -115,11 +116,31 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
 const Navbar = ({ handleOrderPopup }) => {
   const navigate = useNavigate();
   const { siteConfig } = useTenant();
+  const routeData = useRouteData();
+  const sharedData = routeData.shared || {};
+  const initialTours = Array.isArray(sharedData.tours) ? sharedData.tours : [];
+  const initialSettings = sharedData.siteSettings || null;
+  const initialMenuItems = React.useMemo(() => {
+    const menuData =
+      Array.isArray(sharedData.menuItems) && sharedData.menuItems.length > 0
+        ? sharedData.menuItems
+        : FRONTEND_MENU_DEFAULTS;
+
+    return buildMenuWithLiveTours(menuData, initialTours);
+  }, [initialTours, sharedData.menuItems]);
   const [showMenu, setShowMenu] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [menuItems, setMenuItems] = useState(FRONTEND_MENU_DEFAULTS);
-  const [settings, setSettings] = useState(null);
+  const [menuItems, setMenuItems] = useState(initialMenuItems);
+  const [settings, setSettings] = useState(initialSettings);
+
+  useEffect(() => {
+    setMenuItems(initialMenuItems);
+  }, [initialMenuItems]);
+
+  useEffect(() => {
+    setSettings(initialSettings);
+  }, [initialSettings]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -272,7 +293,7 @@ const Navbar = ({ handleOrderPopup }) => {
                   <AnimatePresence>
                     {activeMenu === item.categoryKey && item.itemType !== "link" && (
                       <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={false}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         className={`absolute top-full left-1/2 -translate-x-1/2 mt-4 transition-all duration-300 ${

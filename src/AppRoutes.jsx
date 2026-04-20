@@ -47,6 +47,7 @@ const AppRoutes = () => (
         )}
       />
       <Route path="login" element={<AdminLogin />} />
+      <Route path="admin/login" element={<AdminLogin />} />
       <Route
         path="platform"
         element={(

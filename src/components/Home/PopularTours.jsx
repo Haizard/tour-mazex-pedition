@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
 import { FaStar } from "react-icons/fa";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 const badgeLabels = ["Best Seller", "Traveller Choice", "Our Choice"];
 
@@ -23,8 +24,17 @@ const PopularTours = ({
   introText = "",
   limit = 6,
 }) => {
-  const [tours, setTours] = useState([]);
+  const routeData = useRouteData();
+  const sharedData = routeData.shared || {};
+  const initialTours = Array.isArray(sharedData.tours)
+    ? sharedData.tours.slice(-Math.max(limit, 1)).reverse()
+    : [];
+  const [tours, setTours] = useState(initialTours);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setTours(initialTours);
+  }, [sharedData.tours, limit]);
 
   useEffect(() => {
     const loadTours = async () => {
@@ -67,7 +77,7 @@ const PopularTours = ({
               <motion.button
                 key={item._id}
                 type="button"
-                initial={{ opacity: 0, y: 24 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45, delay: index * 0.08 }}
@@ -126,7 +136,7 @@ const PopularTours = ({
             {tours.map((item, index) => (
               <motion.div
                 key={item._id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}

@@ -4,6 +4,9 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Blog from "../backend/models/Blog.js";
+import MenuItem from "../backend/models/MenuItem.js";
+import SiteSettings from "../backend/models/SiteSettings.js";
+import Taxonomy from "../backend/models/Taxonomy.js";
 import TourPackage from "../backend/models/TourPackage.js";
 import { DESTINATION_META } from "../src/data/destinationMeta.js";
 import {
@@ -38,8 +41,12 @@ const baseRoutes = [
   "/destinations/tarangire",
   "/destinations/manyara",
   "/destinations/natron",
+  "/login",
+  "/admin/login",
   "/plan-my-trip",
+  "/platform/login",
   "/privacy-policy",
+  "/super-admin/login",
   "/terms",
 ];
 
@@ -47,12 +54,19 @@ const { render } = await import(pathToFileUrl(path.join(rootDir, "dist", "server
 
 const template = sanitizeTemplate(await fs.readFile(path.join(distDir, "index.html"), "utf8"));
 
-const { blogs, tours } = await fetchCmsContent();
+const { blogs, tours, menuItems, siteSettings, taxonomies } = await fetchCmsContent();
 const destinations = Object.values(DESTINATION_META);
 const routes = [...new Set([...baseRoutes, ...buildDynamicRoutes({ blogs, tours, destinations })])];
 
 for (const route of routes) {
-  const routeData = buildRouteData(route, { blogs, tours, destinations });
+  const routeData = buildRouteData(route, {
+    blogs,
+    tours,
+    destinations,
+    menuItems,
+    siteSettings,
+    taxonomies,
+  });
   const { appHtml, headTags } = render(route, routeData);
   const dataScript = `<script>window.__PRERENDER_DATA__=${JSON.stringify(routeData).replace(/</g, "\\u003c")}</script>`;
   const html = template
@@ -93,28 +107,56 @@ async function ensureDbConnection() {
 async function fetchCmsContent() {
   try {
     await ensureDbConnection();
-    const [blogs, tours] = await Promise.all([
+    const [blogs, tours, menuItems, siteSettings, taxonomies] = await Promise.all([
       Blog.find({}).sort({ createdAt: -1 }).lean(),
       TourPackage.find({}).sort({ createdAt: -1 }).lean(),
+      MenuItem.find({}).sort({ sortOrder: 1, createdAt: 1 }).lean(),
+      SiteSettings.findOne({}).lean(),
+      Taxonomy.find({}).sort({ name: 1 }).lean(),
     ]);
 
-    return { blogs, tours };
+    return { blogs, tours, menuItems, siteSettings, taxonomies };
   } catch (error) {
     console.warn(
       `[prerender] Continuing without build-time CMS content: ${error.message}`
     );
 
-    return { blogs: [], tours: [] };
+    return {
+      blogs: [],
+      tours: [],
+      menuItems: [],
+      siteSettings: null,
+      taxonomies: [],
+    };
   }
 }
 
-function buildRouteData(route, { blogs, tours, destinations }) {
+function buildRouteData(route, {
+  blogs,
+  tours,
+  destinations,
+  menuItems,
+  siteSettings,
+  taxonomies,
+}) {
+  const shared = {
+    blogs,
+    tours,
+    menuItems,
+    siteSettings,
+    taxonomies: {
+      categories: taxonomies.filter((item) => item.type === "tourCategory"),
+      tourTypes: taxonomies.filter((item) => item.type === "tourType"),
+    },
+  };
+
   if (route.startsWith("/blogs/") && !route.startsWith("/blogs/category/")) {
     const slug = route.replace("/blogs/", "");
     const blog = blogs.find((item) => slugifySeo(item.title) === slug) || null;
     const sidebar = buildBlogSidebarData(blog, blogs, tours);
 
     return {
+      shared,
       blogDetail: {
         blog,
         latestBlogs: sidebar.latestBlogs,
@@ -129,6 +171,7 @@ function buildRouteData(route, { blogs, tours, destinations }) {
     const tour = tours.find((item) => slugifySeo(item.title) === slug) || null;
 
     return {
+      shared,
       packageDetail: {
         tour,
         relatedTours: buildPackageRelatedTours(tour, tours),
@@ -143,6 +186,7 @@ function buildRouteData(route, { blogs, tours, destinations }) {
     const relatedTours = matchDestinationTours(tours, destination);
 
     return {
+      shared,
       destinationDetail: {
         blog,
         relatedTours,
@@ -151,5 +195,5 @@ function buildRouteData(route, { blogs, tours, destinations }) {
     };
   }
 
-  return {};
+  return { shared };
 }

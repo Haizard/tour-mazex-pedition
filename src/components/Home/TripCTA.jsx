@@ -80,7 +80,7 @@ const TripCTA = ({
 
           {/* LEFT: Heading block — matches .line-heading-left */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
@@ -99,7 +99,7 @@ const TripCTA = ({
 
           {/* RIGHT: Body text + CTAs — matches .line-heading p */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.15 }}

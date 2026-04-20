@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
 import { FaCalendarAlt } from "react-icons/fa";
+import { useRouteData } from "../../utils/routeData.jsx";
 
 const slugifyTitle = (value = "") =>
   value
@@ -24,8 +25,19 @@ const GroupTours = ({
   capacityLabel = "Capacity",
   limit,
 }) => {
-  const [groupTours, setGroupTours] = useState([]);
+  const routeData = useRouteData();
+  const sharedData = routeData.shared || {};
+  const initialGroupTours = Array.isArray(sharedData.tours)
+    ? sharedData.tours
+        .filter((tour) => tour.isGroupTour)
+        .slice(0, typeof limit === "number" && limit > 0 ? limit : undefined)
+    : [];
+  const [groupTours, setGroupTours] = useState(initialGroupTours);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setGroupTours(initialGroupTours);
+  }, [sharedData.tours, limit]);
 
   useEffect(() => {
     const loadGroupTours = async () => {
@@ -96,7 +108,7 @@ const GroupTours = ({
             {groupTours.map((item, index) => (
               <motion.div
                 key={item._id}
-                initial={{ opacity: 0, y: 24 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45, delay: index * 0.08 }}
@@ -163,7 +175,7 @@ const GroupTours = ({
             {groupTours.map((item, index) => (
               <motion.div
                 key={item._id}
-                initial={{ opacity: 0, scale: 0.98 }}
+                initial={false}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
