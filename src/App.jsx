@@ -1,9 +1,8 @@
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
-import ScrollToTop from "./components/UI/ScrollToTop";
-import AppRoutes from "./AppRoutes";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import AppShell from "./AppShell";
 
 const App = () => {
   React.useEffect(() => {
@@ -19,8 +18,7 @@ const App = () => {
   return (
     <>
       <BrowserRouter>
-        <ScrollToTop />
-        <AppRoutes />
+        <AppShell />
       </BrowserRouter>
     </>
   );

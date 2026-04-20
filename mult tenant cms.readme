@@ -35,6 +35,10 @@ The original architecture brief below is preserved as the product vision.
   - tenant theme data loads at bootstrap
   - frontend theme variables are applied through tenant context
   - tenant site config and theme defaults are in place
+- Deployment rendering stability improved
+  - client entry now hydrates prerendered HTML instead of replacing it with a fresh client-only root
+  - server and client now share the same provider/app shell structure for prerender compatibility
+  - backend Express entry no longer unconditionally opens a local listener inside the Vercel runtime
 - Page builder foundation exists
   - homepage renders from `PageConfig`
   - section registry, page renderer, and builder defaults added

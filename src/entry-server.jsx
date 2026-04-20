@@ -1,20 +1,17 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { HelmetProvider } from "react-helmet-async";
 import { StaticRouter } from "react-router-dom/server";
-import AppRoutes from "./AppRoutes";
-import { RouteDataProvider } from "./utils/routeData.jsx";
+import AppProviders from "./AppProviders.jsx";
+import AppShell from "./AppShell.jsx";
 
 export const render = (url, routeData = {}) => {
   const helmetContext = {};
   const appHtml = renderToString(
-    <HelmetProvider context={helmetContext}>
-      <RouteDataProvider data={routeData}>
-        <StaticRouter location={url}>
-          <AppRoutes />
-        </StaticRouter>
-      </RouteDataProvider>
-    </HelmetProvider>,
+    <AppProviders routeData={routeData} helmetContext={helmetContext}>
+      <StaticRouter location={url}>
+        <AppShell />
+      </StaticRouter>
+    </AppProviders>,
   );
 
   return {
