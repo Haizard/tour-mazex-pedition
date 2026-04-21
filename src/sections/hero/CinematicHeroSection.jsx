@@ -134,7 +134,14 @@ const CinematicHeroSection = ({
     return (
       <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(215,179,91,0.22),_transparent_30%),linear-gradient(135deg,_#07211e_0%,_#0d3b35_45%,_#133028_100%)] text-white">
         <div className="absolute inset-0 opacity-20">
-          <video autoPlay loop muted playsInline className="h-full w-full object-cover">
+          <video
+            key={videoUrl || "/videos/main.mp4"}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="h-full w-full object-cover"
+          >
             <source src={videoUrl || "/videos/main.mp4"} type="video/mp4" />
           </video>
         </div>

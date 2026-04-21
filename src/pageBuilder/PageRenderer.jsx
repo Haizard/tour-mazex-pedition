@@ -100,7 +100,7 @@ const PageRenderer = ({ sections = [] }) => {
 
         return (
           <div
-            key={section._id || `${section.type}-${section.order || 0}`}
+            key={`${section.type}-${section.order || index}`}
             style={wrapperStyle}
           >
             <div style={innerStyle}>{rendered}</div>

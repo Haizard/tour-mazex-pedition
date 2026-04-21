@@ -6,8 +6,10 @@ import { fetchPageConfig } from "../services/api";
 
 const Home = () => {
   const [pageConfig, setPageConfig] = React.useState(null);
+  const [hasHydrated, setHasHydrated] = React.useState(false);
 
   React.useEffect(() => {
+    setHasHydrated(true);
     let active = true;
 
     const loadPageConfig = async () => {
@@ -28,8 +30,9 @@ const Home = () => {
     };
   }, []);
 
-  const seo = pageConfig?.seo || legacyHomePage.seo;
-  const sections = pageConfig?.sections?.length
+  // Use fallback values during the first hydration pass to match the server/static HTML
+  const seo = (hasHydrated && pageConfig?.seo) || legacyHomePage.seo;
+  const sections = (hasHydrated && pageConfig?.sections?.length)
     ? pageConfig.sections
     : legacyHomePage.sections;
 

@@ -28,6 +28,7 @@ const Hero = ({
       {/* Cinematic Background Video */}
       <div className="absolute inset-0">
         <video
+          key={videoUrl || MainVideo}
           autoPlay
           loop
           muted

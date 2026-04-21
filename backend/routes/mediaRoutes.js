@@ -50,11 +50,40 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ message: "Media not found" });
     }
 
-    res.set("Content-Type", media.contentType);
-    res.set("Content-Length", media.size);
-    res.set("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
+    const totalSize = media.size;
+    const range = req.headers.range;
 
-    res.send(media.data);
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+
+      if (start >= totalSize || end >= totalSize) {
+        res.status(416).set("Content-Range", `bytes */${totalSize}`).send();
+        return;
+      }
+
+      const chunk = media.data.subarray(start, end + 1);
+      const contentLength = end - start + 1;
+
+      res.writeHead(206, {
+        "Content-Range": `bytes ${start}-${end}/${totalSize}`,
+        "Accept-Ranges": "bytes",
+        "Content-Length": contentLength,
+        "Content-Type": media.contentType,
+        "Cache-Control": "public, max-age=31536000",
+      });
+
+      res.end(chunk);
+    } else {
+      res.writeHead(200, {
+        "Content-Length": totalSize,
+        "Content-Type": media.contentType,
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "public, max-age=31536000",
+      });
+      res.end(media.data);
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
