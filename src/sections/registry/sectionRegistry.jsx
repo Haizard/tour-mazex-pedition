@@ -138,7 +138,7 @@ const metadata = {
       { group: "contentConfig", path: "primaryCtaHref", type: "text", placeholder: "Primary CTA link" },
       { group: "contentConfig", path: "secondaryCtaLabel", type: "text", placeholder: "Secondary CTA label" },
       { group: "contentConfig", path: "secondaryCtaHref", type: "text", placeholder: "Secondary CTA link" },
-      { group: "contentConfig", path: "videoUrl", type: "text", placeholder: "Background video URL (MP4)" },
+      { group: "contentConfig", path: "videoUrl", type: "text", placeholder: "Background video URL or Media ID (e.g., /api/media/ID)" },
     ],
     styleSchema: sharedStyleSchema,
     variantSchemas: {

@@ -29,13 +29,15 @@ import taxonomyRoutes from "./routes/taxonomyRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
 import tourRoutes from "./routes/tourRoutes.js";
 import visionaryRoutes from "./routes/visionaryRoutes.js";
+import mediaRoutes from "./routes/mediaRoutes.js";
 import { ensureLegacyTenantFoundation } from "./utils/tenantBootstrap.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const isVercelRuntime = Boolean(process.env.VERCEL);
 
-app.use(express.json());
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ limit: "25mb", extended: true }));
 app.use(
   cors({
     origin: [
@@ -67,6 +69,7 @@ app.use("/api/contact-messages", contactMessageRoutes);
 app.use("/api/menu-items", menuRoutes);
 app.use("/api/home-content", homeContentRoutes);
 app.use("/api/site-settings", siteSettingsRoutes);
+app.use("/api/media", mediaRoutes);
 
 app.use("/", seoRoutes);
 

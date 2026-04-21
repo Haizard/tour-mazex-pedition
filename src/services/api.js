@@ -243,4 +243,25 @@ export const updateSiteSettings = (data) => API.put("/site-settings", data);
 // Chat
 export const sendChatMessage = (data) => API.post("/chat", data);
 
+// Media
+export const uploadMedia = (file, tenantId) => {
+  return fileToBase64(file).then((base64Data) => {
+    return API.post("/media/upload", {
+      filename: file.name,
+      contentType: file.type,
+      data: base64Data.split(",")[1],
+      tenantId,
+    });
+  });
+};
+
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 export default API;
