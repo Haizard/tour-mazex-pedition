@@ -79,7 +79,6 @@ router.get("/bootstrap", async (req, res) => {
         home: homePage || null,
       },
     });
-    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
