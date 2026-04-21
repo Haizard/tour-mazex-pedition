@@ -44,6 +44,7 @@ app.use(
       "http://localhost:5173",
       "https://mazexpeditions.com",
       "https://tourism-website-inky.vercel.app",
+      "https://mazexpeditions.vercel.app",
     ],
     credentials: true,
   })
