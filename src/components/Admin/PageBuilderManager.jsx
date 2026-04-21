@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import Card from "../UI/Card";
 import Button from "../UI/Button";
-import { fetchPageConfig, updatePageConfig, uploadMedia } from "../../services/api";
+import { fetchPageConfig, updatePageConfig, uploadMedia, getMediaUrl } from "../../services/api";
 import { legacyHomePage } from "../../pageBuilder/defaultPages";
 import { sectionRegistry } from "../../sections/registry/sectionRegistry";
 import { useAdminAuth } from "../../context/AdminAuthContext";
