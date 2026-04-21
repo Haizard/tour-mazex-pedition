@@ -96,6 +96,32 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// Response Interceptor for global error handling
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // If we get a 401 Unauthorized from the server, it means our session is invalid
+    if (error.response && error.response.status === 401) {
+      const isAuthPath =
+        window.location.pathname.includes("/admin") ||
+        window.location.pathname.includes("/login");
+
+      if (isAuthPath) {
+        console.warn("Session expired. Clearing local auth state and redirecting...");
+        // Clear all relevant tokens
+        window.localStorage.removeItem("adminAuthToken");
+        window.localStorage.removeItem("platformAdminToken");
+
+        // Force reload/redirect to login if not already on a login page
+        if (!window.location.pathname.endsWith("/login")) {
+          window.location.href = "/admin/login?expired=true";
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const loginAdmin = (data) => API.post("/auth/login", data);
 export const fetchAdminSession = () => API.get("/auth/me");
 export const loginPlatformAdmin = (data) =>
@@ -150,6 +176,8 @@ export const fetchPageConfig = (pageType = "home") =>
   API.get(`/page-config/${encodeURIComponent(pageType)}`);
 export const updatePageConfig = (pageType = "home", data) =>
   API.put(`/page-config/${encodeURIComponent(pageType)}`, data);
+export const fetchTenantTheme = () => API.get("/tenant/bootstrap"); // Bootstrap contains theme
+export const updateTenantTheme = (data) => API.put("/tenant/theme", data);
 
 // Tour Packages
 export const fetchTours = (params = "") => API.get(`/tours${params}`);

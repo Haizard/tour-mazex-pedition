@@ -79,8 +79,29 @@ router.get("/bootstrap", async (req, res) => {
         home: homePage || null,
       },
     });
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+router.put("/theme", requireTenantAdmin, async (req, res) => {
+  try {
+    const current = await TenantTheme.findOne({ tenantId: req.tenantId }).lean();
+    const nextValue = {
+      ...(current || DEFAULT_TENANT_THEME),
+      ...withTenantId(req, req.body),
+    };
+
+    const theme = await TenantTheme.findOneAndUpdate(
+      { tenantId: req.tenantId },
+      withTenantId(req, nextValue),
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    res.status(200).json(theme);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 

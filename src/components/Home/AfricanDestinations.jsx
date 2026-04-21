@@ -26,6 +26,7 @@ const AfricanDestinations = ({
   description = defaultContent.description,
   quote = defaultContent.quote,
   quoteAuthor = defaultContent.quoteAuthor,
+  backgroundImage = "",
 }) => {
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,8 +57,17 @@ const AfricanDestinations = ({
 
   if (variant === "destination-grid") {
     return (
-      <div className="bg-[#faf7f1] py-14 md:py-24">
-        <div className="container px-4 max-w-7xl mx-auto">
+      <div 
+        className="relative py-14 md:py-24 overflow-hidden"
+        style={{ 
+          backgroundColor: backgroundImage ? 'transparent' : '#faf7f1',
+          backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        {backgroundImage && <div className="absolute inset-0 bg-white/90 z-0" />}
+        <div className="container relative px-4 max-w-7xl mx-auto z-10">
           <div className="mx-auto max-w-4xl text-center">
             <p className="font-oswald text-xs uppercase tracking-[0.3em] text-safari-green">
               {subtitle}
@@ -112,8 +122,17 @@ const AfricanDestinations = ({
   }
 
   return (
-    <div className="bg-[#fafafa] py-12 md:py-24 pb-16 md:pb-32 overflow-hidden">
-      <div className="container px-2 sm:px-4 max-w-7xl mx-auto">
+    <div 
+      className="relative py-12 md:py-24 pb-16 md:pb-32 overflow-hidden"
+      style={{ 
+        backgroundColor: backgroundImage ? 'transparent' : '#fafafa',
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      {backgroundImage && <div className="absolute inset-0 bg-white/95 z-0" />}
+      <div className="container relative px-2 sm:px-4 max-w-7xl mx-auto z-10">
         <div className="grid grid-cols-2 gap-4 sm:gap-8 md:gap-24 items-start">
           <motion.div
             initial={false}

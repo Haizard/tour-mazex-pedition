@@ -3,13 +3,14 @@ import { FaCog } from "react-icons/fa";
 import Card from "../UI/Card";
 import Button from "../UI/Button";
 import Badge from "../UI/Badge";
-import { fetchSiteSettings, fetchTenantSiteConfig, updateSiteSettings, updateTenantSiteConfig } from "../../services/api";
+import { fetchSiteSettings, fetchTenantSiteConfig, updateSiteSettings, updateTenantSiteConfig, fetchTenantTheme, updateTenantTheme } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
 
 const SiteSettings = () => {
   const { refreshTenant } = useTenant();
   const [loading, setLoading] = useState(false);
   const [configLoading, setConfigLoading] = useState(false);
+  const [themeLoading, setThemeLoading] = useState(false);
   const [settingsFormData, setSettingsFormData] = useState({
     facebook: "",
     twitter: "",
@@ -38,6 +39,23 @@ const SiteSettings = () => {
     },
   });
 
+  const [themeFormData, setThemeFormData] = useState({
+    primaryColor: "#0d9488",
+    secondaryColor: "#eab308",
+    accentColor: "#f97316",
+    backgroundColor: "#ffffff",
+    surfaceColor: "#f8fafc",
+    textColor: "#1e293b",
+    headingColor: "#0f172a",
+    headingFont: "'Playfair Display', serif",
+    bodyFont: "'Montserrat', sans-serif",
+    borderRadius: "1rem",
+    cardRadius: "1.5rem",
+    buttonRadius: "9999px",
+    shadowStyle: "0 10px 30px rgba(15, 23, 42, 0.12)",
+    spacingScale: "1",
+  });
+
   const loadSiteSettings = async () => {
     try {
       const res = await fetchSiteSettings();
@@ -60,7 +78,22 @@ const SiteSettings = () => {
   useEffect(() => {
     loadSiteSettings();
     loadTenantSiteConfig();
+    loadTenantTheme();
   }, []);
+
+  const loadTenantTheme = async () => {
+    try {
+      const res = await fetchTenantTheme();
+      if (res.data?.theme) {
+        setThemeFormData({
+          ...themeFormData,
+          ...res.data.theme
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadTenantSiteConfig = async () => {
     try {
@@ -122,6 +155,21 @@ const SiteSettings = () => {
       alert("Failed to update navigation/footer config.");
     } finally {
       setConfigLoading(false);
+    }
+  };
+
+  const handleThemeSubmit = async (e) => {
+    e.preventDefault();
+    setThemeLoading(true);
+    try {
+      await updateTenantTheme(themeFormData);
+      await refreshTenant?.();
+      alert("Theme updated successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update theme.");
+    } finally {
+      setThemeLoading(false);
     }
   };
 
@@ -426,6 +474,174 @@ const SiteSettings = () => {
           <div className="flex justify-end pt-2">
             <Button type="submit" disabled={configLoading} className="px-12 py-4 rounded-2xl shadow-lg">
               {configLoading ? "Saving..." : "Save Navigation & Footer"}
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      <Card className="p-8 border-none shadow-2xl bg-white mt-8 mb-20">
+        <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
+          <FaCog className="text-primary" />
+          Theme & Visual Identity
+        </h3>
+
+        <form onSubmit={handleThemeSubmit} className="space-y-10">
+          <div>
+            <h4 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
+              Primary Colors
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Primary Color</label>
+                <div className="flex gap-3">
+                  <input
+                    type="color"
+                    value={themeFormData.primaryColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, primaryColor: e.target.value})}
+                    className="h-14 w-20 rounded-xl border-none cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={themeFormData.primaryColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, primaryColor: e.target.value})}
+                    className="flex-1 bg-slate-50 p-4 rounded-2xl border-none font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Secondary Color</label>
+                <div className="flex gap-3">
+                  <input
+                    type="color"
+                    value={themeFormData.secondaryColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, secondaryColor: e.target.value})}
+                    className="h-14 w-20 rounded-xl border-none cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={themeFormData.secondaryColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, secondaryColor: e.target.value})}
+                    className="flex-1 bg-slate-50 p-4 rounded-2xl border-none font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Accent Color</label>
+                <div className="flex gap-3">
+                  <input
+                    type="color"
+                    value={themeFormData.accentColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, accentColor: e.target.value})}
+                    className="h-14 w-20 rounded-xl border-none cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={themeFormData.accentColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, accentColor: e.target.value})}
+                    className="flex-1 bg-slate-50 p-4 rounded-2xl border-none font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
+              Surface & Text
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Background Color</label>
+                <div className="flex gap-3">
+                  <input
+                    type="color"
+                    value={themeFormData.backgroundColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, backgroundColor: e.target.value})}
+                    className="h-14 w-14 rounded-xl border-none cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={themeFormData.backgroundColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, backgroundColor: e.target.value})}
+                    className="flex-1 bg-slate-50 p-4 rounded-2xl border-none font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Heading Color</label>
+                <div className="flex gap-3">
+                  <input
+                    type="color"
+                    value={themeFormData.headingColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, headingColor: e.target.value})}
+                    className="h-14 w-14 rounded-xl border-none cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={themeFormData.headingColor}
+                    onChange={(e) => setThemeFormData({...themeFormData, headingColor: e.target.value})}
+                    className="flex-1 bg-slate-50 p-4 rounded-2xl border-none font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
+              Typography & Spacing
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Heading Font</label>
+                <input
+                  type="text"
+                  value={themeFormData.headingFont}
+                  onChange={(e) => setThemeFormData({...themeFormData, headingFont: e.target.value})}
+                  className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Body Font</label>
+                <input
+                  type="text"
+                  value={themeFormData.bodyFont}
+                  onChange={(e) => setThemeFormData({...themeFormData, bodyFont: e.target.value})}
+                  className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Border Radius (Base)</label>
+                <select
+                  value={themeFormData.borderRadius}
+                  onChange={(e) => setThemeFormData({...themeFormData, borderRadius: e.target.value})}
+                  className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium"
+                >
+                  <option value="0rem">None</option>
+                  <option value="0.5rem">Medium (0.5rem)</option>
+                  <option value="1rem">Large (1rem)</option>
+                  <option value="1.5rem">Extra Large (1.5rem)</option>
+                  <option value="2rem">Huge (2rem)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Spacing Scale</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.5"
+                  max="2"
+                  value={themeFormData.spacingScale}
+                  onChange={(e) => setThemeFormData({...themeFormData, spacingScale: e.target.value})}
+                  className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button type="submit" disabled={themeLoading} className="px-12 py-4 rounded-2xl shadow-lg">
+              {themeLoading ? "Saving..." : "Save Theme Preferences"}
             </Button>
           </div>
         </form>

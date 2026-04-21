@@ -154,12 +154,16 @@ const metadata = {
           { group: "contentConfig", path: "secondaryCtaHref", type: "text", placeholder: "Secondary CTA link" },
           {
             group: "contentConfig",
-            path: "imageSlides",
-            type: "stringList",
-            placeholder: "One image URL or path per line",
-            rows: 5,
-            colSpan: 2,
+            path: "slides",
+            type: "objectList",
+            itemLabel: "Slide",
+            limit: 5,
+            fields: [
+              { path: "image", type: "media", placeholder: "Slide image" },
+              { path: "caption", type: "text", placeholder: "Optional caption" },
+            ],
           },
+          { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Fallback background image" },
         ],
       },
       "split-panel": {
@@ -174,15 +178,9 @@ const metadata = {
           { group: "contentConfig", path: "panelEyebrow", type: "text", placeholder: "Panel eyebrow" },
           { group: "contentConfig", path: "panelTitle", type: "text", placeholder: "Panel title" },
           { group: "contentConfig", path: "panelBody", type: "textarea", placeholder: "Panel body", rows: 4, colSpan: 2 },
-          {
-            group: "contentConfig",
-            path: "panelHighlights",
-            type: "stringList",
-            placeholder: "One panel highlight per line",
-            rows: 4,
-            colSpan: 2,
-          },
+          { group: "contentConfig", path: "panelHighlights", type: "stringList", placeholder: "One panel highlight per line", rows: 4, colSpan: 2 },
           { group: "contentConfig", path: "videoUrl", type: "media", placeholder: "Background video URL" },
+          { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Fallback background image" },
         ],
       },
     },
@@ -414,6 +412,7 @@ const metadata = {
       { group: "contentConfig", path: "description", type: "textarea", placeholder: "Section description", rows: 3, colSpan: 2 },
       { group: "contentConfig", path: "quote", type: "textarea", placeholder: "Highlight quote", rows: 3 },
       { group: "contentConfig", path: "quoteAuthor", type: "text", placeholder: "Quote author" },
+      { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Section background image" },
     ],
     styleSchema: sharedStyleSchema,
     variantSchemas: {
@@ -532,10 +531,13 @@ const metadata = {
       {
         group: "contentConfig",
         path: "logos",
-        type: "stringList",
-        placeholder: "One logo URL or path per line",
-        rows: 4,
-        colSpan: 2,
+        type: "objectList",
+        itemLabel: "Partner Logo",
+        limit: 12,
+        fields: [
+          { path: "image", type: "media", placeholder: "Logo image" },
+          { path: "alt", type: "text", placeholder: "Partner name" },
+        ],
       },
     ],
     styleSchema: sharedStyleSchema,
@@ -576,8 +578,9 @@ const buildSectionProps = (section) => {
       panelTitle: contentConfig.panelTitle,
       panelBody: contentConfig.panelBody,
       panelHighlights: contentConfig.panelHighlights,
-      imageSlides: contentConfig.imageSlides,
+      imageSlides: contentConfig.imageSlides || contentConfig.slides?.map(s => s.image),
       videoUrl: contentConfig.videoUrl,
+      backgroundImage: contentConfig.backgroundImage,
     };
   }
 
@@ -664,6 +667,7 @@ const buildSectionProps = (section) => {
       description: contentConfig.description,
       quote: contentConfig.quote,
       quoteAuthor: contentConfig.quoteAuthor,
+      backgroundImage: contentConfig.backgroundImage,
     };
   }
 
@@ -684,7 +688,7 @@ const buildSectionProps = (section) => {
   if (section.type === "logoCloud") {
     return {
       variant: section.variant,
-      logos: contentConfig.logos,
+      logos: contentConfig.logos?.map(l => typeof l === 'string' ? l : l.image) || [],
       backgroundColor: contentConfig.backgroundColor,
       title: contentConfig.title,
     };
