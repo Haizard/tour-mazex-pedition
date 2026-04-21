@@ -141,6 +141,7 @@ const CinematicHeroSection = ({
             muted
             playsInline
             className="h-full w-full object-cover"
+            suppressHydrationWarning
           >
             <source src={videoUrl || "/videos/main.mp4"} type="video/mp4" />
           </video>

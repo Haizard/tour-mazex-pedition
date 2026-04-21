@@ -102,8 +102,9 @@ const PageRenderer = ({ sections = [] }) => {
           <div
             key={`${section.type}-${section.order || index}`}
             style={wrapperStyle}
+            suppressHydrationWarning
           >
-            <div style={innerStyle}>{rendered}</div>
+            <div style={innerStyle} suppressHydrationWarning>{rendered}</div>
           </div>
         );
       })}

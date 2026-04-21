@@ -6,13 +6,17 @@ import AppShell from "./AppShell";
 
 const App = () => {
   React.useEffect(() => {
-    AOS.init({
-      offset: 100,
-      duration: 900,
-      easing: "ease-in-sine",
-      delay: 100,
+    // Delay AOS initialization to ensure hydration is complete
+    requestAnimationFrame(() => {
+      AOS.init({
+        offset: 100,
+        duration: 900,
+        easing: "ease-in-sine",
+        delay: 100,
+        once: true, // Only animate once to reduce DOM thrashing
+      });
+      AOS.refresh();
     });
-    AOS.refresh();
   }, []);
 
   return (

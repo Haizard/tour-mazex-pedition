@@ -34,6 +34,7 @@ const Hero = ({
           muted
           playsInline
           className="w-full h-full object-cover"
+          suppressHydrationWarning
         >
           <source src={videoUrl || MainVideo} type="video/mp4" />
         </video>
