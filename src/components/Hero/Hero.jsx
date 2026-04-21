@@ -1,11 +1,12 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import MainVideo from "../../assets/video/main.mp4";
+const MainVideo = "/videos/main.mp4";
 
 const Hero = ({
   eyebrow = "Karibu Maz",
   headlineScript = "Expeditions",
+  description = "",
   primaryCtaLabel = "START PLANNING NOW",
   primaryCtaHref = "/plan-my-trip",
   secondaryCtaLabel = "Explore All Packages",
@@ -30,7 +31,7 @@ const Hero = ({
           loop
           muted
           playsInline
-          className="w-full h-full object-fill"
+          className="w-full h-full object-cover"
         >
           <source src={MainVideo} type="video/mp4" />
         </video>
@@ -58,6 +59,11 @@ const Hero = ({
             <div className="font-signature text-safari-gold text-6xl sm:text-8xl lg:text-9xl px-4 pb-4 -mt-4 drop-shadow-2xl transform">
               {headlineScript}
             </div>
+            {description && (
+              <p className="text-white/80 font-medium text-lg max-w-2xl mx-auto mt-4 leading-relaxed">
+                {description}
+              </p>
+            )}
           </motion.div>
 
           {/* New CTA Button Replacement for Search Engine */}

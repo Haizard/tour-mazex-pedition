@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Hero from "../../components/Hero/Hero";
-import NatureVid from "../../assets/video/main.mp4";
 import KiliImg from "../../assets/Kilimanjaro.jpg";
 import SafariImg from "../../assets/momentlion.jpg";
 import CampImg from "../../assets/camp1.jpg";
@@ -135,7 +134,7 @@ const CinematicHeroSection = ({
       <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(215,179,91,0.22),_transparent_30%),linear-gradient(135deg,_#07211e_0%,_#0d3b35_45%,_#133028_100%)] text-white">
         <div className="absolute inset-0 opacity-20">
           <video autoPlay loop muted playsInline className="h-full w-full object-cover">
-            <source src={NatureVid} type="video/mp4" />
+            <source src="/videos/main.mp4" type="video/mp4" />
           </video>
         </div>
         <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(3,7,18,0.82),rgba(3,7,18,0.45),rgba(3,7,18,0.78))]" />
@@ -216,17 +215,10 @@ const CinematicHeroSection = ({
 
   return (
     <div className="h-screen relative overflow-hidden">
-      <video
-        autoPlay
-        loop
-        muted
-        className="absolute right-0 top-0 h-full w-full object-fill z-0"
-      >
-        <source src={NatureVid} type="video/mp4" />
-      </video>
       <Hero
         eyebrow={eyebrow}
         headlineScript={headlineScript}
+        description={description}
         primaryCtaLabel={primaryCtaLabel}
         primaryCtaHref={primaryCtaHref}
         secondaryCtaLabel={secondaryCtaLabel}
