@@ -11,6 +11,7 @@ const Hero = ({
   primaryCtaHref = "/plan-my-trip",
   secondaryCtaLabel = "Explore All Packages",
   secondaryCtaHref = "/packages",
+  videoUrl = "",
 }) => {
   const navigate = useNavigate();
 
@@ -33,7 +34,7 @@ const Hero = ({
           playsInline
           className="w-full h-full object-cover"
         >
-          <source src={MainVideo} type="video/mp4" />
+          <source src={videoUrl || MainVideo} type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-slate-900" />

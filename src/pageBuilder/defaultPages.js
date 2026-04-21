@@ -43,6 +43,7 @@ export const legacyHomePage = {
           "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
           "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1600&q=80",
         ],
+        videoUrl: "/videos/main.mp4",
       },
       styleConfig: {},
     },

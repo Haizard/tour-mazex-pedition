@@ -23,6 +23,7 @@ const CinematicHeroSection = ({
   panelBody,
   panelHighlights,
   imageSlides,
+  videoUrl,
 }) => {
   const safeSlides =
     Array.isArray(imageSlides) && imageSlides.filter(Boolean).length > 0
@@ -134,7 +135,7 @@ const CinematicHeroSection = ({
       <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(215,179,91,0.22),_transparent_30%),linear-gradient(135deg,_#07211e_0%,_#0d3b35_45%,_#133028_100%)] text-white">
         <div className="absolute inset-0 opacity-20">
           <video autoPlay loop muted playsInline className="h-full w-full object-cover">
-            <source src="/videos/main.mp4" type="video/mp4" />
+            <source src={videoUrl || "/videos/main.mp4"} type="video/mp4" />
           </video>
         </div>
         <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(3,7,18,0.82),rgba(3,7,18,0.45),rgba(3,7,18,0.78))]" />
@@ -223,6 +224,7 @@ const CinematicHeroSection = ({
         primaryCtaHref={primaryCtaHref}
         secondaryCtaLabel={secondaryCtaLabel}
         secondaryCtaHref={secondaryCtaHref}
+        videoUrl={videoUrl}
       />
     </div>
   );
