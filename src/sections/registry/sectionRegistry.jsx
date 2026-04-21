@@ -138,7 +138,7 @@ const metadata = {
       { group: "contentConfig", path: "primaryCtaHref", type: "text", placeholder: "Primary CTA link" },
       { group: "contentConfig", path: "secondaryCtaLabel", type: "text", placeholder: "Secondary CTA label" },
       { group: "contentConfig", path: "secondaryCtaHref", type: "text", placeholder: "Secondary CTA link" },
-      { group: "contentConfig", path: "videoUrl", type: "text", placeholder: "Background video URL or Media ID (e.g., /api/media/ID)" },
+      { group: "contentConfig", path: "videoUrl", type: "media", placeholder: "Background video URL or Media ID (e.g., /api/media/ID)" },
     ],
     styleSchema: sharedStyleSchema,
     variantSchemas: {
@@ -433,7 +433,7 @@ const metadata = {
       { value: "editorial-quotes", label: "Editorial Quotes" },
     ],
     editorSchema: [
-      { group: "contentConfig", path: "backgroundImage", type: "text", placeholder: "Background image URL", colSpan: 2 },
+      { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Background image URL", colSpan: 2 },
       { group: "contentConfig", path: "ratingLabel", type: "text", placeholder: "Rating label" },
       { group: "contentConfig", path: "reviewCountLabel", type: "text", placeholder: "Review count label" },
       { group: "contentConfig", path: "providerLabel", type: "text", placeholder: "Provider label", colSpan: 2 },
@@ -491,7 +491,7 @@ const metadata = {
       { group: "contentConfig", path: "primaryHref", type: "text", placeholder: "Primary button link" },
       { group: "contentConfig", path: "secondaryLabel", type: "text", placeholder: "Secondary button label" },
       { group: "contentConfig", path: "secondaryHref", type: "text", placeholder: "Secondary button link" },
-      { group: "contentConfig", path: "backgroundImage", type: "text", placeholder: "Background image URL", colSpan: 2 },
+      { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Background image URL", colSpan: 2 },
     ],
     styleSchema: sharedStyleSchema,
     variantSchemas: {
