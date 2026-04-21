@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Hero from "../../components/Hero/Hero";
+import { getMediaUrl } from "../../services/api";
 import KiliImg from "../../assets/Kilimanjaro.jpg";
 import SafariImg from "../../assets/momentlion.jpg";
 import CampImg from "../../assets/camp1.jpg";
@@ -143,7 +144,7 @@ const CinematicHeroSection = ({
             className="h-full w-full object-cover"
             suppressHydrationWarning
           >
-            <source src={videoUrl || "/videos/main.mp4"} type="video/mp4" />
+            <source src={getMediaUrl(videoUrl) || "/videos/main.mp4"} type="video/mp4" />
           </video>
         </div>
         <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(3,7,18,0.82),rgba(3,7,18,0.45),rgba(3,7,18,0.78))]" />

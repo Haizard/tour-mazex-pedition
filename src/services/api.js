@@ -264,4 +264,19 @@ const fileToBase64 = (file) => {
   });
 };
 
+/**
+ * Resolve a media path (e.g. "/api/media/ID") to a full URL.
+ * On localhost the frontend runs on a different port to the backend,
+ * so we need the absolute backend origin. In production everything is
+ * served from the same origin, so the relative path works fine.
+ */
+export const getMediaUrl = (url) => {
+  if (!url) return url;
+  if (!url.startsWith("/api/media/")) return url; // already absolute or a public asset
+  if (typeof window !== "undefined" && LOCAL_HOSTNAMES.has(window.location.hostname)) {
+    return `http://127.0.0.1:5000${url}`;
+  }
+  return url; // relative path works fine in production
+};
+
 export default API;

@@ -1,5 +1,5 @@
 import React from "react";
-import { createRoot, hydrateRoot } from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import "slick-carousel/slick/slick.css";
@@ -19,8 +19,4 @@ const app = (
   </React.StrictMode>
 );
 
-if (container.hasChildNodes()) {
-  hydrateRoot(container, app);
-} else {
-  createRoot(container).render(app);
-}
+createRoot(container).render(app);

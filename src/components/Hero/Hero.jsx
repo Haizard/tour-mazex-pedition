@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { getMediaUrl } from "../../services/api";
 const MainVideo = "/videos/main.mp4";
 
 const Hero = ({
@@ -36,7 +37,7 @@ const Hero = ({
           className="w-full h-full object-cover"
           suppressHydrationWarning
         >
-          <source src={videoUrl || MainVideo} type="video/mp4" />
+          <source src={getMediaUrl(videoUrl) || MainVideo} type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-slate-900" />
