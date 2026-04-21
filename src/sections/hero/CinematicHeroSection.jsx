@@ -57,7 +57,7 @@ const CinematicHeroSection = ({
               style={{ backgroundImage: `url('${slide}')` }}
             />
           ))}
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(2,6,23,0.82),rgba(2,6,23,0.36),rgba(2,6,23,0.78))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(2,6,23,0.65),rgba(2,6,23,0.25),rgba(2,6,23,0.6))]" />
         </div>
 
         <div className="container relative z-10 flex min-h-screen items-center px-4 py-24">
@@ -147,7 +147,7 @@ const CinematicHeroSection = ({
             <source src={getMediaUrl(videoUrl) || "/videos/main.mp4"} type="video/mp4" />
           </video>
         </div>
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(3,7,18,0.82),rgba(3,7,18,0.45),rgba(3,7,18,0.78))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(3,7,18,0.65),rgba(3,7,18,0.35),rgba(3,7,18,0.6))]" />
 
         <div className="container relative z-10 px-4 py-20 md:py-28">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_380px] lg:items-center">

@@ -24,7 +24,7 @@ const Hero = ({
   return (
     <div className="relative h-screen min-h-[700px] flex items-center justify-center overflow-hidden">
       {/* Background Overlay */}
-      <div className="absolute inset-0 bg-black/40 z-10" />
+      <div className="absolute inset-0 bg-black/20 z-10" />
 
       {/* Cinematic Background Video */}
       <div className="absolute inset-0">
@@ -39,8 +39,8 @@ const Hero = ({
         >
           <source src={getMediaUrl(videoUrl) || MainVideo} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-slate-900" />
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-slate-900/70" />
       </div>
 
       <div className="container relative z-20 text-center text-white px-4 pt-20">
