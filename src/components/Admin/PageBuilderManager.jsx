@@ -203,7 +203,6 @@ const MediaUploadField = ({ field, value, onChange, inputIdPrefix }) => {
           )}
         </button>
       </div>
-      </div>
       {value && (
         <div className="mt-2 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 h-24 flex items-center justify-center relative group">
           {typeof value === "string" && (value.endsWith(".mp4") || value.includes("/video")) ? (
