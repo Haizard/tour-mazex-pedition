@@ -31,12 +31,21 @@ const getSectionPresets = (type) =>
   }));
 
 const getDefaultSectionTemplate = (type, variant) => {
-  const fromLegacy = legacyHomePage.sections.find((section) => section.type === type);
+  // 1. Try to find an exact match for type AND variant in legacy setup
+  let fromLegacy = legacyHomePage.sections.find(
+    (section) => section.type === type && section.variant === variant
+  );
+
+  // 2. Fallback to just matching the type
+  if (!fromLegacy) {
+    fromLegacy = legacyHomePage.sections.find((section) => section.type === type);
+  }
 
   if (fromLegacy) {
     return {
       ...fromLegacy,
-      variant: variant || fromLegacy.variant,
+      // If we matched the type but not the variant, ensure the requested variant is set
+      variant: variant || fromLegacy.variant || "default",
       dataConfig: { ...(fromLegacy.dataConfig || {}) },
       contentConfig: { ...(fromLegacy.contentConfig || {}) },
       styleConfig: { ...(fromLegacy.styleConfig || {}) },
@@ -194,6 +203,33 @@ const MediaUploadField = ({ field, value, onChange, inputIdPrefix }) => {
           )}
         </button>
       </div>
+      </div>
+      {value && (
+        <div className="mt-2 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 h-24 flex items-center justify-center relative group">
+          {typeof value === "string" && (value.endsWith(".mp4") || value.includes("/video")) ? (
+            <video 
+              src={getMediaUrl(value)} 
+              className="w-full h-full object-cover" 
+              muted 
+              loop 
+              autoPlay 
+            />
+          ) : (
+            <img 
+              src={getMediaUrl(value)} 
+              alt="Media preview" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = '<span class="text-[10px] text-slate-400 font-bold uppercase">Invalid Media URL</span>';
+              }}
+            />
+          )}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="text-[10px] text-white font-bold uppercase tracking-widest">Media Preview</span>
+          </div>
+        </div>
+      )}
       <p className="text-[9px] font-medium text-slate-400 pl-1">
         Max size: 15MB. Best for background videos and images.
       </p>
@@ -508,14 +544,19 @@ const PageBuilderManager = () => {
     updateSection(index, (current) => {
       const preset = getDefaultSectionTemplate(current.type, current.variant);
 
+      // Force a clean reset of all fields to the default template
       return {
         ...current,
+        // Reset everything except the system-level fields like _id and type
+        variant: preset.variant || current.variant,
+        enabled: preset.enabled ?? current.enabled ?? true,
+        order: current.order, // Preserve order
         dataConfig: { ...(preset.dataConfig || {}) },
         contentConfig: { ...(preset.contentConfig || {}) },
         styleConfig: { ...(preset.styleConfig || {}) },
       };
     });
-    setMessage("Section defaults reapplied for the selected preset.");
+    setMessage(`Defaults reapplied for ${getSectionLabel(pageConfig.sections[index].type)}.`);
   };
 
   const handleSave = async () => {

@@ -138,7 +138,8 @@ const metadata = {
       { group: "contentConfig", path: "primaryCtaHref", type: "text", placeholder: "Primary CTA link" },
       { group: "contentConfig", path: "secondaryCtaLabel", type: "text", placeholder: "Secondary CTA label" },
       { group: "contentConfig", path: "secondaryCtaHref", type: "text", placeholder: "Secondary CTA link" },
-      { group: "contentConfig", path: "videoUrl", type: "media", placeholder: "Background video URL or Media ID (e.g., /api/media/ID)" },
+      { group: "contentConfig", path: "videoUrl", type: "media", placeholder: "Background video URL (e.g., /api/media/ID)" },
+      { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Static background image (fallback)" },
     ],
     styleSchema: sharedStyleSchema,
     variantSchemas: {
@@ -181,6 +182,7 @@ const metadata = {
             rows: 4,
             colSpan: 2,
           },
+          { group: "contentConfig", path: "videoUrl", type: "media", placeholder: "Background video URL" },
         ],
       },
     },
@@ -234,6 +236,7 @@ const metadata = {
         fields: [
           { path: "scriptLabel", type: "text", placeholder: "Script label" },
           { path: "title", type: "text", placeholder: "Title" },
+          { path: "image", type: "media", placeholder: "Card image" },
           { path: "description", type: "textarea", placeholder: "Description", rows: 3, colSpan: 2 },
         ],
       },
@@ -256,6 +259,7 @@ const metadata = {
             fields: [
               { path: "scriptLabel", type: "text", placeholder: "Script label" },
               { path: "title", type: "text", placeholder: "Title" },
+              { path: "image", type: "media", placeholder: "Card image" },
               { path: "description", type: "textarea", placeholder: "Description", rows: 3, colSpan: 2 },
             ],
           },
@@ -446,6 +450,7 @@ const metadata = {
         fields: [
           { path: "name", type: "text", placeholder: "Name" },
           { path: "date", type: "text", placeholder: "Date" },
+          { path: "img", type: "media", placeholder: "Reviewer avatar" },
           { path: "text", type: "textarea", placeholder: "Text", rows: 3, colSpan: 2 },
         ],
       },
@@ -466,6 +471,7 @@ const metadata = {
             fields: [
               { path: "name", type: "text", placeholder: "Name" },
               { path: "date", type: "text", placeholder: "Date" },
+              { path: "img", type: "media", placeholder: "Reviewer avatar" },
               { path: "text", type: "textarea", placeholder: "Quote text", rows: 4, colSpan: 2 },
             ],
           },
@@ -505,7 +511,7 @@ const metadata = {
           { group: "contentConfig", path: "secondaryLabel", type: "text", placeholder: "Secondary button label" },
           { group: "contentConfig", path: "secondaryHref", type: "text", placeholder: "Secondary button link" },
           { group: "contentConfig", path: "accentLabel", type: "text", placeholder: "Accent label", colSpan: 2 },
-          { group: "contentConfig", path: "backgroundImage", type: "text", placeholder: "Background image URL", colSpan: 2 },
+          { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Background image URL", colSpan: 2 },
         ],
       },
     },
