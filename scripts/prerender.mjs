@@ -27,7 +27,10 @@ const distDir = path.join(rootDir, "dist");
 dotenv.config({ path: path.join(rootDir, ".env") });
 
 const baseRoutes = [
-  "/",
+  // "/" is intentionally excluded — the home page uses fully dynamic content
+  // fetched from MongoDB at runtime (page config, video, sections). Prerendering it
+  // bakes in stale defaults and causes unavoidable React hydration conflicts.
+  // It is served as a pure SPA shell and rendered entirely on the client.
   "/about",
   "/contact",
   "/blogs",
