@@ -28,9 +28,10 @@ const persistToken = (token) => {
 };
 
 export const PlatformAdminAuthProvider = ({ children }) => {
-  const [token, setToken] = useState(readStoredToken);
+  // Always start with empty state so SSR and client initial renders match.
+  const [token, setToken] = useState("");
   const [platformAdmin, setPlatformAdmin] = useState(null);
-  const [loading, setLoading] = useState(Boolean(readStoredToken()));
+  const [loading, setLoading] = useState(false);
 
   const clearSession = () => {
     persistToken("");
@@ -65,13 +66,19 @@ export const PlatformAdminAuthProvider = ({ children }) => {
     }
   };
 
+  // On mount (client-only), rehydrate auth state from localStorage.
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
+    const storedToken = readStoredToken();
+    if (storedToken) {
+      setToken(storedToken);
+      setLoading(true);
+      refreshSession();
     }
+  }, []);
 
-    refreshSession();
+  // Keep token in sync when it changes.
+  useEffect(() => {
+    persistToken(token);
   }, [token]);
 
   const login = async (credentials) => {
