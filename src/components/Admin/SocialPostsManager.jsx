@@ -7,9 +7,11 @@ import Card from "../UI/Card";
 import {
   createSocialPost,
   deleteSocialPost,
+  fetchSocialAccounts,
   fetchSocialPosts,
   fetchTours,
   generateSocialPost,
+  publishSocialPostLive,
   updateSocialPost,
 } from "../../services/api";
 
@@ -64,6 +66,7 @@ const normalizeEditorFromPost = (post) => ({
 const SocialPostsManager = () => {
   const [tours, setTours] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedTourId, setSelectedTourId] = useState("");
   const [editor, setEditor] = useState(createEmptyEditor());
@@ -77,13 +80,15 @@ const SocialPostsManager = () => {
     setError("");
 
     try {
-      const [tourResponse, postResponse] = await Promise.all([
+      const [tourResponse, postResponse, accountResponse] = await Promise.all([
         fetchTours(),
         fetchSocialPosts(statusFilter !== "all" ? { status: statusFilter } : {}),
+        fetchSocialAccounts(),
       ]);
 
       setTours(Array.isArray(tourResponse.data) ? tourResponse.data : []);
       setPosts(Array.isArray(postResponse.data) ? postResponse.data : []);
+      setAccounts(Array.isArray(accountResponse.data) ? accountResponse.data : []);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load social publishing data.");
     } finally {
@@ -109,8 +114,9 @@ const SocialPostsManager = () => {
       total: posts.length,
       scheduled: posts.filter((post) => post.status === "scheduled").length,
       drafts: posts.filter((post) => post.status === "draft").length,
+      liveAccounts: accounts.filter((account) => account.status === "active").length,
     }),
-    [posts]
+    [accounts, posts]
   );
 
   const filteredPosts = useMemo(
@@ -245,6 +251,23 @@ const SocialPostsManager = () => {
     }
   };
 
+  const handlePublishNow = async (postId) => {
+    setSaving(true);
+    setError("");
+
+    try {
+      await publishSocialPostLive(postId);
+      await loadData(selectedStatus);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to publish this post live."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const availableImages = useMemo(() => {
     if (!selectedTour) {
       return editor.imageUrls;
@@ -273,6 +296,7 @@ const SocialPostsManager = () => {
           <Badge variant="primary">{stats.total} Posts</Badge>
           <Badge variant="secondary">{stats.scheduled} Scheduled</Badge>
           <Badge variant="accent">{stats.drafts} Drafts</Badge>
+          <Badge variant="luxury">{stats.liveAccounts} Live Accounts</Badge>
         </div>
       </div>
 
@@ -366,6 +390,17 @@ const SocialPostsManager = () => {
                         </span>
                       ))}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handlePublishNow(post._id);
+                      }}
+                      className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide text-emerald-600 hover:text-emerald-700"
+                    >
+                      Publish Now
+                    </button>
 
                     <button
                       type="button"

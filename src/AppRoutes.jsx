@@ -20,6 +20,7 @@ import PlatformAdminRoute from "./components/Admin/PlatformAdminRoute";
 import PlatformAdminDashboard from "./pages/PlatformAdminDashboard";
 import PlatformAdminLogin from "./pages/PlatformAdminLogin";
 import PlanMyTrip from "./pages/PlanMyTrip";
+import PricingPage from "./pages/PricingPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 
@@ -37,6 +38,7 @@ const AppRoutes = () => (
       <Route path="destinations/:destinationSlug" element={<DestinationDetail />} />
       <Route path="about" element={<About />} />
       <Route path="contact" element={<Contact />} />
+      <Route path="pricing" element={<PricingPage />} />
       <Route path="gallery" element={<Gallery />} />
       <Route
         path="admin"

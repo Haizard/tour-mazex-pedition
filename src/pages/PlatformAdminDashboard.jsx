@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  createPlatformTenant,
   fetchPlatformSummary,
+  fetchPlatformTenantMarketing,
   fetchPlatformTenantSupport,
   fetchPlatformTenants,
   markPlatformTenantDomainVerified,
+  renewPlatformTenantDomainService,
   updatePlatformTenant,
 } from "../services/api";
 import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
@@ -16,6 +19,9 @@ const metricCards = [
   { key: "inquiryCount", label: "Inquiries" },
   { key: "contactMessageCount", label: "Contact Messages" },
   { key: "openThreadCount", label: "Open Inbox Threads" },
+  { key: "socialAccountCount", label: "Social Accounts" },
+  { key: "socialPostCount", label: "Social Posts" },
+  { key: "campaignCount", label: "Campaigns" },
 ];
 
 const createTenantFormState = (tenant) => ({
@@ -23,9 +29,37 @@ const createTenantFormState = (tenant) => ({
   subdomain: tenant?.subdomain || "",
   status: tenant?.status || "active",
   customDomains: (tenant?.customDomains || []).join("\n"),
+  requestedCustomDomains: (tenant?.requestedCustomDomains || []).join("\n"),
   enableCustomDomains: Boolean(tenant?.features?.enableCustomDomains),
   enablePageBuilder: Boolean(tenant?.features?.enablePageBuilder),
   enableAiContent: tenant?.features?.enableAiContent !== false,
+  subscriptionPlan: tenant?.subscription?.plan || "starter",
+  subscriptionStatus: tenant?.subscription?.status || "inactive",
+  billingInterval: tenant?.subscription?.billingInterval || "monthly",
+  trialEndsAt: tenant?.subscription?.trialEndsAt
+    ? new Date(tenant.subscription.trialEndsAt).toISOString().slice(0, 10)
+    : "",
+  currentPeriodEndsAt: tenant?.subscription?.currentPeriodEndsAt
+    ? new Date(tenant.subscription.currentPeriodEndsAt).toISOString().slice(0, 10)
+    : "",
+  manualOverride: tenant?.subscription?.manualOverride !== false,
+  domainServiceStatus: tenant?.domainService?.serviceStatus || "active",
+  annualDomainPriceUsd: String(tenant?.domainService?.annualPriceUsd || 50),
+  domainRenewalDueAt: tenant?.domainService?.renewalDueAt
+    ? new Date(tenant.domainService.renewalDueAt).toISOString().slice(0, 10)
+    : "",
+  includesHosting: tenant?.domainService?.includesHosting !== false,
+  includesManagedDns: tenant?.domainService?.includesManagedDns !== false,
+});
+
+const createNewTenantState = () => ({
+  name: "",
+  subdomain: "",
+  adminUsername: "",
+  adminPassword: "tenant123",
+  subscriptionPlan: "starter",
+  subscriptionStatus: "trialing",
+  annualDomainPriceUsd: "50",
 });
 
 const PlatformAdminDashboard = () => {
@@ -34,11 +68,15 @@ const PlatformAdminDashboard = () => {
   const [tenants, setTenants] = useState([]);
   const [selectedTenantId, setSelectedTenantId] = useState("");
   const [tenantForm, setTenantForm] = useState(createTenantFormState());
+  const [newTenantForm, setNewTenantForm] = useState(createNewTenantState());
   const [supportDetail, setSupportDetail] = useState(null);
+  const [marketingDetail, setMarketingDetail] = useState(null);
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportMode, setSupportMode] = useState("recent");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [creatingTenant, setCreatingTenant] = useState(false);
+  const [renewingDomain, setRenewingDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -116,6 +154,24 @@ const PlatformAdminDashboard = () => {
     loadSupportDetail();
   }, [selectedTenantId, supportMode]);
 
+  useEffect(() => {
+    const loadMarketingDetail = async () => {
+      if (!selectedTenantId) {
+        setMarketingDetail(null);
+        return;
+      }
+
+      try {
+        const response = await fetchPlatformTenantMarketing(selectedTenantId);
+        setMarketingDetail(response.data?.marketing || null);
+      } catch (_error) {
+        setMarketingDetail(null);
+      }
+    };
+
+    loadMarketingDetail();
+  }, [selectedTenantId]);
+
   const handleSaveTenant = async (event) => {
     event.preventDefault();
 
@@ -142,6 +198,27 @@ const PlatformAdminDashboard = () => {
           enablePageBuilder: tenantForm.enablePageBuilder,
           enableAiContent: tenantForm.enableAiContent,
         },
+        subscription: {
+          ...(selectedTenant.subscription || {}),
+          plan: tenantForm.subscriptionPlan,
+          status: tenantForm.subscriptionStatus,
+          billingInterval: tenantForm.billingInterval,
+          trialEndsAt: tenantForm.trialEndsAt || null,
+          currentPeriodEndsAt: tenantForm.currentPeriodEndsAt || null,
+          manualOverride: tenantForm.manualOverride,
+        },
+        requestedCustomDomains: tenantForm.requestedCustomDomains
+          .split("\n")
+          .map((domain) => domain.trim())
+          .filter(Boolean),
+        domainService: {
+          ...(selectedTenant.domainService || {}),
+          serviceStatus: tenantForm.domainServiceStatus,
+          annualPriceUsd: Number(tenantForm.annualDomainPriceUsd || 50),
+          renewalDueAt: tenantForm.domainRenewalDueAt || null,
+          includesHosting: tenantForm.includesHosting,
+          includesManagedDns: tenantForm.includesManagedDns,
+        },
       });
 
       setNotice("Tenant settings updated.");
@@ -153,6 +230,74 @@ const PlatformAdminDashboard = () => {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreateTenant = async (event) => {
+    event.preventDefault();
+    setCreatingTenant(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await createPlatformTenant({
+        name: newTenantForm.name,
+        subdomain: newTenantForm.subdomain,
+        adminUsername: newTenantForm.adminUsername,
+        adminPassword: newTenantForm.adminPassword,
+        subscription: {
+          plan: newTenantForm.subscriptionPlan,
+          status: newTenantForm.subscriptionStatus,
+          billingInterval: "monthly",
+          manualOverride: true,
+        },
+        domainService: {
+          annualPriceUsd: Number(newTenantForm.annualDomainPriceUsd || 50),
+          serviceStatus: "active",
+          includesHosting: true,
+          includesManagedDns: true,
+        },
+      });
+
+      const createdTenant = response.data?.tenant;
+      const credentials = response.data?.credentials;
+      setNotice(
+        `Tenant created with demo domain ${createdTenant?.demoDomain || "pending"} and admin username ${credentials?.adminUsername}.`
+      );
+      setNewTenantForm(createNewTenantState());
+      await loadPlatformData(createdTenant?._id || "");
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to create the tenant right now."
+      );
+    } finally {
+      setCreatingTenant(false);
+    }
+  };
+
+  const handleRenewDomainService = async () => {
+    if (!selectedTenant) {
+      return;
+    }
+
+    setRenewingDomain(true);
+    setError("");
+    setNotice("");
+
+    try {
+      await renewPlatformTenantDomainService(selectedTenant._id, {
+        annualPriceUsd: Number(tenantForm.annualDomainPriceUsd || 50),
+      });
+      setNotice("Domain service renewed for another year.");
+      await loadPlatformData(selectedTenant._id);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to renew the domain service."
+      );
+    } finally {
+      setRenewingDomain(false);
     }
   };
 
@@ -244,6 +389,117 @@ const PlatformAdminDashboard = () => {
           ))}
         </section>
 
+        <section className="rounded-[32px] border border-white/10 bg-white/5 p-6 md:p-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-black mb-2">
+                Tenant Provisioning
+              </p>
+              <h2 className="text-2xl font-black uppercase tracking-tight">
+                Create New Tenant With Demo Domain
+              </h2>
+            </div>
+            <div className="text-xs font-black uppercase tracking-widest text-cyan-300">
+              Managed domain and hosting service
+            </div>
+          </div>
+
+          <form onSubmit={handleCreateTenant} className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <input
+              type="text"
+              value={newTenantForm.name}
+              onChange={(event) =>
+                setNewTenantForm((current) => ({ ...current, name: event.target.value }))
+              }
+              placeholder="Tenant business name"
+              className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+            />
+            <input
+              type="text"
+              value={newTenantForm.subdomain}
+              onChange={(event) =>
+                setNewTenantForm((current) => ({
+                  ...current,
+                  subdomain: event.target.value.toLowerCase(),
+                }))
+              }
+              placeholder="Demo subdomain"
+              className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+            />
+            <input
+              type="text"
+              value={newTenantForm.adminUsername}
+              onChange={(event) =>
+                setNewTenantForm((current) => ({
+                  ...current,
+                  adminUsername: event.target.value.toLowerCase(),
+                }))
+              }
+              placeholder="Tenant admin username"
+              className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+            />
+            <input
+              type="text"
+              value={newTenantForm.adminPassword}
+              onChange={(event) =>
+                setNewTenantForm((current) => ({ ...current, adminPassword: event.target.value }))
+              }
+              placeholder="Tenant admin password"
+              className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+            />
+            <select
+              value={newTenantForm.subscriptionPlan}
+              onChange={(event) =>
+                setNewTenantForm((current) => ({
+                  ...current,
+                  subscriptionPlan: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-xs font-black uppercase text-white outline-none focus:border-cyan-400/50"
+            >
+              <option value="starter">Starter</option>
+              <option value="growth">Growth</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+            <select
+              value={newTenantForm.subscriptionStatus}
+              onChange={(event) =>
+                setNewTenantForm((current) => ({
+                  ...current,
+                  subscriptionStatus: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-xs font-black uppercase text-white outline-none focus:border-cyan-400/50"
+            >
+              <option value="trialing">Trialing</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <input
+              type="number"
+              min="50"
+              max="200"
+              value={newTenantForm.annualDomainPriceUsd}
+              onChange={(event) =>
+                setNewTenantForm((current) => ({
+                  ...current,
+                  annualDomainPriceUsd: event.target.value,
+                }))
+              }
+              placeholder="Annual domain service price"
+              className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50 xl:col-span-2"
+            />
+            <button
+              type="submit"
+              disabled={creatingTenant}
+              className="w-full rounded-2xl bg-gradient-to-r from-emerald-400 to-lime-400 py-4 font-black uppercase tracking-widest text-slate-950 disabled:opacity-50"
+            >
+              {creatingTenant ? "Creating Tenant..." : "Create Tenant"}
+            </button>
+          </form>
+        </section>
+
         <section className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.9fr] gap-6">
           <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 md:p-8">
             <div className="flex items-center justify-between gap-4 mb-6">
@@ -280,6 +536,11 @@ const PlatformAdminDashboard = () => {
                       <p className="font-black text-lg text-white">{tenant.name}</p>
                       <p className="text-sm text-slate-400 font-medium">{tenant.slug}</p>
                       <div className="flex flex-wrap gap-2 mt-3">
+                        {tenant.demoDomain && (
+                          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 text-xs font-black">
+                            {tenant.demoDomain}
+                          </span>
+                        )}
                         {(tenant.customDomains || []).slice(0, 2).map((domain) => (
                           <span
                             key={domain}
@@ -299,13 +560,21 @@ const PlatformAdminDashboard = () => {
                       <span className="inline-flex px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-200 text-xs font-black uppercase tracking-widest">
                         {tenant.status || "active"}
                       </span>
+                      <p className="mt-3 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
+                        {tenant.subscription?.plan || "starter"} / {tenant.subscription?.status || "inactive"}
+                      </p>
                       <div className="mt-3 text-xs text-slate-400 font-medium space-y-1">
+                        <p>${tenant.domainService?.annualPriceUsd ?? 50} / year domain service</p>
+                        <p>renewal due {tenant.domainService?.renewalDueAt ? new Date(tenant.domainService.renewalDueAt).toLocaleDateString() : "not set"}</p>
                         <p>{tenant.adminCount ?? tenant.metrics?.admins ?? 0} admins</p>
                         <p>{tenant.pageConfigCount ?? tenant.metrics?.pageConfigs ?? 0} pages</p>
                         <p>{tenant.emailConnectionCount ?? tenant.metrics?.emailConnections ?? 0} inbox links</p>
                         <p>{tenant.inquiryCount ?? tenant.metrics?.inquiries ?? 0} inquiries</p>
                         <p>{tenant.contactMessageCount ?? tenant.metrics?.contactMessages ?? 0} contact messages</p>
                         <p>{tenant.openThreadCount ?? tenant.metrics?.openThreads ?? 0} open threads</p>
+                        <p>{tenant.socialAccountCount ?? tenant.metrics?.socialAccounts ?? 0} social accounts</p>
+                        <p>{tenant.socialPostCount ?? tenant.metrics?.socialPosts ?? 0} social posts</p>
+                        <p>{tenant.campaignCount ?? tenant.metrics?.campaigns ?? 0} campaigns</p>
                       </div>
                     </div>
                   </div>
@@ -326,7 +595,7 @@ const PlatformAdminDashboard = () => {
                 Tenant Controls
               </p>
               <h2 className="text-2xl font-black uppercase tracking-tight">
-                Domain Management
+                Domain And Subscription Management
               </h2>
             </div>
 
@@ -344,6 +613,103 @@ const PlatformAdminDashboard = () => {
                     Legacy tenant fallback remains intact while custom domains and
                     dedicated subdomains are configured here.
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <span className="rounded-full bg-emerald-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-200">
+                      Demo domain: {selectedTenant.demoDomain || "pending"}
+                    </span>
+                    <span className="rounded-full bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-cyan-200">
+                      Domain service: {selectedTenant.domainService?.serviceStatus || "active"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <select
+                    value={tenantForm.subscriptionPlan}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        subscriptionPlan: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-xs font-black uppercase text-white outline-none focus:border-cyan-400/50"
+                  >
+                    <option value="starter">Starter</option>
+                    <option value="growth">Growth</option>
+                    <option value="pro">Pro</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
+
+                  <select
+                    value={tenantForm.subscriptionStatus}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        subscriptionStatus: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-xs font-black uppercase text-white outline-none focus:border-cyan-400/50"
+                  >
+                    <option value="inactive">Inactive</option>
+                    <option value="trialing">Trialing</option>
+                    <option value="active">Active</option>
+                    <option value="past_due">Past Due</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+
+                  <select
+                    value={tenantForm.billingInterval}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        billingInterval: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-xs font-black uppercase text-white outline-none focus:border-cyan-400/50"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                    <option value="custom">Custom</option>
+                  </select>
+
+                  <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
+                    <span className="text-sm font-bold text-slate-200">Manual override enabled</span>
+                    <input
+                      type="checkbox"
+                      checked={tenantForm.manualOverride}
+                      onChange={(event) =>
+                        setTenantForm((current) => ({
+                          ...current,
+                          manualOverride: event.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 accent-cyan-400"
+                    />
+                  </label>
+
+                  <input
+                    type="date"
+                    value={tenantForm.trialEndsAt}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        trialEndsAt: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+                  />
+
+                  <input
+                    type="date"
+                    value={tenantForm.currentPeriodEndsAt}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        currentPeriodEndsAt: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+                  />
                 </div>
 
                 <input
@@ -379,6 +745,19 @@ const PlatformAdminDashboard = () => {
                     }))
                   }
                   placeholder="One custom domain per line"
+                  className="w-full bg-slate-900/60 border border-white/10 p-4 rounded-2xl font-medium text-white outline-none focus:border-cyan-400/50"
+                />
+
+                <textarea
+                  rows={3}
+                  value={tenantForm.requestedCustomDomains}
+                  onChange={(event) =>
+                    setTenantForm((current) => ({
+                      ...current,
+                      requestedCustomDomains: event.target.value,
+                    }))
+                  }
+                  placeholder="Requested custom domains from tenant"
                   className="w-full bg-slate-900/60 border border-white/10 p-4 rounded-2xl font-medium text-white outline-none focus:border-cyan-400/50"
                 />
 
@@ -418,6 +797,80 @@ const PlatformAdminDashboard = () => {
                       />
                     </label>
                   ))}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <select
+                    value={tenantForm.domainServiceStatus}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        domainServiceStatus: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-xs font-black uppercase text-white outline-none focus:border-cyan-400/50"
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending_renewal">Pending Renewal</option>
+                    <option value="expired">Expired</option>
+                  </select>
+
+                  <input
+                    type="number"
+                    min="50"
+                    max="200"
+                    value={tenantForm.annualDomainPriceUsd}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        annualDomainPriceUsd: event.target.value,
+                      }))
+                    }
+                    placeholder="Annual domain service USD"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+                  />
+
+                  <input
+                    type="date"
+                    value={tenantForm.domainRenewalDueAt}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        domainRenewalDueAt: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/60 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+                  />
+
+                  <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
+                    <span className="text-sm font-bold text-slate-200">Managed DNS included</span>
+                    <input
+                      type="checkbox"
+                      checked={tenantForm.includesManagedDns}
+                      onChange={(event) =>
+                        setTenantForm((current) => ({
+                          ...current,
+                          includesManagedDns: event.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 accent-cyan-400"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3 md:col-span-2">
+                    <span className="text-sm font-bold text-slate-200">Hosting included in annual charge</span>
+                    <input
+                      type="checkbox"
+                      checked={tenantForm.includesHosting}
+                      onChange={(event) =>
+                        setTenantForm((current) => ({
+                          ...current,
+                          includesHosting: event.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 accent-cyan-400"
+                    />
+                  </label>
                 </div>
 
                 <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-4">
@@ -521,6 +974,15 @@ const PlatformAdminDashboard = () => {
                 >
                   {saving ? "Saving Tenant..." : "Save Tenant Settings"}
                 </button>
+
+                <button
+                  type="button"
+                  disabled={renewingDomain}
+                  onClick={handleRenewDomainService}
+                  className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-400/10 py-4 font-black uppercase tracking-widest text-emerald-200 disabled:opacity-50"
+                >
+                  {renewingDomain ? "Renewing Domain..." : "Renew Domain And Hosting For 1 Year"}
+                </button>
               </form>
             )}
 
@@ -556,6 +1018,93 @@ const PlatformAdminDashboard = () => {
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="rounded-[32px] border border-white/10 bg-white/5 p-6 md:p-8">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-black mb-2">
+                Marketing Visibility
+              </p>
+              <h2 className="text-2xl font-black uppercase tracking-tight">
+                Tenant Social Operations
+              </h2>
+            </div>
+          </div>
+
+          {!selectedTenant && (
+            <div className="rounded-3xl border border-white/10 bg-slate-900/60 px-5 py-8 text-slate-400 font-medium">
+              Select a tenant to inspect connected social accounts, campaigns, posts, and lead activity.
+            </div>
+          )}
+
+          {selectedTenant && (
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+              <div className="rounded-[28px] border border-white/10 bg-slate-900/60 p-5">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-black mb-3">
+                  Accounts
+                </p>
+                <div className="space-y-3">
+                  {(marketingDetail?.socialAccounts || []).map((account) => (
+                    <div key={account._id} className="rounded-2xl bg-white/5 px-4 py-3">
+                      <p className="font-black text-white text-sm">{account.label}</p>
+                      <p className="text-xs text-slate-400 uppercase font-black mt-1">
+                        {account.provider} / {account.status}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-slate-900/60 p-5">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-black mb-3">
+                  Social Posts
+                </p>
+                <div className="space-y-3">
+                  {(marketingDetail?.socialPosts || []).map((post) => (
+                    <div key={post._id} className="rounded-2xl bg-white/5 px-4 py-3">
+                      <p className="font-black text-white text-sm">{post.title}</p>
+                      <p className="text-xs text-slate-400 uppercase font-black mt-1">
+                        {post.status}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-slate-900/60 p-5">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-black mb-3">
+                  Campaigns
+                </p>
+                <div className="space-y-3">
+                  {(marketingDetail?.campaigns || []).map((campaign) => (
+                    <div key={campaign._id} className="rounded-2xl bg-white/5 px-4 py-3">
+                      <p className="font-black text-white text-sm">{campaign.title}</p>
+                      <p className="text-xs text-slate-400 uppercase font-black mt-1">
+                        {campaign.campaignType} / {campaign.status}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-slate-900/60 p-5">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-black mb-3">
+                  Recent Leads
+                </p>
+                <div className="space-y-3">
+                  {(marketingDetail?.inquiries || []).map((inquiry) => (
+                    <div key={inquiry._id} className="rounded-2xl bg-white/5 px-4 py-3">
+                      <p className="font-black text-white text-sm">{inquiry.name}</p>
+                      <p className="text-xs text-slate-400 uppercase font-black mt-1">
+                        {inquiry.sourceChannel} / {inquiry.status}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">

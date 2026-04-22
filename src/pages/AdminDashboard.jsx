@@ -61,8 +61,11 @@ import LeadInboxManager from "../components/Admin/LeadInboxManager";
 import CampaignManager from "../components/Admin/CampaignManager";
 import ContentRepurposingManager from "../components/Admin/ContentRepurposingManager";
 import SocialPostsManager from "../components/Admin/SocialPostsManager";
+import SocialAccountsManager from "../components/Admin/SocialAccountsManager";
 import SiteSettings from "../components/Admin/SiteSettings";
+import SubscriptionManager from "../components/Admin/SubscriptionManager";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import { useTenant } from "../context/TenantContext";
 
 
 const slugifyValue = (value = "") =>
@@ -82,6 +85,7 @@ const AdminDashboard = () => {
 
   const navigate = useNavigate();
   const { logout } = useAdminAuth();
+  const { tenant } = useTenant();
   const [activeTab, setActiveTab] = useState("packages");
   const [tours, setTours] = useState([]);
   const [gallery, setGallery] = useState([]);
@@ -93,10 +97,24 @@ const AdminDashboard = () => {
   const [faqs, setFaqs] = useState([]);
   const [taxonomies, setTaxonomies] = useState([]);
   const [visionaries, setVisionaries] = useState([]);
+  const featureAccess = tenant?.access || {};
+  const gatedTabAccess = {
+    "social-accounts": featureAccess.socialAccounts,
+    "social-posts": featureAccess.socialPosts,
+    "lead-inbox": featureAccess.leadInbox,
+    repurposing: featureAccess.repurposing,
+    campaigns: featureAccess.campaigns,
+  };
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
+
+  useEffect(() => {
+    if (Object.prototype.hasOwnProperty.call(gatedTabAccess, activeTab) && gatedTabAccess[activeTab] === false) {
+      setActiveTab("subscription");
+    }
+  }, [activeTab, gatedTabAccess]);
 
   // Form States
   const [tourFormData, setTourFormData] = useState({
@@ -840,6 +858,11 @@ const AdminDashboard = () => {
           setActiveTab(id);
           setIsSidebarOpen(false);
         }}
+        onLockedFeature={() => {
+          setActiveTab("subscription");
+          setIsSidebarOpen(false);
+        }}
+        featureAccess={featureAccess}
         handleLogout={handleLogout}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
@@ -2878,9 +2901,13 @@ const AdminDashboard = () => {
 
           {activeTab === "social-posts" && <SocialPostsManager />}
 
+          {activeTab === "social-accounts" && <SocialAccountsManager />}
+
           {activeTab === "repurposing" && <ContentRepurposingManager />}
 
           {activeTab === "campaigns" && <CampaignManager />}
+
+          {activeTab === "subscription" && <SubscriptionManager />}
 
           {activeTab === "navigation-legacy" && (
             <div className="animate-fade-in">

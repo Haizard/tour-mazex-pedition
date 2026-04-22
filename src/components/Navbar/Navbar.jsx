@@ -241,6 +241,9 @@ const Navbar = ({ handleOrderPopup }) => {
               <option>English UK</option>
               <option>Germany DE</option>
             </select>
+            <Link to="/pricing" className="hover:text-safari-gold transition-colors">
+              Pricing
+            </Link>
             <Link to={navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
               {navigationConfig.aboutLabel || "About Us"}
             </Link>
@@ -278,6 +281,22 @@ const Navbar = ({ handleOrderPopup }) => {
                 isScrolled ? "text-[#2f2418]" : "text-white"
               }`}
             >
+              <li className="relative">
+                <NavLink
+                  to="/pricing"
+                  className={({ isActive }) =>
+                    `flex items-center gap-1 text-[13px] xl:text-[14px] font-bold uppercase tracking-wider transition-all duration-300 ${
+                      isActive
+                        ? "text-safari-gold"
+                        : isScrolled
+                          ? "text-[#2f2418] hover:text-[#8b5e34]"
+                          : "text-white hover:text-safari-gold"
+                    }`
+                  }
+                >
+                  Pricing
+                </NavLink>
+              </li>
               {menuItems.map((item, index) => (
                 <li
                   key={`${item.label}-${index}`}

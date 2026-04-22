@@ -26,6 +26,7 @@ import {
 } from "./tenantDefaults.js";
 import { HOME_PAGE_DEFAULT } from "./pageBuilderDefaults.js";
 import { hashAdminPassword } from "./adminAuth.js";
+import { buildDemoDomain, calculateNextRenewalDate } from "./domainProvisioning.js";
 
 const TENANT_OWNED_MODELS = [
   TourPackage,
@@ -66,6 +67,7 @@ export const ensureLegacyTenantFoundation = async () => {
         name: LEGACY_TENANT_NAME,
         slug: LEGACY_TENANT_SLUG,
         subdomain: LEGACY_TENANT_SUBDOMAIN,
+        demoDomain: buildDemoDomain(LEGACY_TENANT_SUBDOMAIN),
         customDomains: LEGACY_TENANT_DOMAINS,
         isLegacy: true,
         status: "active",
@@ -74,6 +76,20 @@ export const ensureLegacyTenantFoundation = async () => {
           enablePageBuilder: false,
           enableAiContent: true,
           enableCustomDomains: true,
+        },
+        subscription: {
+          plan: "pro",
+          status: "active",
+          billingInterval: "monthly",
+          manualOverride: true,
+        },
+        domainService: {
+          serviceStatus: "active",
+          annualPriceUsd: 200,
+          renewalCycle: "yearly",
+          renewalDueAt: calculateNextRenewalDate(),
+          includesHosting: true,
+          includesManagedDns: true,
         },
       },
     },

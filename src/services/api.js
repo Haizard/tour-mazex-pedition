@@ -140,9 +140,17 @@ export const fetchPlatformTenants = () =>
   API.get("/platform-admin/tenants", {
     headers: getPlatformAdminHeaders(),
   });
+export const createPlatformTenant = (data) =>
+  API.post("/platform-admin/tenants", data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchPlatformTenantSupport = (tenantId, options = {}) =>
   API.get(`/platform-admin/tenants/${tenantId}/support`, {
     params: options.mode ? { mode: options.mode } : undefined,
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantMarketing = (tenantId) =>
+  API.get(`/platform-admin/tenants/${tenantId}/marketing`, {
     headers: getPlatformAdminHeaders(),
   });
 export const updatePlatformTenant = (tenantId, data) =>
@@ -157,6 +165,10 @@ export const markPlatformTenantDomainVerified = (tenantId, domain) =>
       headers: getPlatformAdminHeaders(),
     }
   );
+export const renewPlatformTenantDomainService = (tenantId, data) =>
+  API.post(`/platform-admin/tenants/${tenantId}/renew-domain-service`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchEmailConnections = () => API.get("/email/connections");
 export const fetchEmailProviders = () => API.get("/email/providers");
 export const createEmailConnection = (data) => API.post("/email/connections", data);
@@ -172,6 +184,7 @@ export const createEmailThread = (data) => API.post("/email/threads", data);
 export const fetchTenantBootstrap = () => API.get("/tenant/bootstrap");
 export const fetchTenantSiteConfig = () => API.get("/tenant/site-config");
 export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", data);
+export const updateTenantDomainRequest = (data) => API.put("/tenant/domain-request", data);
 export const fetchPageConfig = (pageType = "home") =>
   API.get(`/page-config/${encodeURIComponent(pageType)}`);
 export const updatePageConfig = (pageType = "home", data) =>
@@ -206,6 +219,18 @@ export const updateSocialPost = (id, data) =>
   API.patch(`/social-posts/${id}`, data);
 export const deleteSocialPost = (id) =>
   API.delete(`/social-posts/${id}`);
+export const publishSocialPostLive = (id) =>
+  API.post(`/social-accounts/social-posts/${id}/publish`);
+export const fetchSocialAccounts = () => API.get("/social-accounts");
+export const createSocialAccount = (data) => API.post("/social-accounts", data);
+export const updateSocialAccount = (id, data) =>
+  API.patch(`/social-accounts/${id}`, data);
+export const deleteSocialAccount = (id) =>
+  API.delete(`/social-accounts/${id}`);
+export const verifySocialAccount = (id) =>
+  API.post(`/social-accounts/${id}/verify`);
+export const sendInquiryWhatsAppViaApi = (id, data = {}) =>
+  API.post(`/social-accounts/inquiries/${id}/send-whatsapp`, data);
 
 // Gallery
 export const fetchGallery = () => API.get("/gallery");

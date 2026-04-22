@@ -1,5 +1,6 @@
 import express from "express";
 import SiteSettings from "../models/SiteSettings.js";
+import Tenant from "../models/Tenant.js";
 import TenantTheme from "../models/TenantTheme.js";
 import TenantSiteConfig from "../models/TenantSiteConfig.js";
 import PageConfig from "../models/PageConfig.js";
@@ -9,6 +10,8 @@ import {
   DEFAULT_TENANT_SITE_CONFIG,
   DEFAULT_TENANT_THEME,
 } from "../utils/tenantDefaults.js";
+import { canAccessFeature, getPlanDefinition } from "../utils/subscriptionPlans.js";
+import { normalizeRequestedDomains } from "../utils/domainProvisioning.js";
 
 const router = express.Router();
 
@@ -69,8 +72,21 @@ router.get("/bootstrap", async (req, res) => {
         name: req.tenant.name,
         slug: req.tenant.slug,
         subdomain: req.tenant.subdomain,
+        demoDomain: req.tenant.demoDomain || "",
         customDomains: req.tenant.customDomains || [],
+        requestedCustomDomains: req.tenant.requestedCustomDomains || [],
         features: req.tenant.features || {},
+        subscription: req.tenant.subscription || null,
+        domainService: req.tenant.domainService || null,
+        access: {
+          socialAccounts: canAccessFeature(req.tenant.subscription, "social-accounts"),
+          socialPosts: canAccessFeature(req.tenant.subscription, "social-posts"),
+          leadInbox: canAccessFeature(req.tenant.subscription, "lead-inbox"),
+          repurposing: canAccessFeature(req.tenant.subscription, "repurposing"),
+          campaigns: canAccessFeature(req.tenant.subscription, "campaigns"),
+          whatsappAutomation: canAccessFeature(req.tenant.subscription, "whatsapp-automation"),
+        },
+        planDefinition: getPlanDefinition(req.tenant.subscription?.plan),
       },
       theme: theme || DEFAULT_TENANT_THEME,
       siteConfig: siteConfig || DEFAULT_TENANT_SITE_CONFIG,
@@ -99,6 +115,37 @@ router.put("/theme", requireTenantAdmin, async (req, res) => {
     );
 
     res.status(200).json(theme);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.put("/domain-request", requireTenantAdmin, async (req, res) => {
+  try {
+    const requestedCustomDomains = normalizeRequestedDomains(
+      Array.isArray(req.body.requestedCustomDomains)
+        ? req.body.requestedCustomDomains
+        : String(req.body.requestedCustomDomains || "")
+            .split(/[,\n]/)
+            .map((domain) => domain.trim())
+    );
+
+    const tenant = await Tenant.findByIdAndUpdate(
+      req.tenantId,
+      { requestedCustomDomains },
+      { new: true, runValidators: true }
+    ).lean();
+
+    res.status(200).json({
+      tenant: {
+        id: tenant._id,
+        slug: tenant.slug,
+        demoDomain: tenant.demoDomain || "",
+        requestedCustomDomains: tenant.requestedCustomDomains || [],
+        customDomains: tenant.customDomains || [],
+        domainService: tenant.domainService || null,
+      },
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

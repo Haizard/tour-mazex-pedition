@@ -4,7 +4,11 @@ import { FaCheckCircle, FaCopy, FaWhatsapp } from "react-icons/fa";
 import Badge from "../UI/Badge";
 import Button from "../UI/Button";
 import Card from "../UI/Card";
-import { fetchInquiries, updateInquiryStatus } from "../../services/api";
+import {
+  fetchInquiries,
+  sendInquiryWhatsAppViaApi,
+  updateInquiryStatus,
+} from "../../services/api";
 
 const STATUS_FILTERS = ["all", "Pending", "Contacted", "Booked", "Cancelled"];
 const SOURCE_FILTERS = ["all", "website", "plan-my-trip", "whatsapp-button", "chatbot"];
@@ -16,6 +20,7 @@ const LeadInboxManager = () => {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState("");
   const [copiedId, setCopiedId] = useState("");
+  const [sendingWhatsAppId, setSendingWhatsAppId] = useState("");
   const [error, setError] = useState("");
 
   const loadInquiries = async () => {
@@ -98,6 +103,25 @@ const LeadInboxManager = () => {
       }, 1800);
     } catch (_error) {
       setError("Copy failed. Your browser blocked clipboard access.");
+    }
+  };
+
+  const handleSendWhatsApp = async (inquiry) => {
+    setSendingWhatsAppId(inquiry._id);
+    setError("");
+
+    try {
+      await sendInquiryWhatsAppViaApi(inquiry._id, {
+        message: inquiry.followUpMessage,
+      });
+      await loadInquiries();
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to send the WhatsApp Business message."
+      );
+    } finally {
+      setSendingWhatsAppId("");
     }
   };
 
@@ -256,15 +280,16 @@ const LeadInboxManager = () => {
                     </button>
 
                     {inquiry.contactPreference === "whatsapp" && inquiry.followUpMessage && (
-                      <a
-                        href={`https://wa.me/${(inquiry.phone || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(inquiry.followUpMessage)}`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => handleSendWhatsApp(inquiry)}
                         className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white"
                       >
                         <FaWhatsapp />
-                        Open WhatsApp
-                      </a>
+                        {sendingWhatsAppId === inquiry._id
+                          ? "Sending..."
+                          : "Send Via API"}
+                      </button>
                     )}
 
                     <button

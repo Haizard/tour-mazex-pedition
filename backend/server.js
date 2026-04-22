@@ -26,6 +26,7 @@ import platformAdminRoutes from "./routes/platformAdminRoutes.js";
 import platformAuthRoutes from "./routes/platformAuthRoutes.js";
 import seoRoutes from "./routes/seoRoutes.js";
 import siteSettingsRoutes from "./routes/siteSettingsRoutes.js";
+import socialAccountRoutes from "./routes/socialAccountRoutes.js";
 import socialPostRoutes from "./routes/socialPostRoutes.js";
 import taxonomyRoutes from "./routes/taxonomyRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
@@ -73,6 +74,7 @@ app.use("/api/menu-items", menuRoutes);
 app.use("/api/home-content", homeContentRoutes);
 app.use("/api/marketing", marketingRoutes);
 app.use("/api/site-settings", siteSettingsRoutes);
+app.use("/api/social-accounts", socialAccountRoutes);
 app.use("/api/social-posts", socialPostRoutes);
 app.use("/api/media", mediaRoutes);
 

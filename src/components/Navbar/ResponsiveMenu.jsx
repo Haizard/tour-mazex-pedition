@@ -42,6 +42,15 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
         {/* Navigation */}
         <nav className="mt-2">
           <ul className="flex flex-col gap-2 text-sm sm:text-base uppercase font-bold tracking-wider">
+            <li className="flex flex-col border-b border-gray-50 py-1 dark:border-gray-800">
+              <Link
+                to="/pricing"
+                onClick={() => setShowMenu(false)}
+                className="text-white transition-colors hover:text-safari-gold"
+              >
+                Pricing
+              </Link>
+            </li>
             {menuItems.map((data) => {
               const hasChildren = data.children && data.children.length > 0;
               const isOpen = openSubmenu === (data._id || data.label);
