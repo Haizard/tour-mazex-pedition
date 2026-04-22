@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import TourPackage from "../models/TourPackage.js";
 import Blog from "../models/Blog.js";
 import { buildTenantFilter } from "../utils/tenantContext.js";
+import { buildSalesAssistantPayload } from "../utils/chatSalesAssistant.js";
 
 export const handleChat = async (req, res) => {
     const { message, history } = req.body;
@@ -107,7 +108,15 @@ export const handleChat = async (req, res) => {
             });
         }
 
-        res.json({ message: response.text });
+        const salesAssistant = buildSalesAssistantPayload({
+            message,
+            tours,
+        });
+
+        res.json({
+            message: response.text,
+            salesAssistant,
+        });
     } catch (error) {
         console.error("Chat Error:", error);
 

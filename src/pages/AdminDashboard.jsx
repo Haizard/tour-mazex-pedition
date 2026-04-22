@@ -57,6 +57,10 @@ import AdminSidebar from "../components/Admin/AdminSidebar";
 import NavigationManager from "../components/Admin/NavigationManager";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
 import EmailInboxManager from "../components/Admin/EmailInboxManager";
+import LeadInboxManager from "../components/Admin/LeadInboxManager";
+import CampaignManager from "../components/Admin/CampaignManager";
+import ContentRepurposingManager from "../components/Admin/ContentRepurposingManager";
+import SocialPostsManager from "../components/Admin/SocialPostsManager";
 import SiteSettings from "../components/Admin/SiteSettings";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
@@ -2869,6 +2873,14 @@ const AdminDashboard = () => {
           {activeTab === "navigation" && <NavigationManager />}
 
           {activeTab === "email-inbox" && <EmailInboxManager />}
+
+          {activeTab === "lead-inbox" && <LeadInboxManager />}
+
+          {activeTab === "social-posts" && <SocialPostsManager />}
+
+          {activeTab === "repurposing" && <ContentRepurposingManager />}
+
+          {activeTab === "campaigns" && <CampaignManager />}
 
           {activeTab === "navigation-legacy" && (
             <div className="animate-fade-in">

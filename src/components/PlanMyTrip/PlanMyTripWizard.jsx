@@ -149,6 +149,7 @@ const PlanMyTripWizard = ({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [successAutomation, setSuccessAutomation] = useState(null);
 
   const wrapperClass = compact
     ? "w-full"
@@ -240,7 +241,11 @@ const PlanMyTripWizard = ({
     setError("");
 
     try {
-      await createInquiry(payload);
+      const response = await createInquiry({
+        ...payload,
+        sourceChannel: "plan-my-trip",
+      });
+      setSuccessAutomation(response.data?.automation || null);
       setSuccess(true);
       setFormData(initialFormData);
       setCurrentStep(0);
@@ -332,6 +337,7 @@ const PlanMyTripWizard = ({
                   type="button"
                   onClick={() => {
                     setSuccess(false);
+                    setSuccessAutomation(null);
                     if (showIntro) {
                       setShowForm(false);
                     }
@@ -348,6 +354,16 @@ const PlanMyTripWizard = ({
                   >
                     Close
                   </button>
+                )}
+                {successAutomation?.whatsappUrl && (
+                  <a
+                    href={successAutomation.whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-green-200 bg-green-50 px-6 py-3.5 md:py-4 text-xs md:text-sm font-black uppercase tracking-[0.2em] text-green-700"
+                  >
+                    Continue On WhatsApp
+                  </a>
                 )}
               </div>
             </div>

@@ -1,4 +1,3 @@
-import React from "react";
 import {
     FaBox,
     FaBlog,
@@ -12,7 +11,11 @@ import {
     FaUsers,
     FaSignOutAlt,
     FaEdit,
-    FaCog
+    FaCog,
+    FaShareAlt,
+    FaInbox,
+    FaBullhorn,
+    FaRetweet,
 } from "react-icons/fa";
 
 import Logo from "../../assets/maz-logo.jpeg";
@@ -22,11 +25,15 @@ const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen
     const menuItems = [
         { id: "packages", label: "Packages", icon: <FaBox /> },
         { id: "blogs", label: "Blogs", icon: <FaBlog /> },
+        { id: "social-posts", label: "Social Posts", icon: <FaShareAlt /> },
         { id: "page-builder", label: "Page Builder", icon: <FaEdit /> },
+        { id: "repurposing", label: "Repurposing", icon: <FaRetweet /> },
+        { id: "campaigns", label: "Campaigns", icon: <FaBullhorn /> },
         { id: "navigation", label: "Navigation", icon: <FaBars /> },
         { id: "email-inbox", label: "Email Inbox", icon: <FaEnvelopeOpenText /> },
         { id: "gallery", label: "Gallery", icon: <FaImages /> },
         { id: "bookings", label: "Bookings", icon: <FaCalendarCheck /> },
+        { id: "lead-inbox", label: "Lead Inbox", icon: <FaInbox /> },
         { id: "inquiries", label: "Inquiries", icon: <FaQuestionCircle /> },
         { id: "contact-messages", label: "Contact Messages", icon: <FaEnvelopeOpenText /> },
         { id: "plan-my-trip", label: "Plan My Trip", icon: <FaRoute /> },

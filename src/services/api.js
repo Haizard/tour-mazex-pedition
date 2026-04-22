@@ -195,6 +195,18 @@ export const generateTourSeo = (data) =>
 export const generateFullTourPackage = (data) =>
   API.post("/tours/generate-full", data);
 
+// Social Posts
+export const fetchSocialPosts = (params = {}) =>
+  API.get("/social-posts", { params });
+export const generateSocialPost = (data) =>
+  API.post("/social-posts/generate", data);
+export const createSocialPost = (data) =>
+  API.post("/social-posts", data);
+export const updateSocialPost = (id, data) =>
+  API.patch(`/social-posts/${id}`, data);
+export const deleteSocialPost = (id) =>
+  API.delete(`/social-posts/${id}`);
+
 // Gallery
 export const fetchGallery = () => API.get("/gallery");
 export const createGallery = (newItem) => API.post("/gallery", newItem);
@@ -220,10 +232,23 @@ export const regenerateBlogContent = (data) =>
   API.post("/blogs/regenerate-content", data);
 export const generateBlogSeo = (data) =>
   API.post("/blogs/generate-seo", data);
+export const repurposeBlogContent = (data) =>
+  API.post("/marketing/repurpose-blog", data);
+export const fetchCampaigns = () => API.get("/marketing/campaigns");
+export const generateCampaignDraft = (data) =>
+  API.post("/marketing/campaigns/generate", data);
+export const createCampaign = (data) =>
+  API.post("/marketing/campaigns", data);
+export const updateCampaign = (id, data) =>
+  API.patch(`/marketing/campaigns/${id}`, data);
+export const deleteCampaign = (id) =>
+  API.delete(`/marketing/campaigns/${id}`);
 
 // Custom Inquiries
 export const fetchInquiries = () => API.get("/custom-inquiries");
 export const createInquiry = (data) => API.post("/custom-inquiries", data);
+export const createWhatsAppLead = (data) =>
+  API.post("/custom-inquiries/whatsapp-lead", data);
 export const updateInquiryStatus = (id, status) =>
   API.patch(`/custom-inquiries/${id}`, { status });
 export const deleteInquiry = (id) => API.delete(`/custom-inquiries/${id}`);

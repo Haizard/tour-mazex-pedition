@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IoSend, IoClose, IoChatbubbleEllipses } from "react-icons/io5";
+import { Link } from "react-router-dom";
 import { sendChatMessage } from "../../services/api";
 
 const ChatBot = () => {
@@ -10,6 +11,7 @@ const ChatBot = () => {
       role: "model",
       content:
         "Hi! I'm your MAZ Expeditions assistant. Ready to plan your dream safari?",
+      salesAssistant: null,
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,13 +39,20 @@ const ChatBot = () => {
       });
       setChatHistory((prev) => [
         ...prev,
-        { role: "model", content: response.data.message },
+        {
+          role: "model",
+          content: response.data.message,
+          salesAssistant: response.data.salesAssistant || null,
+        },
       ]);
     } catch (error) {
       const errorMsg =
         error.response?.data?.error ||
         "Oops! I'm having a technical moment. Please try again or message us on WhatsApp!";
-      setChatHistory((prev) => [...prev, { role: "model", content: errorMsg }]);
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "model", content: errorMsg, salesAssistant: null },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +102,31 @@ const ChatBot = () => {
                     }`}
                 >
                   {msg.content}
+                  {msg.role === "model" && msg.salesAssistant && (
+                    <div className="mt-3 space-y-3 rounded-2xl bg-white/70 p-3 text-gray-800">
+                      <p className="text-[11px] font-black uppercase tracking-widest text-primary">
+                        Best Next Step
+                      </p>
+                      <p className="text-xs font-bold leading-5">
+                        {msg.salesAssistant.summary}
+                      </p>
+                      <p className="text-xs leading-5 text-gray-600">
+                        {msg.salesAssistant.qualificationQuestion}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {msg.salesAssistant.quickActions?.map((action) => (
+                          <Link
+                            key={`${action.href}-${action.label}`}
+                            to={action.href}
+                            onClick={() => setIsOpen(false)}
+                            className="rounded-full bg-primary px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                          >
+                            {action.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

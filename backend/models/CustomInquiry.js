@@ -30,6 +30,18 @@ const customInquirySchema = new mongoose.Schema({
     budget: { type: String },
     services: [{ type: String }],
     message: { type: String, required: true },
+    sourceChannel: {
+        type: String,
+        enum: ['website', 'plan-my-trip', 'whatsapp-button', 'chatbot'],
+        default: 'website'
+    },
+    leadStage: {
+        type: String,
+        enum: ['new', 'qualified', 'follow-up', 'booked', 'closed'],
+        default: 'new'
+    },
+    automationSummary: { type: String, default: '' },
+    followUpMessage: { type: String, default: '' },
     status: { type: String, enum: ['Pending', 'Contacted', 'Booked', 'Cancelled'], default: 'Pending' }
 }, { timestamps: true });
 
