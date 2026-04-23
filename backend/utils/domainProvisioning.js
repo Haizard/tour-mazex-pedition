@@ -10,6 +10,14 @@ export const slugifyTenantValue = (value = "") =>
 export const getDemoDomainRoot = () =>
   process.env.PLATFORM_DEMO_DOMAIN_ROOT || "demo.mazex.co.tz";
 
+export const getDemoBaseUrl = () =>
+  (
+    process.env.PLATFORM_DEMO_BASE_URL ||
+    process.env.SITE_URL ||
+    process.env.VITE_SITE_URL ||
+    "https://mazexpeditions.vercel.app"
+  ).replace(/\/+$/, "");
+
 export const buildDemoDomain = (subdomain = "") => {
   const normalizedSubdomain = slugifyTenantValue(subdomain);
 
@@ -17,7 +25,7 @@ export const buildDemoDomain = (subdomain = "") => {
     return "";
   }
 
-  return `${normalizedSubdomain}.${getDemoDomainRoot()}`;
+  return `${getDemoBaseUrl()}/demo/${normalizedSubdomain}`;
 };
 
 export const normalizeRequestedDomains = (domains = []) =>

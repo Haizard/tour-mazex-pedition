@@ -11,7 +11,7 @@ import {
   DEFAULT_TENANT_THEME,
 } from "../utils/tenantDefaults.js";
 import { canAccessFeature, getPlanDefinition } from "../utils/subscriptionPlans.js";
-import { normalizeRequestedDomains } from "../utils/domainProvisioning.js";
+import { buildDemoDomain, normalizeRequestedDomains } from "../utils/domainProvisioning.js";
 
 const router = express.Router();
 
@@ -66,13 +66,17 @@ router.get("/bootstrap", async (req, res) => {
       PageConfig.findOne({ tenantId: req.tenantId, pageType: "home" }).lean(),
     ]);
 
+    const demoDomain = req.tenant.demoDomain?.startsWith("http")
+      ? req.tenant.demoDomain
+      : buildDemoDomain(req.tenant.subdomain || req.tenant.slug);
+
     res.status(200).json({
       tenant: {
         id: req.tenant._id,
         name: req.tenant.name,
         slug: req.tenant.slug,
         subdomain: req.tenant.subdomain,
-        demoDomain: req.tenant.demoDomain || "",
+        demoDomain,
         customDomains: req.tenant.customDomains || [],
         requestedCustomDomains: req.tenant.requestedCustomDomains || [],
         features: req.tenant.features || {},

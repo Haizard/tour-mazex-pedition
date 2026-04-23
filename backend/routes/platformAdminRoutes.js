@@ -232,6 +232,9 @@ router.get("/tenants", async (_req, res) => {
     res.status(200).json(
       tenants.map((tenant) => ({
         ...tenant,
+        demoDomain: tenant.demoDomain?.startsWith("http")
+          ? tenant.demoDomain
+          : buildDemoDomain(tenant.subdomain || tenant.slug),
         primaryDomain: tenant.customDomains?.[0] || "",
         adminCount: adminLookup[String(tenant._id)] || 0,
         pageConfigCount: pageLookup[String(tenant._id)] || 0,
@@ -541,6 +544,9 @@ router.put("/tenants/:tenantId", async (req, res) => {
     res.status(200).json({
       tenant: {
         ...tenant,
+        demoDomain: tenant.demoDomain?.startsWith("http")
+          ? tenant.demoDomain
+          : buildDemoDomain(tenant.subdomain || tenant.slug),
         primaryDomain: tenant.customDomains?.[0] || "",
       },
     });
@@ -575,6 +581,9 @@ router.post("/tenants/:tenantId/renew-domain-service", async (req, res) => {
     res.status(200).json({
       tenant: {
         ...tenant,
+        demoDomain: tenant.demoDomain?.startsWith("http")
+          ? tenant.demoDomain
+          : buildDemoDomain(tenant.subdomain || tenant.slug),
         primaryDomain: tenant.customDomains?.[0] || "",
       },
     });
@@ -614,6 +623,9 @@ router.post("/tenants/:tenantId/domains/:domain/mark-verified", async (req, res)
     res.status(200).json({
       tenant: {
         ...tenant.toObject(),
+        demoDomain: tenant.demoDomain?.startsWith("http")
+          ? tenant.demoDomain
+          : buildDemoDomain(tenant.subdomain || tenant.slug),
         primaryDomain: tenant.customDomains?.[0] || "",
       },
     });

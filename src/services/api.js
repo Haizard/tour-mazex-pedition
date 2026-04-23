@@ -14,13 +14,27 @@ const LEGACY_HOSTNAMES = new Set([
 
 const API = axios.create({ baseURL: API_URL });
 
+const getDemoTenantSlug = () => {
+  if (!isBrowser) {
+    return "";
+  }
+
+  const match = window.location.pathname.match(/^\/demo\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]).trim().toLowerCase() : "";
+};
+
 const getTenantHeaders = () => {
   if (!isBrowser) {
     return {};
   }
 
   const hostname = window.location.hostname.toLowerCase();
+  const demoTenantSlug = getDemoTenantSlug();
   const storedTenantSlug = window.localStorage.getItem("activeTenantSlug");
+
+  if (demoTenantSlug) {
+    return { "x-tenant-slug": demoTenantSlug };
+  }
 
   if (storedTenantSlug && LOCAL_HOSTNAMES.has(hostname)) {
     return { "x-tenant-slug": storedTenantSlug };

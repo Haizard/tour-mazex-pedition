@@ -14,7 +14,35 @@ test("slugifyTenantValue produces a stable tenant slug", () => {
 });
 
 test("buildDemoDomain composes the tenant subdomain with the platform demo root", () => {
-  assert.equal(buildDemoDomain("serengeti-pro"), "serengeti-pro.demo.mazex.co.tz");
+  const originalDemoBaseUrl = process.env.PLATFORM_DEMO_BASE_URL;
+  const originalSiteUrl = process.env.SITE_URL;
+  const originalViteSiteUrl = process.env.VITE_SITE_URL;
+
+  process.env.PLATFORM_DEMO_BASE_URL = "https://example.test";
+  delete process.env.SITE_URL;
+  delete process.env.VITE_SITE_URL;
+
+  try {
+    assert.equal(buildDemoDomain("serengeti-pro"), "https://example.test/demo/serengeti-pro");
+  } finally {
+    if (originalDemoBaseUrl === undefined) {
+      delete process.env.PLATFORM_DEMO_BASE_URL;
+    } else {
+      process.env.PLATFORM_DEMO_BASE_URL = originalDemoBaseUrl;
+    }
+
+    if (originalSiteUrl === undefined) {
+      delete process.env.SITE_URL;
+    } else {
+      process.env.SITE_URL = originalSiteUrl;
+    }
+
+    if (originalViteSiteUrl === undefined) {
+      delete process.env.VITE_SITE_URL;
+    } else {
+      process.env.VITE_SITE_URL = originalViteSiteUrl;
+    }
+  }
 });
 
 test("normalizeRequestedDomains trims and lowercases domains", () => {
