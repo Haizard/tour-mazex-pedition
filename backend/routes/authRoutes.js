@@ -14,6 +14,8 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Username and password are required." });
     }
 
+    console.log(`[Login Attempt] TenantID: ${req.tenantId}, Username: ${username}`);
+
     const admin = await TenantAdmin.findOne({
       tenantId: req.tenantId,
       username,
@@ -21,6 +23,7 @@ router.post("/login", async (req, res) => {
     });
 
     if (!admin) {
+      console.warn(`[Login Failed] Admin not found for username "${username}" in tenant ${req.tenantId}`);
       return res.status(401).json({ message: "Invalid credentials." });
     }
 
