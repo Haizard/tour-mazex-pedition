@@ -38,6 +38,65 @@ import { ensureLegacyTenantFoundation } from "./utils/tenantBootstrap.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 const isVercelRuntime = Boolean(process.env.VERCEL);
+let mongoConnectionPromise = null;
+let legacyFoundationPromise = null;
+
+const ensureLegacyFoundationReady = async () => {
+  if (!legacyFoundationPromise) {
+    legacyFoundationPromise = ensureLegacyTenantFoundation()
+      .then(() => {
+        console.log("Legacy tenant foundation ready");
+      })
+      .catch((error) => {
+        legacyFoundationPromise = null;
+        throw error;
+      });
+  }
+
+  return legacyFoundationPromise;
+};
+
+const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) {
+    await ensureLegacyFoundationReady();
+    return mongoose.connection;
+  }
+
+  const mongoUri = process.env.MONGODB_URI;
+
+  if (!mongoUri) {
+    throw new Error("MONGODB_URI is not defined in environment variables");
+  }
+
+  if (!mongoConnectionPromise) {
+    mongoConnectionPromise = mongoose
+      .connect(mongoUri, {
+        maxPoolSize: isVercelRuntime ? 3 : 10,
+        minPoolSize: 0,
+        maxIdleTimeMS: 10000,
+        serverSelectionTimeoutMS: 8000,
+        socketTimeoutMS: 45000,
+      })
+      .then(async (connection) => {
+        console.log("Connected to MongoDB");
+        await ensureLegacyFoundationReady();
+        return connection;
+      })
+      .catch((error) => {
+        mongoConnectionPromise = null;
+        legacyFoundationPromise = null;
+        console.error("MongoDB connection error:", error.message);
+        throw error;
+      });
+  }
+
+  return mongoConnectionPromise;
+};
+
+const databaseRequired = (req) =>
+  req.path.startsWith("/api") ||
+  req.path === "/robots.txt" ||
+  req.path === "/sitemap.xml";
 
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
@@ -52,6 +111,24 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(async (req, res, next) => {
+  if (!databaseRequired(req)) {
+    next();
+    return;
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database unavailable for request:", error.message);
+    res.status(503).json({
+      code: "DATABASE_UNAVAILABLE",
+      message: "Database connection is temporarily unavailable. Please retry shortly.",
+    });
+  }
+});
 
 app.use(tenantMiddleware);
 app.use("/api/auth", authRoutes);
@@ -84,31 +161,11 @@ app.get("/", (_req, res) => {
   res.send("Tourism API is running...");
 });
 
-const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) {
-    return;
-  }
-
-  const mongoUri = process.env.MONGODB_URI;
-
-  if (!mongoUri) {
-    console.error("MONGODB_URI is not defined in environment variables");
-    return;
-  }
-
-  try {
-    await mongoose.connect(mongoUri);
-    console.log("Connected to MongoDB");
-    await ensureLegacyTenantFoundation();
-    console.log("Legacy tenant foundation ready");
-  } catch (error) {
-    console.error("MongoDB connection error:", error.message);
-  }
-};
-
-connectDB();
-
 if (!isVercelRuntime) {
+  connectDB().catch((error) => {
+    console.error("Initial MongoDB connection failed:", error.message);
+  });
+
   app.listen(PORT, () => {
     console.log(`Server is listening on port: ${PORT}`);
   });
