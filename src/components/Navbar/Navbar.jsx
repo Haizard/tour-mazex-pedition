@@ -115,10 +115,10 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
 
 const Navbar = ({ handleOrderPopup }) => {
   const navigate = useNavigate();
-  const { siteConfig, tenant } = useTenant();
+  const { siteConfig, tenant, loading } = useTenant();
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
-  const shouldUseDefaultMenu = !tenant || tenant.slug === "maz-expeditions";
+  const shouldUseDefaultMenu = !loading && (!tenant || tenant.slug === "maz-expeditions");
   const isLegacyTenant = shouldUseDefaultMenu;
   const initialTours = React.useMemo(() => 
     Array.isArray(sharedData.tours) ? sharedData.tours : [], 

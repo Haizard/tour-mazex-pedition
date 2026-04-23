@@ -5,10 +5,12 @@ import Footer from "../components/Footer/Footer";
 import OrderPopup from "../components/OrderPopup/OrderPopup";
 import ChatBot from "../components/Chat/ChatBot";
 import WhatsAppButton from "../components/WhatsApp/WhatsAppButton";
+import { useTenant } from "../context/TenantContext";
 
 const Layout = () => {
   const [orderPopup, setOrderPopup] = React.useState(false);
   const location = useLocation();
+  const { loading } = useTenant();
 
   const handleOrderPopup = () => {
     setOrderPopup((prev) => !prev);
@@ -45,6 +47,16 @@ const Layout = () => {
 
     return () => window.clearTimeout(timerId);
   }, [shouldAutoPrompt, location.pathname]);
+
+  if (!isAdminRoute && loading) {
+    return (
+      <main className="min-h-screen bg-white" aria-busy="true" aria-label="Loading tenant website">
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>

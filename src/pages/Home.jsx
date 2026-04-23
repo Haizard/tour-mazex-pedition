@@ -6,7 +6,7 @@ import { fetchPageConfig } from "../services/api";
 import { useTenant } from "../context/TenantContext";
 
 const Home = () => {
-  const { tenant } = useTenant();
+  const { tenant, loading } = useTenant();
   const [pageConfig, setPageConfig] = React.useState(null);
 
   React.useEffect(() => {
@@ -30,7 +30,7 @@ const Home = () => {
     };
   }, []);
 
-  const shouldUseLegacyFallback = !tenant || tenant.slug === "maz-expeditions";
+  const shouldUseLegacyFallback = !loading && (!tenant || tenant.slug === "maz-expeditions");
   const seo = pageConfig?.seo || (shouldUseLegacyFallback ? legacyHomePage.seo : {});
   const sections = pageConfig?.sections?.length
     ? pageConfig.sections

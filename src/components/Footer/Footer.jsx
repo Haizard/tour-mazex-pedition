@@ -55,8 +55,8 @@ const socialItems = (settings = {}) => [
 ].filter((item) => item.href);
 
 const Footer = () => {
-  const { siteConfig, tenant } = useTenant();
-  const isLegacyTenant = !tenant || tenant.slug === "maz-expeditions";
+  const { siteConfig, tenant, loading } = useTenant();
+  const isLegacyTenant = !loading && (!tenant || tenant.slug === "maz-expeditions");
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
   const footerConfig = siteConfig?.footerConfig || {};
