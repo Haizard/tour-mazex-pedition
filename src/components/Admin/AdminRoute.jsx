@@ -22,7 +22,9 @@ const AdminRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    const demoMatch = location.pathname.match(/^\/demo\/[^/]+/);
+    const loginPath = demoMatch ? `${demoMatch[0]}/login` : "/login";
+    return <Navigate to={loginPath} replace state={{ from: location }} />;
   }
 
   return children;

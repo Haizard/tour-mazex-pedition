@@ -18,7 +18,9 @@ const AdminLogin = () => {
     loading: platformLoading,
   } = usePlatformAdminAuth();
 
-  const redirectPath = location.state?.from?.pathname || "/admin";
+  const demoMatch = location.pathname.match(/^\/demo\/[^/]+/);
+  const defaultRedirectPath = demoMatch ? `${demoMatch[0]}/admin` : "/admin";
+  const redirectPath = location.state?.from?.pathname || defaultRedirectPath;
 
   useEffect(() => {
     if (isAuthenticated) {

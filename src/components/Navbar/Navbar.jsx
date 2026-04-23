@@ -115,9 +115,10 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
 
 const Navbar = ({ handleOrderPopup }) => {
   const navigate = useNavigate();
-  const { siteConfig } = useTenant();
+  const { siteConfig, tenant } = useTenant();
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
+  const shouldUseDefaultMenu = !tenant || tenant.slug === "maz-expeditions";
   const initialTours = React.useMemo(() => 
     Array.isArray(sharedData.tours) ? sharedData.tours : [], 
   [sharedData.tours]);
@@ -130,10 +131,12 @@ const Navbar = ({ handleOrderPopup }) => {
     const menuData =
       Array.isArray(sharedData.menuItems) && sharedData.menuItems.length > 0
         ? sharedData.menuItems
-        : FRONTEND_MENU_DEFAULTS;
+        : shouldUseDefaultMenu
+          ? FRONTEND_MENU_DEFAULTS
+          : [];
 
     return buildMenuWithLiveTours(menuData, initialTours);
-  }, [initialTours, sharedData.menuItems]);
+  }, [initialTours, sharedData.menuItems, shouldUseDefaultMenu]);
 
   const [showMenu, setShowMenu] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
@@ -178,12 +181,12 @@ const Navbar = ({ handleOrderPopup }) => {
         const menuData =
           Array.isArray(menuRes.data) && menuRes.data.length > 0
             ? menuRes.data
-            : FRONTEND_MENU_DEFAULTS;
+            : shouldUseDefaultMenu
+              ? FRONTEND_MENU_DEFAULTS
+              : [];
         const toursData = Array.isArray(toursRes.data) ? toursRes.data : initialTours;
 
-        if (menuData.length > 0) {
-          setMenuItems(buildMenuWithLiveTours(menuData, toursData));
-        }
+        setMenuItems(buildMenuWithLiveTours(menuData, toursData));
       } catch (error) {
         console.error("Error loading menu items:", error);
       }
@@ -193,7 +196,7 @@ const Navbar = ({ handleOrderPopup }) => {
     if (menuItems.length === 0 || initialTours.length === 0) {
        loadMenuItems();
     }
-  }, []); // Run only on mount to prevent loops, let dependencies like tenant context handle refresh if needed
+  }, [shouldUseDefaultMenu]); // Refresh when tenant context resolves for demo tenants.
 
   const navigationConfig = siteConfig?.navigationConfig || {};
 

@@ -16,11 +16,12 @@ const Layout = () => {
 
   const isAdminRoute =
     location.pathname.startsWith("/admin") ||
-    location.pathname.startsWith("/login");
+    location.pathname.startsWith("/login") ||
+    /^\/demo\/[^/]+\/(admin|login)(\/|$)/.test(location.pathname);
   const shouldAutoPrompt =
     !isAdminRoute &&
-    location.pathname !== "/plan-my-trip" &&
-    location.pathname !== "/tailor-made";
+    !location.pathname.endsWith("/plan-my-trip") &&
+    !location.pathname.endsWith("/tailor-made");
 
   React.useEffect(() => {
     if (!shouldAutoPrompt) {

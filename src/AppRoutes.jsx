@@ -82,6 +82,16 @@ const AppRoutes = () => (
     </Route>
     <Route path="/demo/:tenantSlug" element={<Layout />}>
       {tenantSiteRoutes}
+      <Route
+        path="admin"
+        element={(
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        )}
+      />
+      <Route path="login" element={<AdminLogin />} />
+      <Route path="admin/login" element={<AdminLogin />} />
       <Route path="*" element={<NoPage />} />
     </Route>
   </Routes>
