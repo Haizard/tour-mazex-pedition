@@ -149,7 +149,7 @@ const PlatformAdminDashboard = () => {
 
   useEffect(() => {
     const loadSupportDetail = async () => {
-      if (!selectedTenantId) {
+      if (!selectedTenantId || activeSection !== "tenant" || activeTenantPanel !== "support") {
         setSupportDetail(null);
         return;
       }
@@ -164,11 +164,11 @@ const PlatformAdminDashboard = () => {
       }
     };
     loadSupportDetail();
-  }, [selectedTenantId, supportMode]);
+  }, [activeSection, activeTenantPanel, selectedTenantId, supportMode]);
 
   useEffect(() => {
     const loadMarketingDetail = async () => {
-      if (!selectedTenantId) {
+      if (!selectedTenantId || activeSection !== "tenant" || activeTenantPanel !== "marketing") {
         setMarketingDetail(null);
         return;
       }
@@ -180,7 +180,7 @@ const PlatformAdminDashboard = () => {
       }
     };
     loadMarketingDetail();
-  }, [selectedTenantId]);
+  }, [activeSection, activeTenantPanel, selectedTenantId]);
 
   const openTenant = (tenantId, panel = "overview") => {
     setSelectedTenantId(tenantId);
