@@ -12,6 +12,7 @@ import {
 } from "../services/api";
 import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
+import NavigationManager from "../components/Admin/NavigationManager";
 
 const metricCards = [
   ["tenantCount", "Tenants"],
@@ -27,6 +28,7 @@ const tenantPanels = [
   ["domains", "Domains"],
   ["credentials", "Credentials"],
   ["subscription", "Subscription"],
+  ["site-chrome", "Navbar & Footer"],
   ["page-builder", "Page Builder"],
   ["marketing", "Marketing"],
   ["support", "Support"],
@@ -539,6 +541,18 @@ const PlatformAdminDashboard = () => {
     if (activeTenantPanel === "domains") return renderDomains();
     if (activeTenantPanel === "credentials") return renderCredentials();
     if (activeTenantPanel === "subscription") return renderSubscription();
+    if (activeTenantPanel === "site-chrome") {
+      return (
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <NavigationManager
+            key={selectedTenant._id}
+            mode="platform"
+            tenantId={selectedTenant._id}
+            tenantName={selectedTenant.name}
+          />
+        </div>
+      );
+    }
     if (activeTenantPanel === "page-builder") {
       return (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">

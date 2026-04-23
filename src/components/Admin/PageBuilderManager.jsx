@@ -91,6 +91,19 @@ const TEXTAREA_CLASS =
   "w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium text-slate-700";
 const EDITOR_PANEL_CLASS =
   "rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm";
+const PAGE_TYPES = [
+  { value: "home", label: "Home", slug: "/" },
+  { value: "tours", label: "Tours Listing", slug: "/packages" },
+  { value: "tour-detail", label: "Tour Detail", slug: "/packages/:slug" },
+  { value: "blogs", label: "Blog Listing", slug: "/blogs" },
+  { value: "blog-detail", label: "Blog Detail", slug: "/blogs/:slug" },
+  { value: "tailor-made", label: "Tailor Made", slug: "/tailor-made" },
+  { value: "contact", label: "Contact", slug: "/contact" },
+  { value: "landing", label: "Custom Landing", slug: "/landing" },
+];
+
+const getPageTypeMeta = (pageType) =>
+  PAGE_TYPES.find((page) => page.value === pageType) || PAGE_TYPES[0];
 
 const getValueAtPath = (source, path) =>
   String(path || "")
@@ -438,6 +451,7 @@ const PageBuilderManager = ({
     seo: canManageLayout ? legacyHomePage.seo : {},
     sections: canManageLayout ? legacyHomePage.sections : [],
   });
+  const [activePageType, setActivePageType] = React.useState("home");
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [message, setMessage] = React.useState("");
@@ -455,25 +469,27 @@ const PageBuilderManager = ({
     let active = true;
 
     const loadConfig = async () => {
+      setLoading(true);
       try {
         const response = tenantId
-          ? await fetchPlatformTenantPageConfig(tenantId, "home")
-          : await fetchPageConfig("home");
+          ? await fetchPlatformTenantPageConfig(tenantId, activePageType)
+          : await fetchPageConfig(activePageType);
         if (!active) {
           return;
         }
 
+        const pageMeta = getPageTypeMeta(activePageType);
         const data = response.data || {};
         setPageConfig({
-          pageType: data.pageType || "home",
-          slug: data.slug || "/",
-          title: data.title || "Home",
+          pageType: data.pageType || activePageType,
+          slug: data.slug || pageMeta.slug,
+          title: data.title || pageMeta.label,
           status: data.status || "published",
           seo: data.seo || (canManageLayout ? legacyHomePage.seo : {}),
           sections: normalizeSections(
             data.sections?.length
               ? data.sections
-              : canManageLayout && !tenantId
+              : canManageLayout && !tenantId && activePageType === "home"
                 ? legacyHomePage.sections
                 : []
           ),
@@ -483,7 +499,10 @@ const PageBuilderManager = ({
         if (active) {
           setPageConfig((current) => ({
             ...current,
-            sections: canManageLayout && !tenantId
+            pageType: activePageType,
+            slug: getPageTypeMeta(activePageType).slug,
+            title: getPageTypeMeta(activePageType).label,
+            sections: canManageLayout && !tenantId && activePageType === "home"
               ? normalizeSections(legacyHomePage.sections)
               : [],
           }));
@@ -500,7 +519,7 @@ const PageBuilderManager = ({
     return () => {
       active = false;
     };
-  }, [canManageLayout, tenantId]);
+  }, [activePageType, canManageLayout, tenantId]);
 
   const updateSection = (index, updater) => {
     setPageConfig((current) => {
@@ -610,12 +629,13 @@ const PageBuilderManager = ({
     try {
       const payload = {
         ...pageConfig,
+        pageType: activePageType,
         sections: normalizeSections(pageConfig.sections),
       };
 
       const response = tenantId
-        ? await updatePlatformTenantPageConfig(tenantId, "home", payload)
-        : await updatePageConfig("home", payload);
+        ? await updatePlatformTenantPageConfig(tenantId, activePageType, payload)
+        : await updatePageConfig(activePageType, payload);
       setPageConfig((current) => ({
         ...current,
         ...response.data,
@@ -914,7 +934,7 @@ const PageBuilderManager = ({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Page Studio</p>
             <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">
-              Homepage Builder
+              {getPageTypeMeta(activePageType).label} Builder
             </h2>
             <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
               {canManageLayout
@@ -943,6 +963,25 @@ const PageBuilderManager = ({
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[290px_minmax(0,1fr)]">
         <aside className="rounded-[28px] border border-slate-200 bg-[#0b0b0f] p-3 text-white xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Page Type</p>
+            <select
+              value={activePageType}
+              onChange={(event) => {
+                setActivePageType(event.target.value);
+                setActiveTool("settings");
+                setSelectedSectionIndex(0);
+              }}
+              className="mt-3 w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-black text-slate-950 outline-none"
+            >
+              {PAGE_TYPES.map((page) => (
+                <option key={page.value} value={page.value}>
+                  {page.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Tools</p>
             <div className="mt-4 grid grid-cols-1 gap-2">
               {[

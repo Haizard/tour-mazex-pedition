@@ -5,11 +5,18 @@ import Button from "../UI/Button";
 import Badge from "../UI/Badge";
 import {
   createMenuItem,
+  createPlatformTenantMenuItem,
   deleteMenuItem,
+  deletePlatformTenantMenuItem,
   fetchMenuItems,
+  fetchPlatformTenantMenuItems,
+  fetchPlatformTenantSiteConfig,
   fetchTenantSiteConfig,
+  resetPlatformTenantMenuItemsToDefaults,
   resetMenuItemsToDefaults,
   updateMenuItem,
+  updatePlatformTenantMenuItem,
+  updatePlatformTenantSiteConfig,
   updateTenantSiteConfig,
 } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
@@ -25,24 +32,39 @@ const initialMenuForm = {
   childrenText: "",
 };
 
-const NavigationManager = () => {
+const defaultSiteConfigFormData = {
+  navigationConfig: {
+    ctaLabel: "PLAN MY TRIP",
+    ctaHref: "/plan-my-trip",
+    aboutLabel: "About Us",
+    aboutHref: "/about",
+    logoPlacement: "left",
+  },
+  footerConfig: {
+    brandName: "",
+    brandDescription: "",
+    primaryCtaLabel: "",
+    primaryCtaHref: "",
+    secondaryCtaLabel: "",
+    secondaryCtaHref: "",
+    copyrightLabel: "",
+  },
+};
+
+const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } = {}) => {
   const { refreshTenant } = useTenant();
+  const isPlatformMode = mode === "platform" && tenantId;
   const [menuItems, setMenuItems] = React.useState([]);
   const [menuFormData, setMenuFormData] = React.useState(initialMenuForm);
   const [editingMenuId, setEditingMenuId] = React.useState(null);
-  const [siteConfigFormData, setSiteConfigFormData] = React.useState({
-    navigationConfig: {
-      ctaLabel: "PLAN MY TRIP",
-      ctaHref: "/plan-my-trip",
-      aboutLabel: "About Us",
-      aboutHref: "/about",
-    },
-  });
+  const [siteConfigFormData, setSiteConfigFormData] = React.useState(defaultSiteConfigFormData);
   const [loading, setLoading] = React.useState(false);
 
   const loadMenuItems = async () => {
     try {
-      const res = await fetchMenuItems();
+      const res = isPlatformMode
+        ? await fetchPlatformTenantMenuItems(tenantId)
+        : await fetchMenuItems();
       setMenuItems(res.data || []);
     } catch (error) {
       console.error(error);
@@ -51,13 +73,25 @@ const NavigationManager = () => {
 
   const loadSiteConfig = async () => {
     try {
-      const res = await fetchTenantSiteConfig();
+      const res = isPlatformMode
+        ? await fetchPlatformTenantSiteConfig(tenantId)
+        : await fetchTenantSiteConfig();
       setSiteConfigFormData({
         navigationConfig: {
-          ctaLabel: res.data?.navigationConfig?.ctaLabel || "PLAN MY TRIP",
-          ctaHref: res.data?.navigationConfig?.ctaHref || "/plan-my-trip",
-          aboutLabel: res.data?.navigationConfig?.aboutLabel || "About Us",
-          aboutHref: res.data?.navigationConfig?.aboutHref || "/about",
+          ctaLabel: res.data?.navigationConfig?.ctaLabel || "",
+          ctaHref: res.data?.navigationConfig?.ctaHref || "",
+          aboutLabel: res.data?.navigationConfig?.aboutLabel || "",
+          aboutHref: res.data?.navigationConfig?.aboutHref || "",
+          logoPlacement: res.data?.navigationConfig?.logoPlacement || "left",
+        },
+        footerConfig: {
+          brandName: res.data?.footerConfig?.brandName || "",
+          brandDescription: res.data?.footerConfig?.brandDescription || "",
+          primaryCtaLabel: res.data?.footerConfig?.primaryCtaLabel || "",
+          primaryCtaHref: res.data?.footerConfig?.primaryCtaHref || "",
+          secondaryCtaLabel: res.data?.footerConfig?.secondaryCtaLabel || "",
+          secondaryCtaHref: res.data?.footerConfig?.secondaryCtaHref || "",
+          copyrightLabel: res.data?.footerConfig?.copyrightLabel || "",
         },
       });
     } catch (error) {
@@ -68,7 +102,7 @@ const NavigationManager = () => {
   React.useEffect(() => {
     loadMenuItems();
     loadSiteConfig();
-  }, []);
+  }, [isPlatformMode, tenantId]);
 
   const handleMenuInputChange = (e) =>
     setMenuFormData((current) => ({ ...current, [e.target.name]: e.target.value }));
@@ -104,9 +138,17 @@ const NavigationManager = () => {
       };
 
       if (editingMenuId) {
-        await updateMenuItem(editingMenuId, payload);
+        if (isPlatformMode) {
+          await updatePlatformTenantMenuItem(tenantId, editingMenuId, payload);
+        } else {
+          await updateMenuItem(editingMenuId, payload);
+        }
       } else {
-        await createMenuItem(payload);
+        if (isPlatformMode) {
+          await createPlatformTenantMenuItem(tenantId, payload);
+        } else {
+          await createMenuItem(payload);
+        }
       }
 
       resetMenuForm();
@@ -123,10 +165,14 @@ const NavigationManager = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await updateTenantSiteConfig(siteConfigFormData);
-      await refreshTenant?.();
+      if (isPlatformMode) {
+        await updatePlatformTenantSiteConfig(tenantId, siteConfigFormData);
+      } else {
+        await updateTenantSiteConfig(siteConfigFormData);
+        await refreshTenant?.();
+      }
       await loadSiteConfig();
-      alert("Navigation config updated.");
+      alert("Navigation and footer config updated.");
     } catch (error) {
       console.error(error);
       alert("Failed to update navigation config.");
@@ -138,12 +184,25 @@ const NavigationManager = () => {
   return (
     <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-10">
-        <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
-          Navigation
-        </h2>
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+            {isPlatformMode ? "Super Admin Website Chrome" : "Navigation"}
+          </p>
+          <h2 className="mt-2 text-3xl font-black text-gray-900 uppercase tracking-tighter">
+            {isPlatformMode ? `${tenantName || "Tenant"} Navbar & Footer` : "Navigation"}
+          </h2>
+        </div>
         <div className="flex items-center gap-3">
           <Badge variant="secondary">{menuItems.length} Menu Items</Badge>
-          <Button variant="outline" onClick={() => resetMenuItemsToDefaults().then(loadMenuItems)}>
+          <Button
+            variant="outline"
+            onClick={() =>
+              (isPlatformMode
+                ? resetPlatformTenantMenuItemsToDefaults(tenantId)
+                : resetMenuItemsToDefaults()
+              ).then(loadMenuItems)
+            }
+          >
             Restore Defaults
           </Button>
         </div>
@@ -217,11 +276,75 @@ const NavigationManager = () => {
               placeholder="About Link"
               className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold"
             />
+            <select
+              value={siteConfigFormData.navigationConfig.logoPlacement}
+              onChange={(e) =>
+                setSiteConfigFormData((current) => ({
+                  ...current,
+                  navigationConfig: {
+                    ...current.navigationConfig,
+                    logoPlacement: e.target.value,
+                  },
+                }))
+              }
+              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold"
+            >
+              <option value="left">Logo Left</option>
+              <option value="center">Logo Center</option>
+            </select>
+          </div>
+
+          <div className="mt-8 border-t border-slate-100 pt-8">
+            <h4 className="mb-5 text-sm font-black uppercase tracking-[0.2em] text-slate-400">
+              Footer Structure
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                ["brandName", "Footer Brand Name"],
+                ["primaryCtaLabel", "Primary CTA Label"],
+                ["primaryCtaHref", "Primary CTA Link"],
+                ["secondaryCtaLabel", "Secondary CTA Label"],
+                ["secondaryCtaHref", "Secondary CTA Link"],
+                ["copyrightLabel", "Copyright Label"],
+              ].map(([key, placeholder]) => (
+                <input
+                  key={key}
+                  type="text"
+                  value={siteConfigFormData.footerConfig[key] || ""}
+                  onChange={(e) =>
+                    setSiteConfigFormData((current) => ({
+                      ...current,
+                      footerConfig: {
+                        ...current.footerConfig,
+                        [key]: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder={placeholder}
+                  className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold"
+                />
+              ))}
+              <textarea
+                rows={4}
+                value={siteConfigFormData.footerConfig.brandDescription || ""}
+                onChange={(e) =>
+                  setSiteConfigFormData((current) => ({
+                    ...current,
+                    footerConfig: {
+                      ...current.footerConfig,
+                      brandDescription: e.target.value,
+                    },
+                  }))
+                }
+                placeholder="Footer brand description"
+                className="md:col-span-2 w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end">
             <Button type="submit" disabled={loading} className="px-10">
-              Save Navigation Config
+              Save Navbar & Footer
             </Button>
           </div>
         </form>
@@ -308,7 +431,12 @@ const NavigationManager = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => deleteMenuItem(item._id).then(loadMenuItems)}
+                    onClick={() =>
+                      (isPlatformMode
+                        ? deletePlatformTenantMenuItem(tenantId, item._id)
+                        : deleteMenuItem(item._id)
+                      ).then(loadMenuItems)
+                    }
                     className="text-[10px] text-red-500 font-black uppercase hover:underline"
                   >
                     Delete

@@ -260,6 +260,7 @@ const SiteSettings = () => {
         </form>
       </Card>
 
+      {false && (
       <Card className="p-8 border-none shadow-2xl bg-white mt-8">
         <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
           <FaCog className="text-primary" />
@@ -478,6 +479,7 @@ const SiteSettings = () => {
           </div>
         </form>
       </Card>
+      )}
 
       <Card className="p-8 border-none shadow-2xl bg-white mt-8 mb-20">
         <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">

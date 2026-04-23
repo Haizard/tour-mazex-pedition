@@ -12,8 +12,10 @@ import TenantSiteConfig from "../models/TenantSiteConfig.js";
 import EmailProviderConnection from "../models/EmailProviderConnection.js";
 import EmailThread from "../models/EmailThread.js";
 import PageConfig from "../models/PageConfig.js";
+import MenuItem from "../models/MenuItem.js";
 import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.js";
 import { getPageConfig, upsertPageConfig } from "../controllers/pageConfigController.js";
+import { defaultMenuItems } from "../data/defaultMenuItems.js";
 import {
   DEFAULT_TENANT_THEME,
 } from "../utils/tenantDefaults.js";
@@ -363,6 +365,33 @@ const loadTenantForPlatformPageConfig = async (req, res, next) => {
   }
 };
 
+const sortMenuItems = (items = []) =>
+  items
+    .map((item) => ({
+      ...item,
+      children: [...(item.children || [])].sort(
+        (a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)
+      ),
+    }))
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+const buildTenantSiteConfigPayload = (tenantId, current = {}, body = {}) => ({
+  tenantId,
+  homepageConfig: {
+    ...(current.homepageConfig || {}),
+    ...(body.homepageConfig || {}),
+  },
+  navigationConfig: {
+    ...(current.navigationConfig || {}),
+    ...(body.navigationConfig || {}),
+  },
+  footerConfig: {
+    ...(current.footerConfig || {}),
+    ...(body.footerConfig || {}),
+  },
+  enabledFeatures: body.enabledFeatures || current.enabledFeatures || ["ai-content", "dynamic-menu"],
+});
+
 router.get(
   "/tenants/:tenantId/page-config/:pageType",
   loadTenantForPlatformPageConfig,
@@ -374,6 +403,150 @@ router.put(
   loadTenantForPlatformPageConfig,
   upsertPageConfig
 );
+
+router.get("/tenants/:tenantId/site-config", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).select("_id").lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const config = await TenantSiteConfig.findOne({ tenantId: tenant._id }).lean();
+
+    res.status(200).json(
+      config || {
+        tenantId: tenant._id,
+        homepageConfig: { pageType: "custom-home", sections: [] },
+        navigationConfig: {},
+        footerConfig: {},
+        enabledFeatures: ["ai-content", "dynamic-menu"],
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.put("/tenants/:tenantId/site-config", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).select("_id").lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const current = await TenantSiteConfig.findOne({ tenantId: tenant._id }).lean();
+    const config = await TenantSiteConfig.findOneAndUpdate(
+      { tenantId: tenant._id },
+      buildTenantSiteConfigPayload(tenant._id, current || {}, req.body || {}),
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    res.status(200).json(config);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.get("/tenants/:tenantId/menu-items", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).select("_id").lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const items = await MenuItem.find({ tenantId: tenant._id }).lean();
+    res.status(200).json(sortMenuItems(items));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/tenants/:tenantId/menu-items", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).select("_id").lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const menuItem = await MenuItem.create({
+      ...req.body,
+      tenantId: tenant._id,
+    });
+
+    res.status(201).json(menuItem);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.put("/tenants/:tenantId/menu-items/:menuItemId", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).select("_id").lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const menuItem = await MenuItem.findOneAndUpdate(
+      { _id: req.params.menuItemId, tenantId: tenant._id },
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!menuItem) {
+      return res.status(404).json({ message: "Menu item not found." });
+    }
+
+    res.status(200).json(menuItem);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.delete("/tenants/:tenantId/menu-items/:menuItemId", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).select("_id").lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    await MenuItem.findOneAndDelete({
+      _id: req.params.menuItemId,
+      tenantId: tenant._id,
+    });
+
+    res.status(200).json({ message: "Menu item deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/tenants/:tenantId/menu-items/reset-defaults", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).select("_id").lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    await MenuItem.deleteMany({ tenantId: tenant._id });
+    const created = await MenuItem.insertMany(
+      defaultMenuItems.map((item) => ({
+        ...item,
+        tenantId: tenant._id,
+      }))
+    );
+
+    res.status(200).json(sortMenuItems(created.map((item) => item.toObject())));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 router.get("/tenants/:tenantId/support", async (req, res) => {
   try {

@@ -244,6 +244,34 @@ export const updatePlatformTenantPageConfig = (tenantId, pageType = "home", data
   API.put(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, data, {
     headers: getPlatformAdminHeaders(),
   });
+export const fetchPlatformTenantSiteConfig = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/site-config`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformTenantSiteConfig = (tenantId, data) =>
+  API.put(`/platform-admin/tenants/${tenantId}/site-config`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantMenuItems = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/menu-items`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformTenantMenuItem = (tenantId, data) =>
+  API.post(`/platform-admin/tenants/${tenantId}/menu-items`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformTenantMenuItem = (tenantId, menuItemId, data) =>
+  API.put(`/platform-admin/tenants/${tenantId}/menu-items/${menuItemId}`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const deletePlatformTenantMenuItem = (tenantId, menuItemId) =>
+  API.delete(`/platform-admin/tenants/${tenantId}/menu-items/${menuItemId}`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const resetPlatformTenantMenuItemsToDefaults = (tenantId) =>
+  API.post(`/platform-admin/tenants/${tenantId}/menu-items/reset-defaults`, {}, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const updatePlatformTenantAdmin = (tenantId, data) =>
   API.patch(`/platform-admin/tenants/${tenantId}/admin`, data, {
     headers: getPlatformAdminHeaders(),

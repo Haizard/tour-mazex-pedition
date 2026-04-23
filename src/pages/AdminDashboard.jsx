@@ -54,7 +54,6 @@ import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import AdminSidebar from "../components/Admin/AdminSidebar";
-import NavigationManager from "../components/Admin/NavigationManager";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
 import EmailInboxManager from "../components/Admin/EmailInboxManager";
 import LeadInboxManager from "../components/Admin/LeadInboxManager";
@@ -2926,8 +2925,15 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* Navigation Section */}
-          {activeTab === "navigation" && <NavigationManager />}
+          {/* Navbar and footer structure are controlled by the super admin design studio. */}
+          {activeTab === "navigation" && (
+            <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+              <p className="text-xl font-black text-zinc-950">Navigation is managed by the platform admin.</p>
+              <p className="mt-2 text-sm font-medium text-zinc-500">
+                Tenant admins can manage content, images, tours, blogs, contacts, and social links. Navbar structure and footer layout stay controlled from the super admin panel.
+              </p>
+            </div>
+          )}
 
           {activeTab === "email-inbox" && <EmailInboxManager />}
 

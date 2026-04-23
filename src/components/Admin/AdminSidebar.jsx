@@ -66,7 +66,6 @@ const groupedMenuItems = [
     label: "Website Content",
     items: [
       { id: "page-content", label: "Homepage Content", icon: <FaEdit /> },
-      { id: "navigation", label: "Navigation", icon: <FaBars /> },
       { id: "settings", label: "Site Settings", icon: <FaCog /> },
     ],
   },

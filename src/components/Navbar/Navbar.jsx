@@ -200,6 +200,7 @@ const Navbar = ({ handleOrderPopup }) => {
   }, [shouldUseDefaultMenu]); // Refresh when tenant context resolves for demo tenants.
 
   const navigationConfig = siteConfig?.navigationConfig || {};
+  const logoPlacement = navigationConfig.logoPlacement || "left";
 
   const handlePrimaryCta = () => {
     const href = navigationConfig.ctaHref || (isLegacyTenant ? "/plan-my-trip" : "");
@@ -274,7 +275,9 @@ const Navbar = ({ handleOrderPopup }) => {
             : "bg-[#6f5336] border-white/10"
         }`}
       >
-        <div className="container mx-auto flex justify-between items-center px-4">
+        <div className={`container relative mx-auto flex items-center px-4 ${
+          logoPlacement === "center" ? "justify-center gap-8" : "justify-between"
+        }`}>
           <Link to="/" className="flex items-center" onClick={() => window.scrollTo(0, 0)}>
             {(settings?.logoUrl || isLegacyTenant) ? (
               <img
@@ -291,10 +294,10 @@ const Navbar = ({ handleOrderPopup }) => {
             )}
           </Link>
 
-          <div className="hidden lg:block">
+          <div className={`hidden lg:block ${logoPlacement === "center" ? "absolute left-1/2 top-full mt-3 -translate-x-1/2 rounded-2xl bg-white/95 px-6 py-3 shadow-2xl" : ""}`}>
             <ul
               className={`flex items-center gap-6 xl:gap-8 ${
-                isScrolled ? "text-[#2f2418]" : "text-white"
+                logoPlacement === "center" ? "text-[#2f2418]" : isScrolled ? "text-[#2f2418]" : "text-white"
               }`}
             >
               {menuItems.map((item, index) => (
