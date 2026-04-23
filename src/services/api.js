@@ -187,6 +187,10 @@ export const updatePlatformTenant = (tenantId, data) =>
   API.put(`/platform-admin/tenants/${tenantId}`, data, {
     headers: getPlatformAdminHeaders(),
   });
+export const updatePlatformTenantAdmin = (tenantId, data) =>
+  API.patch(`/platform-admin/tenants/${tenantId}/admin`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const markPlatformTenantDomainVerified = (tenantId, domain) =>
   API.post(
     `/platform-admin/tenants/${tenantId}/domains/${encodeURIComponent(domain)}/mark-verified`,

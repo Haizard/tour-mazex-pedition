@@ -8,6 +8,7 @@ import {
   markPlatformTenantDomainVerified,
   renewPlatformTenantDomainService,
   updatePlatformTenant,
+  updatePlatformTenantAdmin,
 } from "../services/api";
 import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
 
@@ -28,6 +29,10 @@ const createTenantFormState = (tenant) => ({
   name: tenant?.name || "",
   subdomain: tenant?.subdomain || "",
   status: tenant?.status || "active",
+  adminUsername: tenant?.admins?.[0]?.username || "",
+  adminDisplayName: tenant?.admins?.[0]?.displayName || "",
+  adminStatus: tenant?.admins?.[0]?.status || "active",
+  adminPassword: "",
   customDomains: (tenant?.customDomains || []).join("\n"),
   requestedCustomDomains: (tenant?.requestedCustomDomains || []).join("\n"),
   enableCustomDomains: Boolean(tenant?.features?.enableCustomDomains),
@@ -55,7 +60,7 @@ const createTenantFormState = (tenant) => ({
 const createNewTenantState = () => ({
   name: "",
   subdomain: "",
-  adminUsername: "",
+  adminUsername: "tenant",
   adminPassword: "tenant123",
   subscriptionPlan: "starter",
   subscriptionStatus: "trialing",
@@ -220,6 +225,15 @@ const PlatformAdminDashboard = () => {
           includesManagedDns: tenantForm.includesManagedDns,
         },
       });
+
+      if (tenantForm.adminUsername || tenantForm.adminPassword) {
+        await updatePlatformTenantAdmin(selectedTenant._id, {
+          username: tenantForm.adminUsername,
+          displayName: tenantForm.adminDisplayName,
+          status: tenantForm.adminStatus,
+          password: tenantForm.adminPassword,
+        });
+      }
 
       setNotice("Tenant settings updated.");
       await loadPlatformData(selectedTenant._id);
@@ -566,6 +580,7 @@ const PlatformAdminDashboard = () => {
                       <div className="mt-3 text-xs text-slate-400 font-medium space-y-1">
                         <p>${tenant.domainService?.annualPriceUsd ?? 50} / year domain service</p>
                         <p>renewal due {tenant.domainService?.renewalDueAt ? new Date(tenant.domainService.renewalDueAt).toLocaleDateString() : "not set"}</p>
+                        <p>login: {tenant.admins?.[0]?.username || "not set"}</p>
                         <p>{tenant.adminCount ?? tenant.metrics?.admins ?? 0} admins</p>
                         <p>{tenant.pageConfigCount ?? tenant.metrics?.pageConfigs ?? 0} pages</p>
                         <p>{tenant.emailConnectionCount ?? tenant.metrics?.emailConnections ?? 0} inbox links</p>
@@ -624,6 +639,73 @@ const PlatformAdminDashboard = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-5 md:col-span-2">
+                    <div className="mb-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-300">
+                        Tenant Login Access
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-slate-300">
+                        Set the username and reset the password used at{" "}
+                        <span className="font-black text-white">
+                          {selectedTenant.demoDomain || "tenant demo"}/login
+                        </span>
+                        .
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <input
+                        type="text"
+                        value={tenantForm.adminUsername}
+                        onChange={(event) =>
+                          setTenantForm((current) => ({
+                            ...current,
+                            adminUsername: event.target.value.toLowerCase(),
+                          }))
+                        }
+                        placeholder="Tenant login username"
+                        className="w-full rounded-2xl border border-white/10 bg-slate-950/70 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+                      />
+                      <input
+                        type="text"
+                        value={tenantForm.adminPassword}
+                        onChange={(event) =>
+                          setTenantForm((current) => ({
+                            ...current,
+                            adminPassword: event.target.value,
+                          }))
+                        }
+                        placeholder="New password (leave blank to keep current)"
+                        className="w-full rounded-2xl border border-white/10 bg-slate-950/70 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+                      />
+                      <input
+                        type="text"
+                        value={tenantForm.adminDisplayName}
+                        onChange={(event) =>
+                          setTenantForm((current) => ({
+                            ...current,
+                            adminDisplayName: event.target.value,
+                          }))
+                        }
+                        placeholder="Display name"
+                        className="w-full rounded-2xl border border-white/10 bg-slate-950/70 p-4 font-bold text-white outline-none focus:border-cyan-400/50"
+                      />
+                      <select
+                        value={tenantForm.adminStatus}
+                        onChange={(event) =>
+                          setTenantForm((current) => ({
+                            ...current,
+                            adminStatus: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-xs font-black uppercase text-white outline-none focus:border-cyan-400/50"
+                      >
+                        <option value="active">Active</option>
+                        <option value="disabled">Disabled</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <select
                     value={tenantForm.subscriptionPlan}
                     onChange={(event) =>

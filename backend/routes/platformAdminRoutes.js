@@ -166,6 +166,7 @@ router.get("/tenants", async (_req, res) => {
     const tenantIds = tenants.map((tenant) => tenant._id);
     const [
       adminCounts,
+      tenantAdmins,
       pageCounts,
       emailCounts,
       inquiryCounts,
@@ -179,6 +180,10 @@ router.get("/tenants", async (_req, res) => {
         { $match: { tenantId: { $in: tenantIds }, status: "active" } },
         { $group: { _id: "$tenantId", count: { $sum: 1 } } },
       ]),
+      TenantAdmin.find({ tenantId: { $in: tenantIds } })
+        .sort({ role: -1, createdAt: 1 })
+        .select("_id tenantId username displayName role status lastLoginAt")
+        .lean(),
       PageConfig.aggregate([
         { $match: { tenantId: { $in: tenantIds } } },
         { $group: { _id: "$tenantId", count: { $sum: 1 } } },
@@ -220,6 +225,14 @@ router.get("/tenants", async (_req, res) => {
       }, {});
 
     const adminLookup = toLookup(adminCounts);
+    const adminListLookup = tenantAdmins.reduce((accumulator, admin) => {
+      const tenantId = String(admin.tenantId);
+      if (!accumulator[tenantId]) {
+        accumulator[tenantId] = [];
+      }
+      accumulator[tenantId].push(admin);
+      return accumulator;
+    }, {});
     const pageLookup = toLookup(pageCounts);
     const emailLookup = toLookup(emailCounts);
     const inquiryLookup = toLookup(inquiryCounts);
@@ -237,6 +250,7 @@ router.get("/tenants", async (_req, res) => {
           : buildDemoDomain(tenant.subdomain || tenant.slug),
         primaryDomain: tenant.customDomains?.[0] || "",
         adminCount: adminLookup[String(tenant._id)] || 0,
+        admins: adminListLookup[String(tenant._id)] || [],
         pageConfigCount: pageLookup[String(tenant._id)] || 0,
         emailConnectionCount: emailLookup[String(tenant._id)] || 0,
         inquiryCount: inquiryLookup[String(tenant._id)] || 0,
@@ -260,6 +274,77 @@ router.get("/tenants", async (_req, res) => {
     );
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+router.patch("/tenants/:tenantId/admin", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const username = req.body.username?.toString().trim().toLowerCase();
+    const displayName = req.body.displayName?.toString().trim();
+    const password = req.body.password?.toString() || "";
+    const status = req.body.status?.toString() || "active";
+
+    if (!username) {
+      return res.status(400).json({ message: "Tenant admin username is required." });
+    }
+
+    const existingForUsername = await TenantAdmin.findOne({
+      tenantId: tenant._id,
+      username,
+    });
+
+    const existingAdmin =
+      existingForUsername ||
+      (await TenantAdmin.findOne({ tenantId: tenant._id, role: "owner" }).sort({
+        createdAt: 1,
+      })) ||
+      (await TenantAdmin.findOne({ tenantId: tenant._id }).sort({ createdAt: 1 }));
+
+    const update = {
+      tenantId: tenant._id,
+      username,
+      displayName: displayName || `${tenant.name} Admin`,
+      role: existingAdmin?.role || "owner",
+      status: ["active", "disabled"].includes(status) ? status : "active",
+    };
+
+    if (password) {
+      Object.assign(update, await hashAdminPassword(password));
+    }
+
+    if (!existingAdmin && !password) {
+      return res.status(400).json({
+        message: "Password is required when creating the tenant admin.",
+      });
+    }
+
+    const admin = existingAdmin
+      ? await TenantAdmin.findByIdAndUpdate(existingAdmin._id, update, {
+          new: true,
+          runValidators: true,
+        }).lean()
+      : await TenantAdmin.create(update);
+
+    res.status(200).json({
+      admin: {
+        _id: admin._id,
+        tenantId: admin.tenantId,
+        username: admin.username,
+        displayName: admin.displayName,
+        role: admin.role,
+        status: admin.status,
+        lastLoginAt: admin.lastLoginAt,
+      },
+      passwordUpdated: Boolean(password),
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 

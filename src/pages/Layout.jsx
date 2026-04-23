@@ -17,6 +17,8 @@ const Layout = () => {
   const isAdminRoute =
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/platform") ||
+    location.pathname.startsWith("/super-admin") ||
     /^\/demo\/[^/]+\/(admin|login)(\/|$)/.test(location.pathname);
   const shouldAutoPrompt =
     !isAdminRoute &&
