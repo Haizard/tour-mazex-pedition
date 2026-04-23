@@ -122,35 +122,35 @@ const AdminSidebar = ({
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[45] bg-black/50 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-[45] bg-black/20 backdrop-blur-sm md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       <div
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 transform flex-col bg-slate-900 text-white transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 transform flex-col border-r border-zinc-200 bg-white text-zinc-950 shadow-[0_0_0_1px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0`}
       >
-        <div className="flex items-center justify-between border-b border-white/5 p-8">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-5">
           <div className="flex items-center gap-4">
             <img
               src={Logo}
               alt="Admin Logo"
-              className="h-10 w-10 rounded-full object-fill ring-2 ring-primary/30"
+              className="h-9 w-9 rounded-xl border border-zinc-200 object-cover"
             />
             <div>
-              <h2 className="font-heading text-lg font-black uppercase tracking-tighter">
+              <h2 className="font-heading text-sm font-black uppercase tracking-tight text-zinc-950">
                 MAZ Expeditions
               </h2>
-              <p className="text-[10px] font-black uppercase tracking-widest text-primary">
-                Admin Portal
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                Workspace
               </p>
             </div>
           </div>
         </div>
 
-        <nav className="scrollbar-hide flex-1 space-y-4 overflow-y-auto px-4 py-8">
+        <nav className="scrollbar-hide flex-1 space-y-3 overflow-y-auto px-3 py-4">
           {groupedMenuItems.map((group) => {
             const isOpenGroup = Boolean(openGroups[group.id]);
             const groupHasActiveTab = group.items.some((item) => item.id === activeTab);
@@ -158,32 +158,29 @@ const AdminSidebar = ({
             return (
               <div
                 key={group.id}
-                className={`rounded-2xl border ${
-                  groupHasActiveTab ? "border-primary/40 bg-white/5" : "border-white/5 bg-slate-950/60"
+                className={`rounded-xl border transition-colors ${
+                  groupHasActiveTab ? "border-zinc-300 bg-zinc-50" : "border-transparent bg-white"
                 }`}
               >
                 <button
                   type="button"
                   onClick={() => toggleGroup(group.id)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left hover:bg-zinc-50"
                 >
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.26em] text-slate-500">
-                      Menu Group
-                    </p>
-                    <p className="mt-1 text-sm font-black uppercase tracking-wider text-white">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">
                       {group.label}
                     </p>
                   </div>
                   <FaChevronDown
-                    className={`text-sm text-slate-400 transition-transform ${
+                    className={`text-xs text-zinc-400 transition-transform ${
                       isOpenGroup ? "rotate-180" : ""
                     }`}
                   />
                 </button>
 
                 {isOpenGroup && (
-                  <div className="space-y-2 border-t border-white/5 px-3 py-3">
+                  <div className="space-y-1 px-2 pb-2">
                     {group.items.map((item) => {
                       const isLocked = item.accessKey && featureAccess[item.accessKey] === false;
 
@@ -191,16 +188,16 @@ const AdminSidebar = ({
                         <button
                           key={item.id}
                           onClick={() => handleItemClick(item)}
-                          className={`flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left text-sm font-bold transition-all ${
+                          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-all ${
                             activeTab === item.id
-                              ? "bg-primary text-white shadow-lg shadow-primary/20"
-                              : "text-slate-400 hover:bg-white/5 hover:text-white"
+                              ? "bg-zinc-950 text-white shadow-sm"
+                              : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950"
                           }`}
                         >
-                          <span className="text-lg">{item.icon}</span>
+                          <span className="text-sm">{item.icon}</span>
                           <span className="flex-1">{item.label}</span>
                           {isLocked && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-amber-700">
                               <FaLock className="text-[9px]" />
                               Locked
                             </span>
@@ -215,12 +212,12 @@ const AdminSidebar = ({
           })}
         </nav>
 
-        <div className="border-t border-white/5 p-4">
+        <div className="border-t border-zinc-200 p-3">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-red-400 transition-all hover:bg-red-400/10"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-zinc-600 transition-all hover:bg-red-50 hover:text-red-600"
           >
-            <FaSignOutAlt className="text-lg" />
+            <FaSignOutAlt className="text-sm" />
             Logout
           </button>
         </div>

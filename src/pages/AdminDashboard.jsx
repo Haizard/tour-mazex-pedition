@@ -849,8 +849,15 @@ const AdminDashboard = () => {
     }
   }, [taxonomies]);
 
+  const formatTabTitle = (value = "") =>
+    value
+      .split("-")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="flex min-h-screen bg-[#fafafa] text-zinc-950">
       {/* Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
@@ -869,34 +876,61 @@ const AdminDashboard = () => {
       />
 
       {/* Main Content Area */}
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-64 opacity-50 pointer-events-none md:opacity-100 md:pointer-events-auto" : "ml-0 md:ml-64"} min-h-screen w-full`}>
-        {/* Top bar (for spacing/branding) */}
-        <div className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 flex items-center justify-between px-4 md:px-12">
+      <div className={`min-h-screen w-full flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-72 opacity-50 pointer-events-none md:opacity-100 md:pointer-events-auto" : "ml-0 md:ml-72"}`}>
+        <div className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur-xl md:px-8">
           <div className="flex items-center gap-4">
              <button 
                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-               className="p-2 md:hidden text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+               className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition-colors hover:bg-zinc-50 md:hidden"
              >
                {isSidebarOpen ? <HiX size={24} /> : <HiMenu size={24} />}
              </button>
-             <h2 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tighter italic">
-               Control <span className="text-primary italic text-sm md:text-xl">Center</span>
-             </h2>
+             <div>
+               <p className="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-500">
+                 Tenant Admin
+               </p>
+               <h2 className="text-sm font-black text-zinc-950 md:text-base">
+                 {tenant?.name || "Workspace"}
+               </h2>
+             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="primary" className="hidden sm:block">Online</Badge>
+          <div className="flex items-center gap-3">
+            <span className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-emerald-700 sm:inline-flex">
+              Online
+            </span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="hidden rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 md:inline-flex"
+            >
+              Sign out
+            </button>
           </div>
         </div>
 
-        <div className="p-2 md:p-12 w-full max-w-full overflow-x-hidden">
-          {/* Header information removed in favor of sidebar context */}
-          <div className="mb-6 md:mb-12 px-2 md:px-0">
-            <h1 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter mb-2">
-              {activeTab} Management
-            </h1>
-            <p className="text-slate-500 font-medium text-xs md:text-base">
-              Manage your {activeTab} inventory and resources from here.
-            </p>
+        <div className="w-full max-w-full overflow-x-hidden p-3 md:p-8">
+          <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm md:mb-8 md:p-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-zinc-500">
+                  Dashboard
+                </p>
+                <h1 className="mt-2 text-2xl font-black tracking-tight text-zinc-950 md:text-4xl">
+                  {formatTabTitle(activeTab)}
+                </h1>
+                <p className="mt-2 text-sm font-medium text-zinc-500 md:text-base">
+                  Manage this workspace with a focused, Vercel-style control surface.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-widest">
+                <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-600">
+                  {tenant?.subscription?.plan || "starter"} plan
+                </span>
+                <span className="rounded-full border border-zinc-200 bg-zinc-950 px-3 py-2 text-white">
+                  {tenant?.subscription?.status || "inactive"}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Packages Section */}
