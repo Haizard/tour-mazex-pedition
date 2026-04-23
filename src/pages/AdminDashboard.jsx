@@ -3517,7 +3517,9 @@ const AdminDashboard = () => {
           )}
           */}
 
-          {activeTab === "page-builder" && <PageBuilderManager />}
+          {(activeTab === "page-builder" || activeTab === "page-content") && (
+            <PageBuilderManager mode="content" tenantName={tenant?.name || ""} />
+          )}
 
           {activeTab === "settings" && <SiteSettings />}
 

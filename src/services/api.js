@@ -232,8 +232,16 @@ export const fetchPlatformTenantMarketing = (tenantId) =>
   cachedGet(`/platform-admin/tenants/${tenantId}/marketing`, {
     headers: getPlatformAdminHeaders(),
   });
+export const fetchPlatformTenantPageConfig = (tenantId, pageType = "home") =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const updatePlatformTenant = (tenantId, data) =>
   API.put(`/platform-admin/tenants/${tenantId}`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformTenantPageConfig = (tenantId, pageType = "home", data) =>
+  API.put(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, data, {
     headers: getPlatformAdminHeaders(),
   });
 export const updatePlatformTenantAdmin = (tenantId, data) =>

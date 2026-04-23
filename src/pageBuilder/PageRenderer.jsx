@@ -89,7 +89,7 @@ const PageRenderer = ({ sections = [] }) => {
 
   return (
     <>
-      {normalizedSections.map((section) => {
+      {normalizedSections.map((section, index) => {
         const rendered = renderRegisteredSection(section);
         if (!rendered) {
           return null;

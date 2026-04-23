@@ -11,6 +11,7 @@ import {
   updatePlatformTenantAdmin,
 } from "../services/api";
 import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
+import PageBuilderManager from "../components/Admin/PageBuilderManager";
 
 const metricCards = [
   { key: "tenantCount", label: "Tenants" },
@@ -1100,6 +1101,37 @@ const PlatformAdminDashboard = () => {
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="rounded-[32px] border border-white/10 bg-slate-950 p-6 md:p-8">
+          <div className="mb-6">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-black mb-2">
+              Website Design Control
+            </p>
+            <h2 className="text-2xl font-black uppercase tracking-tight">
+              Tenant Homepage Layout Builder
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm font-medium text-slate-400">
+              Super admin controls sections, variants, ordering, visibility, and style. Tenant admins only edit content and images inside the approved layout.
+            </p>
+          </div>
+
+          {!selectedTenant && (
+            <div className="rounded-3xl border border-white/10 bg-slate-900/60 px-5 py-8 text-slate-400 font-medium">
+              Select a tenant to design their homepage layout.
+            </div>
+          )}
+
+          {selectedTenant && (
+            <div className="rounded-[28px] bg-white p-5 text-slate-950 md:p-8">
+              <PageBuilderManager
+                key={selectedTenant._id}
+                mode="layout"
+                tenantId={selectedTenant._id}
+                tenantName={selectedTenant.name}
+              />
+            </div>
+          )}
         </section>
 
         <section className="rounded-[32px] border border-white/10 bg-white/5 p-6 md:p-8">

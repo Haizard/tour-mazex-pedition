@@ -48,3 +48,27 @@ export const DEFAULT_TENANT_SITE_CONFIG = {
   },
   enabledFeatures: ["legacy-ui", "ai-content", "dynamic-menu"],
 };
+
+export const EMPTY_TENANT_SITE_CONFIG = {
+  homepageConfig: {
+    pageType: "custom-home",
+    sections: [],
+  },
+  navigationConfig: {
+    ctaLabel: "",
+    ctaHref: "",
+    aboutLabel: "",
+    aboutHref: "",
+  },
+  footerConfig: {
+    brandName: "",
+    brandDescription: "",
+    primaryCtaLabel: "",
+    primaryCtaHref: "",
+    secondaryCtaLabel: "",
+    secondaryCtaHref: "",
+    copyrightLabel: "",
+    mobileCopyrightLabel: "",
+  },
+  enabledFeatures: ["ai-content", "dynamic-menu"],
+};

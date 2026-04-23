@@ -12,7 +12,14 @@ import {
 } from "react-icons/fa";
 import Card from "../UI/Card";
 import Button from "../UI/Button";
-import { fetchPageConfig, updatePageConfig, uploadMedia, getMediaUrl } from "../../services/api";
+import {
+  fetchPageConfig,
+  fetchPlatformTenantPageConfig,
+  getMediaUrl,
+  updatePageConfig,
+  updatePlatformTenantPageConfig,
+  uploadMedia,
+} from "../../services/api";
 import { legacyHomePage } from "../../pageBuilder/defaultPages";
 import { sectionRegistry } from "../../sections/registry/sectionRegistry";
 import { useAdminAuth } from "../../context/AdminAuthContext";
@@ -66,6 +73,14 @@ const normalizeSections = (sections = []) =>
   [...sections]
     .filter((section) => section?.type)
     .sort((a, b) => (a.order || 0) - (b.order || 0))
+    .map((section, index) => ({
+      ...section,
+      order: index + 1,
+    }));
+
+const reorderSections = (sections = []) =>
+  sections
+    .filter((section) => section?.type)
     .map((section, index) => ({
       ...section,
       order: index + 1,
@@ -408,14 +423,19 @@ const SectionStyleFields = ({ section, onChange }) => {
   );
 };
 
-const PageBuilderManager = () => {
+const PageBuilderManager = ({
+  mode = "layout",
+  tenantId = "",
+  tenantName = "",
+} = {}) => {
+  const canManageLayout = mode === "layout";
   const [pageConfig, setPageConfig] = React.useState({
     pageType: "home",
     slug: "/",
     title: "Home",
     status: "published",
-    seo: legacyHomePage.seo,
-    sections: legacyHomePage.sections,
+    seo: canManageLayout ? legacyHomePage.seo : {},
+    sections: canManageLayout ? legacyHomePage.sections : [],
   });
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -433,7 +453,9 @@ const PageBuilderManager = () => {
 
     const loadConfig = async () => {
       try {
-        const response = await fetchPageConfig("home");
+        const response = tenantId
+          ? await fetchPlatformTenantPageConfig(tenantId, "home")
+          : await fetchPageConfig("home");
         if (!active) {
           return;
         }
@@ -444,9 +466,13 @@ const PageBuilderManager = () => {
           slug: data.slug || "/",
           title: data.title || "Home",
           status: data.status || "published",
-          seo: data.seo || legacyHomePage.seo,
+          seo: data.seo || (canManageLayout ? legacyHomePage.seo : {}),
           sections: normalizeSections(
-            data.sections?.length ? data.sections : legacyHomePage.sections
+            data.sections?.length
+              ? data.sections
+              : canManageLayout && !tenantId
+                ? legacyHomePage.sections
+                : []
           ),
         });
       } catch (error) {
@@ -454,7 +480,9 @@ const PageBuilderManager = () => {
         if (active) {
           setPageConfig((current) => ({
             ...current,
-            sections: normalizeSections(legacyHomePage.sections),
+            sections: canManageLayout && !tenantId
+              ? normalizeSections(legacyHomePage.sections)
+              : [],
           }));
         }
       } finally {
@@ -469,7 +497,7 @@ const PageBuilderManager = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [canManageLayout, tenantId]);
 
   const updateSection = (index, updater) => {
     setPageConfig((current) => {
@@ -480,7 +508,7 @@ const PageBuilderManager = () => {
 
       return {
         ...current,
-        sections: normalizeSections(nextSections),
+        sections: reorderSections(nextSections),
       };
     });
   };
@@ -521,9 +549,12 @@ const PageBuilderManager = () => {
 
     setPageConfig((current) => ({
       ...current,
-      sections: normalizeSections([
+      sections: reorderSections([
         ...current.sections,
-        getDefaultSectionTemplate(newSectionType, newSectionVariant),
+        {
+          ...getDefaultSectionTemplate(newSectionType, newSectionVariant),
+          order: current.sections.length + 1,
+        },
       ]),
     }));
     setMessage(`Added ${getSectionLabel(newSectionType)} section with ${newSectionVariant} preset.`);
@@ -568,13 +599,15 @@ const PageBuilderManager = () => {
         sections: normalizeSections(pageConfig.sections),
       };
 
-      const response = await updatePageConfig("home", payload);
+      const response = tenantId
+        ? await updatePlatformTenantPageConfig(tenantId, "home", payload)
+        : await updatePageConfig("home", payload);
       setPageConfig((current) => ({
         ...current,
         ...response.data,
         sections: normalizeSections(response.data?.sections || current.sections),
       }));
-      setMessage("Homepage page config saved.");
+      setMessage(canManageLayout ? "Homepage layout saved." : "Homepage content saved.");
     } catch (error) {
       console.error("Failed to save page config:", error);
       setMessage(error?.response?.data?.message || "Failed to save page config.");
@@ -606,7 +639,9 @@ const PageBuilderManager = () => {
             Homepage Page Builder
           </h2>
           <p className="text-slate-500 font-medium mt-2">
-            Manage section order, visibility, variants, and homepage SEO from tenant page config.
+            {canManageLayout
+              ? `Manage section order, visibility, variants, and homepage SEO${tenantName ? ` for ${tenantName}` : ""}.`
+              : "Edit only the text and images inside the homepage sections prepared by the platform administrator."}
           </p>
         </div>
         <Button
@@ -616,7 +651,7 @@ const PageBuilderManager = () => {
           className="px-8 py-3 rounded-2xl shadow-lg shadow-primary/20 inline-flex items-center gap-3"
         >
           <FaSave />
-          {saving ? "Saving..." : "Save Homepage"}
+          {saving ? "Saving..." : canManageLayout ? "Save Layout" : "Save Content"}
         </Button>
       </div>
 
@@ -677,6 +712,7 @@ const PageBuilderManager = () => {
         </div>
       </Card>
 
+      {canManageLayout && (
       <Card className="p-8 mb-8 border-none shadow-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -728,8 +764,18 @@ const PageBuilderManager = () => {
           </div>
         </div>
       </Card>
+      )}
 
       <div className="space-y-4">
+        {!pageConfig.sections.length && (
+          <Card className="p-8 border-none shadow-xl bg-white">
+            <p className="text-sm font-bold text-slate-500">
+              {canManageLayout
+                ? "No homepage sections yet. Add the first section to design this tenant website."
+                : "No homepage sections have been prepared yet. The platform administrator will add the layout, then content fields will appear here."}
+            </p>
+          </Card>
+        )}
         {pageConfig.sections.map((section, index) => (
           <Card
             key={section._id || `${section.type}-${index}`}
@@ -753,6 +799,7 @@ const PageBuilderManager = () => {
                 </div>
               </div>
 
+              {canManageLayout && (
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4 lg:min-w-[860px]">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
@@ -860,6 +907,7 @@ const PageBuilderManager = () => {
                   </button>
                 </div>
               </div>
+              )}
             </div>
 
             <div className="mt-6 border-t border-slate-100 pt-6">
@@ -874,6 +922,7 @@ const PageBuilderManager = () => {
               />
             </div>
 
+            {canManageLayout && (
             <div className="mt-6 border-t border-slate-100 pt-6">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">
                 Style Controls
@@ -885,6 +934,7 @@ const PageBuilderManager = () => {
                 }
               />
             </div>
+            )}
           </Card>
         ))}
       </div>

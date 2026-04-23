@@ -13,11 +13,10 @@ import EmailProviderConnection from "../models/EmailProviderConnection.js";
 import EmailThread from "../models/EmailThread.js";
 import PageConfig from "../models/PageConfig.js";
 import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.js";
+import { getPageConfig, upsertPageConfig } from "../controllers/pageConfigController.js";
 import {
-  DEFAULT_TENANT_SITE_CONFIG,
   DEFAULT_TENANT_THEME,
 } from "../utils/tenantDefaults.js";
-import { HOME_PAGE_DEFAULT } from "../utils/pageBuilderDefaults.js";
 import { hashAdminPassword } from "../utils/adminAuth.js";
 import {
   buildDemoDomain,
@@ -348,6 +347,34 @@ router.patch("/tenants/:tenantId/admin", async (req, res) => {
   }
 });
 
+const loadTenantForPlatformPageConfig = async (req, res, next) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    req.tenant = tenant;
+    req.tenantId = tenant._id;
+    next();
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+router.get(
+  "/tenants/:tenantId/page-config/:pageType",
+  loadTenantForPlatformPageConfig,
+  getPageConfig
+);
+
+router.put(
+  "/tenants/:tenantId/page-config/:pageType",
+  loadTenantForPlatformPageConfig,
+  upsertPageConfig
+);
+
 router.get("/tenants/:tenantId/support", async (req, res) => {
   try {
     const tenant = await Tenant.findById(req.params.tenantId).lean();
@@ -472,12 +499,15 @@ router.post("/tenants", async (req, res) => {
       ),
       TenantSiteConfig.findOneAndUpdate(
         { tenantId: tenant._id },
-        { $setOnInsert: { tenantId: tenant._id, ...DEFAULT_TENANT_SITE_CONFIG } },
-        { upsert: true, new: true }
-      ),
-      PageConfig.findOneAndUpdate(
-        { tenantId: tenant._id, pageType: "home" },
-        { $setOnInsert: { tenantId: tenant._id, ...HOME_PAGE_DEFAULT } },
+        {
+          $setOnInsert: {
+            tenantId: tenant._id,
+            homepageConfig: { pageType: "custom-home", sections: [] },
+            navigationConfig: {},
+            footerConfig: {},
+            enabledFeatures: ["ai-content", "dynamic-menu"],
+          },
+        },
         { upsert: true, new: true }
       ),
       TenantAdmin.findOneAndUpdate(

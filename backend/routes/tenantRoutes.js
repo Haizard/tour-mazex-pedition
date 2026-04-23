@@ -9,16 +9,50 @@ import { withTenantId } from "../utils/tenantContext.js";
 import {
   DEFAULT_TENANT_SITE_CONFIG,
   DEFAULT_TENANT_THEME,
+  EMPTY_TENANT_SITE_CONFIG,
+  LEGACY_TENANT_SLUG,
 } from "../utils/tenantDefaults.js";
 import { canAccessFeature, getPlanDefinition } from "../utils/subscriptionPlans.js";
 import { buildDemoDomain, normalizeRequestedDomains } from "../utils/domainProvisioning.js";
 
 const router = express.Router();
 
+const getFallbackSiteConfig = (tenant) =>
+  tenant?.slug === LEGACY_TENANT_SLUG
+    ? DEFAULT_TENANT_SITE_CONFIG
+    : EMPTY_TENANT_SITE_CONFIG;
+
+const sanitizeSiteConfigForTenant = (tenant, config) => {
+  const fallbackConfig = getFallbackSiteConfig(tenant);
+
+  if (!config) {
+    return fallbackConfig;
+  }
+
+  if (tenant?.slug === LEGACY_TENANT_SLUG) {
+    return config;
+  }
+
+  const footerConfig =
+    config.footerConfig?.brandName === DEFAULT_TENANT_SITE_CONFIG.footerConfig.brandName
+      ? EMPTY_TENANT_SITE_CONFIG.footerConfig
+      : config.footerConfig || EMPTY_TENANT_SITE_CONFIG.footerConfig;
+  const navigationConfig =
+    config.navigationConfig?.ctaLabel === DEFAULT_TENANT_SITE_CONFIG.navigationConfig.ctaLabel
+      ? EMPTY_TENANT_SITE_CONFIG.navigationConfig
+      : config.navigationConfig || EMPTY_TENANT_SITE_CONFIG.navigationConfig;
+
+  return {
+    ...config,
+    footerConfig,
+    navigationConfig,
+  };
+};
+
 router.get("/site-config", async (req, res) => {
   try {
     const config = await TenantSiteConfig.findOne({ tenantId: req.tenantId }).lean();
-    res.status(200).json(config || DEFAULT_TENANT_SITE_CONFIG);
+    res.status(200).json(sanitizeSiteConfigForTenant(req.tenant, config));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -26,23 +60,24 @@ router.get("/site-config", async (req, res) => {
 
 router.put("/site-config", requireTenantAdmin, async (req, res) => {
   try {
+    const fallbackConfig = getFallbackSiteConfig(req.tenant);
     const current = await TenantSiteConfig.findOne({ tenantId: req.tenantId }).lean();
     const nextValue = {
-      ...(current || DEFAULT_TENANT_SITE_CONFIG),
+      ...(current || fallbackConfig),
       ...withTenantId(req, {}),
       navigationConfig: {
-        ...(current?.navigationConfig || DEFAULT_TENANT_SITE_CONFIG.navigationConfig),
+        ...(current?.navigationConfig || fallbackConfig.navigationConfig),
         ...(req.body.navigationConfig || {}),
       },
       footerConfig: {
-        ...(current?.footerConfig || DEFAULT_TENANT_SITE_CONFIG.footerConfig),
+        ...(current?.footerConfig || fallbackConfig.footerConfig),
         ...(req.body.footerConfig || {}),
       },
       homepageConfig: {
-        ...(current?.homepageConfig || DEFAULT_TENANT_SITE_CONFIG.homepageConfig),
+        ...(current?.homepageConfig || fallbackConfig.homepageConfig),
         ...(req.body.homepageConfig || {}),
       },
-      enabledFeatures: req.body.enabledFeatures || current?.enabledFeatures || DEFAULT_TENANT_SITE_CONFIG.enabledFeatures,
+      enabledFeatures: req.body.enabledFeatures || current?.enabledFeatures || fallbackConfig.enabledFeatures,
     };
 
     const config = await TenantSiteConfig.findOneAndUpdate(
@@ -93,7 +128,7 @@ router.get("/bootstrap", async (req, res) => {
         planDefinition: getPlanDefinition(req.tenant.subscription?.plan),
       },
       theme: theme || DEFAULT_TENANT_THEME,
-      siteConfig: siteConfig || DEFAULT_TENANT_SITE_CONFIG,
+      siteConfig: sanitizeSiteConfigForTenant(req.tenant, siteConfig),
       siteSettings: siteSettings || null,
       pages: {
         home: homePage || null,

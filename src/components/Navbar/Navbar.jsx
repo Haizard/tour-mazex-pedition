@@ -119,6 +119,7 @@ const Navbar = ({ handleOrderPopup }) => {
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
   const shouldUseDefaultMenu = !tenant || tenant.slug === "maz-expeditions";
+  const isLegacyTenant = shouldUseDefaultMenu;
   const initialTours = React.useMemo(() => 
     Array.isArray(sharedData.tours) ? sharedData.tours : [], 
   [sharedData.tours]);
@@ -201,7 +202,8 @@ const Navbar = ({ handleOrderPopup }) => {
   const navigationConfig = siteConfig?.navigationConfig || {};
 
   const handlePrimaryCta = () => {
-    const href = navigationConfig.ctaHref || "/plan-my-trip";
+    const href = navigationConfig.ctaHref || (isLegacyTenant ? "/plan-my-trip" : "");
+    if (!href) return;
     if (href === "popup") {
       handleOrderPopup();
       return;
@@ -231,31 +233,36 @@ const Navbar = ({ handleOrderPopup }) => {
           </div>
 
           <div className="flex-1 flex justify-center">
-            <button
-              onClick={handlePrimaryCta}
-              className="bg-safari-green text-white px-8 py-1.5 rounded-lg text-sm font-medium tracking-wider hover:bg-opacity-90 transition-all shadow-md transform hover:scale-105 active:scale-95"
-            >
-              {navigationConfig.ctaLabel || "PLAN MY TRIP"}
-            </button>
+            {(navigationConfig.ctaLabel || isLegacyTenant) && (
+              <button
+                onClick={handlePrimaryCta}
+                className="bg-safari-green text-white px-8 py-1.5 rounded-lg text-sm font-medium tracking-wider hover:bg-opacity-90 transition-all shadow-md transform hover:scale-105 active:scale-95"
+              >
+                {navigationConfig.ctaLabel || "PLAN MY TRIP"}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-6 text-[13px] font-medium uppercase tracking-tighter">
-            <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 text-white">
-              <option>English UK</option>
-              <option>Germany DE</option>
-            </select>
-            <Link to="/pricing" className="hover:text-safari-gold transition-colors">
-              Pricing
-            </Link>
-            <Link to={navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
-              {navigationConfig.aboutLabel || "About Us"}
-            </Link>
-            <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 max-w-[150px] text-white" defaultValue="Practical Info">
-              <option disabled>Practical Info</option>
-              <option>Privacy Policy</option>
-              <option>Terms & Conditions</option>
-              <option>Safari FAQs</option>
-            </select>
+            {isLegacyTenant && (
+              <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 text-white">
+                <option>English UK</option>
+                <option>Germany DE</option>
+              </select>
+            )}
+            {(navigationConfig.aboutLabel || isLegacyTenant) && (
+              <Link to={navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
+                {navigationConfig.aboutLabel || "About Us"}
+              </Link>
+            )}
+            {isLegacyTenant && (
+              <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 max-w-[150px] text-white" defaultValue="Practical Info">
+                <option disabled>Practical Info</option>
+                <option>Privacy Policy</option>
+                <option>Terms & Conditions</option>
+                <option>Safari FAQs</option>
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -269,13 +276,19 @@ const Navbar = ({ handleOrderPopup }) => {
       >
         <div className="container mx-auto flex justify-between items-center px-4">
           <Link to="/" className="flex items-center" onClick={() => window.scrollTo(0, 0)}>
-            <img
-              src={settings?.logoUrl || Logo}
-              alt="Logo"
-              className={`h-12 sm:h-14 md:h-20 rounded-full shadow-2xl transition-all duration-300 ${
-                isScrolled ? "border-2 border-[#6f5336]/20" : "border-2 border-white/20"
-              }`}
-            />
+            {(settings?.logoUrl || isLegacyTenant) ? (
+              <img
+                src={settings?.logoUrl || Logo}
+                alt="Logo"
+                className={`h-12 sm:h-14 md:h-20 rounded-full shadow-2xl transition-all duration-300 ${
+                  isScrolled ? "border-2 border-[#6f5336]/20" : "border-2 border-white/20"
+                }`}
+              />
+            ) : (
+              <span className={`font-black uppercase tracking-widest ${isScrolled ? "text-[#2f2418]" : "text-white"}`}>
+                {tenant?.name || "Tenant"}
+              </span>
+            )}
           </Link>
 
           <div className="hidden lg:block">
@@ -284,22 +297,6 @@ const Navbar = ({ handleOrderPopup }) => {
                 isScrolled ? "text-[#2f2418]" : "text-white"
               }`}
             >
-              <li className="relative">
-                <NavLink
-                  to="/pricing"
-                  className={({ isActive }) =>
-                    `flex items-center gap-1 text-[13px] xl:text-[14px] font-bold uppercase tracking-wider transition-all duration-300 ${
-                      isActive
-                        ? "text-safari-gold"
-                        : isScrolled
-                          ? "text-[#2f2418] hover:text-[#8b5e34]"
-                          : "text-white hover:text-safari-gold"
-                    }`
-                  }
-                >
-                  Pricing
-                </NavLink>
-              </li>
               {menuItems.map((item, index) => (
                 <li
                   key={`${item.label}-${index}`}
