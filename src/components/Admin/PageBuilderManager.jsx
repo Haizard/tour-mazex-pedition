@@ -13,6 +13,7 @@ import {
 import Button from "../UI/Button";
 import {
   fetchPageConfig,
+  createPlatformTenantMenuItem,
   fetchPlatformTenantPageConfig,
   getMediaUrl,
   updatePageConfig,
@@ -93,7 +94,7 @@ const EDITOR_PANEL_CLASS =
   "rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm";
 const PAGE_TYPES = [
   { value: "home", label: "Home", slug: "/" },
-  { value: "tours", label: "Tours Listing", slug: "/packages" },
+  { value: "tours", label: "Tours Listing", slug: "/tours" },
   { value: "tour-detail", label: "Tour Detail", slug: "/packages/:slug" },
   { value: "blogs", label: "Blog Listing", slug: "/blogs" },
   { value: "blog-detail", label: "Blog Detail", slug: "/blogs/:slug" },
@@ -657,6 +658,28 @@ const PageBuilderManager = ({
     }));
   };
 
+  const handleAddCurrentPageToNavbar = async () => {
+    if (!tenantId || !canManageLayout) return;
+    setSaving(true);
+    setMessage("");
+
+    try {
+      await createPlatformTenantMenuItem(tenantId, {
+        label: pageConfig.title || getPageTypeMeta(activePageType).label,
+        link: pageConfig.slug || getPageTypeMeta(activePageType).slug,
+        itemType: "link",
+        sortOrder: 99,
+        children: [],
+      });
+      setMessage(`${pageConfig.title || getPageTypeMeta(activePageType).label} added to the tenant navbar.`);
+    } catch (error) {
+      console.error("Failed to add page to navbar:", error);
+      setMessage(error?.response?.data?.message || "Failed to add this page to the navbar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   React.useEffect(() => {
     setSelectedSectionIndex((current) => {
       if (!pageConfig.sections.length) return 0;
@@ -734,6 +757,22 @@ const PageBuilderManager = ({
           />
         </div>
       </div>
+      {tenantId && canManageLayout && (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm font-black text-slate-900">Navbar publishing</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">
+            Save this page, then add a menu link so visitors can discover it from the public navbar.
+          </p>
+          <button
+            type="button"
+            onClick={handleAddCurrentPageToNavbar}
+            disabled={saving}
+            className="mt-4 rounded-xl bg-slate-950 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"
+          >
+            Add This Page To Navbar
+          </button>
+        </div>
+      )}
     </div>
   );
 

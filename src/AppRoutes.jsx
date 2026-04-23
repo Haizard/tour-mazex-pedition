@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Layout from "./pages/Layout";
 import Home from "./pages/Home";
 import Blogs from "./pages/Blogs";
+import ConfiguredPage from "./pages/ConfiguredPage";
 import NoPage from "./pages/NoPage";
 import PlacesRoute from "./pages/PlacesRoute";
 import DestinationDetail from "./pages/DestinationDetail";
@@ -26,19 +27,21 @@ import TermsConditions from "./pages/TermsConditions";
 const tenantSiteRoutes = (
   <>
     <Route index element={<Home />} />
-    <Route path="blogs" element={<Blogs />} />
+    <Route path="blogs" element={<ConfiguredPage pageType="blogs" fallback={Blogs} />} />
     <Route path="blogs/:title" element={<BlogDetail />} />
     <Route path="blogs/category/:categoryId" element={<BlogCategory />} />
-    <Route path="packages" element={<PackagesPage />} />
+    <Route path="packages" element={<ConfiguredPage pageType="tours" fallback={PackagesPage} />} />
+    <Route path="tours" element={<ConfiguredPage pageType="tours" fallback={PackagesPage} />} />
     <Route path="packages/:title" element={<PackageDetail />} />
     <Route path="best-places" element={<PlacesRoute />} />
     <Route path="destinations" element={<PlacesRoute />} />
     <Route path="destinations/:destinationSlug" element={<DestinationDetail />} />
     <Route path="about" element={<About />} />
-    <Route path="contact" element={<Contact />} />
+    <Route path="contact" element={<ConfiguredPage pageType="contact" fallback={Contact} />} />
     <Route path="gallery" element={<Gallery />} />
     <Route path="plan-my-trip" element={<PlanMyTrip />} />
-    <Route path="tailor-made" element={<PlanMyTrip />} />
+    <Route path="tailor-made" element={<ConfiguredPage pageType="tailor-made" fallback={PlanMyTrip} />} />
+    <Route path="landing" element={<ConfiguredPage pageType="landing" />} />
     <Route path="privacy-policy" element={<PrivacyPolicy />} />
     <Route path="terms" element={<TermsConditions />} />
   </>

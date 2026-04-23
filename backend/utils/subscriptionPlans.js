@@ -84,6 +84,13 @@ export const canAccessFeature = (subscription = {}, featureKey = "") => {
     return false;
   }
 
+  if (
+    subscription.featureOverrides &&
+    Object.prototype.hasOwnProperty.call(subscription.featureOverrides, featureKey)
+  ) {
+    return Boolean(subscription.featureOverrides[featureKey]);
+  }
+
   const plan = getPlanDefinition(subscription.plan);
   return plan.features.includes(featureKey);
 };

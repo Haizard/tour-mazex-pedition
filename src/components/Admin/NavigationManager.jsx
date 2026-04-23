@@ -59,6 +59,7 @@ const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } =
   const [editingMenuId, setEditingMenuId] = React.useState(null);
   const [siteConfigFormData, setSiteConfigFormData] = React.useState(defaultSiteConfigFormData);
   const [loading, setLoading] = React.useState(false);
+  const [activeChromeTool, setActiveChromeTool] = React.useState("chrome");
 
   const loadMenuItems = async () => {
     try {
@@ -208,6 +209,29 @@ const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } =
         </div>
       </div>
 
+      <div className="mb-8 grid grid-cols-1 gap-3 rounded-[28px] border border-slate-200 bg-slate-100/70 p-2 md:grid-cols-3">
+        {[
+          ["chrome", "Chrome Settings", "CTA, logo placement, footer brand"],
+          ["menu", "Menu Builder", "Links, dropdowns, megamenus"],
+          ["preview", "Structure Preview", "Audit the current navigation"],
+        ].map(([id, label, description]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveChromeTool(id)}
+            className={`rounded-2xl px-5 py-4 text-left transition ${
+              activeChromeTool === id
+                ? "bg-white text-slate-950 shadow-sm"
+                : "text-slate-500 hover:bg-white/70"
+            }`}
+          >
+            <span className="block text-sm font-black">{label}</span>
+            <span className="mt-1 block text-xs font-semibold">{description}</span>
+          </button>
+        ))}
+      </div>
+
+      {activeChromeTool === "chrome" && (
       <Card className="p-8 mb-8 border-none shadow-xl bg-white">
         <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
           <FaCog className="text-primary" />
@@ -349,7 +373,10 @@ const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } =
           </div>
         </form>
       </Card>
+      )}
 
+      {activeChromeTool === "menu" && (
+      <>
       <Card className="p-8 mb-8 border-none shadow-xl">
         <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
           <FaBars className="text-primary" />
@@ -472,6 +499,53 @@ const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } =
           </Card>
         ))}
       </div>
+      </>
+      )}
+
+      {activeChromeTool === "preview" && (
+        <Card className="p-8 border-none shadow-xl bg-white">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Current Structure</p>
+          <h3 className="mt-2 text-2xl font-black text-slate-950">Navbar and footer audit</h3>
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <p className="text-sm font-black text-slate-950">Navbar CTA</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                {siteConfigFormData.navigationConfig.ctaLabel || "No CTA"} → {siteConfigFormData.navigationConfig.ctaHref || "No link"}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <p className="text-sm font-black text-slate-950">Logo Placement</p>
+              <p className="mt-2 text-sm font-semibold capitalize text-slate-500">
+                {siteConfigFormData.navigationConfig.logoPlacement || "left"}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <p className="text-sm font-black text-slate-950">Footer Brand</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                {siteConfigFormData.footerConfig.brandName || "No brand configured"}
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 space-y-3">
+            {menuItems.map((item) => (
+              <div key={item._id || `${item.label}-${item.link}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-black text-slate-950">{item.label}</p>
+                    <p className="text-xs font-semibold text-slate-500">{item.link}</p>
+                  </div>
+                  <Badge variant="secondary">{item.itemType}</Badge>
+                </div>
+              </div>
+            ))}
+            {!menuItems.length && (
+              <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm font-bold text-slate-500">
+                No menu items yet. Add links from the Menu Builder tab.
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

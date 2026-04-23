@@ -34,6 +34,15 @@ const tenantPanels = [
   ["support", "Support"],
 ];
 
+const growthSuiteFeatures = [
+  ["social-accounts", "Social Channels", "Connect tenant Instagram, Facebook, and other publishing channels."],
+  ["social-posts", "Social Posts", "Schedule and publish AI-assisted posts."],
+  ["lead-inbox", "Lead Inbox", "Capture and qualify leads from forms, chat, and campaigns."],
+  ["repurposing", "Repurposing", "Turn blogs and tours into marketing content."],
+  ["campaigns", "Campaigns", "Create seasonal offers and campaign workflows."],
+  ["whatsapp-automation", "WhatsApp Automation", "Enable WhatsApp Business messaging flows."],
+];
+
 const createTenantFormState = (tenant) => ({
   name: tenant?.name || "",
   subdomain: tenant?.subdomain || "",
@@ -53,6 +62,13 @@ const createTenantFormState = (tenant) => ({
   trialEndsAt: tenant?.subscription?.trialEndsAt ? new Date(tenant.subscription.trialEndsAt).toISOString().slice(0, 10) : "",
   currentPeriodEndsAt: tenant?.subscription?.currentPeriodEndsAt ? new Date(tenant.subscription.currentPeriodEndsAt).toISOString().slice(0, 10) : "",
   manualOverride: tenant?.subscription?.manualOverride !== false,
+  featureOverrides: tenant?.subscription?.featureOverrides || {},
+  ...Object.fromEntries(
+    growthSuiteFeatures.map(([key]) => [
+      `feature_${key}`,
+      tenant?.subscription?.featureOverrides?.[key] === true,
+    ])
+  ),
   domainServiceStatus: tenant?.domainService?.serviceStatus || "active",
   annualDomainPriceUsd: String(tenant?.domainService?.annualPriceUsd || 50),
   domainRenewalDueAt: tenant?.domainService?.renewalDueAt ? new Date(tenant.domainService.renewalDueAt).toISOString().slice(0, 10) : "",
@@ -219,6 +235,9 @@ const PlatformAdminDashboard = () => {
           trialEndsAt: tenantForm.trialEndsAt || null,
           currentPeriodEndsAt: tenantForm.currentPeriodEndsAt || null,
           manualOverride: tenantForm.manualOverride,
+          featureOverrides: Object.fromEntries(
+            growthSuiteFeatures.map(([key]) => [key, Boolean(tenantForm[`feature_${key}`])])
+          ),
         },
         domainService: {
           ...(selectedTenant.domainService || {}),
@@ -484,6 +503,45 @@ const PlatformAdminDashboard = () => {
               {label}<input type="checkbox" checked={tenantForm[key]} onChange={(event) => setTenantForm((current) => ({ ...current, [key]: event.target.checked }))} className="h-4 w-4 accent-zinc-950" />
             </label>
           ))}
+        </div>
+        <div className="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Growth Suite Feature Control</p>
+              <h3 className="mt-2 text-xl font-black text-zinc-950">Manual access per tenant</h3>
+            </div>
+            <p className="max-w-md text-sm font-medium text-zinc-500">
+              These overrides control what the tenant actually sees, even if you want to sell a custom package outside the default plan tiers.
+            </p>
+          </div>
+          <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {growthSuiteFeatures.map(([key, label, description]) => (
+              <label
+                key={key}
+                className={`flex cursor-pointer items-start justify-between gap-5 rounded-2xl border p-4 transition ${
+                  tenantForm[`feature_${key}`]
+                    ? "border-emerald-300 bg-white shadow-sm"
+                    : "border-zinc-200 bg-white/70"
+                }`}
+              >
+                <span>
+                  <span className="block text-sm font-black text-zinc-950">{label}</span>
+                  <span className="mt-1 block text-xs font-semibold leading-5 text-zinc-500">{description}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={Boolean(tenantForm[`feature_${key}`])}
+                  onChange={(event) =>
+                    setTenantForm((current) => ({
+                      ...current,
+                      [`feature_${key}`]: event.target.checked,
+                    }))
+                  }
+                  className="mt-1 h-5 w-5 accent-emerald-600"
+                />
+              </label>
+            ))}
+          </div>
         </div>
         <button className="mt-6 rounded-xl bg-zinc-950 px-5 py-3 text-sm font-black uppercase tracking-widest text-white disabled:opacity-50" disabled={saving}>{saving ? "Saving..." : "Save Subscription"}</button>
       </div>
