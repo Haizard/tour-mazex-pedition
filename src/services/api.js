@@ -100,24 +100,40 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    // If we get a 401 Unauthorized from the server, it means our session is invalid
-    if (error.response && error.response.status === 401) {
+    const requestUrl = error.config?.url || "";
+    const isLoginRequest =
+      requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/platform-auth/login");
+
+    // A login request returning 401 is just wrong credentials. Other 401s mean
+    // a stored session expired and should redirect to the matching admin login.
+    if (error.response && error.response.status === 401 && !isLoginRequest && isBrowser) {
       const isAuthPath =
         window.location.pathname.includes("/admin") ||
+        window.location.pathname.includes("/platform") ||
+        window.location.pathname.includes("/super-admin") ||
         window.location.pathname.includes("/login");
 
       if (isAuthPath) {
         console.warn("Session expired. Clearing local auth state and redirecting...");
-        // Clear all relevant tokens
         window.localStorage.removeItem("adminAuthToken");
-        window.localStorage.removeItem("platformAdminToken");
+        window.localStorage.removeItem("platformAdminAuthToken");
 
-        // Force reload/redirect to login if not already on a login page
         if (!window.location.pathname.endsWith("/login")) {
-          window.location.href = "/admin/login?expired=true";
+          const isPlatformPath =
+            window.location.pathname.includes("/platform") ||
+            window.location.pathname.includes("/super-admin");
+          window.location.href = isPlatformPath
+            ? "/platform/login?expired=true"
+            : "/admin/login?expired=true";
         }
       }
+    } else if (isLoginRequest && error.response?.status === 401) {
+      console.error("Login failed: Invalid credentials.", error.response.data?.message || "");
+    } else if (error.response) {
+      console.error(`API Error (${error.response.status}):`, error.response.data?.message || error.message);
     }
+    
     return Promise.reject(error);
   }
 );
