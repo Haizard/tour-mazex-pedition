@@ -28,6 +28,9 @@ const ResponsiveMenu = ({
     footerConfig.mobileCopyrightLabel ||
     footerConfig.copyrightLabel ||
     `Copyright ${new Date().getFullYear()} ${brandName || "Tenant Website"}`;
+  const menuHeading = brandName || footerConfig.brandName || "Website Menu";
+  const menuSubheading =
+    navigationConfig.aboutLabel || footerConfig.brandDescription || "Explore this website";
 
   const toggleSubmenu = (id) => {
     setOpenSubmenu(openSubmenu === id ? null : id);
@@ -60,8 +63,8 @@ const ResponsiveMenu = ({
             <FaUserCircle size={32} />
           </div>
           <div>
-            <h1 className="text-lg font-bold uppercase tracking-wide text-white">Hello Explorer</h1>
-            <h2 className="text-xs italic text-white/60 lowercase">Welcome to Adventure</h2>
+            <h1 className="text-lg font-bold uppercase tracking-wide text-white">{menuHeading}</h1>
+            <h2 className="text-xs italic text-white/60">{menuSubheading}</h2>
           </div>
         </div>
 
