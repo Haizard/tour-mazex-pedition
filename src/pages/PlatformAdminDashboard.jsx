@@ -43,6 +43,50 @@ const growthSuiteFeatures = [
   ["whatsapp-automation", "WhatsApp Automation", "Enable WhatsApp Business messaging flows."],
 ];
 
+const subscriptionPlans = [
+  {
+    code: "starter",
+    name: "Starter",
+    price: "$29",
+    description: "Entry plan for smaller operators launching their first managed site.",
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai"],
+    limits: ["20 AI generations", "50 chatbot interactions", "1 social account"],
+  },
+  {
+    code: "growth",
+    name: "Growth",
+    price: "$79",
+    description: "Main commercial plan for operators who need leads and social publishing.",
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...growthSuiteFeatures.map(([key]) => key)],
+    limits: ["200 AI generations", "500 chatbot interactions", "2 social accounts"],
+  },
+  {
+    code: "pro",
+    name: "Pro",
+    price: "$199",
+    description: "Full growth suite with campaigns, WhatsApp flows, and higher operational limits.",
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...growthSuiteFeatures.map(([key]) => key), "priority-support"],
+    limits: ["1000 AI generations", "3000 chatbot interactions", "10 social accounts"],
+  },
+  {
+    code: "enterprise",
+    name: "Enterprise",
+    price: "Custom",
+    description: "Negotiated packaging for multi-brand or high-touch managed accounts.",
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...growthSuiteFeatures.map(([key]) => key), "priority-support"],
+    limits: ["Custom limits", "Custom integrations", "Managed rollout"],
+  },
+];
+
+const subscriptionTools = [
+  ["plans", "Plan Studio", "Pricing, billing cadence, trial and renewal windows"],
+  ["growth-suite", "Growth Suite", "Per-tenant access for social, leads, campaigns, and WhatsApp"],
+  ["service", "Hosting Service", "Managed hosting, DNS, and annual renewal controls"],
+];
+
+const getSubscriptionPlanMeta = (planCode = "starter") =>
+  subscriptionPlans.find((plan) => plan.code === planCode) || subscriptionPlans[0];
+
 const createTenantFormState = (tenant) => ({
   name: tenant?.name || "",
   subdomain: tenant?.subdomain || "",
@@ -117,6 +161,7 @@ const PlatformAdminDashboard = () => {
   const [supportMode, setSupportMode] = useState("recent");
   const [activeSection, setActiveSection] = useState("tenants");
   const [activeTenantPanel, setActiveTenantPanel] = useState("overview");
+  const [activeSubscriptionTool, setActiveSubscriptionTool] = useState("plans");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creatingTenant, setCreatingTenant] = useState(false);
@@ -163,6 +208,7 @@ const PlatformAdminDashboard = () => {
 
   useEffect(() => {
     setTenantForm(createTenantFormState(selectedTenant));
+    setActiveSubscriptionTool("plans");
   }, [selectedTenant]);
 
   useEffect(() => {
@@ -475,85 +521,200 @@ const PlatformAdminDashboard = () => {
     </form>
   );
 
-  const renderSubscription = () => (
-    <form onSubmit={handleSaveTenant} className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.7fr]">
-      <div className={panelClass}>
-        <p className="text-xl font-black text-zinc-950">Subscription And Hosting</p>
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-          <select className={inputClass} value={tenantForm.subscriptionPlan} onChange={(event) => setTenantForm((current) => ({ ...current, subscriptionPlan: event.target.value }))}>
-            <option value="starter">Starter</option><option value="growth">Growth</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option>
-          </select>
-          <select className={inputClass} value={tenantForm.subscriptionStatus} onChange={(event) => setTenantForm((current) => ({ ...current, subscriptionStatus: event.target.value }))}>
-            <option value="inactive">Inactive</option><option value="trialing">Trialing</option><option value="active">Active</option><option value="past_due">Past Due</option><option value="cancelled">Cancelled</option>
-          </select>
-          <select className={inputClass} value={tenantForm.billingInterval} onChange={(event) => setTenantForm((current) => ({ ...current, billingInterval: event.target.value }))}>
-            <option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="custom">Custom</option>
-          </select>
-          <input className={inputClass} type="number" min="50" max="200" value={tenantForm.annualDomainPriceUsd} onChange={(event) => setTenantForm((current) => ({ ...current, annualDomainPriceUsd: event.target.value }))} />
-          <input className={inputClass} type="date" value={tenantForm.trialEndsAt} onChange={(event) => setTenantForm((current) => ({ ...current, trialEndsAt: event.target.value }))} />
-          <input className={inputClass} type="date" value={tenantForm.currentPeriodEndsAt} onChange={(event) => setTenantForm((current) => ({ ...current, currentPeriodEndsAt: event.target.value }))} />
-          <input className={inputClass} type="date" value={tenantForm.domainRenewalDueAt} onChange={(event) => setTenantForm((current) => ({ ...current, domainRenewalDueAt: event.target.value }))} />
-          <select className={inputClass} value={tenantForm.domainServiceStatus} onChange={(event) => setTenantForm((current) => ({ ...current, domainServiceStatus: event.target.value }))}>
-            <option value="active">Active</option><option value="pending_renewal">Pending Renewal</option><option value="expired">Expired</option>
-          </select>
+  const renderSubscription = () => {
+    const selectedPlan = getSubscriptionPlanMeta(tenantForm.subscriptionPlan);
+    const activeFeatureCount = growthSuiteFeatures.filter(([key]) => Boolean(tenantForm[`feature_${key}`])).length;
+
+    return (
+      <form onSubmit={handleSaveTenant} className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <StatCard label="Plan" value={selectedPlan.name} />
+          <StatCard label="Status" value={tenantForm.subscriptionStatus || "inactive"} />
+          <StatCard label="Growth Suite" value={`${activeFeatureCount}/${growthSuiteFeatures.length}`} />
+          <StatCard label="Annual Service" value={`$${tenantForm.annualDomainPriceUsd || 50}`} />
         </div>
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-          {[["manualOverride", "Manual override"], ["includesHosting", "Hosting included"], ["includesManagedDns", "Managed DNS"], ["enableCustomDomains", "Custom domains"], ["enablePageBuilder", "Page builder"], ["enableAiContent", "AI content"]].map(([key, label]) => (
-            <label key={key} className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-bold text-zinc-700">
-              {label}<input type="checkbox" checked={tenantForm[key]} onChange={(event) => setTenantForm((current) => ({ ...current, [key]: event.target.checked }))} className="h-4 w-4 accent-zinc-950" />
-            </label>
+
+        <div className="grid grid-cols-1 gap-3 rounded-3xl border border-zinc-200 bg-white p-2 shadow-sm md:grid-cols-3">
+          {subscriptionTools.map(([id, label, description]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveSubscriptionTool(id)}
+              className={`rounded-2xl px-5 py-4 text-left transition ${
+                activeSubscriptionTool === id
+                  ? "bg-zinc-950 text-white shadow-sm"
+                  : "text-zinc-500 hover:bg-zinc-50"
+              }`}
+            >
+              <span className="block text-sm font-black">{label}</span>
+              <span className={`mt-1 block text-xs font-semibold ${activeSubscriptionTool === id ? "text-zinc-300" : "text-zinc-500"}`}>{description}</span>
+            </button>
           ))}
         </div>
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Growth Suite Feature Control</p>
-              <h3 className="mt-2 text-xl font-black text-zinc-950">Manual access per tenant</h3>
+
+        {activeSubscriptionTool === "plans" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-4">
+              {subscriptionPlans.map((plan) => {
+                const isActive = tenantForm.subscriptionPlan === plan.code;
+                return (
+                  <button
+                    key={plan.code}
+                    type="button"
+                    onClick={() => setTenantForm((current) => ({ ...current, subscriptionPlan: plan.code }))}
+                    className={`rounded-3xl border p-5 text-left transition ${
+                      isActive
+                        ? "border-zinc-950 bg-zinc-950 text-white shadow-xl"
+                        : "border-zinc-200 bg-white hover:-translate-y-0.5 hover:shadow-md"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${isActive ? "text-zinc-400" : "text-zinc-500"}`}>{plan.code}</p>
+                        <h3 className="mt-2 text-2xl font-black">{plan.name}</h3>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${isActive ? "bg-white text-zinc-950" : "bg-zinc-100 text-zinc-700"}`}>
+                        {plan.price}
+                      </span>
+                    </div>
+                    <p className={`mt-4 text-sm font-medium leading-6 ${isActive ? "text-zinc-300" : "text-zinc-500"}`}>{plan.description}</p>
+                    <div className="mt-5 space-y-2">
+                      {plan.limits.map((limit) => (
+                        <p key={`${plan.code}-${limit}`} className={`text-xs font-black uppercase tracking-widest ${isActive ? "text-zinc-400" : "text-zinc-500"}`}>{limit}</p>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-            <p className="max-w-md text-sm font-medium text-zinc-500">
-              These overrides control what the tenant actually sees, even if you want to sell a custom package outside the default plan tiers.
-            </p>
+
+            <div className={panelClass}>
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Billing Controls</p>
+                  <h2 className="mt-2 text-2xl font-black text-zinc-950">Subscription state and commercial timing</h2>
+                </div>
+                <p className="max-w-xl text-sm font-medium text-zinc-500">
+                  Use this panel to control what commercial state the tenant is in, without opening code or changing plan definitions.
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div><label className={labelClass}>Subscription Status</label><select className={inputClass} value={tenantForm.subscriptionStatus} onChange={(event) => setTenantForm((current) => ({ ...current, subscriptionStatus: event.target.value }))}><option value="inactive">Inactive</option><option value="trialing">Trialing</option><option value="active">Active</option><option value="past_due">Past Due</option><option value="cancelled">Cancelled</option></select></div>
+                <div><label className={labelClass}>Billing Interval</label><select className={inputClass} value={tenantForm.billingInterval} onChange={(event) => setTenantForm((current) => ({ ...current, billingInterval: event.target.value }))}><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="custom">Custom</option></select></div>
+                <div><label className={labelClass}>Trial Ends</label><input className={inputClass} type="date" value={tenantForm.trialEndsAt} onChange={(event) => setTenantForm((current) => ({ ...current, trialEndsAt: event.target.value }))} /></div>
+                <div><label className={labelClass}>Current Period Ends</label><input className={inputClass} type="date" value={tenantForm.currentPeriodEndsAt} onChange={(event) => setTenantForm((current) => ({ ...current, currentPeriodEndsAt: event.target.value }))} /></div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+                {[["manualOverride", "Manual override"], ["enableCustomDomains", "Custom domains"], ["enablePageBuilder", "Page builder"], ["enableAiContent", "AI content"]].map(([key, label]) => (
+                  <label key={key} className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 px-4 py-4 text-sm font-bold text-zinc-700">
+                    {label}
+                    <input type="checkbox" checked={tenantForm[key]} onChange={(event) => setTenantForm((current) => ({ ...current, [key]: event.target.checked }))} className="h-4 w-4 accent-zinc-950" />
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
-            {growthSuiteFeatures.map(([key, label, description]) => (
-              <label
-                key={key}
-                className={`flex cursor-pointer items-start justify-between gap-5 rounded-2xl border p-4 transition ${
-                  tenantForm[`feature_${key}`]
-                    ? "border-emerald-300 bg-white shadow-sm"
-                    : "border-zinc-200 bg-white/70"
-                }`}
-              >
-                <span>
-                  <span className="block text-sm font-black text-zinc-950">{label}</span>
-                  <span className="mt-1 block text-xs font-semibold leading-5 text-zinc-500">{description}</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(tenantForm[`feature_${key}`])}
-                  onChange={(event) =>
-                    setTenantForm((current) => ({
-                      ...current,
-                      [`feature_${key}`]: event.target.checked,
-                    }))
-                  }
-                  className="mt-1 h-5 w-5 accent-emerald-600"
-                />
-              </label>
-            ))}
+        )}
+
+        {activeSubscriptionTool === "growth-suite" && (
+          <div className={panelClass}>
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Growth Suite Access</p>
+                <h2 className="mt-2 text-2xl font-black text-zinc-950">Per-tenant commercial entitlements</h2>
+              </div>
+              <p className="max-w-xl text-sm font-medium text-zinc-500">
+                Override the default plan package when you need a custom commercial deal for one tenant without changing the whole pricing catalog.
+              </p>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+              <p className="text-sm font-black text-zinc-950">Base plan entitlement</p>
+              <p className="mt-2 text-sm font-medium text-zinc-500">
+                {selectedPlan.name} includes {selectedPlan.features.filter((feature) => growthSuiteFeatures.some(([key]) => key === feature)).length} packaged Growth Suite features before overrides.
+              </p>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {growthSuiteFeatures.map(([key, label, description]) => {
+                const includedByPlan = selectedPlan.features.includes(key);
+                const enabled = Boolean(tenantForm[`feature_${key}`]);
+
+                return (
+                  <label
+                    key={key}
+                    className={`flex cursor-pointer items-start justify-between gap-5 rounded-2xl border p-5 transition ${
+                      enabled
+                        ? "border-emerald-300 bg-emerald-50/60 shadow-sm"
+                        : "border-zinc-200 bg-white"
+                    }`}
+                  >
+                    <span>
+                      <span className="block text-sm font-black text-zinc-950">{label}</span>
+                      <span className="mt-1 block text-xs font-semibold leading-5 text-zinc-500">{description}</span>
+                      <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${includedByPlan ? "bg-zinc-950 text-white" : "bg-zinc-100 text-zinc-700"}`}>
+                        {includedByPlan ? "Included In Plan" : "Override Only"}
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      onChange={(event) =>
+                        setTenantForm((current) => ({
+                          ...current,
+                          [`feature_${key}`]: event.target.checked,
+                        }))
+                      }
+                      className="mt-1 h-5 w-5 accent-emerald-600"
+                    />
+                  </label>
+                );
+              })}
+            </div>
           </div>
+        )}
+
+        {activeSubscriptionTool === "service" && (
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.8fr]">
+            <div className={panelClass}>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Hosting Service</p>
+              <h2 className="mt-2 text-2xl font-black text-zinc-950">Managed hosting, DNS, and renewal controls</h2>
+              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div><label className={labelClass}>Annual Service Price (USD)</label><input className={inputClass} type="number" min="50" max="200" value={tenantForm.annualDomainPriceUsd} onChange={(event) => setTenantForm((current) => ({ ...current, annualDomainPriceUsd: event.target.value }))} /></div>
+                <div><label className={labelClass}>Service Status</label><select className={inputClass} value={tenantForm.domainServiceStatus} onChange={(event) => setTenantForm((current) => ({ ...current, domainServiceStatus: event.target.value }))}><option value="active">Active</option><option value="pending_renewal">Pending Renewal</option><option value="expired">Expired</option></select></div>
+                <div><label className={labelClass}>Renewal Due Date</label><input className={inputClass} type="date" value={tenantForm.domainRenewalDueAt} onChange={(event) => setTenantForm((current) => ({ ...current, domainRenewalDueAt: event.target.value }))} /></div>
+              </div>
+              <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
+                {[["includesHosting", "Hosting included"], ["includesManagedDns", "Managed DNS"]].map(([key, label]) => (
+                  <label key={key} className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 px-4 py-4 text-sm font-bold text-zinc-700">
+                    {label}
+                    <input type="checkbox" checked={tenantForm[key]} onChange={(event) => setTenantForm((current) => ({ ...current, [key]: event.target.checked }))} className="h-4 w-4 accent-zinc-950" />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className={panelClass}>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Renewal Action</p>
+              <h3 className="mt-2 text-xl font-black text-zinc-950">Annual domain recharge</h3>
+              <p className="mt-3 text-sm font-medium text-zinc-500">Charge between $50 and $200 yearly for domain, DNS, hosting, and managed service.</p>
+              <button type="button" disabled={renewingDomain} onClick={handleRenewDomainService} className="mt-6 w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black uppercase tracking-widest text-white disabled:opacity-50">
+                {renewingDomain ? "Renewing..." : "Renew For 1 Year"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <button className="rounded-xl bg-zinc-950 px-6 py-3 text-sm font-black uppercase tracking-widest text-white disabled:opacity-50" disabled={saving}>
+            {saving ? "Saving..." : "Save Subscription Workspace"}
+          </button>
         </div>
-        <button className="mt-6 rounded-xl bg-zinc-950 px-5 py-3 text-sm font-black uppercase tracking-widest text-white disabled:opacity-50" disabled={saving}>{saving ? "Saving..." : "Save Subscription"}</button>
-      </div>
-      <div className={panelClass}>
-        <p className="text-xl font-black text-zinc-950">Annual Domain Renewal</p>
-        <p className="mt-3 text-sm font-medium text-zinc-500">Charge between $50 and $200 yearly for domain, DNS, hosting, and managed service.</p>
-        <button type="button" disabled={renewingDomain} onClick={handleRenewDomainService} className="mt-6 w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black uppercase tracking-widest text-white disabled:opacity-50">
-          {renewingDomain ? "Renewing..." : "Renew For 1 Year"}
-        </button>
-      </div>
-    </form>
-  );
+      </form>
+    );
+  };
 
   const renderMarketing = () => (
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-4">
