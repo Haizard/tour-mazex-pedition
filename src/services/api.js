@@ -404,6 +404,8 @@ export const createWhatsAppLead = (data) =>
   API.post("/custom-inquiries/whatsapp-lead", data);
 export const updateInquiryStatus = (id, status) =>
   API.patch(`/custom-inquiries/${id}`, { status });
+export const updateInquiryLeadStage = (id, leadStage) =>
+  API.patch(`/custom-inquiries/${id}`, { leadStage });
 export const deleteInquiry = (id) => API.delete(`/custom-inquiries/${id}`);
 
 // FAQs

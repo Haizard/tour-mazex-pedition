@@ -4,6 +4,7 @@ import SiteSettings from '../models/SiteSettings.js';
 import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
 import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
 import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
+import { scoreInquiryLead } from '../utils/leadScoring.js';
 
 const router = express.Router();
 
@@ -27,7 +28,46 @@ const buildInquiryPayload = (body = {}, sourceChannel = 'website') => ({
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
         const inquiries = await CustomInquiry.find(buildTenantFilter(req)).sort({ createdAt: -1 });
-        res.status(200).json(inquiries);
+        const updates = [];
+
+        const enrichedInquiries = inquiries.map((inquiry) => {
+            const record = inquiry.toObject();
+            const hasScoring =
+                typeof record.leadScore === 'number' &&
+                typeof record.leadTemperature === 'string' &&
+                record.leadTemperature.length > 0;
+
+            if (hasScoring) {
+                return record;
+            }
+
+            const scoring = scoreInquiryLead(record);
+            updates.push({
+                updateOne: {
+                    filter: { _id: inquiry._id, tenantId: req.tenantId },
+                    update: { $set: scoring },
+                }
+            });
+
+            return {
+                ...record,
+                ...scoring,
+            };
+        });
+
+        if (updates.length > 0) {
+            await CustomInquiry.bulkWrite(updates, { ordered: false });
+        }
+
+        enrichedInquiries.sort((left, right) => {
+            const scoreDelta = (right.leadScore || 0) - (left.leadScore || 0);
+            if (scoreDelta !== 0) {
+                return scoreDelta;
+            }
+            return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+        });
+
+        res.status(200).json(enrichedInquiries);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -42,8 +82,10 @@ router.post('/', async (req, res) => {
             tenantName: req.tenant?.name || 'MAZ Expeditions',
             whatsappNumber,
         });
+        const scoring = scoreInquiryLead(inquiryData);
         const newInquiry = new CustomInquiry(withTenantId(req, {
             ...inquiryData,
+            ...scoring,
             automationSummary: automation.summary,
             followUpMessage: automation.followUpMessage,
         }));
@@ -87,8 +129,10 @@ router.post('/whatsapp-lead', async (req, res) => {
             tenantName: req.tenant?.name || 'MAZ Expeditions',
             whatsappNumber,
         });
+        const scoring = scoreInquiryLead(inquiryData);
         const newInquiry = new CustomInquiry(withTenantId(req, {
             ...inquiryData,
+            ...scoring,
             automationSummary: automation.summary,
             followUpMessage: automation.followUpMessage,
         }));
@@ -107,10 +151,23 @@ router.post('/whatsapp-lead', async (req, res) => {
 // Update status (Admin)
 router.patch('/:id', requireTenantAdmin, async (req, res) => {
     try {
-        const { status } = req.body;
+        const nextFields = {};
+
+        if (req.body.status) {
+            nextFields.status = req.body.status;
+        }
+
+        if (req.body.leadStage) {
+            nextFields.leadStage = req.body.leadStage;
+        }
+
+        if (Object.keys(nextFields).length === 0) {
+            return res.status(400).json({ message: 'No inquiry updates were provided.' });
+        }
+
         const updated = await CustomInquiry.findOneAndUpdate(
             buildTenantFilter(req, { _id: req.params.id }),
-            { status },
+            nextFields,
             { new: true }
         );
         res.status(200).json(updated);

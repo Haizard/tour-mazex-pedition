@@ -27,6 +27,7 @@ import {
   fetchInquiries,
 
   updateInquiryStatus,
+  updateInquiryLeadStage,
   deleteInquiry,
   fetchContactMessages,
   updateContactMessageStatus,
@@ -2452,6 +2453,15 @@ const AdminDashboard = () => {
                           <div className="px-2.5 py-1 bg-slate-900 text-white rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg">
                             Request
                           </div>
+                          <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm ${
+                            i.leadTemperature === "hot"
+                              ? "bg-red-50 text-red-600 border border-red-100"
+                              : i.leadTemperature === "warm"
+                                ? "bg-amber-50 text-amber-600 border border-amber-100"
+                                : "bg-slate-100 text-slate-500 border border-slate-200"
+                          }`}>
+                            {i.leadTemperature || "cold"} lead
+                          </div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -2470,6 +2480,19 @@ const AdminDashboard = () => {
                       <p className="text-primary font-bold text-xs truncate mb-5 opacity-80 decoration-primary/30 group-hover:underline">
                         {i.email}
                       </p>
+
+                      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Lead Score</p>
+                          <p className="mt-1 text-2xl font-black text-slate-900">{i.leadScore ?? 0}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Stage</p>
+                          <p className="mt-1 text-xs font-black uppercase tracking-widest text-slate-600">
+                            {i.leadStage || "new"}
+                          </p>
+                        </div>
+                      </div>
 
                       <div className="bg-slate-50/80 backdrop-blur-sm p-4 rounded-2xl mb-4 border border-slate-100 group-hover:bg-white transition-colors duration-500">
                         <p className="text-slate-600 text-xs italic line-clamp-3 leading-relaxed">
@@ -2578,8 +2601,39 @@ const AdminDashboard = () => {
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Status</p>
                             <Badge variant="secondary" className="mt-1">{selectedInquiry.status}</Badge>
                           </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Lead Score</p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-black text-slate-900">{selectedInquiry.leadScore ?? 0}</span>
+                              <Badge
+                                variant="secondary"
+                                className={`mt-1 border-none ${
+                                  selectedInquiry.leadTemperature === "hot"
+                                    ? "bg-red-50 text-red-600"
+                                    : selectedInquiry.leadTemperature === "warm"
+                                      ? "bg-amber-50 text-amber-600"
+                                      : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                {selectedInquiry.leadTemperature || "cold"}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
                       </div>
+
+                      {selectedInquiry.leadScoreReasons && selectedInquiry.leadScoreReasons.length > 0 && (
+                        <div className="mb-8 p-6 bg-white rounded-2xl border border-slate-100">
+                          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Lead Scoring Signals</p>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedInquiry.leadScoreReasons.map((reason, idx) => (
+                              <Badge key={idx} variant="secondary" className="bg-slate-100 text-slate-700 border-none font-bold">
+                                {reason}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {selectedInquiry.sleepingArrangement && (
                         <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
@@ -2621,6 +2675,45 @@ const AdminDashboard = () => {
                         <p className="text-slate-600 italic leading-relaxed whitespace-pre-wrap">
                           "{selectedInquiry.message}"
                         </p>
+                      </div>
+
+                      <div className="mb-4 flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          className="rounded-2xl border-slate-200 text-slate-600"
+                          onClick={() =>
+                            updateInquiryLeadStage(selectedInquiry._id, "qualified").then(() => {
+                              loadInquiries();
+                              setSelectedInquiry((prev) => prev ? { ...prev, leadStage: "qualified" } : prev);
+                            })
+                          }
+                        >
+                          Mark Qualified
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="rounded-2xl border-slate-200 text-slate-600"
+                          onClick={() =>
+                            updateInquiryLeadStage(selectedInquiry._id, "follow-up").then(() => {
+                              loadInquiries();
+                              setSelectedInquiry((prev) => prev ? { ...prev, leadStage: "follow-up" } : prev);
+                            })
+                          }
+                        >
+                          Set Follow-Up
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="rounded-2xl border-slate-200 text-slate-600"
+                          onClick={() =>
+                            updateInquiryStatus(selectedInquiry._id, "Contacted").then(() => {
+                              loadInquiries();
+                              setSelectedInquiry((prev) => prev ? { ...prev, status: "Contacted" } : prev);
+                            })
+                          }
+                        >
+                          Mark Contacted
+                        </Button>
                       </div>
 
                       <div className="flex flex-col md:flex-row gap-4">

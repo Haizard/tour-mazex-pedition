@@ -40,6 +40,13 @@ const customInquirySchema = new mongoose.Schema({
         enum: ['new', 'qualified', 'follow-up', 'booked', 'closed'],
         default: 'new'
     },
+    leadScore: { type: Number, min: 0, max: 100, default: 0 },
+    leadTemperature: {
+        type: String,
+        enum: ['hot', 'warm', 'cold'],
+        default: 'cold'
+    },
+    leadScoreReasons: [{ type: String }],
     automationSummary: { type: String, default: '' },
     followUpMessage: { type: String, default: '' },
     status: { type: String, enum: ['Pending', 'Contacted', 'Booked', 'Cancelled'], default: 'Pending' }
