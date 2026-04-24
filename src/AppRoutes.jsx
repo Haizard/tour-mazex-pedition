@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./pages/Layout";
 import Home from "./pages/Home";
@@ -15,15 +15,32 @@ import PackageDetail from "./components/Blogs/PackageDetail";
 import PackagesPage from "./pages/PackagesPage";
 import BlogDetail from "./components/Blogs/BlogDetail";
 import BlogCategory from "./pages/BlogCategory";
-import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import AdminRoute from "./components/Admin/AdminRoute";
 import PlatformAdminRoute from "./components/Admin/PlatformAdminRoute";
-import PlatformAdminDashboard from "./pages/PlatformAdminDashboard";
 import PlatformAdminLogin from "./pages/PlatformAdminLogin";
 import PlanMyTrip from "./pages/PlanMyTrip";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
+
+const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
+const PlatformAdminDashboard = React.lazy(() => import("./pages/PlatformAdminDashboard"));
+
+const DashboardRouteFallback = ({ label }) => (
+  <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
+    <div className="mx-auto max-w-4xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+      <p className="text-[11px] font-black uppercase tracking-[0.24em] text-zinc-500">
+        Workspace Loading
+      </p>
+      <h1 className="mt-3 text-2xl font-black tracking-tight text-zinc-950">{label}</h1>
+      <div className="mt-6 space-y-3">
+        <div className="h-3 w-40 animate-pulse rounded-full bg-zinc-200" />
+        <div className="h-12 w-full animate-pulse rounded-2xl bg-zinc-100" />
+        <div className="h-40 w-full animate-pulse rounded-3xl bg-zinc-100" />
+      </div>
+    </div>
+  </main>
+);
 
 const tenantSiteRoutes = (
   <>
@@ -56,7 +73,9 @@ const AppRoutes = () => (
         path="admin"
         element={(
           <AdminRoute>
-            <AdminDashboard />
+            <Suspense fallback={<DashboardRouteFallback label="Loading tenant admin workspace" />}>
+              <AdminDashboard />
+            </Suspense>
           </AdminRoute>
         )}
       />
@@ -66,7 +85,9 @@ const AppRoutes = () => (
         path="platform"
         element={(
           <PlatformAdminRoute>
-            <PlatformAdminDashboard />
+            <Suspense fallback={<DashboardRouteFallback label="Loading platform control workspace" />}>
+              <PlatformAdminDashboard />
+            </Suspense>
           </PlatformAdminRoute>
         )}
       />
@@ -75,7 +96,9 @@ const AppRoutes = () => (
         path="super-admin"
         element={(
           <PlatformAdminRoute>
-            <PlatformAdminDashboard />
+            <Suspense fallback={<DashboardRouteFallback label="Loading platform control workspace" />}>
+              <PlatformAdminDashboard />
+            </Suspense>
           </PlatformAdminRoute>
         )}
       />
@@ -88,7 +111,9 @@ const AppRoutes = () => (
         path="admin"
         element={(
           <AdminRoute>
-            <AdminDashboard />
+            <Suspense fallback={<DashboardRouteFallback label="Loading tenant admin workspace" />}>
+              <AdminDashboard />
+            </Suspense>
           </AdminRoute>
         )}
       />
