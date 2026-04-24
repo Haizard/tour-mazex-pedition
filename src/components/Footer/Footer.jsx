@@ -278,15 +278,6 @@ const Footer = () => {
                 : `Copyright ©${new Date().getFullYear()} ${brandName}`)}
           </p>
 
-          {isLegacyTenant && (
-            <div className="text-gray-300">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#4ade80]">
-                Developed by:
-              </span>
-              <span className="ml-2 text-xs font-black">haizard@misape</span>
-            </div>
-          )}
-
           <Link to="/login" className="opacity-5 transition-opacity hover:opacity-30">
             <FaShieldAlt size={10} className="text-gray-400" />
           </Link>

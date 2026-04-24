@@ -48,6 +48,7 @@ const defaultSiteConfigFormData = {
     secondaryCtaLabel: "",
     secondaryCtaHref: "",
     copyrightLabel: "",
+    mobileCopyrightLabel: "",
   },
 };
 
@@ -93,6 +94,7 @@ const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } =
           secondaryCtaLabel: res.data?.footerConfig?.secondaryCtaLabel || "",
           secondaryCtaHref: res.data?.footerConfig?.secondaryCtaHref || "",
           copyrightLabel: res.data?.footerConfig?.copyrightLabel || "",
+          mobileCopyrightLabel: res.data?.footerConfig?.mobileCopyrightLabel || "",
         },
       });
     } catch (error) {
@@ -330,6 +332,7 @@ const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } =
                 ["secondaryCtaLabel", "Secondary CTA Label"],
                 ["secondaryCtaHref", "Secondary CTA Link"],
                 ["copyrightLabel", "Copyright Label"],
+                ["mobileCopyrightLabel", "Mobile Copyright Label"],
               ].map(([key, placeholder]) => (
                 <input
                   key={key}

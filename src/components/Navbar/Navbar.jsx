@@ -200,6 +200,7 @@ const Navbar = ({ handleOrderPopup }) => {
   }, [shouldUseDefaultMenu]); // Refresh when tenant context resolves for demo tenants.
 
   const navigationConfig = siteConfig?.navigationConfig || {};
+  const footerConfig = siteConfig?.footerConfig || {};
   const logoPlacement = navigationConfig.logoPlacement || "left";
 
   const handlePrimaryCta = () => {
@@ -407,6 +408,8 @@ const Navbar = ({ handleOrderPopup }) => {
         menuItems={menuItems}
         settings={settings}
         navigationConfig={navigationConfig}
+        footerConfig={footerConfig}
+        brandName={tenant?.name || ""}
       />
     </nav>
   );

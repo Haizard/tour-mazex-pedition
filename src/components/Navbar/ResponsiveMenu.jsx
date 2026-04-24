@@ -1,11 +1,33 @@
 import React from "react";
-import { FaUserCircle, FaFacebookF, FaTwitter, FaInstagram, FaWhatsapp, FaYoutube, FaRedditAlien, FaChevronDown, FaPhone, FaEnvelope } from "react-icons/fa";
+import {
+  FaUserCircle,
+  FaFacebookF,
+  FaTwitter,
+  FaInstagram,
+  FaWhatsapp,
+  FaYoutube,
+  FaRedditAlien,
+  FaChevronDown,
+} from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [], settings, navigationConfig = {} }) => {
+const ResponsiveMenu = ({
+  showMenu,
+  setShowMenu,
+  handleOrderPopup,
+  menuItems = [],
+  settings,
+  navigationConfig = {},
+  footerConfig = {},
+  brandName = "",
+}) => {
   const navigate = useNavigate();
   const [openSubmenu, setOpenSubmenu] = React.useState(null);
+  const mobileCopyright =
+    footerConfig.mobileCopyrightLabel ||
+    footerConfig.copyrightLabel ||
+    `Copyright ${new Date().getFullYear()} ${brandName || "Tenant Website"}`;
 
   const toggleSubmenu = (id) => {
     setOpenSubmenu(openSubmenu === id ? null : id);
@@ -28,35 +50,37 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
 
   return (
     <div
-      className={`${showMenu ? "left-0" : "-left-[100%]"
-        } fixed bottom-0 top-0 z-[2000] flex h-screen w-[75%] sm:w-[50%] flex-col justify-between bg-[#6f5336] px-6 pb-6 pt-12 text-white transition-all duration-500 md:hidden rounded-r-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-y-auto font-oswald`}
+      className={`${
+        showMenu ? "left-0" : "-left-[100%]"
+      } fixed bottom-0 top-0 z-[2000] flex h-screen w-[75%] sm:w-[50%] flex-col justify-between overflow-y-auto rounded-r-2xl bg-[#6f5336] px-6 pb-6 pt-12 font-oswald text-white shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all duration-500 md:hidden`}
     >
       <div className="flex flex-col gap-6">
-        {/* User Profile / Greeting */}
         <div className="flex items-center justify-start gap-4">
-          <div className="p-3 bg-white text-[#6f5336] rounded-full shadow-lg">
+          <div className="rounded-full bg-white p-3 text-[#6f5336] shadow-lg">
             <FaUserCircle size={32} />
           </div>
           <div>
             <h1 className="text-lg font-bold uppercase tracking-wide text-white">Hello Explorer</h1>
-            <h2 className="text-xs text-white/60 lowercase italic">Welcome to Adventure</h2>
+            <h2 className="text-xs italic text-white/60 lowercase">Welcome to Adventure</h2>
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="mt-2">
-          <ul className="flex flex-col gap-2 text-sm sm:text-base uppercase font-bold tracking-wider">
+          <ul className="flex flex-col gap-2 text-sm font-bold uppercase tracking-wider sm:text-base">
             {menuItems.map((data) => {
               const hasChildren = data.children && data.children.length > 0;
               const isOpen = openSubmenu === (data._id || data.label);
 
               return (
-                <li key={data._id || `${data.label}-${data.link}`} className="flex flex-col border-b border-gray-50 dark:border-gray-800 py-1">
+                <li
+                  key={data._id || `${data.label}-${data.link}`}
+                  className="flex flex-col border-b border-gray-50 py-1 dark:border-gray-800"
+                >
                   <div className="flex items-center justify-between">
                     <Link
                       to={data.link}
                       onClick={() => !hasChildren && setShowMenu(false)}
-                      className="hover:text-safari-gold text-white transition-colors flex-1"
+                      className="flex-1 text-white transition-colors hover:text-safari-gold"
                     >
                       {data.label}
                     </Link>
@@ -70,21 +94,20 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
                     )}
                   </div>
 
-                  {/* Dropdown Content */}
                   <AnimatePresence>
                     {hasChildren && isOpen && (
                       <motion.ul
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden bg-black/20 rounded-xl mt-1"
+                        className="mt-1 overflow-hidden rounded-xl bg-black/20"
                       >
                         {(data.children || []).map((child) => (
                           <li key={`${child.label}-${child.link}`}>
                             <Link
                               to={child.link}
                               onClick={() => setShowMenu(false)}
-                              className="block py-3 px-4 text-sm sm:text-base font-bold uppercase tracking-wider text-white/80 hover:text-safari-gold border-l-2 border-transparent hover:border-safari-gold transition-all"
+                              className="block border-l-2 border-transparent px-4 py-3 text-sm font-bold uppercase tracking-wider text-white/80 transition-all hover:border-safari-gold hover:text-safari-gold sm:text-base"
                             >
                               {child.label}
                             </Link>
@@ -99,43 +122,29 @@ const ResponsiveMenu = ({ showMenu, setShowMenu, handleOrderPopup, menuItems = [
           </ul>
         </nav>
 
-        {/* Action Button */}
-        {(navigationConfig.ctaLabel && navigationConfig.ctaHref) && (
-        <div className="mt-2 pb-6">
-          <button
-            className="w-full bg-safari-green text-white py-3 rounded-lg font-bold uppercase tracking-wider text-xs shadow-lg hover:bg-green-800 transition-all"
-            onClick={handlePrimaryCta}
-          >
-            {navigationConfig.ctaLabel}
-          </button>
-        </div>
+        {navigationConfig.ctaLabel && navigationConfig.ctaHref && (
+          <div className="mt-2 pb-6">
+            <button
+              className="w-full rounded-lg bg-safari-green py-3 text-xs font-bold uppercase tracking-wider text-white shadow-lg transition-all hover:bg-green-800"
+              onClick={handlePrimaryCta}
+            >
+              {navigationConfig.ctaLabel}
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Footer / Socials */}
       <div className="flex flex-col gap-4 border-t border-white/10 pt-6">
-        <div className="flex justify-between items-center text-xl text-safari-gold">
-          {settings?.facebook && <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaFacebookF /></a>}
-          {settings?.twitter && <a href={settings.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaTwitter /></a>}
-          {settings?.instagram && <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaInstagram /></a>}
-          {settings?.whatsapp && <a href={`https://wa.me/${settings.whatsapp.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaWhatsapp /></a>}
-          {settings?.youtube && <a href={settings.youtube} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaYoutube /></a>}
-          {settings?.reddit && <a href={settings.reddit} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FaRedditAlien /></a>}
+        <div className="flex items-center justify-between text-xl text-safari-gold">
+          {settings?.facebook && <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white"><FaFacebookF /></a>}
+          {settings?.twitter && <a href={settings.twitter} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white"><FaTwitter /></a>}
+          {settings?.instagram && <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white"><FaInstagram /></a>}
+          {settings?.whatsapp && <a href={`https://wa.me/${settings.whatsapp.replace(/\+/g, "")}`} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white"><FaWhatsapp /></a>}
+          {settings?.youtube && <a href={settings.youtube} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white"><FaYoutube /></a>}
+          {settings?.reddit && <a href={settings.reddit} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white"><FaRedditAlien /></a>}
         </div>
-        <div className="text-[10px] text-white/40 uppercase flex flex-col gap-1 items-center font-oswald text-center">
-          <span>{navigationConfig.mobileCopyrightLabel || "© 2026 MAZ Expeditions"}</span>
-          <div className="mt-2 pt-2 border-t border-white/5 w-full flex flex-col gap-1">
-            <span className="text-safari-gold font-bold tracking-widest uppercase">Developed by:</span>
-            <span className="text-white font-black text-xs">haizard@misape</span>
-            <div className="flex items-center justify-center gap-3 mt-1">
-              <a href="tel:0781071061" className="flex items-center gap-1 text-white/70 hover:text-safari-gold transition-colors text-[9px] lowercase">
-                <FaPhone size={8} className="text-safari-gold" /> 0781071061
-              </a>
-              <a href="mailto:haithammisape@gmail.com" className="flex items-center gap-1 text-white/70 hover:text-safari-gold transition-colors text-[9px] lowercase">
-                <FaEnvelope size={8} className="text-safari-gold" /> haithammisape@gmail.com
-              </a>
-            </div>
-          </div>
+        <div className="text-center font-oswald text-[10px] uppercase text-white/40">
+          <span>{mobileCopyright}</span>
         </div>
       </div>
     </div>
