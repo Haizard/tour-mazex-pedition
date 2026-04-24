@@ -1,11 +1,12 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
-import OrderPopup from "../components/OrderPopup/OrderPopup";
-import ChatBot from "../components/Chat/ChatBot";
-import WhatsAppButton from "../components/WhatsApp/WhatsAppButton";
 import { useTenant } from "../context/TenantContext";
+
+const OrderPopup = React.lazy(() => import("../components/OrderPopup/OrderPopup"));
+const ChatBot = React.lazy(() => import("../components/Chat/ChatBot"));
+const WhatsAppButton = React.lazy(() => import("../components/WhatsApp/WhatsAppButton"));
 
 const Layout = () => {
   const [orderPopup, setOrderPopup] = React.useState(false);
@@ -26,6 +27,7 @@ const Layout = () => {
     !isAdminRoute &&
     !location.pathname.endsWith("/plan-my-trip") &&
     !location.pathname.endsWith("/tailor-made");
+  const shouldLoadAssistiveWidgets = !isAdminRoute;
 
   React.useEffect(() => {
     if (!shouldAutoPrompt) {
@@ -64,15 +66,21 @@ const Layout = () => {
       <Outlet />
       {!isAdminRoute && (
         <>
-          <ChatBot />
-          <WhatsAppButton />
+          <Suspense fallback={null}>
+            {shouldLoadAssistiveWidgets && <ChatBot />}
+            {shouldLoadAssistiveWidgets && <WhatsAppButton />}
+          </Suspense>
           <Footer />
         </>
       )}
-      <OrderPopup
-        isVisible={orderPopup}
-        setOrderPopupVisible={setOrderPopup}
-      />
+      <Suspense fallback={null}>
+        {orderPopup && (
+          <OrderPopup
+            isVisible={orderPopup}
+            setOrderPopupVisible={setOrderPopup}
+          />
+        )}
+      </Suspense>
     </>
   );
 };

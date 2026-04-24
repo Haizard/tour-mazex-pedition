@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./pages/Layout";
 import Home from "./pages/Home";
@@ -15,15 +15,30 @@ import PackageDetail from "./components/Blogs/PackageDetail";
 import PackagesPage from "./pages/PackagesPage";
 import BlogDetail from "./components/Blogs/BlogDetail";
 import BlogCategory from "./pages/BlogCategory";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminLogin from "./pages/AdminLogin";
 import AdminRoute from "./components/Admin/AdminRoute";
 import PlatformAdminRoute from "./components/Admin/PlatformAdminRoute";
-import PlatformAdminDashboard from "./pages/PlatformAdminDashboard";
-import PlatformAdminLogin from "./pages/PlatformAdminLogin";
 import PlanMyTrip from "./pages/PlanMyTrip";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
+
+const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
+const AdminLogin = React.lazy(() => import("./pages/AdminLogin"));
+const PlatformAdminDashboard = React.lazy(() => import("./pages/PlatformAdminDashboard"));
+const PlatformAdminLogin = React.lazy(() => import("./pages/PlatformAdminLogin"));
+
+const RouteSuspense = ({ children }) => (
+  <Suspense
+    fallback={(
+      <main className="min-h-[50vh] bg-white" aria-busy="true">
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
+        </div>
+      </main>
+    )}
+  >
+    {children}
+  </Suspense>
+);
 
 const tenantSiteRoutes = (
   <>
@@ -56,30 +71,36 @@ const AppRoutes = () => (
         path="admin"
         element={(
           <AdminRoute>
-            <AdminDashboard />
+            <RouteSuspense>
+              <AdminDashboard />
+            </RouteSuspense>
           </AdminRoute>
         )}
       />
-      <Route path="login" element={<AdminLogin />} />
-      <Route path="admin/login" element={<AdminLogin />} />
+      <Route path="login" element={<RouteSuspense><AdminLogin /></RouteSuspense>} />
+      <Route path="admin/login" element={<RouteSuspense><AdminLogin /></RouteSuspense>} />
       <Route
         path="platform"
         element={(
           <PlatformAdminRoute>
-            <PlatformAdminDashboard />
+            <RouteSuspense>
+              <PlatformAdminDashboard />
+            </RouteSuspense>
           </PlatformAdminRoute>
         )}
       />
-      <Route path="platform/login" element={<PlatformAdminLogin />} />
+      <Route path="platform/login" element={<RouteSuspense><PlatformAdminLogin /></RouteSuspense>} />
       <Route
         path="super-admin"
         element={(
           <PlatformAdminRoute>
-            <PlatformAdminDashboard />
+            <RouteSuspense>
+              <PlatformAdminDashboard />
+            </RouteSuspense>
           </PlatformAdminRoute>
         )}
       />
-      <Route path="super-admin/login" element={<PlatformAdminLogin />} />
+      <Route path="super-admin/login" element={<RouteSuspense><PlatformAdminLogin /></RouteSuspense>} />
       <Route path="*" element={<DynamicTenantPage />} />
     </Route>
     <Route path="/demo/:tenantSlug" element={<Layout />}>
@@ -88,12 +109,14 @@ const AppRoutes = () => (
         path="admin"
         element={(
           <AdminRoute>
-            <AdminDashboard />
+            <RouteSuspense>
+              <AdminDashboard />
+            </RouteSuspense>
           </AdminRoute>
         )}
       />
-      <Route path="login" element={<AdminLogin />} />
-      <Route path="admin/login" element={<AdminLogin />} />
+      <Route path="login" element={<RouteSuspense><AdminLogin /></RouteSuspense>} />
+      <Route path="admin/login" element={<RouteSuspense><AdminLogin /></RouteSuspense>} />
       <Route path="*" element={<DynamicTenantPage />} />
     </Route>
   </Routes>
