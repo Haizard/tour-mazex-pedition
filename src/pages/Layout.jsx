@@ -11,7 +11,7 @@ const WhatsAppButton = React.lazy(() => import("../components/WhatsApp/WhatsAppB
 const Layout = () => {
   const [orderPopup, setOrderPopup] = React.useState(false);
   const location = useLocation();
-  const { loading } = useTenant();
+  const { loading, bootstrapError } = useTenant();
 
   const handleOrderPopup = () => {
     setOrderPopup((prev) => !prev);
@@ -55,6 +55,31 @@ const Layout = () => {
       <main className="min-h-screen bg-white" aria-busy="true" aria-label="Loading tenant website">
         <div className="flex min-h-screen items-center justify-center">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
+        </div>
+      </main>
+    );
+  }
+
+  if (!isAdminRoute && bootstrapError) {
+    return (
+      <main className="min-h-screen bg-white px-6 py-24">
+        <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center shadow-sm">
+          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">
+            Tenant Bootstrap
+          </p>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+            The website is taking too long to load.
+          </h1>
+          <p className="mt-4 text-sm font-medium leading-6 text-slate-600">
+            {bootstrapError}
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-6 rounded-xl bg-slate-950 px-5 py-3 text-sm font-black uppercase tracking-widest text-white"
+          >
+            Retry Loading
+          </button>
         </div>
       </main>
     );

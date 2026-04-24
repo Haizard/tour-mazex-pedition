@@ -6,6 +6,7 @@ const defaultTenantContext = {
   theme: null,
   siteConfig: null,
   siteSettings: null,
+  bootstrapError: "",
   loading: true,
 };
 
@@ -36,27 +37,48 @@ const applyTenantTheme = (theme) => {
 export const TenantProvider = ({ children }) => {
   const [state, setState] = React.useState(defaultTenantContext);
 
+  const loadTenantBootstrap = React.useCallback(async () => {
+    const timeoutMs = 12000;
+    let timeoutId = null;
+
+    try {
+      return await Promise.race([
+        fetchTenantBootstrap(),
+        new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(new Error("Tenant bootstrap timed out."));
+          }, timeoutMs);
+        }),
+      ]);
+    } finally {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    }
+  }, []);
+
   const refreshTenant = React.useCallback(async () => {
-    const response = await fetchTenantBootstrap();
+    const response = await loadTenantBootstrap();
     const nextState = {
       tenant: response.data?.tenant || null,
       theme: response.data?.theme || null,
       siteConfig: response.data?.siteConfig || null,
       siteSettings: response.data?.siteSettings || null,
+      bootstrapError: "",
       loading: false,
     };
 
     applyTenantTheme(nextState.theme);
     setState(nextState);
     return nextState;
-  }, []);
+  }, [loadTenantBootstrap]);
 
   React.useEffect(() => {
     let active = true;
 
     const loadTenant = async () => {
       try {
-        const response = await fetchTenantBootstrap();
+        const response = await loadTenantBootstrap();
         if (!active) {
           return;
         }
@@ -66,6 +88,7 @@ export const TenantProvider = ({ children }) => {
           theme: response.data?.theme || null,
           siteConfig: response.data?.siteConfig || null,
           siteSettings: response.data?.siteSettings || null,
+          bootstrapError: "",
           loading: false,
         };
 
@@ -74,7 +97,11 @@ export const TenantProvider = ({ children }) => {
       } catch (error) {
         console.error("Failed to load tenant bootstrap:", error);
         if (active) {
-          setState((current) => ({ ...current, loading: false }));
+          setState((current) => ({
+            ...current,
+            bootstrapError: error.message || "Unable to load tenant website.",
+            loading: false,
+          }));
         }
       }
     };
@@ -84,7 +111,7 @@ export const TenantProvider = ({ children }) => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadTenantBootstrap]);
 
   return (
     <TenantContext.Provider value={{ ...state, refreshTenant }}>
