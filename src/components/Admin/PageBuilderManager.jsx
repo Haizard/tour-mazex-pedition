@@ -108,6 +108,12 @@ const PAGE_TYPES = [
 const getPageTypeMeta = (pageType) =>
   PAGE_TYPES.find((page) => page.value === pageType) || PAGE_TYPES[0];
 
+const defaultSectionsByPageType = {
+  home: legacyHomePage.sections,
+  "tour-detail": [{ type: "tourDetail", variant: "default", enabled: true, order: 1, dataConfig: {}, contentConfig: {}, styleConfig: {} }],
+  "blog-detail": [{ type: "blogDetail", variant: "default", enabled: true, order: 1, dataConfig: {}, contentConfig: {}, styleConfig: {} }],
+};
+
 const slugifyPageIdentifier = (value = "") =>
   value
     .toString()
@@ -545,9 +551,7 @@ const PageBuilderManager = ({
           sections: normalizeSections(
             data.sections?.length
               ? data.sections
-              : canManageLayout && !tenantId && activePageType === "home"
-                ? legacyHomePage.sections
-                : []
+              : defaultSectionsByPageType[activePageType] || []
           ),
         });
       } catch (error) {
@@ -558,9 +562,7 @@ const PageBuilderManager = ({
             pageType: activePageType,
             slug: activePageMeta.slug,
             title: activePageMeta.label,
-            sections: canManageLayout && !tenantId && activePageType === "home"
-              ? normalizeSections(legacyHomePage.sections)
-              : [],
+            sections: normalizeSections(defaultSectionsByPageType[activePageType] || []),
           }));
         }
       } finally {

@@ -5,6 +5,8 @@ import Welcome from "../../components/Home/Welcome";
 import PopularTours from "../../components/Home/PopularTours";
 import GroupTours from "../../components/Home/GroupTours";
 import BlogsComp from "../../components/Blogs/BlogsComp";
+import BlogDetail from "../../components/Blogs/BlogDetail";
+import PackageDetail from "../../components/Blogs/PackageDetail";
 import AfricanDestinations from "../../components/Home/AfricanDestinations";
 import Testimonial from "../../components/Testimonial/Testimonial";
 import TripCtaSection from "../cta/TripCtaSection";
@@ -17,8 +19,10 @@ const sectionComponents = {
   featuredPackages: PopularTours,
   groupTours: GroupTours,
   blogPreview: BlogsComp,
+  blogDetail: BlogDetail,
   destinations: AfricanDestinations,
   testimonials: Testimonial,
+  tourDetail: PackageDetail,
   cta: TripCtaSection,
   logoCloud: LogoSlider,
 };
@@ -557,6 +561,44 @@ const metadata = {
         ],
       },
     },
+  },
+  tourDetail: {
+    key: "tourDetail",
+    label: "Tour Detail",
+    category: "dynamic-pages",
+    supportedVariants: ["default"],
+    allowMultiple: false,
+    presets: [{ value: "default", label: "Tour Detail Template" }],
+    editorSchema: [
+      {
+        group: "contentConfig",
+        path: "notes",
+        type: "textarea",
+        placeholder: "This section uses the live tour detail template for the current tour URL.",
+        rows: 3,
+        colSpan: 2,
+      },
+    ],
+    styleSchema: sharedStyleSchema,
+  },
+  blogDetail: {
+    key: "blogDetail",
+    label: "Blog Detail",
+    category: "dynamic-pages",
+    supportedVariants: ["default"],
+    allowMultiple: false,
+    presets: [{ value: "default", label: "Blog Detail Template" }],
+    editorSchema: [
+      {
+        group: "contentConfig",
+        path: "notes",
+        type: "textarea",
+        placeholder: "This section uses the live blog detail template for the current blog URL.",
+        rows: 3,
+        colSpan: 2,
+      },
+    ],
+    styleSchema: sharedStyleSchema,
   },
 };
 

@@ -29,11 +29,11 @@ const tenantSiteRoutes = (
   <>
     <Route index element={<Home />} />
     <Route path="blogs" element={<ConfiguredPage pageType="blogs" fallback={Blogs} />} />
-    <Route path="blogs/:title" element={<BlogDetail />} />
+    <Route path="blogs/:title" element={<ConfiguredPage pageType="blog-detail" fallback={BlogDetail} />} />
     <Route path="blogs/category/:categoryId" element={<BlogCategory />} />
     <Route path="packages" element={<ConfiguredPage pageType="tours" fallback={PackagesPage} />} />
     <Route path="tours" element={<ConfiguredPage pageType="tours" fallback={PackagesPage} />} />
-    <Route path="packages/:title" element={<PackageDetail />} />
+    <Route path="packages/:title" element={<ConfiguredPage pageType="tour-detail" fallback={PackageDetail} />} />
     <Route path="best-places" element={<PlacesRoute />} />
     <Route path="destinations" element={<PlacesRoute />} />
     <Route path="destinations/:destinationSlug" element={<DestinationDetail />} />
