@@ -2,24 +2,20 @@ import PageConfig from "../models/PageConfig.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
 import { HOME_PAGE_DEFAULT } from "../utils/pageBuilderDefaults.js";
+import {
+  getDefaultPageSlug,
+  isPagePubliclyAccessible,
+  normalizePageSlug,
+} from "../utils/pagePublishing.js";
 
 const normalizeSections = (sections = []) =>
   [...sections]
     .filter((section) => section && section.type)
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-const normalizeSlug = (slug = "/") => {
-  const trimmed = `/${String(slug || "/")
-    .trim()
-    .replace(/^\/+/, "")
-    .replace(/\/+$/, "")}`;
-
-  return trimmed === "/" ? "/" : trimmed;
-};
-
 const createEmptyPageConfig = (req, pageType) => ({
   pageType,
-  slug: pageType === "home" ? "/" : `/${pageType}`,
+  slug: getDefaultPageSlug(pageType),
   title: pageType === "home" ? "Home" : pageType,
   status: "published",
   seo: {},
@@ -79,6 +75,10 @@ export const getPageConfig = async (req, res) => {
       page = createEmptyPageConfig(req, pageType);
     }
 
+    if (page && !isPagePubliclyAccessible(page, req)) {
+      page = null;
+    }
+
     if (!page && pageType === "home" && req.tenant?.slug === LEGACY_TENANT_SLUG) {
       page = {
         ...HOME_PAGE_DEFAULT,
@@ -112,8 +112,14 @@ export const listPageConfigs = async (req, res) => {
 
 export const resolvePageConfigBySlug = async (req, res) => {
   try {
-    const slug = normalizeSlug(req.query.slug || "/");
-    const page = await PageConfig.findOne(buildTenantFilter(req, { slug })).lean();
+    const slug = normalizePageSlug(req.query.slug || "/");
+    const query = buildTenantFilter(req, { slug });
+
+    if (!req.admin && !req.platformAdmin) {
+      query.status = "published";
+    }
+
+    const page = await PageConfig.findOne(query).lean();
 
     if (!page) {
       return res.status(404).json({ message: "Page not found." });
@@ -161,7 +167,7 @@ export const upsertPageConfig = async (req, res) => {
 
     const payload = {
       pageType,
-      slug: normalizeSlug(req.body.slug || (pageType === "home" ? "/" : `/${pageType}`)),
+      slug: normalizePageSlug(req.body.slug || getDefaultPageSlug(pageType)),
       title: req.body.title || "",
       status: req.body.status || "published",
       seo: req.body.seo || {},

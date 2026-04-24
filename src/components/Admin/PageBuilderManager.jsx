@@ -15,9 +15,11 @@ import {
   fetchPageConfig,
   fetchPageConfigs,
   createPlatformTenantMenuItem,
+  fetchPlatformTenantMenuItems,
   fetchPlatformTenantPageConfig,
   fetchPlatformTenantPageConfigs,
   getMediaUrl,
+  updatePlatformTenantMenuItem,
   updatePageConfig,
   updatePlatformTenantPageConfig,
   uploadMedia,
@@ -95,14 +97,14 @@ const TEXTAREA_CLASS =
 const EDITOR_PANEL_CLASS =
   "rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm";
 const PAGE_TYPES = [
-  { value: "home", label: "Home", slug: "/" },
-  { value: "tours", label: "Tours Listing", slug: "/tours" },
-  { value: "tour-detail", label: "Tour Detail", slug: "/packages/:slug" },
-  { value: "blogs", label: "Blog Listing", slug: "/blogs" },
-  { value: "blog-detail", label: "Blog Detail", slug: "/blogs/:slug" },
-  { value: "tailor-made", label: "Tailor Made", slug: "/tailor-made" },
-  { value: "contact", label: "Contact", slug: "/contact" },
-  { value: "landing", label: "Custom Landing", slug: "/landing" },
+  { value: "home", label: "Home", slug: "/", status: "published" },
+  { value: "tours", label: "Tours Listing", slug: "/tours", status: "published" },
+  { value: "tour-detail", label: "Tour Detail", slug: "/packages/:slug", status: "published" },
+  { value: "blogs", label: "Blog Listing", slug: "/blogs", status: "published" },
+  { value: "blog-detail", label: "Blog Detail", slug: "/blogs/:slug", status: "published" },
+  { value: "tailor-made", label: "Tailor Made", slug: "/tailor-made", status: "published" },
+  { value: "contact", label: "Contact", slug: "/contact", status: "published" },
+  { value: "landing", label: "Custom Landing", slug: "/landing", status: "published" },
 ];
 
 const getPageTypeMeta = (pageType) =>
@@ -121,6 +123,32 @@ const slugifyPageIdentifier = (value = "") =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+const normalizePageSlug = (value = "/") => {
+  const normalized = `/${String(value || "/")
+    .trim()
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "")}`;
+
+  return normalized === "/" ? "/" : normalized;
+};
+
+const isCustomPageType = (pageType = "") => pageType.startsWith("custom-");
+
+const canAppearInNavbar = (slug = "") =>
+  typeof slug === "string" && slug.startsWith("/") && !slug.includes(":");
+
+const getPageBadgeClasses = (status = "draft") => {
+  if (status === "published") {
+    return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+  }
+
+  if (status === "draft") {
+    return "bg-amber-50 text-amber-800 border border-amber-200";
+  }
+
+  return "bg-slate-100 text-slate-600 border border-slate-200";
+};
 
 const getValueAtPath = (source, path) =>
   String(path || "")
@@ -470,6 +498,7 @@ const PageBuilderManager = ({
   });
   const [activePageType, setActivePageType] = React.useState("home");
   const [availablePages, setAvailablePages] = React.useState(PAGE_TYPES);
+  const [tenantMenuItems, setTenantMenuItems] = React.useState([]);
   const [newPageLabel, setNewPageLabel] = React.useState("");
   const [newPageSlug, setNewPageSlug] = React.useState("");
   const [loading, setLoading] = React.useState(true);
@@ -486,6 +515,19 @@ const PageBuilderManager = ({
   const [selectedSectionIndex, setSelectedSectionIndex] = React.useState(0);
   const activePageMeta =
     availablePages.find((page) => page.value === activePageType) || getPageTypeMeta(activePageType);
+  const pageSlug = React.useMemo(
+    () => normalizePageSlug(pageConfig.slug || activePageMeta.slug || "/"),
+    [activePageMeta.slug, pageConfig.slug]
+  );
+  const canEditPageSlug = canManageLayout && isCustomPageType(activePageType);
+  const canPublishPageToNavbar = canManageLayout && tenantId && canAppearInNavbar(pageSlug);
+  const linkedNavbarItem = React.useMemo(
+    () =>
+      tenantMenuItems.find(
+        (item) => normalizePageSlug(item.link || "/") === pageSlug
+      ) || null,
+    [pageSlug, tenantMenuItems]
+  );
 
   React.useEffect(() => {
     let active = true;
@@ -501,11 +543,18 @@ const PageBuilderManager = ({
           value: page.pageType,
           label: page.title || page.pageType,
           slug: page.slug || `/${page.pageType}`,
+          status: page.status || "draft",
         }));
 
         const mergedPages = [...PAGE_TYPES];
         dynamicPages.forEach((page) => {
-          if (!mergedPages.some((item) => item.value === page.value)) {
+          const existingIndex = mergedPages.findIndex((item) => item.value === page.value);
+          if (existingIndex >= 0) {
+            mergedPages[existingIndex] = {
+              ...mergedPages[existingIndex],
+              ...page,
+            };
+          } else {
             mergedPages.push(page);
           }
         });
@@ -528,6 +577,37 @@ const PageBuilderManager = ({
   React.useEffect(() => {
     let active = true;
 
+    const loadTenantMenu = async () => {
+      if (!tenantId || !canManageLayout) {
+        if (active) {
+          setTenantMenuItems([]);
+        }
+        return;
+      }
+
+      try {
+        const response = await fetchPlatformTenantMenuItems(tenantId);
+        if (active) {
+          setTenantMenuItems(Array.isArray(response.data) ? response.data : []);
+        }
+      } catch (error) {
+        console.error("Failed to load tenant menu items:", error);
+        if (active) {
+          setTenantMenuItems([]);
+        }
+      }
+    };
+
+    loadTenantMenu();
+
+    return () => {
+      active = false;
+    };
+  }, [canManageLayout, tenantId]);
+
+  React.useEffect(() => {
+    let active = true;
+
     const loadConfig = async () => {
       setLoading(true);
       try {
@@ -546,7 +626,7 @@ const PageBuilderManager = ({
           pageType: data.pageType || activePageType,
           slug: data.slug || pageMeta.slug,
           title: data.title || pageMeta.label,
-          status: data.status || "published",
+          status: data.status || pageMeta.status || "published",
           seo: data.seo || (canManageLayout ? legacyHomePage.seo : {}),
           sections: normalizeSections(
             data.sections?.length
@@ -658,7 +738,7 @@ const PageBuilderManager = ({
       ),
     }));
     setSelectedSectionIndex((current) => Math.max(0, Math.min(current, pageConfig.sections.length - 2)));
-    setMessage("Section removed from homepage.");
+    setMessage(`Section removed from ${activePageMeta.label}.`);
   };
 
   const applySectionPreset = (index) => {
@@ -685,9 +765,13 @@ const PageBuilderManager = ({
     setMessage("");
 
     try {
+      const resolvedSlug = canEditPageSlug
+        ? normalizePageSlug(pageConfig.slug || activePageMeta.slug || "/")
+        : normalizePageSlug(activePageMeta.slug || pageConfig.slug || "/");
       const payload = {
         ...pageConfig,
         pageType: activePageType,
+        slug: resolvedSlug,
         sections: normalizeSections(pageConfig.sections),
       };
 
@@ -699,7 +783,28 @@ const PageBuilderManager = ({
         ...response.data,
         sections: normalizeSections(response.data?.sections || current.sections),
       }));
-      setMessage(canManageLayout ? "Homepage layout saved." : "Homepage content saved.");
+      setAvailablePages((current) =>
+        current.map((page) =>
+          page.value === activePageType
+            ? {
+                ...page,
+                label: response.data?.title || payload.title || page.label,
+                slug: response.data?.slug || resolvedSlug,
+                status: response.data?.status || payload.status || page.status,
+              }
+            : page
+        )
+      );
+      setMessage(
+        canManageLayout
+          ? `${activePageMeta.label} layout saved.`
+          : `${activePageMeta.label} content saved.`
+      );
+
+      if (tenantId && canManageLayout) {
+        const menuResponse = await fetchPlatformTenantMenuItems(tenantId);
+        setTenantMenuItems(Array.isArray(menuResponse.data) ? menuResponse.data : []);
+      }
     } catch (error) {
       console.error("Failed to save page config:", error);
       setMessage(error?.response?.data?.message || "Failed to save page config.");
@@ -716,19 +821,37 @@ const PageBuilderManager = ({
   };
 
   const handleAddCurrentPageToNavbar = async () => {
-    if (!tenantId || !canManageLayout) return;
+    if (!tenantId || !canManageLayout || !canPublishPageToNavbar) return;
     setSaving(true);
     setMessage("");
 
     try {
-      await createPlatformTenantMenuItem(tenantId, {
+      if (pageConfig.status !== "published") {
+        setMessage("Publish this page before linking it in the navbar.");
+        return;
+      }
+
+      const payload = {
         label: pageConfig.title || activePageMeta.label,
-        link: pageConfig.slug || activePageMeta.slug,
+        link: pageSlug,
         itemType: "link",
-        sortOrder: 99,
-        children: [],
-      });
-      setMessage(`${pageConfig.title || activePageMeta.label} added to the tenant navbar.`);
+        sortOrder: linkedNavbarItem?.sortOrder || 99,
+        children: linkedNavbarItem?.children || [],
+      };
+
+      if (linkedNavbarItem?._id) {
+        await updatePlatformTenantMenuItem(tenantId, linkedNavbarItem._id, {
+          ...linkedNavbarItem,
+          ...payload,
+        });
+        setMessage(`${pageConfig.title || activePageMeta.label} navbar link synced.`);
+      } else {
+        await createPlatformTenantMenuItem(tenantId, payload);
+        setMessage(`${pageConfig.title || activePageMeta.label} added to the tenant navbar.`);
+      }
+
+      const menuResponse = await fetchPlatformTenantMenuItems(tenantId);
+      setTenantMenuItems(Array.isArray(menuResponse.data) ? menuResponse.data : []);
     } catch (error) {
       console.error("Failed to add page to navbar:", error);
       setMessage(error?.response?.data?.message || "Failed to add this page to the navbar.");
@@ -755,14 +878,14 @@ const PageBuilderManager = ({
       return;
     }
 
-    const pageMeta = { value: pageType, label, slug: normalizedSlug };
+    const pageMeta = { value: pageType, label, slug: normalizedSlug, status: "draft" };
     setAvailablePages((current) => [...current, pageMeta]);
     setActivePageType(pageType);
     setPageConfig({
       pageType,
       slug: normalizedSlug,
       title: label,
-      status: "published",
+      status: "draft",
       seo: {},
       sections: [],
     });
@@ -770,7 +893,7 @@ const PageBuilderManager = ({
     setSelectedSectionIndex(0);
     setNewPageLabel("");
     setNewPageSlug("");
-    setMessage(`Custom page ${label} is ready. Add sections and save it.`);
+    setMessage(`Custom page ${label} is ready as a draft. Add sections, save it, then publish.`);
   };
 
   React.useEffect(() => {
@@ -799,9 +922,9 @@ const PageBuilderManager = ({
   const renderPageSettings = () => (
     <div className={EDITOR_PANEL_CLASS}>
       <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Page Settings</p>
-      <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Homepage Metadata</h3>
+      <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{activePageMeta.label} Metadata</h3>
       <p className="mt-2 text-sm font-medium text-slate-500">
-        Control title, slug, and SEO defaults for this tenant homepage.
+        Control route, publish status, and SEO defaults for this tenant page.
       </p>
       <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
         <div className="space-y-2">
@@ -823,12 +946,34 @@ const PageBuilderManager = ({
           </label>
           <input
             type="text"
-            value={pageConfig.slug || "/"}
+            value={canEditPageSlug ? (pageConfig.slug || "/") : pageSlug}
             onChange={(e) =>
               setPageConfig((current) => ({ ...current, slug: e.target.value }))
             }
             className={INPUT_CLASS}
+            disabled={!canEditPageSlug}
           />
+          {!canEditPageSlug && (
+            <p className="text-xs font-semibold text-slate-500">
+              System pages keep a fixed route so the tenant engine stays predictable.
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
+            Publish Status
+          </label>
+          <select
+            value={pageConfig.status || "draft"}
+            onChange={(e) =>
+              setPageConfig((current) => ({ ...current, status: e.target.value }))
+            }
+            className={INPUT_CLASS}
+            disabled={!canManageLayout}
+          >
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </select>
         </div>
         <div className="space-y-2 md:col-span-2">
           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
@@ -850,19 +995,39 @@ const PageBuilderManager = ({
           />
         </div>
       </div>
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Route</p>
+          <p className="mt-2 text-sm font-black text-slate-950">{pageSlug}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Visibility</p>
+          <span className={`mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest ${getPageBadgeClasses(pageConfig.status)}`}>
+            {pageConfig.status || "draft"}
+          </span>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Navbar</p>
+          <p className="mt-2 text-sm font-black text-slate-950">
+            {linkedNavbarItem ? "Linked" : "Not linked"}
+          </p>
+        </div>
+      </div>
       {tenantId && canManageLayout && (
         <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-sm font-black text-slate-900">Navbar publishing</p>
           <p className="mt-1 text-xs font-semibold text-slate-500">
-            Save this page, then add a menu link so visitors can discover it from the public navbar.
+            {canPublishPageToNavbar
+              ? "Publish this page, then sync a menu link so visitors can discover it from the public navbar."
+              : "Route-pattern pages are kept out of the main navbar on purpose."}
           </p>
           <button
             type="button"
             onClick={handleAddCurrentPageToNavbar}
-            disabled={saving}
+            disabled={saving || !canPublishPageToNavbar || pageConfig.status !== "published"}
             className="mt-4 rounded-xl bg-slate-950 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"
           >
-            Add This Page To Navbar
+            {linkedNavbarItem ? "Sync Navbar Link" : "Add This Page To Navbar"}
           </button>
         </div>
       )}
@@ -872,9 +1037,9 @@ const PageBuilderManager = ({
   const renderAddSectionTool = () => (
     <div className={EDITOR_PANEL_CLASS}>
       <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Section Library</p>
-      <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Add A Homepage Block</h3>
+      <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Add A Page Block</h3>
       <p className="mt-2 text-sm font-medium text-slate-500">
-        Choose a section type and preset, then add it to this tenant homepage.
+        Choose a section type and preset, then add it to this tenant page.
       </p>
       {canManageLayout ? (
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_auto]">
@@ -932,8 +1097,8 @@ const PageBuilderManager = ({
         <div className={EDITOR_PANEL_CLASS}>
           <p className="text-sm font-bold text-slate-500">
             {canManageLayout
-              ? "No homepage sections yet. Add the first section from the section library."
-              : "No homepage sections have been prepared yet. The platform administrator will add the layout first."}
+              ? `No sections yet on ${activePageMeta.label}. Add the first section from the section library.`
+              : "No sections have been prepared yet. The platform administrator will add the layout first."}
           </p>
         </div>
       );
@@ -1071,7 +1236,7 @@ const PageBuilderManager = ({
             <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
               {canManageLayout
                 ? `Design section structure, visibility, variants, and SEO${tenantName ? ` for ${tenantName}` : ""}.`
-                : "Edit only the text and images inside homepage sections prepared by the platform administrator."}
+                : "Edit only the text and images inside sections prepared by the platform administrator."}
             </p>
           </div>
           <Button
@@ -1095,22 +1260,50 @@ const PageBuilderManager = ({
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[290px_minmax(0,1fr)]">
         <aside className="rounded-[28px] border border-slate-200 bg-[#0b0b0f] p-3 text-white xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Page Type</p>
-            <select
-              value={activePageType}
-              onChange={(event) => {
-                setActivePageType(event.target.value);
-                setActiveTool("settings");
-                setSelectedSectionIndex(0);
-              }}
-              className="mt-3 w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-black text-slate-950 outline-none"
-            >
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Page Explorer</p>
+              <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-black text-slate-300">
+                {availablePages.length}
+              </span>
+            </div>
+            <div className="mt-4 space-y-2">
               {availablePages.map((page) => (
-                <option key={page.value} value={page.value}>
-                  {page.label}
-                </option>
+                <button
+                  key={page.value}
+                  type="button"
+                  onClick={() => {
+                    setActivePageType(page.value);
+                    setActiveTool("settings");
+                    setSelectedSectionIndex(0);
+                  }}
+                  className={`w-full rounded-xl border px-3 py-3 text-left transition ${
+                    activePageType === page.value
+                      ? "border-white bg-white text-slate-950"
+                      : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black">{page.label}</p>
+                      <p className="mt-1 truncate text-[10px] font-black uppercase tracking-widest opacity-55">
+                        {page.slug}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-widest ${
+                        activePageType === page.value
+                          ? getPageBadgeClasses(page.status)
+                          : page.status === "published"
+                            ? "bg-emerald-500/15 text-emerald-200"
+                            : "bg-amber-500/15 text-amber-200"
+                      }`}
+                    >
+                      {page.status || "draft"}
+                    </span>
+                  </div>
+                </button>
               ))}
-            </select>
+            </div>
             {canManageLayout && (
               <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">New Custom Page</p>
