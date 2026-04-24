@@ -7,7 +7,6 @@ dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 import cors from "cors";
 import express from "express";
-import mongoose from "mongoose";
 import { tenantMiddleware } from "./middleware/tenantMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
@@ -35,18 +34,21 @@ import visionaryRoutes from "./routes/visionaryRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
 import {
   applySecurityHeaders,
+  attachRequestMetadata,
   buildAllowedOrigins,
   createRateLimit,
   isAllowedOrigin,
 } from "./middleware/securityMiddleware.js";
-import { ensureLegacyTenantFoundation } from "./utils/tenantBootstrap.js";
+import {
+  connectDB,
+  getDatabaseHealth,
+  registerMongooseListeners,
+} from "./utils/database.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const isVercelRuntime = Boolean(process.env.VERCEL);
 const allowedOrigins = buildAllowedOrigins();
-let mongoConnectionPromise = null;
-let legacyFoundationPromise = null;
 const tenantAuthRateLimit = createRateLimit({
   windowMs: 10 * 60 * 1000,
   max: 10,
@@ -59,58 +61,13 @@ const platformAuthRateLimit = createRateLimit({
   message: "Too many platform login attempts. Please try again shortly.",
   keyGenerator: (req) => `${req.ip || "unknown"}:platform-auth`,
 });
-
-const ensureLegacyFoundationReady = async () => {
-  if (!legacyFoundationPromise) {
-    legacyFoundationPromise = ensureLegacyTenantFoundation()
-      .then(() => {
-        console.log("Legacy tenant foundation ready");
-      })
-      .catch((error) => {
-        legacyFoundationPromise = null;
-        throw error;
-      });
-  }
-
-  return legacyFoundationPromise;
-};
-
-const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) {
-    await ensureLegacyFoundationReady();
-    return mongoose.connection;
-  }
-
-  const mongoUri = process.env.MONGODB_URI;
-
-  if (!mongoUri) {
-    throw new Error("MONGODB_URI is not defined in environment variables");
-  }
-
-  if (!mongoConnectionPromise) {
-    mongoConnectionPromise = mongoose
-      .connect(mongoUri, {
-        maxPoolSize: isVercelRuntime ? 3 : 10,
-        minPoolSize: 0,
-        maxIdleTimeMS: 10000,
-        serverSelectionTimeoutMS: 8000,
-        socketTimeoutMS: 45000,
-      })
-      .then(async (connection) => {
-        console.log("Connected to MongoDB");
-        await ensureLegacyFoundationReady();
-        return connection;
-      })
-      .catch((error) => {
-        mongoConnectionPromise = null;
-        legacyFoundationPromise = null;
-        console.error("MongoDB connection error:", error.message);
-        throw error;
-      });
-  }
-
-  return mongoConnectionPromise;
-};
+const apiWriteRateLimit = createRateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 120,
+  message: "Too many write requests. Please slow down and try again shortly.",
+  keyGenerator: (req) =>
+    `${req.ip || "unknown"}:${req.headers["x-tenant-slug"] || req.tenantId || "global"}:write-api`,
+});
 
 const databaseRequired = (req) =>
   req.path.startsWith("/api") ||
@@ -119,7 +76,9 @@ const databaseRequired = (req) =>
 
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
+registerMongooseListeners();
 app.use(applySecurityHeaders);
+app.use(attachRequestMetadata);
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
 app.use(
@@ -145,13 +104,27 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.get("/api/ready", (_req, res) => {
-  const isReady = mongoose.connection.readyState === 1;
+  getDatabaseHealth()
+    .then((health) => {
+      const isReady = health.connected && health.pingOk && health.legacyFoundationReady;
 
-  res.status(isReady ? 200 : 503).json({
-    status: isReady ? "ready" : "degraded",
-    mongoReadyState: mongoose.connection.readyState,
-    legacyFoundationReady: Boolean(legacyFoundationPromise),
-  });
+      res.status(isReady ? 200 : 503).json({
+        status: isReady ? "ready" : "degraded",
+        mongoReadyState: health.readyState,
+        mongoPingOk: health.pingOk,
+        legacyFoundationReady: health.legacyFoundationReady,
+        errorMessage: health.errorMessage || "",
+      });
+    })
+    .catch((error) => {
+      res.status(503).json({
+        status: "degraded",
+        mongoReadyState: 0,
+        mongoPingOk: false,
+        legacyFoundationReady: false,
+        errorMessage: error.message,
+      });
+    });
 });
 
 app.use(async (req, res, next) => {
@@ -173,6 +146,19 @@ app.use(async (req, res, next) => {
 });
 
 app.use(tenantMiddleware);
+app.use("/api", (req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+    next();
+    return;
+  }
+
+  if (req.path.startsWith("/auth") || req.path.startsWith("/platform-auth")) {
+    next();
+    return;
+  }
+
+  apiWriteRateLimit(req, res, next);
+});
 app.use("/api/auth", tenantAuthRateLimit, authRoutes);
 app.use("/api/platform-auth", platformAuthRateLimit, platformAuthRoutes);
 app.use("/api/platform-admin", platformAdminRoutes);
@@ -201,6 +187,19 @@ app.use("/", seoRoutes);
 
 app.get("/", (_req, res) => {
   res.send("Tourism API is running...");
+});
+
+app.use((error, req, res, _next) => {
+  console.error(`[Unhandled Error][${req.requestId || "unknown"}]`, error);
+
+  if (res.headersSent) {
+    return;
+  }
+
+  res.status(error.status || 500).json({
+    message: "Something went wrong on the server.",
+    requestId: req.requestId || "",
+  });
 });
 
 if (!isVercelRuntime) {

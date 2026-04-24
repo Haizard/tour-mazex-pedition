@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  attachRequestMetadata,
   buildAllowedOrigins,
   createRateLimit,
   isAllowedOrigin,
@@ -64,4 +65,24 @@ test("createRateLimit blocks after max requests within the window", async () => 
   assert.equal(nextCount, 2);
   assert.equal(blockedResponse.statusCode, 429);
   assert.equal(typeof blockedResponse.body?.retryAfterSeconds, "number");
+});
+
+test("attachRequestMetadata sets a reusable request id header", async () => {
+  const req = {
+    headers: {},
+  };
+  const res = {
+    headers: {},
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
+  };
+
+  await new Promise((resolve) => {
+    attachRequestMetadata(req, res, resolve);
+  });
+
+  assert.equal(typeof req.requestId, "string");
+  assert.equal(req.requestId.length > 5, true);
+  assert.equal(res.headers["X-Request-Id"], req.requestId);
 });

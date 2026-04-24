@@ -23,9 +23,19 @@ export const createRateLimit = ({
   keyGenerator,
 } = {}) => {
   const requests = new Map();
+  let lastCleanupAt = 0;
 
   return (req, res, next) => {
     const now = Date.now();
+    if (now - lastCleanupAt >= windowMs) {
+      for (const [storedKey, entry] of requests.entries()) {
+        if (entry.resetAt <= now) {
+          requests.delete(storedKey);
+        }
+      }
+      lastCleanupAt = now;
+    }
+
     const key =
       keyGenerator?.(req) ||
       `${getClientIp(req)}:${req.method}:${req.baseUrl || ""}:${req.path || ""}`;
@@ -54,6 +64,16 @@ export const createRateLimit = ({
     requests.set(key, existing);
     next();
   };
+};
+
+export const attachRequestMetadata = (req, res, next) => {
+  const requestId =
+    req.headers["x-request-id"]?.toString().trim() ||
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+  req.requestId = requestId;
+  res.setHeader("X-Request-Id", requestId);
+  next();
 };
 
 const defaultAllowedOrigins = [
