@@ -33,13 +33,32 @@ import tenantRoutes from "./routes/tenantRoutes.js";
 import tourRoutes from "./routes/tourRoutes.js";
 import visionaryRoutes from "./routes/visionaryRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
+import {
+  applySecurityHeaders,
+  buildAllowedOrigins,
+  createRateLimit,
+  isAllowedOrigin,
+} from "./middleware/securityMiddleware.js";
 import { ensureLegacyTenantFoundation } from "./utils/tenantBootstrap.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const isVercelRuntime = Boolean(process.env.VERCEL);
+const allowedOrigins = buildAllowedOrigins();
 let mongoConnectionPromise = null;
 let legacyFoundationPromise = null;
+const tenantAuthRateLimit = createRateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  message: "Too many tenant login attempts. Please try again shortly.",
+  keyGenerator: (req) => `${req.ip || "unknown"}:tenant-auth:${req.tenantId || "unknown"}`,
+});
+const platformAuthRateLimit = createRateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  message: "Too many platform login attempts. Please try again shortly.",
+  keyGenerator: (req) => `${req.ip || "unknown"}:platform-auth`,
+});
 
 const ensureLegacyFoundationReady = async () => {
   if (!legacyFoundationPromise) {
@@ -98,19 +117,42 @@ const databaseRequired = (req) =>
   req.path === "/robots.txt" ||
   req.path === "/sitemap.xml";
 
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+app.use(applySecurityHeaders);
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://mazexpeditions.com",
-      "https://tourism-website-inky.vercel.app",
-      "https://mazexpeditions.vercel.app",
-    ],
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin, allowedOrigins)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("CORS origin not allowed."));
+    },
     credentials: true,
   })
 );
+
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    uptimeSeconds: Math.round(process.uptime()),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
+app.get("/api/ready", (_req, res) => {
+  const isReady = mongoose.connection.readyState === 1;
+
+  res.status(isReady ? 200 : 503).json({
+    status: isReady ? "ready" : "degraded",
+    mongoReadyState: mongoose.connection.readyState,
+    legacyFoundationReady: Boolean(legacyFoundationPromise),
+  });
+});
 
 app.use(async (req, res, next) => {
   if (!databaseRequired(req)) {
@@ -131,8 +173,8 @@ app.use(async (req, res, next) => {
 });
 
 app.use(tenantMiddleware);
-app.use("/api/auth", authRoutes);
-app.use("/api/platform-auth", platformAuthRoutes);
+app.use("/api/auth", tenantAuthRateLimit, authRoutes);
+app.use("/api/platform-auth", platformAuthRateLimit, platformAuthRoutes);
 app.use("/api/platform-admin", platformAdminRoutes);
 app.use("/api/tenant", tenantRoutes);
 app.use("/api/page-config", pageConfigRoutes);
