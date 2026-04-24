@@ -13,8 +13,10 @@ import {
 import Button from "../UI/Button";
 import {
   fetchPageConfig,
+  fetchPageConfigs,
   createPlatformTenantMenuItem,
   fetchPlatformTenantPageConfig,
+  fetchPlatformTenantPageConfigs,
   getMediaUrl,
   updatePageConfig,
   updatePlatformTenantPageConfig,
@@ -105,6 +107,14 @@ const PAGE_TYPES = [
 
 const getPageTypeMeta = (pageType) =>
   PAGE_TYPES.find((page) => page.value === pageType) || PAGE_TYPES[0];
+
+const slugifyPageIdentifier = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 const getValueAtPath = (source, path) =>
   String(path || "")
@@ -453,6 +463,9 @@ const PageBuilderManager = ({
     sections: canManageLayout ? legacyHomePage.sections : [],
   });
   const [activePageType, setActivePageType] = React.useState("home");
+  const [availablePages, setAvailablePages] = React.useState(PAGE_TYPES);
+  const [newPageLabel, setNewPageLabel] = React.useState("");
+  const [newPageSlug, setNewPageSlug] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [message, setMessage] = React.useState("");
@@ -465,6 +478,46 @@ const PageBuilderManager = ({
   );
   const [activeTool, setActiveTool] = React.useState("settings");
   const [selectedSectionIndex, setSelectedSectionIndex] = React.useState(0);
+  const activePageMeta =
+    availablePages.find((page) => page.value === activePageType) || getPageTypeMeta(activePageType);
+
+  React.useEffect(() => {
+    let active = true;
+
+    const loadAvailablePages = async () => {
+      try {
+        const response = tenantId
+          ? await fetchPlatformTenantPageConfigs(tenantId)
+          : await fetchPageConfigs();
+        if (!active) return;
+
+        const dynamicPages = (Array.isArray(response.data) ? response.data : []).map((page) => ({
+          value: page.pageType,
+          label: page.title || page.pageType,
+          slug: page.slug || `/${page.pageType}`,
+        }));
+
+        const mergedPages = [...PAGE_TYPES];
+        dynamicPages.forEach((page) => {
+          if (!mergedPages.some((item) => item.value === page.value)) {
+            mergedPages.push(page);
+          }
+        });
+        setAvailablePages(mergedPages);
+      } catch (error) {
+        console.error("Failed to load available pages:", error);
+        if (active) {
+          setAvailablePages(PAGE_TYPES);
+        }
+      }
+    };
+
+    loadAvailablePages();
+
+    return () => {
+      active = false;
+    };
+  }, [tenantId]);
 
   React.useEffect(() => {
     let active = true;
@@ -479,7 +532,9 @@ const PageBuilderManager = ({
           return;
         }
 
-        const pageMeta = getPageTypeMeta(activePageType);
+        const pageMeta =
+          availablePages.find((page) => page.value === activePageType) ||
+          getPageTypeMeta(activePageType);
         const data = response.data || {};
         setPageConfig({
           pageType: data.pageType || activePageType,
@@ -501,8 +556,8 @@ const PageBuilderManager = ({
           setPageConfig((current) => ({
             ...current,
             pageType: activePageType,
-            slug: getPageTypeMeta(activePageType).slug,
-            title: getPageTypeMeta(activePageType).label,
+            slug: activePageMeta.slug,
+            title: activePageMeta.label,
             sections: canManageLayout && !tenantId && activePageType === "home"
               ? normalizeSections(legacyHomePage.sections)
               : [],
@@ -520,7 +575,7 @@ const PageBuilderManager = ({
     return () => {
       active = false;
     };
-  }, [activePageType, canManageLayout, tenantId]);
+  }, [activePageMeta.label, activePageMeta.slug, activePageType, availablePages, canManageLayout, tenantId]);
 
   const updateSection = (index, updater) => {
     setPageConfig((current) => {
@@ -665,19 +720,55 @@ const PageBuilderManager = ({
 
     try {
       await createPlatformTenantMenuItem(tenantId, {
-        label: pageConfig.title || getPageTypeMeta(activePageType).label,
-        link: pageConfig.slug || getPageTypeMeta(activePageType).slug,
+        label: pageConfig.title || activePageMeta.label,
+        link: pageConfig.slug || activePageMeta.slug,
         itemType: "link",
         sortOrder: 99,
         children: [],
       });
-      setMessage(`${pageConfig.title || getPageTypeMeta(activePageType).label} added to the tenant navbar.`);
+      setMessage(`${pageConfig.title || activePageMeta.label} added to the tenant navbar.`);
     } catch (error) {
       console.error("Failed to add page to navbar:", error);
       setMessage(error?.response?.data?.message || "Failed to add this page to the navbar.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCreateCustomPage = () => {
+    const label = newPageLabel.trim();
+    const slug = newPageSlug.trim();
+    const identifier = slugifyPageIdentifier(label);
+
+    if (!label || !slug || !identifier) {
+      setMessage("Custom page label and slug are required.");
+      return;
+    }
+
+    const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`;
+    const pageType = `custom-${identifier}`;
+
+    if (availablePages.some((page) => page.value === pageType || page.slug === normalizedSlug)) {
+      setMessage("A page with this identifier or slug already exists.");
+      return;
+    }
+
+    const pageMeta = { value: pageType, label, slug: normalizedSlug };
+    setAvailablePages((current) => [...current, pageMeta]);
+    setActivePageType(pageType);
+    setPageConfig({
+      pageType,
+      slug: normalizedSlug,
+      title: label,
+      status: "published",
+      seo: {},
+      sections: [],
+    });
+    setActiveTool("settings");
+    setSelectedSectionIndex(0);
+    setNewPageLabel("");
+    setNewPageSlug("");
+    setMessage(`Custom page ${label} is ready. Add sections and save it.`);
   };
 
   React.useEffect(() => {
@@ -973,7 +1064,7 @@ const PageBuilderManager = ({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Page Studio</p>
             <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">
-              {getPageTypeMeta(activePageType).label} Builder
+              {activePageMeta.label} Builder
             </h2>
             <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
               {canManageLayout
@@ -1012,12 +1103,38 @@ const PageBuilderManager = ({
               }}
               className="mt-3 w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-black text-slate-950 outline-none"
             >
-              {PAGE_TYPES.map((page) => (
+              {availablePages.map((page) => (
                 <option key={page.value} value={page.value}>
                   {page.label}
                 </option>
               ))}
             </select>
+            {canManageLayout && (
+              <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">New Custom Page</p>
+                <input
+                  type="text"
+                  value={newPageLabel}
+                  onChange={(event) => setNewPageLabel(event.target.value)}
+                  placeholder="Page title"
+                  className="mt-3 w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none"
+                />
+                <input
+                  type="text"
+                  value={newPageSlug}
+                  onChange={(event) => setNewPageSlug(event.target.value)}
+                  placeholder="/your-page-slug"
+                  className="mt-3 w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleCreateCustomPage}
+                  className="mt-3 w-full rounded-xl bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-950"
+                >
+                  Create Custom Page
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">

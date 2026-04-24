@@ -236,6 +236,10 @@ export const fetchPlatformTenantPageConfig = (tenantId, pageType = "home") =>
   cachedGet(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, {
     headers: getPlatformAdminHeaders(),
   });
+export const fetchPlatformTenantPageConfigs = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/page-configs`, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const updatePlatformTenant = (tenantId, data) =>
   API.put(`/platform-admin/tenants/${tenantId}`, data, {
     headers: getPlatformAdminHeaders(),
@@ -306,6 +310,11 @@ export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", d
 export const updateTenantDomainRequest = (data) => API.put("/tenant/domain-request", data);
 export const fetchPageConfig = (pageType = "home") =>
   cachedGet(`/page-config/${encodeURIComponent(pageType)}`);
+export const fetchPageConfigs = () => cachedGet("/page-config/list/all");
+export const resolvePageConfigBySlug = (slug) =>
+  cachedGet("/page-config/resolve/by-slug", {
+    params: { slug },
+  });
 export const updatePageConfig = (pageType = "home", data) =>
   API.put(`/page-config/${encodeURIComponent(pageType)}`, data);
 export const fetchTenantTheme = () => cachedGet("/tenant/bootstrap"); // Bootstrap contains theme

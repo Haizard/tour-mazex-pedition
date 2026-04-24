@@ -8,6 +8,15 @@ const normalizeSections = (sections = []) =>
     .filter((section) => section && section.type)
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
+const normalizeSlug = (slug = "/") => {
+  const trimmed = `/${String(slug || "/")
+    .trim()
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "")}`;
+
+  return trimmed === "/" ? "/" : trimmed;
+};
+
 const createEmptyPageConfig = (req, pageType) => ({
   pageType,
   slug: pageType === "home" ? "/" : `/${pageType}`,
@@ -88,6 +97,35 @@ export const getPageConfig = async (req, res) => {
   }
 };
 
+export const listPageConfigs = async (req, res) => {
+  try {
+    const pages = await PageConfig.find(buildTenantFilter(req))
+      .sort({ createdAt: 1, title: 1 })
+      .select("pageType slug title status updatedAt createdAt")
+      .lean();
+
+    res.status(200).json(pages);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const resolvePageConfigBySlug = async (req, res) => {
+  try {
+    const slug = normalizeSlug(req.query.slug || "/");
+    const page = await PageConfig.findOne(buildTenantFilter(req, { slug })).lean();
+
+    if (!page) {
+      return res.status(404).json({ message: "Page not found." });
+    }
+
+    page.sections = normalizeSections(page.sections);
+    return res.status(200).json(page);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export const upsertPageConfig = async (req, res) => {
   try {
     const pageType = req.params.pageType || req.body.pageType || "home";
@@ -123,7 +161,7 @@ export const upsertPageConfig = async (req, res) => {
 
     const payload = {
       pageType,
-      slug: req.body.slug || (pageType === "home" ? "/" : `/${pageType}`),
+      slug: normalizeSlug(req.body.slug || (pageType === "home" ? "/" : `/${pageType}`)),
       title: req.body.title || "",
       status: req.body.status || "published",
       seo: req.body.seo || {},

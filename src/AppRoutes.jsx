@@ -4,6 +4,7 @@ import Layout from "./pages/Layout";
 import Home from "./pages/Home";
 import Blogs from "./pages/Blogs";
 import ConfiguredPage from "./pages/ConfiguredPage";
+import DynamicTenantPage from "./pages/DynamicTenantPage";
 import NoPage from "./pages/NoPage";
 import PlacesRoute from "./pages/PlacesRoute";
 import DestinationDetail from "./pages/DestinationDetail";
@@ -79,7 +80,7 @@ const AppRoutes = () => (
         )}
       />
       <Route path="super-admin/login" element={<PlatformAdminLogin />} />
-      <Route path="*" element={<NoPage />} />
+      <Route path="*" element={<DynamicTenantPage />} />
     </Route>
     <Route path="/demo/:tenantSlug" element={<Layout />}>
       {tenantSiteRoutes}
@@ -93,7 +94,7 @@ const AppRoutes = () => (
       />
       <Route path="login" element={<AdminLogin />} />
       <Route path="admin/login" element={<AdminLogin />} />
-      <Route path="*" element={<NoPage />} />
+      <Route path="*" element={<DynamicTenantPage />} />
     </Route>
   </Routes>
 );

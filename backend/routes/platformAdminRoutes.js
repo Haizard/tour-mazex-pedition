@@ -14,7 +14,7 @@ import EmailThread from "../models/EmailThread.js";
 import PageConfig from "../models/PageConfig.js";
 import MenuItem from "../models/MenuItem.js";
 import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.js";
-import { getPageConfig, upsertPageConfig } from "../controllers/pageConfigController.js";
+import { getPageConfig, listPageConfigs, upsertPageConfig } from "../controllers/pageConfigController.js";
 import { defaultMenuItems } from "../data/defaultMenuItems.js";
 import {
   DEFAULT_TENANT_THEME,
@@ -402,6 +402,12 @@ router.put(
   "/tenants/:tenantId/page-config/:pageType",
   loadTenantForPlatformPageConfig,
   upsertPageConfig
+);
+
+router.get(
+  "/tenants/:tenantId/page-configs",
+  loadTenantForPlatformPageConfig,
+  listPageConfigs
 );
 
 router.get("/tenants/:tenantId/site-config", async (req, res) => {
