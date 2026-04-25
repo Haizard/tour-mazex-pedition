@@ -5,12 +5,13 @@ import Welcome from "../../components/Home/Welcome";
 import PopularTours from "../../components/Home/PopularTours";
 import GroupTours from "../../components/Home/GroupTours";
 import BlogsComp from "../../components/Blogs/BlogsComp";
-import BlogDetail from "../../components/Blogs/BlogDetail";
-import PackageDetail from "../../components/Blogs/PackageDetail";
 import AfricanDestinations from "../../components/Home/AfricanDestinations";
 import Testimonial from "../../components/Testimonial/Testimonial";
 import TripCtaSection from "../cta/TripCtaSection";
 import LogoSlider from "../../components/Home/LogoSlider";
+
+const BlogDetail = React.lazy(() => import("../../components/Blogs/BlogDetail"));
+const PackageDetail = React.lazy(() => import("../../components/Blogs/PackageDetail"));
 
 const sectionComponents = {
   hero: CinematicHeroSection,
@@ -761,5 +762,9 @@ export const renderRegisteredSection = (section) => {
     return null;
   }
 
-  return <Component {...sectionRegistry.getProps(section)} />;
+  return (
+    <React.Suspense fallback={null}>
+      <Component {...sectionRegistry.getProps(section)} />
+    </React.Suspense>
+  );
 };

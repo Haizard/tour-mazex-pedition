@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import SEO from "../components/UI/SEO";
 import PageRenderer from "../pageBuilder/PageRenderer";
 import { fetchPageConfig } from "../services/api";
@@ -39,19 +39,15 @@ const ConfiguredPage = ({ pageType, fallback: FallbackComponent = null }) => {
   const sections = pageConfig?.sections?.filter((section) => section.enabled !== false) || [];
 
   if (!loading && sections.length === 0 && FallbackComponent) {
-    return <FallbackComponent />;
+    return (
+      <Suspense fallback={renderPageLoadingState()}>
+        <FallbackComponent />
+      </Suspense>
+    );
   }
 
   if (loading) {
-    return (
-      <div className="min-h-[60vh] bg-white pt-32">
-        <div className="container mx-auto max-w-4xl px-4">
-          <div className="h-2 w-48 animate-pulse rounded-full bg-slate-200" />
-          <div className="mt-5 h-12 w-full max-w-xl animate-pulse rounded-2xl bg-slate-100" />
-          <div className="mt-4 h-32 w-full animate-pulse rounded-3xl bg-slate-100" />
-        </div>
-      </div>
-    );
+    return renderPageLoadingState();
   }
 
   return (
@@ -66,5 +62,15 @@ const ConfiguredPage = ({ pageType, fallback: FallbackComponent = null }) => {
     </div>
   );
 };
+
+const renderPageLoadingState = () => (
+  <div className="min-h-[60vh] bg-white pt-32">
+    <div className="container mx-auto max-w-4xl px-4">
+      <div className="h-2 w-48 animate-pulse rounded-full bg-slate-200" />
+      <div className="mt-5 h-12 w-full max-w-xl animate-pulse rounded-2xl bg-slate-100" />
+      <div className="mt-4 h-32 w-full animate-pulse rounded-3xl bg-slate-100" />
+    </div>
+  </div>
+);
 
 export default ConfiguredPage;

@@ -28,6 +28,9 @@ const distDir = path.join(rootDir, "dist");
 
 dotenv.config({ path: path.join(rootDir, ".env") });
 
+const shouldUseBuildTimeCms =
+  String(process.env.PRERENDER_WITH_CMS || "").toLowerCase() === "true";
+
 const baseRoutes = [
   // "/" is intentionally excluded — the home page uses fully dynamic content
   // fetched from MongoDB at runtime (page config, video, sections). Prerendering it
@@ -110,6 +113,16 @@ async function ensureDbConnection() {
 }
 
 async function fetchCmsContent() {
+  if (!shouldUseBuildTimeCms) {
+    return {
+      blogs: [],
+      tours: [],
+      menuItems: [],
+      siteSettings: null,
+      taxonomies: [],
+    };
+  }
+
   try {
     await ensureDbConnection();
     const legacyTenant = await Tenant.findOne({ slug: LEGACY_TENANT_SLUG })

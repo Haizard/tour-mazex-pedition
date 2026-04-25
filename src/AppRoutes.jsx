@@ -2,29 +2,28 @@ import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./pages/Layout";
 import Home from "./pages/Home";
-import Blogs from "./pages/Blogs";
 import ConfiguredPage from "./pages/ConfiguredPage";
 import DynamicTenantPage from "./pages/DynamicTenantPage";
-import NoPage from "./pages/NoPage";
-import PlacesRoute from "./pages/PlacesRoute";
-import DestinationDetail from "./pages/DestinationDetail";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Gallery from "./pages/Gallery";
-import PackageDetail from "./components/Blogs/PackageDetail";
-import PackagesPage from "./pages/PackagesPage";
-import BlogDetail from "./components/Blogs/BlogDetail";
-import BlogCategory from "./pages/BlogCategory";
 import AdminLogin from "./pages/AdminLogin";
 import AdminRoute from "./components/Admin/AdminRoute";
 import PlatformAdminRoute from "./components/Admin/PlatformAdminRoute";
 import PlatformAdminLogin from "./pages/PlatformAdminLogin";
-import PlanMyTrip from "./pages/PlanMyTrip";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsConditions from "./pages/TermsConditions";
 
 const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
 const PlatformAdminDashboard = React.lazy(() => import("./pages/PlatformAdminDashboard"));
+const Blogs = React.lazy(() => import("./pages/Blogs"));
+const PlacesRoute = React.lazy(() => import("./pages/PlacesRoute"));
+const DestinationDetail = React.lazy(() => import("./pages/DestinationDetail"));
+const About = React.lazy(() => import("./pages/About"));
+const Contact = React.lazy(() => import("./pages/Contact"));
+const Gallery = React.lazy(() => import("./pages/Gallery"));
+const PackageDetail = React.lazy(() => import("./components/Blogs/PackageDetail"));
+const PackagesPage = React.lazy(() => import("./pages/PackagesPage"));
+const BlogDetail = React.lazy(() => import("./components/Blogs/BlogDetail"));
+const BlogCategory = React.lazy(() => import("./pages/BlogCategory"));
+const PlanMyTrip = React.lazy(() => import("./pages/PlanMyTrip"));
+const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
+const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 
 const DashboardRouteFallback = ({ label }) => (
   <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
@@ -42,26 +41,42 @@ const DashboardRouteFallback = ({ label }) => (
   </main>
 );
 
+const PublicRouteFallback = () => (
+  <div className="min-h-[45vh] bg-white pt-24">
+    <div className="container mx-auto max-w-5xl px-4">
+      <div className="h-3 w-36 animate-pulse rounded-full bg-slate-200" />
+      <div className="mt-5 h-12 w-full max-w-xl animate-pulse rounded-2xl bg-slate-100" />
+      <div className="mt-5 h-52 w-full animate-pulse rounded-3xl bg-slate-100" />
+    </div>
+  </div>
+);
+
+const withPublicSuspense = (element) => (
+  <Suspense fallback={<PublicRouteFallback />}>
+    {element}
+  </Suspense>
+);
+
 const tenantSiteRoutes = (
   <>
     <Route index element={<Home />} />
     <Route path="blogs" element={<ConfiguredPage pageType="blogs" fallback={Blogs} />} />
     <Route path="blogs/:title" element={<ConfiguredPage pageType="blog-detail" fallback={BlogDetail} />} />
-    <Route path="blogs/category/:categoryId" element={<BlogCategory />} />
+    <Route path="blogs/category/:categoryId" element={withPublicSuspense(<BlogCategory />)} />
     <Route path="packages" element={<ConfiguredPage pageType="tours" fallback={PackagesPage} />} />
     <Route path="tours" element={<ConfiguredPage pageType="tours" fallback={PackagesPage} />} />
     <Route path="packages/:title" element={<ConfiguredPage pageType="tour-detail" fallback={PackageDetail} />} />
-    <Route path="best-places" element={<PlacesRoute />} />
-    <Route path="destinations" element={<PlacesRoute />} />
-    <Route path="destinations/:destinationSlug" element={<DestinationDetail />} />
-    <Route path="about" element={<About />} />
+    <Route path="best-places" element={withPublicSuspense(<PlacesRoute />)} />
+    <Route path="destinations" element={withPublicSuspense(<PlacesRoute />)} />
+    <Route path="destinations/:destinationSlug" element={withPublicSuspense(<DestinationDetail />)} />
+    <Route path="about" element={withPublicSuspense(<About />)} />
     <Route path="contact" element={<ConfiguredPage pageType="contact" fallback={Contact} />} />
-    <Route path="gallery" element={<Gallery />} />
-    <Route path="plan-my-trip" element={<PlanMyTrip />} />
+    <Route path="gallery" element={withPublicSuspense(<Gallery />)} />
+    <Route path="plan-my-trip" element={withPublicSuspense(<PlanMyTrip />)} />
     <Route path="tailor-made" element={<ConfiguredPage pageType="tailor-made" fallback={PlanMyTrip} />} />
     <Route path="landing" element={<ConfiguredPage pageType="landing" />} />
-    <Route path="privacy-policy" element={<PrivacyPolicy />} />
-    <Route path="terms" element={<TermsConditions />} />
+    <Route path="privacy-policy" element={withPublicSuspense(<PrivacyPolicy />)} />
+    <Route path="terms" element={withPublicSuspense(<TermsConditions />)} />
   </>
 );
 
