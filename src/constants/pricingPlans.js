@@ -53,6 +53,7 @@ export const PRICING_PLANS = [
       "Unified inbox operations",
       "Campaign automation",
       "Guide & driver management",
+      "Accommodation coordination",
       "Repeat customer automation",
       "Advanced analytics and priority support",
     ],
@@ -72,6 +73,7 @@ export const FEATURE_PLAN_REQUIREMENTS = {
   "review-automation": "growth",
   campaigns: "pro",
   "guide-driver-management": "pro",
+  "accommodation-coordination": "pro",
   "repeat-customer-automation": "pro",
   "whatsapp-automation": "pro",
 };

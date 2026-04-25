@@ -71,6 +71,7 @@ import ContentRepurposingManager from "../components/Admin/ContentRepurposingMan
 import SocialPostsManager from "../components/Admin/SocialPostsManager";
 import SocialAccountsManager from "../components/Admin/SocialAccountsManager";
 import GuideDriverManager from "../components/Admin/GuideDriverManager";
+import AccommodationManager from "../components/Admin/AccommodationManager";
 import SiteSettings from "../components/Admin/SiteSettings";
 import SubscriptionManager from "../components/Admin/SubscriptionManager";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -113,6 +114,7 @@ const AdminDashboard = () => {
     "lead-inbox": featureAccess.leadInbox,
     repurposing: featureAccess.repurposing,
     campaigns: featureAccess.campaigns,
+    accommodations: featureAccess.accommodationCoordination,
   };
   const handleLogout = () => {
     logout();
@@ -3591,6 +3593,8 @@ const AdminDashboard = () => {
           {activeTab === "campaigns" && <CampaignManager />}
 
           {activeTab === "guide-drivers" && <GuideDriverManager />}
+
+          {activeTab === "accommodations" && <AccommodationManager />}
 
           {activeTab === "subscription" && <SubscriptionManager />}
 

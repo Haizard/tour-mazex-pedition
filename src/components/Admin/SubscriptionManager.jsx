@@ -41,6 +41,11 @@ const featureCards = [
     description: "Manage field staff availability, safari assignments, driver licenses, and booking operations.",
   },
   {
+    key: "accommodation-coordination",
+    label: "Accommodations",
+    description: "Coordinate hotel suppliers, room plans, guest stays, and lodge confirmations for each booking.",
+  },
+  {
     key: "campaigns",
     label: "Campaigns",
     description: "Run automated seasonal, migration, and destination campaigns.",
@@ -60,6 +65,7 @@ const featureAccessKeyMap = {
   "repeat-customer-automation": "repeatCustomerAutomation",
   "whatsapp-automation": "whatsappAutomation",
   "guide-driver-management": "guideDriverManagement",
+  "accommodation-coordination": "accommodationCoordination",
 };
 
 const SubscriptionManager = () => {

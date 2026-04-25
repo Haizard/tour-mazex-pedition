@@ -42,13 +42,14 @@ const growthSuiteFeatures = [
   ["review-automation", "Review Automation", "Generate and track post-trip review request workflows."],
   ["campaigns", "Campaigns", "Create seasonal offers and campaign workflows."],
   ["repeat-customer-automation", "Repeat Customer", "Run referral, anniversary, and guest reactivation follow-up."],
+  ["accommodation-coordination", "Accommodation Coordination", "Manage hotel suppliers, reservation tracking, and stay planning for tenant bookings."],
   ["whatsapp-automation", "WhatsApp Automation", "Enable WhatsApp Business messaging flows."],
   ["guide-driver-management", "Guide & Driver Management", "Manage safari field staff, availability, assignment planning, and booking-linked operations."],
 ];
 
 const growthPlanFeatureKeys = growthSuiteFeatures
   .filter(([key]) =>
-    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management"].includes(key)
+    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management", "accommodation-coordination"].includes(key)
   )
   .map(([key]) => key);
 

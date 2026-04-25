@@ -75,6 +75,18 @@ test("pro plan includes guide and driver management", () => {
   assert.equal(allowed, true);
 });
 
+test("pro plan includes accommodation coordination", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "pro",
+      status: "active",
+    },
+    "accommodation-coordination"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {

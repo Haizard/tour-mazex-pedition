@@ -9,6 +9,7 @@ import {
   FaCog,
   FaEdit,
   FaEnvelopeOpenText,
+  FaHotel,
   FaImages,
   FaInbox,
   FaLink,
@@ -75,6 +76,7 @@ const groupedMenuItems = [
     label: "Operations",
     items: [
       { id: "guide-drivers", label: "Guides & Drivers", icon: <FaTruck />, accessKey: "guideDriverManagement" },
+      { id: "accommodations", label: "Accommodations", icon: <FaHotel />, accessKey: "accommodationCoordination" },
     ],
   },
 ];

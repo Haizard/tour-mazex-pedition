@@ -1,0 +1,383 @@
+import { useEffect, useMemo, useState } from "react";
+
+import Badge from "../UI/Badge";
+import Button from "../UI/Button";
+import Card from "../UI/Card";
+import {
+  createAccommodationReservation,
+  deleteAccommodationReservation,
+  fetchAccommodationReservations,
+  fetchBookings,
+  updateAccommodationReservation,
+} from "../../services/api";
+
+const initialForm = {
+  bookingId: "",
+  hotelName: "",
+  supplierName: "",
+  supplierContact: "",
+  destination: "",
+  reservationCode: "",
+  roomPlan: "",
+  checkInDate: "",
+  checkOutDate: "",
+  guestCount: 1,
+  status: "pending",
+  notes: "",
+};
+
+const statusTone = {
+  pending: "bg-amber-50 text-amber-700",
+  confirmed: "bg-emerald-50 text-emerald-700",
+  cancelled: "bg-rose-50 text-rose-700",
+};
+
+const AccommodationManager = () => {
+  const [reservations, setReservations] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [form, setForm] = useState(initialForm);
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const selectedBooking = useMemo(
+    () => bookings.find((booking) => booking._id === form.bookingId),
+    [bookings, form.bookingId]
+  );
+
+  const loadData = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [reservationResponse, bookingsResponse] = await Promise.all([
+        fetchAccommodationReservations(),
+        fetchBookings(),
+      ]);
+
+      setReservations(Array.isArray(reservationResponse.data) ? reservationResponse.data : []);
+      setBookings(Array.isArray(bookingsResponse.data) ? bookingsResponse.data : []);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to load accommodation coordination right now."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const resetForm = () => {
+    setForm(initialForm);
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    const payload = {
+      ...form,
+      bookingId: form.bookingId || null,
+      bookingGuestName: selectedBooking?.name || "",
+      assignedTourTitle: selectedBooking?.packageTour || "",
+      guestCount: Number(form.guestCount) || 1,
+      checkInDate: form.checkInDate || null,
+      checkOutDate: form.checkOutDate || null,
+    };
+
+    try {
+      if (editingId) {
+        await updateAccommodationReservation(editingId, payload);
+      } else {
+        await createAccommodationReservation(payload);
+      }
+
+      resetForm();
+      await loadData();
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to save this accommodation reservation."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEdit = (reservation) => {
+    setEditingId(reservation._id);
+    setForm({
+      bookingId: reservation.bookingId || "",
+      hotelName: reservation.hotelName || "",
+      supplierName: reservation.supplierName || "",
+      supplierContact: reservation.supplierContact || "",
+      destination: reservation.destination || "",
+      reservationCode: reservation.reservationCode || "",
+      roomPlan: reservation.roomPlan || "",
+      checkInDate: reservation.checkInDate
+        ? new Date(reservation.checkInDate).toISOString().slice(0, 10)
+        : "",
+      checkOutDate: reservation.checkOutDate
+        ? new Date(reservation.checkOutDate).toISOString().slice(0, 10)
+        : "",
+      guestCount: reservation.guestCount || 1,
+      status: reservation.status || "pending",
+      notes: reservation.notes || "",
+    });
+  };
+
+  const handleDelete = async (reservationId) => {
+    setSaving(true);
+    setError("");
+    try {
+      await deleteAccommodationReservation(reservationId);
+      if (editingId === reservationId) {
+        resetForm();
+      }
+      await loadData();
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to delete this accommodation reservation."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+            Operations Desk
+          </p>
+          <h2 className="text-3xl font-black uppercase tracking-tighter text-gray-900">
+            Accommodation Coordination
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
+            Manage hotel reservations, supplier contacts, room plans, and guest stays for each booking.
+          </p>
+        </div>
+        <Badge variant="accent">{reservations.length} Reservations</Badge>
+      </div>
+
+      {error && (
+        <div className="rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card className="border-none p-8 shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+            {editingId ? "Edit Reservation" : "Add Reservation"}
+          </h3>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <select
+              value={form.bookingId}
+              onChange={(event) => setForm((current) => ({ ...current, bookingId: event.target.value }))}
+              className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+            >
+              <option value="">No booking linked</option>
+              {bookings.map((booking) => (
+                <option key={booking._id} value={booking._id}>
+                  {booking.name} - {booking.packageTour || "Custom"}
+                </option>
+              ))}
+            </select>
+            <div className="grid gap-4 md:grid-cols-2">
+              <input
+                type="text"
+                value={form.hotelName}
+                onChange={(event) => setForm((current) => ({ ...current, hotelName: event.target.value }))}
+                placeholder="Hotel or lodge name"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+              <input
+                type="text"
+                value={form.destination}
+                onChange={(event) => setForm((current) => ({ ...current, destination: event.target.value }))}
+                placeholder="Destination"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <input
+                type="text"
+                value={form.supplierName}
+                onChange={(event) => setForm((current) => ({ ...current, supplierName: event.target.value }))}
+                placeholder="Supplier name"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+              <input
+                type="text"
+                value={form.supplierContact}
+                onChange={(event) => setForm((current) => ({ ...current, supplierContact: event.target.value }))}
+                placeholder="Supplier contact"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <input
+                type="text"
+                value={form.roomPlan}
+                onChange={(event) => setForm((current) => ({ ...current, roomPlan: event.target.value }))}
+                placeholder="Room plan"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+              <input
+                type="text"
+                value={form.reservationCode}
+                onChange={(event) => setForm((current) => ({ ...current, reservationCode: event.target.value }))}
+                placeholder="Reservation code"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <input
+                type="date"
+                value={form.checkInDate}
+                onChange={(event) => setForm((current) => ({ ...current, checkInDate: event.target.value }))}
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+              <input
+                type="date"
+                value={form.checkOutDate}
+                onChange={(event) => setForm((current) => ({ ...current, checkOutDate: event.target.value }))}
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+              <input
+                type="number"
+                min="1"
+                value={form.guestCount}
+                onChange={(event) => setForm((current) => ({ ...current, guestCount: event.target.value }))}
+                placeholder="Guest count"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <select
+              value={form.status}
+              onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
+              className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+            >
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <textarea
+              rows={4}
+              value={form.notes}
+              onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+              placeholder="Supplier notes, rooming list updates, guest requests..."
+              className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+            />
+
+            <div className="flex gap-3">
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : editingId ? "Update Reservation" : "Create Reservation"}
+              </Button>
+              {editingId && (
+                <Button type="button" variant="secondary" onClick={resetForm} disabled={saving}>
+                  Cancel Edit
+                </Button>
+              )}
+            </div>
+          </form>
+        </Card>
+
+        <Card className="border-none p-8 shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+            Reservation Board
+          </h3>
+
+          <div className="space-y-4">
+            {loading && (
+              <p className="text-sm font-medium text-slate-500">
+                Loading accommodation reservations...
+              </p>
+            )}
+
+            {!loading && reservations.length === 0 && (
+              <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">
+                No accommodation reservations added yet.
+              </div>
+            )}
+
+            {!loading &&
+              reservations.map((reservation) => (
+                <div
+                  key={reservation._id}
+                  className="rounded-[28px] border border-slate-200 bg-white px-5 py-5"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs font-black uppercase tracking-wide text-slate-900">
+                          {reservation.hotelName}
+                        </p>
+                        <span
+                          className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                            statusTone[reservation.status] || statusTone.pending
+                          }`}
+                        >
+                          {reservation.status}
+                        </span>
+                        {reservation.destination && (
+                          <Badge variant="secondary">{reservation.destination}</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium leading-6 text-slate-600">
+                        {reservation.coordinationSummary?.summary ||
+                          "No accommodation summary available."}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {reservation.bookingGuestName && (
+                          <Badge variant="secondary">{reservation.bookingGuestName}</Badge>
+                        )}
+                        {reservation.assignedTourTitle && (
+                          <Badge variant="secondary">{reservation.assignedTourTitle}</Badge>
+                        )}
+                        {reservation.roomPlan && (
+                          <Badge variant="secondary">{reservation.roomPlan}</Badge>
+                        )}
+                        {reservation.reservationCode && (
+                          <Badge variant="secondary">Ref {reservation.reservationCode}</Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(reservation)}
+                        className="rounded-2xl border border-slate-200 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(reservation._id)}
+                        className="rounded-2xl border border-red-200 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default AccommodationManager;
