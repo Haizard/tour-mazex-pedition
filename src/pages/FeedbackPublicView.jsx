@@ -34,10 +34,11 @@ const FeedbackPublicView = () => {
     if (rating === 0) return;
     setSubmitting(true);
     try {
-      await submitPublicFeedback(token, {
+      const response = await submitPublicFeedback(token, {
         rating,
         privateNote,
       });
+      setFeedback(response.data);
       setSubmitted(true);
     } catch (err) {
       setError("Failed to submit feedback. Please try again.");
@@ -140,7 +141,7 @@ const FeedbackPublicView = () => {
                         Share this code with your friends. If they book a trip, you both get <span className="font-bold text-primary">$100 Safari Credit!</span>
                       </p>
                       <div className="bg-white rounded-2xl py-4 font-mono text-2xl font-black tracking-widest text-primary border-2 border-dashed border-primary/20">
-                        {token.substring(0, 8).toUpperCase()}
+                        {feedback.referralCode || token.substring(0, 8).toUpperCase()}
                       </div>
                     </div>
                   </div>

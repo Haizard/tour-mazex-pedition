@@ -58,14 +58,14 @@
 - Create: `src/pages/FeedbackPublicView.jsx`
 - Modify: `src/AppRoutes.jsx`
 
-- [ ] **Step 1: Build FeedbackPublicView.jsx**
+- [x] **Step 1: Build FeedbackPublicView.jsx**
     - Star rating selector (1-5).
     - Dynamic conditional rendering:
         - If rating < 4: Show private feedback text area + submit.
         - If rating >= 4: Show Google/TripAdvisor buttons + "Refer a Friend" code.
     - Submit logic to update `TravelerFeedback` in backend.
 
-- [ ] **Step 2: Register route**
+- [x] **Step 2: Register route**
     `path="feedback/:token"` in `AppRoutes.jsx`.
 
 ---
@@ -106,11 +106,11 @@
 - Create: `src/components/Public/ReviewWall.jsx`
 - Modify: `src/pages/Home.jsx` (or a landing page)
 
-- [ ] **Step 1: Build ReviewWall.jsx**
+- [x] **Step 1: Build ReviewWall.jsx**
     - Fetch 4-5 star feedback via a new public endpoint.
     - Premium layout (masonry or grid) with traveler names and ratings.
 
-- [ ] **Step 2: Integrate into Website**
+- [x] **Step 2: Integrate into Website**
     Add the `ReviewWall` to the homepage or a dedicated "Testimonials" section.
 
 ---
@@ -121,13 +121,13 @@
 - Modify: `backend/models/Booking.js`
 - Modify: `src/pages/PlanMyTrip.jsx` (The booking form)
 
-- [ ] **Step 1: Update Booking Model**
+- [x] **Step 1: Update Booking Model**
     Add `appliedReferralCode` field.
 
-- [ ] **Step 2: Update Booking Form**
+- [x] **Step 2: Update Booking Form**
     Add an "Optional Referral Code" field to the UI.
 
-- [ ] **Step 3: Logic for Rewards**
+- [x] **Step 3: Logic for Rewards**
     If a booking is created with a code, link it to the referring `TravelerFeedback` record.
 
 ---
@@ -138,8 +138,8 @@
 - Create: `backend/routes/reportRoutes.js`
 - Create: `backend/utils/sentimentAnalysis.js`
 
-- [ ] **Step 1: Create Sentiment Aggregator**
+- [x] **Step 1: Create Sentiment Aggregator**
     AI-powered script to summarize `privateNote` fields for the tenant admin.
 
-- [ ] **Step 2: Admin Dashboard Report**
+- [x] **Step 2: Admin Dashboard Report**
     Show "What Travelers Love" vs "What to Improve" in a new tab.

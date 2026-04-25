@@ -1,18 +1,9 @@
+import { calculateCustomerSegment, getSegmentPerks } from "./customerSegmentation.js";
+
 const formatTravelDate = (value) => {
-  if (!value) {
-    return "";
-  }
-
+  if (!value) return "";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 };
 
 export const buildRepeatCustomerAutomation = ({
@@ -20,59 +11,76 @@ export const buildRepeatCustomerAutomation = ({
   bookingHistory = [],
   tenantName = "Your safari team",
 } = {}) => {
-  const guestName = booking.name || "Traveler";
+  const guestName = booking.name?.split(" ")[0] || "Traveler";
   const packageTitle = booking.packageTour || "your safari";
   const travelDateLabel = formatTravelDate(booking.travelDate);
-  const completedTrips = Array.isArray(bookingHistory) ? bookingHistory.length : 0;
-  const campaignType = completedTrips > 1 ? "anniversary" : "referral";
-  const audienceTag = completedTrips > 1 ? "repeat-guest" : "first-time-guest";
-  const offerLabel =
-    campaignType === "anniversary"
-      ? "Return guest priority offer"
-      : "Referral reward for your next safari";
+  
+  const segment = calculateCustomerSegment(bookingHistory);
+  const perks = getSegmentPerks(segment);
+  
+  const campaignType = segment === "First-Timer" ? "referral" : "anniversary";
+  const audienceTag = segment.toLowerCase();
+  
+  let offerLabel = "Exclusive Return Offer";
+  let subject = `${tenantName}: A special gift for your next journey`;
+  let messageParts = [`Hi ${guestName},`];
 
-  const subject =
-    campaignType === "anniversary"
-      ? `${tenantName} is ready for your next safari`
-      : `${tenantName} would love to welcome your friends too`;
-
-  const message =
-    campaignType === "anniversary"
-      ? [
-          `Hi ${guestName},`,
-          "",
-          `Thank you again for travelling with ${tenantName}. Since you have already experienced ${packageTitle}, we would love to help you plan your next return to Tanzania.`,
-          travelDateLabel
-            ? `Your last safari was around ${travelDateLabel}, which makes this a perfect moment to shape an anniversary-style return offer.`
-            : "This is a great moment to shape a return safari offer while your last journey is still fresh in memory.",
-          "",
-          "Reply if you want us to draft a preferred-return itinerary with loyalty perks and faster planning support.",
-        ].join("\n")
-      : [
-          `Hi ${guestName},`,
-          "",
-          `We hope you loved ${packageTitle} with ${tenantName}. If you know friends or family dreaming about Tanzania, we would love to welcome them too.`,
-          "We can prepare a referral-ready itinerary and add a returning guest reward for your next booking.",
-          "",
-          "Reply if you want a personal referral invitation you can forward directly.",
-        ].join("\n");
+  if (segment === "VIP") {
+    offerLabel = "VIP Loyalty Recognition";
+    subject = `Exclusive VIP Invitation from ${tenantName}`;
+    messageParts.push(
+      `It has been an absolute honor hosting you on your recent ${packageTitle}. Because of your incredible loyalty to ${tenantName}, we have officially upgraded your status to VIP.`,
+      `For your next journey, you will automatically enjoy:`,
+      ...perks.map(p => `• ${p}`),
+      `Whenever you're ready for the wild again, your dedicated planner is standing by.`
+    );
+  } else if (segment === "Loyal") {
+    offerLabel = "Loyalty Appreciation Offer";
+    subject = `Welcome back to the family, ${guestName}`;
+    messageParts.push(
+      `We loved having you back for ${packageTitle}. As a token of our appreciation for your continued trust in ${tenantName}, we've prepared a 'Loyalty Pack' for your next trip:`,
+      ...perks.map(p => `• ${p}`),
+      `Shall we start looking at some new horizons for your next visit?`
+    );
+  } else if (segment === "Lapsed") {
+    offerLabel = "Welcome Back Priority";
+    subject = `We miss you, ${guestName}!`;
+    messageParts.push(
+      `It's been a while since we last saw you in the bush! We're reaching out because we'd love to welcome you back to Tanzania.`,
+      `A lot has changed since your ${packageTitle} trip, and we'd love to show you our newest private conservancies.`,
+      `Book your return this season and we'll include:`,
+      ...perks.map(p => `• ${p}`)
+    );
+  } else {
+    // First-Timer / Referral focus
+    offerLabel = "Referral Reward Program";
+    subject = `Share the magic of Africa, ${guestName}`;
+    messageParts.push(
+      `We hope the memories of ${packageTitle} are still making you smile!`,
+      `If you have friends dreaming of a similar adventure, we'd love to treat them (and you).`,
+      `Refer a friend who books a safari, and you'll both receive:`,
+      ...perks.map(p => `• ${p}`),
+      `Simply share your unique referral code or reply to this message to introduce us.`
+    );
+  }
 
   return {
-    guestName,
+    guestName: booking.name,
     guestEmail: booking.email || "",
     bookingLabel: packageTitle,
     campaignType,
+    segment,
+    channel: segment === "VIP" || segment === "Loyal" ? "whatsapp" : "email",
     audienceTag,
     offerLabel,
     subject,
-    message,
+    message: messageParts.join("\n\n"),
     status: "draft",
-    recommendedSendAtLabel:
-      travelDateLabel || "within 30 days of trip completion",
+    recommendedSendAtLabel: travelDateLabel || "post-trip",
     nextStepChecklist: [
-      "Review the guest message and adjust the offer if needed",
-      "Send after the trip is complete and feedback is positive",
-      "Track replies and convert interested guests into new inquiries",
+      `Review tailored ${segment} perks in the message`,
+      "Confirm guest's preferred contact method (WhatsApp recommended for VIPs)",
+      "Send draft and monitor for conversion"
     ],
   };
 };

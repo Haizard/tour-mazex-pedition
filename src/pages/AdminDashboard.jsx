@@ -81,6 +81,7 @@ import CompetitorIntelligenceManager from "../components/Admin/CompetitorIntelli
 import SiteSettings from "../components/Admin/SiteSettings";
 import SubscriptionManager from "../components/Admin/SubscriptionManager";
 import ReputationGuardianManager from "../components/Admin/ReputationGuardianManager";
+import RepeatCustomerManager from "../components/Admin/RepeatCustomerManager";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import { useTenant } from "../context/TenantContext";
 
@@ -4224,6 +4225,7 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === "reputation" && <ReputationGuardianManager />}
+          {activeTab === "repeat-customers" && <RepeatCustomerManager />}
           {activeTab === "lead-inbox" && <LeadInboxManager />}
           {activeTab === "email-inbox" && <UnifiedInboxManager />}
           {activeTab === "campaigns" && <CampaignManager />}

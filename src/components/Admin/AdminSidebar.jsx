@@ -56,6 +56,7 @@ const groupedMenuItems = [
       { id: "social-posts", label: "Social Posts", icon: <FaShareAlt />, accessKey: "socialPosts" },
       { id: "repurposing", label: "Repurposing", icon: <FaRetweet />, accessKey: "repurposing" },
       { id: "campaigns", label: "Campaigns", icon: <FaBullhorn />, accessKey: "campaigns" },
+      { id: "repeat-customers", label: "Repeat Customers", icon: <FaUsers />, accessKey: "repeatCustomerAutomation" },
       { id: "reputation", label: "Reputation Guardian", icon: <FaShieldAlt />, accessKey: "reviewAutomation" },
       { id: "subscription", label: "Subscription", icon: <FaWallet /> },
     ],

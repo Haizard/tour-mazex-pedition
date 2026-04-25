@@ -24,6 +24,17 @@ const repeatCustomerCampaignSchema = new mongoose.Schema(
       index: true,
     },
     audienceTag: { type: String, default: "" },
+    segment: { 
+      type: String, 
+      enum: ["First-Timer", "Loyal", "VIP", "Lapsed"],
+      default: "First-Timer",
+      index: true
+    },
+    channel: {
+      type: String,
+      enum: ["email", "whatsapp"],
+      default: "email"
+    },
     offerLabel: { type: String, default: "" },
     subject: { type: String, required: true, trim: true },
     message: { type: String, required: true, trim: true },

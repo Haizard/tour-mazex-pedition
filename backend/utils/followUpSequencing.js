@@ -36,7 +36,7 @@ export const generateReviewSequence = (booking = {}, feedbackToken = "", { tenan
     {
       scheduledAt: new Date(now.getTime() + 2 * 60 * 60 * 1000), // 2 hours after completion
       channel: "whatsapp",
-      content: `Hi ${firstName}, it's ${tenantName}! We hope you had an incredible journey. 🌍 We'd love to hear your thoughts while the memories are fresh. Could you take a quick minute to rate your experience? ${process.env.VITE_APP_URL || "http://localhost:5173"}/feedback/${feedbackToken}`,
+      content: `Hi ${firstName}, it's ${tenantName}! We hope you had an incredible journey. 🌍 We'd love to hear your thoughts while the memories are fresh. Could you take a quick minute to rate your experience? ${process.env.SITE_URL || "https://mazexpeditions.vercel.app"}/feedback/${feedbackToken}`,
       status: "pending",
     },
   ];

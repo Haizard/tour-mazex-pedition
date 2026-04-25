@@ -89,7 +89,10 @@ router.post('/', async (req, res) => {
             await tour.save();
         }
 
-        const newBooking = new Booking(withTenantId(req, bookingData));
+        const newBooking = new Booking(withTenantId(req, {
+            ...bookingData,
+            referralCode: bookingData.referralCode || undefined
+        }));
         await newBooking.save();
         res.status(201).json(newBooking);
     } catch (error) {
@@ -110,8 +113,12 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        // Trigger Review Automation if Completed
+        // Trigger Growth Suite: Reputation Guardian & Repeat Customer Automation
         if (status === "Completed") {
+            const tenant = await Tenant.findById(updatedBooking.tenantId).lean();
+            const tenantName = tenant?.brandName || tenant?.name || "our team";
+
+            // 1. Reputation Guardian (Review Request)
             const existingFeedback = await TravelerFeedback.findOne({ bookingId: updatedBooking._id });
             if (!existingFeedback) {
                 const feedback = new TravelerFeedback({
@@ -120,18 +127,42 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
                 });
                 await feedback.save();
 
-                const tenant = await Tenant.findById(updatedBooking.tenantId).lean();
-                const touchpoints = generateReviewSequence(updatedBooking, feedback.publicToken, {
-                    tenantName: tenant?.brandName || tenant?.name || "our team"
-                });
+                const touchpoints = generateReviewSequence(updatedBooking, feedback.publicToken, { tenantName });
 
                 const sequence = new LeadFollowUpSequence({
                     tenantId: updatedBooking.tenantId,
-                    inquiryId: null, // This is for bookings
+                    inquiryId: null,
                     bookingId: updatedBooking._id,
                     touchpoints,
                 });
                 await sequence.save();
+            }
+
+            // 2. Repeat Customer Automation (Lifecycle Segmentation)
+            const existingCampaign = await RepeatCustomerCampaign.findOne({ bookingId: updatedBooking._id });
+            if (!existingCampaign) {
+                // Fetch historical bookings for this guest across the tenant
+                const bookingHistory = await Booking.find({
+                    tenantId: updatedBooking.tenantId,
+                    $or: [
+                        { email: updatedBooking.email },
+                        { phone: updatedBooking.phone }
+                    ],
+                    status: "Completed"
+                }).lean();
+
+                const automation = buildRepeatCustomerAutomation({
+                    booking: updatedBooking,
+                    bookingHistory,
+                    tenantName
+                });
+
+                const campaign = new RepeatCustomerCampaign({
+                    tenantId: updatedBooking.tenantId,
+                    bookingId: updatedBooking._id,
+                    ...automation
+                });
+                await campaign.save();
             }
         }
 
