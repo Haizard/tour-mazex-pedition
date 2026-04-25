@@ -32,6 +32,7 @@ export const PRICING_PLANS = [
       "AI captions and hashtags",
       "Lead inbox and qualification flows",
       "Email follow-up automation",
+      "Review automation",
     ],
     limits: {
       aiGenerations: 200,
@@ -66,6 +67,7 @@ export const FEATURE_PLAN_REQUIREMENTS = {
   "social-posts": "growth",
   "lead-inbox": "growth",
   repurposing: "growth",
+  "review-automation": "growth",
   campaigns: "pro",
   "whatsapp-automation": "pro",
 };

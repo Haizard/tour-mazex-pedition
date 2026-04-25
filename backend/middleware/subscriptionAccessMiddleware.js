@@ -8,6 +8,7 @@ const FEATURE_LABELS = {
   "social-posts": "social publishing",
   "lead-inbox": "lead inbox",
   repurposing: "content repurposing",
+  "review-automation": "review automation",
   campaigns: "campaign automation",
   "whatsapp-automation": "WhatsApp automation",
 };

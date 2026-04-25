@@ -371,6 +371,11 @@ export const createBooking = (newBooking) => API.post("/bookings", newBooking);
 export const updateBookingStatus = (id, status) =>
   API.patch(`/bookings/${id}`, { status });
 export const deleteBooking = (id) => API.delete(`/bookings/${id}`);
+export const fetchReviewRequests = () => cachedGet("/bookings/review-requests");
+export const generateBookingReviewRequest = (id) =>
+  API.post(`/bookings/${id}/review-request`);
+export const updateReviewRequest = (id, data) =>
+  API.patch(`/bookings/review-requests/${id}`, data);
 
 // Blogs
 export const fetchBlogs = () => cachedGet("/blogs");

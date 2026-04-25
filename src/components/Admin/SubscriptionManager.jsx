@@ -26,6 +26,11 @@ const featureCards = [
     description: "Turn blog content into channel-ready social and campaign assets.",
   },
   {
+    key: "review-automation",
+    label: "Review Automation",
+    description: "Generate and track post-trip review requests for Google, Tripadvisor, and Booking.com.",
+  },
+  {
     key: "campaigns",
     label: "Campaigns",
     description: "Run automated seasonal, migration, and destination campaigns.",
@@ -257,8 +262,10 @@ const SubscriptionManager = () => {
                   ? "socialAccounts"
                   : feature.key === "social-posts"
                     ? "socialPosts"
-                    : feature.key === "lead-inbox"
-                      ? "leadInbox"
+                      : feature.key === "lead-inbox"
+                        ? "leadInbox"
+                      : feature.key === "review-automation"
+                        ? "reviewAutomation"
                       : feature.key === "whatsapp-automation"
                         ? "whatsappAutomation"
                         : feature.key

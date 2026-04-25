@@ -14,8 +14,8 @@ Last audit date: `2026-04-24`
 
 - Total roadmap features audited: `26`
 - Complete: `6`
-- Partial: `9`
-- Not Started: `11`
+- Partial: `10`
+- Not Started: `10`
 
 ## Product Vision
 
@@ -50,7 +50,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 13 | AI Quote Generator | Partial | Inquiry-linked quote drafts can now be generated and saved with itinerary outlines, pricing line items, totals, and next steps. PDF export and full send/accept workflows are still missing. |
 | 14 | Automated Follow-Up System | Partial | Lead follow-up fields and some outreach support exist, but abandoned booking reminders and full sales sequencing are not fully implemented. |
 | 15 | Lead Scoring | Complete | Inquiries now receive automatic lead scores, hot/warm/cold classification, scoring reasons, and tenant-admin visibility in the inquiry workflow. |
-| 16 | Review Automation | Not Started | Review display fields exist, but no automation for Google, Tripadvisor, or Booking.com review collection was found. |
+| 16 | Review Automation | Partial | Tenants can now generate post-booking review request drafts, track review-request status, and manage Google/Tripadvisor/Booking.com review follow-up from the booking workflow. Live third-party delivery and direct review-platform integrations are still missing. |
 | 17 | Repeat Customer Automation | Not Started | No referral, anniversary, or retargeting automation engine found. |
 | 18 | Guide & Driver Management | Not Started | No guide/driver assignment or availability management module found. |
 | 19 | Accommodation Coordination | Not Started | Tour content stores accommodation information, but no hotel/supplier coordination module was found. |

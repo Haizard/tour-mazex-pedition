@@ -37,6 +37,7 @@ export const PRICING_PLANS = [
       "lead-inbox",
       "sales-chatbot",
       "repurposing",
+      "review-automation",
     ],
     limits: {
       aiGenerations: 200,
@@ -62,6 +63,7 @@ export const PRICING_PLANS = [
       "lead-inbox",
       "sales-chatbot",
       "repurposing",
+      "review-automation",
       "campaigns",
       "whatsapp-automation",
       "priority-support",

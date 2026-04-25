@@ -1,8 +1,11 @@
 import express from 'express';
 import Booking from '../models/Booking.js';
+import ReviewRequest from "../models/ReviewRequest.js";
 import TourPackage from '../models/TourPackage.js';
 import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
+import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
+import { buildReviewRequestDraft } from "../utils/reviewAutomation.js";
 
 const router = express.Router();
 
@@ -15,6 +18,22 @@ router.get('/', requireTenantAdmin, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
+router.get(
+    "/review-requests",
+    requireTenantAdmin,
+    requireSubscriptionFeature("review-automation"),
+    async (req, res) => {
+        try {
+            const reviewRequests = await ReviewRequest.find(buildTenantFilter(req))
+                .sort({ createdAt: -1 })
+                .lean();
+            res.status(200).json(reviewRequests);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+);
 
 // Create a new booking (Customer)
 router.post('/', async (req, res) => {
@@ -72,6 +91,102 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
+router.post(
+    "/:id/review-request",
+    requireTenantAdmin,
+    requireSubscriptionFeature("review-automation"),
+    async (req, res) => {
+        try {
+            const booking = await Booking.findOne(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+            if (!booking) {
+                return res.status(404).json({ message: "Booking not found" });
+            }
+
+            if (booking.status !== "Confirmed") {
+                return res.status(400).json({
+                    message: "Only confirmed bookings can receive automated review requests.",
+                });
+            }
+
+            const existing = await ReviewRequest.findOne(
+                buildTenantFilter(req, { bookingId: booking._id })
+            );
+
+            if (existing) {
+                return res.status(200).json(existing);
+            }
+
+            const draft = buildReviewRequestDraft({
+                booking,
+                tenantName: req.tenant?.name,
+            });
+
+            const reviewRequest = new ReviewRequest(
+                withTenantId(req, {
+                    bookingId: booking._id,
+                    ...draft,
+                })
+            );
+            await reviewRequest.save();
+
+            res.status(201).json(reviewRequest);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+);
+
+router.patch(
+    "/review-requests/:id",
+    requireTenantAdmin,
+    requireSubscriptionFeature("review-automation"),
+    async (req, res) => {
+        try {
+            const updates = {};
+            const allowedStatuses = new Set(["draft", "scheduled", "sent", "completed", "skipped"]);
+
+            if (req.body.status && allowedStatuses.has(req.body.status)) {
+                updates.status = req.body.status;
+            }
+
+            if (Array.isArray(req.body.platforms)) {
+                updates.platforms = req.body.platforms;
+            }
+
+            if (typeof req.body.subject === "string") {
+                updates.subject = req.body.subject;
+            }
+
+            if (typeof req.body.message === "string") {
+                updates.message = req.body.message;
+            }
+
+            if (updates.status === "sent") {
+                updates.sentAt = new Date();
+            }
+
+            if (updates.status === "completed") {
+                updates.completedAt = new Date();
+            }
+
+            const reviewRequest = await ReviewRequest.findOneAndUpdate(
+                buildTenantFilter(req, { _id: req.params.id }),
+                { $set: updates },
+                { new: true }
+            );
+
+            if (!reviewRequest) {
+                return res.status(404).json({ message: "Review request not found" });
+            }
+
+            res.status(200).json(reviewRequest);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+);
 
 // Delete a booking (Admin)
 router.delete('/:id', requireTenantAdmin, async (req, res) => {

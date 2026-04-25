@@ -15,6 +15,9 @@ import {
   fetchBookings,
   updateBookingStatus,
   deleteBooking,
+  fetchReviewRequests,
+  generateBookingReviewRequest,
+  updateReviewRequest,
   fetchBlogs,
   createBlog,
   updateBlog,
@@ -118,6 +121,14 @@ const AdminDashboard = () => {
     }
   }, [activeTab, gatedTabAccess]);
 
+  useEffect(() => {
+    if (!selectedBooking?._id) {
+      return;
+    }
+
+    setSelectedBookingReviewRequest(getReviewRequestForBooking(selectedBooking._id));
+  }, [reviewRequests, selectedBooking]);
+
   // Form States
   const [tourFormData, setTourFormData] = useState({
     title: "",
@@ -207,6 +218,13 @@ const AdminDashboard = () => {
   const [generatingInquiryQuote, setGeneratingInquiryQuote] = useState(false);
   const [selectedContactMessage, setSelectedContactMessage] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [reviewRequests, setReviewRequests] = useState([]);
+  const [selectedBookingReviewRequest, setSelectedBookingReviewRequest] = useState(null);
+  const [generatingReviewRequest, setGeneratingReviewRequest] = useState(false);
+  const [savingReviewRequest, setSavingReviewRequest] = useState(false);
+  const [reviewRequestError, setReviewRequestError] = useState("");
+  const getReviewRequestForBooking = (bookingId) =>
+    reviewRequests.find((item) => item.bookingId === bookingId) || null;
 
   const [editingTourId, setEditingTourId] = useState(null);
   const [editingBlogId, setEditingBlogId] = useState(null);
@@ -339,6 +357,7 @@ const AdminDashboard = () => {
     loadTours();
     loadGallery();
     loadBookings();
+    loadReviewRequests();
     loadBlogs();
     loadInquiries();
     loadContactMessages();
@@ -371,6 +390,19 @@ const AdminDashboard = () => {
       const res = await fetchBookings();
       setBookings(res.data);
     } catch (e) {
+      console.error(e);
+    }
+  };
+  const loadReviewRequests = async () => {
+    try {
+      const res = await fetchReviewRequests();
+      setReviewRequests(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      if (e.response?.status === 403) {
+        setReviewRequests([]);
+        return;
+      }
+
       console.error(e);
     }
   };
@@ -428,6 +460,57 @@ const AdminDashboard = () => {
       setVisionaries(res.data);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleOpenBooking = (booking) => {
+    setSelectedBooking(booking);
+    setReviewRequestError("");
+    setSelectedBookingReviewRequest(getReviewRequestForBooking(booking._id));
+  };
+
+  const handleGenerateReviewRequest = async (bookingId) => {
+    setGeneratingReviewRequest(true);
+    setReviewRequestError("");
+    try {
+      const response = await generateBookingReviewRequest(bookingId);
+      const nextRequest = response.data;
+      setReviewRequests((current) => {
+        const existingIndex = current.findIndex((item) => item._id === nextRequest._id);
+        if (existingIndex >= 0) {
+          const clone = [...current];
+          clone[existingIndex] = nextRequest;
+          return clone;
+        }
+
+        return [nextRequest, ...current];
+      });
+      setSelectedBookingReviewRequest(nextRequest);
+    } catch (error) {
+      setReviewRequestError(
+        error.response?.data?.message || "Unable to generate the review request right now."
+      );
+    } finally {
+      setGeneratingReviewRequest(false);
+    }
+  };
+
+  const handleReviewRequestStatusChange = async (requestId, status) => {
+    setSavingReviewRequest(true);
+    setReviewRequestError("");
+    try {
+      const response = await updateReviewRequest(requestId, { status });
+      const nextRequest = response.data;
+      setReviewRequests((current) =>
+        current.map((item) => (item._id === nextRequest._id ? nextRequest : item))
+      );
+      setSelectedBookingReviewRequest(nextRequest);
+    } catch (error) {
+      setReviewRequestError(
+        error.response?.data?.message || "Unable to update review request status."
+      );
+    } finally {
+      setSavingReviewRequest(false);
     }
   };
 
@@ -2247,7 +2330,10 @@ const AdminDashboard = () => {
                 <Badge variant="accent">{bookings.length} New Bookings</Badge>
               </div>
               <div className="space-y-4">
-                {bookings.map((b) => (
+                {bookings.map((b) => {
+                  const bookingReviewRequest = getReviewRequestForBooking(b._id);
+
+                  return (
                   <div
                     key={b._id}
                     className="flex flex-col md:flex-row items-stretch md:items-center justify-between p-6 md:p-6 bg-white border border-slate-100 rounded-[2.5rem] group shadow-sm hover:shadow-2xl transition-all duration-500"
@@ -2266,6 +2352,11 @@ const AdminDashboard = () => {
                           <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${b.status?.toLowerCase() === 'confirmed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-orange-50 text-orange-600 border border-orange-100'}`}>
                             {b.status}
                           </div>
+                          {bookingReviewRequest && (
+                            <div className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-sky-50 text-sky-700 border border-sky-100">
+                              Review {bookingReviewRequest.status}
+                            </div>
+                          )}
                         </div>
                         <p className="text-slate-400 font-bold text-xs mb-4 truncate">{b.email}</p>
                         
@@ -2292,7 +2383,7 @@ const AdminDashboard = () => {
                            </div>
                          </div>
                         <button 
-                          onClick={() => setSelectedBooking(b)}
+                          onClick={() => handleOpenBooking(b)}
                           className="mt-2 text-[9px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
                         >
                           View Booking Details
@@ -2315,7 +2406,8 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2328,7 +2420,11 @@ const AdminDashboard = () => {
                 className="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
               >
                 <button
-                  onClick={() => setSelectedBooking(null)}
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setSelectedBookingReviewRequest(null);
+                    setReviewRequestError("");
+                  }}
                   className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 flex"
                 >
                   <span className="text-xl md:text-2xl">&times;</span>
@@ -2424,6 +2520,145 @@ const AdminDashboard = () => {
                     <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-sm">
                       {selectedBooking.notes || "No extra notes were included with this booking."}
                     </p>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50 p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          Review Automation
+                        </p>
+                        <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-slate-900">
+                          Turn completed trips into public reviews
+                        </h3>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                          Generate a reusable review request for Google, Tripadvisor, and Booking.com
+                          once the safari is confirmed and complete.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {tenant?.access?.reviewAutomation ? (
+                          <button
+                            type="button"
+                            disabled={
+                              generatingReviewRequest ||
+                              selectedBooking.status !== "Confirmed" ||
+                              Boolean(selectedBookingReviewRequest)
+                            }
+                            onClick={() => handleGenerateReviewRequest(selectedBooking._id)}
+                            className="rounded-full bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {generatingReviewRequest
+                              ? "Generating..."
+                              : selectedBookingReviewRequest
+                                ? "Review Request Ready"
+                                : "Generate Review Request"}
+                          </button>
+                        ) : (
+                          <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">
+                            Growth plan required
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {reviewRequestError && (
+                      <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                        {reviewRequestError}
+                      </div>
+                    )}
+
+                    {selectedBookingReviewRequest ? (
+                      <div className="mt-6 space-y-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Badge variant="secondary">Status: {selectedBookingReviewRequest.status}</Badge>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                            Send window: {selectedBookingReviewRequest.sendWindowLabel}
+                          </span>
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Email Subject
+                          </p>
+                          <p className="mt-2 text-sm font-bold text-slate-900">
+                            {selectedBookingReviewRequest.subject}
+                          </p>
+                          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Message Draft
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                            {selectedBookingReviewRequest.message}
+                          </p>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Review Channels
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              {(selectedBookingReviewRequest.platforms || []).map((platform) => (
+                                <div
+                                  key={`${selectedBookingReviewRequest._id}-${platform.channel}`}
+                                  className="rounded-2xl bg-slate-50 px-4 py-3"
+                                >
+                                  <p className="text-sm font-black text-slate-900">{platform.label}</p>
+                                  <p className="mt-1 text-xs font-medium text-slate-500">
+                                    {platform.reviewUrl || "Add the public review URL before sending live."}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Next Steps
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              {(selectedBookingReviewRequest.nextStepChecklist || []).map((step, index) => (
+                                <div key={`${selectedBookingReviewRequest._id}-step-${index}`} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                                  {step}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            disabled={savingReviewRequest}
+                            onClick={() => handleReviewRequestStatusChange(selectedBookingReviewRequest._id, "scheduled")}
+                            className="rounded-full border border-slate-200 bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-700 disabled:opacity-50"
+                          >
+                            Mark Scheduled
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingReviewRequest}
+                            onClick={() => handleReviewRequestStatusChange(selectedBookingReviewRequest._id, "sent")}
+                            className="rounded-full border border-sky-200 bg-sky-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-sky-700 disabled:opacity-50"
+                          >
+                            Mark Sent
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingReviewRequest}
+                            onClick={() => handleReviewRequestStatusChange(selectedBookingReviewRequest._id, "completed")}
+                            className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700 disabled:opacity-50"
+                          >
+                            Mark Review Received
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-6 text-sm font-medium text-slate-500">
+                        No review request has been generated for this booking yet.
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

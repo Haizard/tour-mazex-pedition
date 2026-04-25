@@ -39,6 +39,18 @@ test("canAccessFeature blocks starter plan from campaigns", () => {
   assert.equal(allowed, false);
 });
 
+test("growth plan includes review automation", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "growth",
+      status: "active",
+    },
+    "review-automation"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {
