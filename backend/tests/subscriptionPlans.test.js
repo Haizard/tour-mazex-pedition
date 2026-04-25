@@ -63,6 +63,18 @@ test("pro plan includes repeat customer automation", () => {
   assert.equal(allowed, true);
 });
 
+test("pro plan includes guide and driver management", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "pro",
+      status: "active",
+    },
+    "guide-driver-management"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {

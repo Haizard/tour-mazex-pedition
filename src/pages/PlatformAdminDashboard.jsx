@@ -43,7 +43,16 @@ const growthSuiteFeatures = [
   ["campaigns", "Campaigns", "Create seasonal offers and campaign workflows."],
   ["repeat-customer-automation", "Repeat Customer", "Run referral, anniversary, and guest reactivation follow-up."],
   ["whatsapp-automation", "WhatsApp Automation", "Enable WhatsApp Business messaging flows."],
+  ["guide-driver-management", "Guide & Driver Management", "Manage safari field staff, availability, assignment planning, and booking-linked operations."],
 ];
+
+const growthPlanFeatureKeys = growthSuiteFeatures
+  .filter(([key]) =>
+    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management"].includes(key)
+  )
+  .map(([key]) => key);
+
+const proPlanFeatureKeys = growthSuiteFeatures.map(([key]) => key);
 
 const subscriptionPlans = [
   {
@@ -59,7 +68,7 @@ const subscriptionPlans = [
     name: "Growth",
     price: "$79",
     description: "Main commercial plan for operators who need leads and social publishing.",
-    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...growthSuiteFeatures.map(([key]) => key)],
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...growthPlanFeatureKeys],
     limits: ["200 AI generations", "500 chatbot interactions", "2 social accounts"],
   },
   {
@@ -67,7 +76,7 @@ const subscriptionPlans = [
     name: "Pro",
     price: "$199",
     description: "Full growth suite with campaigns, WhatsApp flows, and higher operational limits.",
-    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...growthSuiteFeatures.map(([key]) => key), "priority-support"],
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...proPlanFeatureKeys, "priority-support"],
     limits: ["1000 AI generations", "3000 chatbot interactions", "10 social accounts"],
   },
   {
@@ -75,7 +84,7 @@ const subscriptionPlans = [
     name: "Enterprise",
     price: "Custom",
     description: "Negotiated packaging for multi-brand or high-touch managed accounts.",
-    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...growthSuiteFeatures.map(([key]) => key), "priority-support"],
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...proPlanFeatureKeys, "priority-support"],
     limits: ["Custom limits", "Custom integrations", "Managed rollout"],
   },
 ];

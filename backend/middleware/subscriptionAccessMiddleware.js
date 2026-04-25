@@ -10,6 +10,7 @@ const FEATURE_LABELS = {
   repurposing: "content repurposing",
   "review-automation": "review automation",
   "repeat-customer-automation": "repeat customer automation",
+  "guide-driver-management": "guide and driver management",
   campaigns: "campaign automation",
   "whatsapp-automation": "WhatsApp automation",
 };

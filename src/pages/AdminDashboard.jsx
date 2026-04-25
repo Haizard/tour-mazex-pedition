@@ -70,6 +70,7 @@ import CampaignManager from "../components/Admin/CampaignManager";
 import ContentRepurposingManager from "../components/Admin/ContentRepurposingManager";
 import SocialPostsManager from "../components/Admin/SocialPostsManager";
 import SocialAccountsManager from "../components/Admin/SocialAccountsManager";
+import GuideDriverManager from "../components/Admin/GuideDriverManager";
 import SiteSettings from "../components/Admin/SiteSettings";
 import SubscriptionManager from "../components/Admin/SubscriptionManager";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -3588,6 +3589,8 @@ const AdminDashboard = () => {
           {activeTab === "repurposing" && <ContentRepurposingManager />}
 
           {activeTab === "campaigns" && <CampaignManager />}
+
+          {activeTab === "guide-drivers" && <GuideDriverManager />}
 
           {activeTab === "subscription" && <SubscriptionManager />}
 

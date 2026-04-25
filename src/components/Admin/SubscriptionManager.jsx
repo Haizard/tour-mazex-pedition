@@ -36,6 +36,11 @@ const featureCards = [
     description: "Draft loyalty, referral, and anniversary re-engagement offers for past safari guests.",
   },
   {
+    key: "guide-driver-management",
+    label: "Guides & Drivers",
+    description: "Manage field staff availability, safari assignments, driver licenses, and booking operations.",
+  },
+  {
     key: "campaigns",
     label: "Campaigns",
     description: "Run automated seasonal, migration, and destination campaigns.",
@@ -46,6 +51,16 @@ const featureCards = [
     description: "Send structured business follow-ups through tenant-owned WhatsApp channels.",
   },
 ];
+
+const featureAccessKeyMap = {
+  "social-accounts": "socialAccounts",
+  "social-posts": "socialPosts",
+  "lead-inbox": "leadInbox",
+  "review-automation": "reviewAutomation",
+  "repeat-customer-automation": "repeatCustomerAutomation",
+  "whatsapp-automation": "whatsappAutomation",
+  "guide-driver-management": "guideDriverManagement",
+};
 
 const SubscriptionManager = () => {
   const { tenant, refreshTenant } = useTenant();
@@ -262,21 +277,7 @@ const SubscriptionManager = () => {
           {featureCards.map((feature) => {
             const requiredPlan = getPricingPlan(FEATURE_PLAN_REQUIREMENTS[feature.key]);
             const enabled = Boolean(
-              tenant?.access?.[
-                feature.key === "social-accounts"
-                  ? "socialAccounts"
-                  : feature.key === "social-posts"
-                    ? "socialPosts"
-                      : feature.key === "lead-inbox"
-                        ? "leadInbox"
-                      : feature.key === "review-automation"
-                        ? "reviewAutomation"
-                      : feature.key === "repeat-customer-automation"
-                        ? "repeatCustomerAutomation"
-                      : feature.key === "whatsapp-automation"
-                        ? "whatsappAutomation"
-                        : feature.key
-              ]
+              tenant?.access?.[featureAccessKeyMap[feature.key] || feature.key]
             );
 
             return (

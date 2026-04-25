@@ -14,6 +14,7 @@ import {
   FaLink,
   FaLock,
   FaQuestionCircle,
+  FaTruck,
   FaRetweet,
   FaRoute,
   FaShareAlt,
@@ -69,6 +70,13 @@ const groupedMenuItems = [
       { id: "settings", label: "Site Settings", icon: <FaCog /> },
     ],
   },
+  {
+    id: "operations",
+    label: "Operations",
+    items: [
+      { id: "guide-drivers", label: "Guides & Drivers", icon: <FaTruck />, accessKey: "guideDriverManagement" },
+    ],
+  },
 ];
 
 const getGroupIdByTab = (tabId) =>
@@ -88,6 +96,7 @@ const AdminSidebar = ({
     growth: true,
     sales: false,
     site: false,
+    operations: false,
   }));
 
   const activeGroupId = useMemo(() => getGroupIdByTab(activeTab), [activeTab]);

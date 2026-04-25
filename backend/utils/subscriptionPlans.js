@@ -66,6 +66,7 @@ export const PRICING_PLANS = [
       "review-automation",
       "campaigns",
       "repeat-customer-automation",
+      "guide-driver-management",
       "whatsapp-automation",
       "priority-support",
     ],

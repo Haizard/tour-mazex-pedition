@@ -8,14 +8,14 @@ Status legend:
 - `Partial`: some important parts exist, but the feature is not fully end-to-end or production-complete
 - `Not Started`: no meaningful implementation found yet
 
-Last audit date: `2026-04-24`
+Last audit date: `2026-04-25`
 
 ## Summary
 
 - Total roadmap features audited: `26`
 - Complete: `6`
-- Partial: `11`
-- Not Started: `9`
+- Partial: `12`
+- Not Started: `8`
 
 ## Product Vision
 
@@ -52,7 +52,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 15 | Lead Scoring | Complete | Inquiries now receive automatic lead scores, hot/warm/cold classification, scoring reasons, and tenant-admin visibility in the inquiry workflow. |
 | 16 | Review Automation | Partial | Tenants can now generate post-booking review request drafts, track review-request status, and manage Google/Tripadvisor/Booking.com review follow-up from the booking workflow. Live third-party delivery and direct review-platform integrations are still missing. |
 | 17 | Repeat Customer Automation | Partial | Confirmed bookings can now generate repeat-customer campaign drafts with referral or anniversary messaging, tracked status, and tenant-admin controls. Live outbound delivery, customer segmentation, and retargeting channel integrations are still missing. |
-| 18 | Guide & Driver Management | Not Started | No guide/driver assignment or availability management module found. |
+| 18 | Guide & Driver Management | Partial | Tenant admins can now create guides and drivers, track availability, capture specialties and license details, and assign field staff to bookings. It still needs deeper scheduling, conflict detection, and dispatch-style workflow polish. |
 | 19 | Accommodation Coordination | Not Started | Tour content stores accommodation information, but no hotel/supplier coordination module was found. |
 | 20 | Airport Pickup Coordination | Not Started | No pickup scheduling/assignment/notification module found. |
 | 21 | Payment Automation | Not Started | No Stripe, PayPal, or payment gateway integration was found in the current codebase. |
@@ -99,6 +99,7 @@ The biggest missing revenue-critical areas are:
 2. AI Quote Generator
 3. Lead Scoring
 4. Automated Follow-Up System
+5. Guide & Driver Management
 5. Unified Inbox completion
 6. WhatsApp Automation completion
 7. Review Automation

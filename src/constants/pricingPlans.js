@@ -52,6 +52,7 @@ export const PRICING_PLANS = [
       "WhatsApp automation",
       "Unified inbox operations",
       "Campaign automation",
+      "Guide & driver management",
       "Repeat customer automation",
       "Advanced analytics and priority support",
     ],
@@ -70,6 +71,7 @@ export const FEATURE_PLAN_REQUIREMENTS = {
   repurposing: "growth",
   "review-automation": "growth",
   campaigns: "pro",
+  "guide-driver-management": "pro",
   "repeat-customer-automation": "pro",
   "whatsapp-automation": "pro",
 };
