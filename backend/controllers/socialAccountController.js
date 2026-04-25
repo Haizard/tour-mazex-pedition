@@ -7,6 +7,7 @@ import {
   sendWhatsAppTextMessage,
   verifyMetaAccountConnection,
 } from "../utils/metaGraphApi.js";
+import { buildWhatsAppAutomationSnapshot } from "../utils/unifiedInbox.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 
 const normalizeSocialAccountPayload = (body = {}) => ({
@@ -204,6 +205,15 @@ export const sendInquiryWhatsAppMessage = async (req, res) => {
 
     inquiry.status = "Contacted";
     inquiry.leadStage = "follow-up";
+    inquiry.whatsappAutomation = buildWhatsAppAutomationSnapshot(
+      inquiry.whatsappAutomation || {},
+      {
+        message,
+        externalMessageId: result?.messages?.[0]?.id || "",
+        status: "sent",
+        sentAt: new Date().toISOString(),
+      }
+    );
     await inquiry.save();
 
     res.status(200).json({

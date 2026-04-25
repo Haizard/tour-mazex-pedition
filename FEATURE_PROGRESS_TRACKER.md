@@ -44,8 +44,8 @@ An all-in-one SaaS platform that helps tour operators:
 | 7 | AI Customer Support Chatbot | Partial | AI chatbot exists and uses tenant tours/blogs context. It is useful now, but not yet a fully metered, deeply managed commercial support system. |
 | 8 | Social Media Automation | Partial | Social accounts, post drafts, scheduling, captions, hashtags, and live Meta publishing hooks exist. Full automation depth and broader channel coverage are not complete yet. |
 | 9 | Content Repurposing Engine | Complete | Blog repurposing into campaign/social/email-style output is implemented in the marketing workflow. |
-| 10 | WhatsApp Automation | Partial | WhatsApp Business account fields and send-message flows exist, but the full automation journey is not yet complete. |
-| 11 | Unified Inbox | Partial | Email thread handling and support linking exist, but there is not yet one true inbox that unifies website chat, WhatsApp, Instagram, Facebook, and email together. |
+| 10 | WhatsApp Automation | Partial | WhatsApp Business account fields, send-message flows, tenant-account isolation, and delivery-state tracking now exist inside the inbox workflow. It still needs richer templates, automated sequences, and broader conversational orchestration. |
+| 11 | Unified Inbox | Partial | Tenant admins can now work email threads and WhatsApp lead conversations from one merged operator inbox with shared filtering and action controls. It still needs Instagram, Facebook, website chat, and deeper reply-sync coverage to become a fully universal inbox. |
 | 12 | AI Sales Assistant | Partial | The chat system includes conversion-oriented selling behavior and a sales assistant payload, but not a full AI closer workflow tied to booking conversion. |
 | 13 | AI Quote Generator | Partial | Inquiry-linked quote drafts can now be generated and saved with itinerary outlines, pricing line items, totals, and next steps. PDF export and full send/accept workflows are still missing. |
 | 14 | Automated Follow-Up System | Partial | Lead follow-up fields and some outreach support exist, but abandoned booking reminders and full sales sequencing are not fully implemented. |

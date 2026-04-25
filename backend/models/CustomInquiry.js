@@ -49,6 +49,17 @@ const customInquirySchema = new mongoose.Schema({
     leadScoreReasons: [{ type: String }],
     automationSummary: { type: String, default: '' },
     followUpMessage: { type: String, default: '' },
+    whatsappAutomation: {
+        outboundMessageCount: { type: Number, default: 0, min: 0 },
+        lastMessageAt: { type: Date, default: null },
+        lastMessagePreview: { type: String, default: '' },
+        lastExternalMessageId: { type: String, default: '' },
+        lastDeliveryStatus: {
+            type: String,
+            enum: ['not-sent', 'sent', 'failed'],
+            default: 'not-sent'
+        }
+    },
     status: { type: String, enum: ['Pending', 'Contacted', 'Booked', 'Cancelled'], default: 'Pending' }
 }, { timestamps: true });
 

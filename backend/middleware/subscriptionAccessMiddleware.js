@@ -10,6 +10,7 @@ const FEATURE_LABELS = {
   repurposing: "content repurposing",
   "review-automation": "review automation",
   "repeat-customer-automation": "repeat customer automation",
+  "unified-inbox": "unified inbox",
   "guide-driver-management": "guide and driver management",
   "accommodation-coordination": "accommodation coordination",
   "airport-pickup-coordination": "airport pickup coordination",

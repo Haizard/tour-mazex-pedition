@@ -36,6 +36,11 @@ const featureCards = [
     description: "Draft loyalty, referral, and anniversary re-engagement offers for past safari guests.",
   },
   {
+    key: "unified-inbox",
+    label: "Unified Inbox",
+    description: "Work email threads and WhatsApp lead conversations from one operator inbox.",
+  },
+  {
     key: "guide-driver-management",
     label: "Guides & Drivers",
     description: "Manage field staff availability, safari assignments, driver licenses, and booking operations.",
@@ -98,6 +103,7 @@ const featureAccessKeyMap = {
   "lead-inbox": "leadInbox",
   "review-automation": "reviewAutomation",
   "repeat-customer-automation": "repeatCustomerAutomation",
+  "unified-inbox": "unifiedInbox",
   "whatsapp-automation": "whatsappAutomation",
   "guide-driver-management": "guideDriverManagement",
   "accommodation-coordination": "accommodationCoordination",

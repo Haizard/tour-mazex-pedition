@@ -101,6 +101,7 @@ export const FEATURE_PLAN_REQUIREMENTS = {
   "payment-automation": "starter",
   "travel-documentation-assistant": "growth",
   campaigns: "pro",
+  "unified-inbox": "pro",
   "guide-driver-management": "pro",
   "accommodation-coordination": "pro",
   "airport-pickup-coordination": "pro",

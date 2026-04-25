@@ -42,6 +42,7 @@ const growthSuiteFeatures = [
   ["review-automation", "Review Automation", "Generate and track post-trip review request workflows."],
   ["campaigns", "Campaigns", "Create seasonal offers and campaign workflows."],
   ["repeat-customer-automation", "Repeat Customer", "Run referral, anniversary, and guest reactivation follow-up."],
+  ["unified-inbox", "Unified Inbox", "Work tenant email threads and WhatsApp lead conversations from one team inbox."],
   ["accommodation-coordination", "Accommodation Coordination", "Manage hotel suppliers, reservation tracking, and stay planning for tenant bookings."],
   ["airport-pickup-coordination", "Airport Pickup Coordination", "Schedule airport transfers, assign drivers, and manage arrival dispatch operations."],
   ["payment-automation", "Payment Automation", "Create checkout flows, transaction tracking, and fee-aware collections for booking revenue."],
@@ -56,7 +57,7 @@ const growthSuiteFeatures = [
 
 const growthPlanFeatureKeys = growthSuiteFeatures
   .filter(([key]) =>
-    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management", "accommodation-coordination", "airport-pickup-coordination", "partner-portal", "dynamic-pricing-engine", "multi-language-ai-assistant", "competitor-intelligence"].includes(key)
+    !["campaigns", "repeat-customer-automation", "unified-inbox", "whatsapp-automation", "guide-driver-management", "accommodation-coordination", "airport-pickup-coordination", "partner-portal", "dynamic-pricing-engine", "multi-language-ai-assistant", "competitor-intelligence"].includes(key)
   )
   .map(([key]) => key);
 

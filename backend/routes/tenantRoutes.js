@@ -121,6 +121,7 @@ router.get("/bootstrap", async (req, res) => {
           socialAccounts: canAccessFeature(req.tenant.subscription, "social-accounts"),
           socialPosts: canAccessFeature(req.tenant.subscription, "social-posts"),
           leadInbox: canAccessFeature(req.tenant.subscription, "lead-inbox"),
+          unifiedInbox: canAccessFeature(req.tenant.subscription, "unified-inbox"),
           repurposing: canAccessFeature(req.tenant.subscription, "repurposing"),
           reviewAutomation: canAccessFeature(req.tenant.subscription, "review-automation"),
           repeatCustomerAutomation: canAccessFeature(req.tenant.subscription, "repeat-customer-automation"),

@@ -304,6 +304,7 @@ export const fetchEmailThreads = () => API.get("/email/threads");
 export const linkEmailThread = (threadId, data) =>
   API.post(`/email/threads/${threadId}/link`, data);
 export const createEmailThread = (data) => API.post("/email/threads", data);
+export const fetchUnifiedInboxItems = () => API.get("/unified-inbox");
 export const fetchTenantBootstrap = () => cachedGet("/tenant/bootstrap");
 export const fetchTenantSiteConfig = () => cachedGet("/tenant/site-config");
 export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", data);

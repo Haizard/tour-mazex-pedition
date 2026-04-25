@@ -64,7 +64,7 @@ import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import AdminSidebar from "../components/Admin/AdminSidebar";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
-import EmailInboxManager from "../components/Admin/EmailInboxManager";
+import UnifiedInboxManager from "../components/Admin/UnifiedInboxManager";
 import LeadInboxManager from "../components/Admin/LeadInboxManager";
 import CampaignManager from "../components/Admin/CampaignManager";
 import ContentRepurposingManager from "../components/Admin/ContentRepurposingManager";
@@ -118,6 +118,7 @@ const AdminDashboard = () => {
     "social-accounts": featureAccess.socialAccounts,
     "social-posts": featureAccess.socialPosts,
     "lead-inbox": featureAccess.leadInbox,
+    "email-inbox": featureAccess.unifiedInbox,
     repurposing: featureAccess.repurposing,
     campaigns: featureAccess.campaigns,
     accommodations: featureAccess.accommodationCoordination,
@@ -3593,7 +3594,7 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {activeTab === "email-inbox" && <EmailInboxManager />}
+          {activeTab === "email-inbox" && <UnifiedInboxManager />}
 
           {activeTab === "lead-inbox" && <LeadInboxManager />}
 

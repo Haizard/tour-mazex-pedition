@@ -171,6 +171,18 @@ test("enterprise plan includes competitor intelligence", () => {
   assert.equal(allowed, true);
 });
 
+test("pro plan includes unified inbox", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "pro",
+      status: "active",
+    },
+    "unified-inbox"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {
