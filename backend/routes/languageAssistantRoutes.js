@@ -1,0 +1,108 @@
+import express from "express";
+import LanguageAssistantProfile from "../models/LanguageAssistantProfile.js";
+import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
+import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
+import { summarizeLanguageAssistantProfile } from "../utils/languageAssistant.js";
+import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+
+const router = express.Router();
+
+router.use(requireTenantAdmin);
+router.use(requireSubscriptionFeature("multi-language-ai-assistant"));
+
+router.get("/", async (req, res) => {
+  try {
+    const profiles = await LanguageAssistantProfile.find(buildTenantFilter(req))
+      .sort({ language: 1 })
+      .lean();
+
+    res.status(200).json(
+      profiles.map((profile) => ({
+        ...profile,
+        profileSummary: summarizeLanguageAssistantProfile(profile),
+      }))
+    );
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/", async (req, res) => {
+  try {
+    const profile = new LanguageAssistantProfile(
+      withTenantId(req, {
+        language: req.body.language,
+        localeCode: req.body.localeCode,
+        tone: req.body.tone,
+        useCases: Array.isArray(req.body.useCases) ? req.body.useCases : [],
+        glossary: Array.isArray(req.body.glossary) ? req.body.glossary : [],
+        status: req.body.status,
+        notes: req.body.notes,
+      })
+    );
+
+    await profile.save();
+
+    res.status(201).json({
+      ...profile.toObject(),
+      profileSummary: summarizeLanguageAssistantProfile(profile.toObject()),
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/:id", async (req, res) => {
+  try {
+    const updates = {
+      language: req.body.language,
+      localeCode: req.body.localeCode,
+      tone: req.body.tone,
+      useCases: Array.isArray(req.body.useCases) ? req.body.useCases : undefined,
+      glossary: Array.isArray(req.body.glossary) ? req.body.glossary : undefined,
+      status: req.body.status,
+      notes: req.body.notes,
+    };
+
+    Object.keys(updates).forEach((key) => {
+      if (updates[key] === undefined) {
+        delete updates[key];
+      }
+    });
+
+    const profile = await LanguageAssistantProfile.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      { $set: updates },
+      { new: true }
+    ).lean();
+
+    if (!profile) {
+      return res.status(404).json({ message: "Language assistant profile not found" });
+    }
+
+    res.status(200).json({
+      ...profile,
+      profileSummary: summarizeLanguageAssistantProfile(profile),
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const profile = await LanguageAssistantProfile.findOneAndDelete(
+      buildTenantFilter(req, { _id: req.params.id })
+    ).lean();
+
+    if (!profile) {
+      return res.status(404).json({ message: "Language assistant profile not found" });
+    }
+
+    res.status(200).json({ message: "Language assistant profile deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+export default router;

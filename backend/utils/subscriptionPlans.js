@@ -40,6 +40,7 @@ export const PRICING_PLANS = [
       "repurposing",
       "review-automation",
       "payment-automation",
+      "travel-documentation-assistant",
     ],
     limits: {
       aiGenerations: 200,
@@ -73,6 +74,7 @@ export const PRICING_PLANS = [
       "airport-pickup-coordination",
       "payment-automation",
       "whatsapp-automation",
+      "travel-documentation-assistant",
       "priority-support",
     ],
     limits: {
@@ -107,6 +109,8 @@ export const PRICING_PLANS = [
       "airport-pickup-coordination",
       "payment-automation",
       "dynamic-pricing-engine",
+      "multi-language-ai-assistant",
+      "travel-documentation-assistant",
       "whatsapp-automation",
       "partner-portal",
       "priority-support",

@@ -66,6 +66,16 @@ const featureCards = [
     description: "Apply enterprise pricing rules using season, demand, and occupancy multipliers with previewed final pricing.",
   },
   {
+    key: "travel-documentation-assistant",
+    label: "Travel Docs",
+    description: "Maintain traveler guidance for visas, vaccines, insurance, and entry requirements by market.",
+  },
+  {
+    key: "multi-language-ai-assistant",
+    label: "Languages",
+    description: "Prepare multilingual AI response packs, glossary terms, and guest communication setups for international travelers.",
+  },
+  {
     key: "campaigns",
     label: "Campaigns",
     description: "Run automated seasonal, migration, and destination campaigns.",
@@ -90,6 +100,8 @@ const featureAccessKeyMap = {
   "payment-automation": "paymentAutomation",
   "partner-portal": "partnerPortal",
   "dynamic-pricing-engine": "dynamicPricingEngine",
+  "travel-documentation-assistant": "travelDocumentationAssistant",
+  "multi-language-ai-assistant": "multilingualAiAssistant",
 };
 
 const SubscriptionManager = () => {

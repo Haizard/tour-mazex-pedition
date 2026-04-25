@@ -47,13 +47,15 @@ const growthSuiteFeatures = [
   ["payment-automation", "Payment Automation", "Create checkout flows, transaction tracking, and fee-aware collections for booking revenue."],
   ["partner-portal", "Partner Portal", "Manage hotels, agencies, and suppliers through a tenant-specific enterprise partner workspace."],
   ["dynamic-pricing-engine", "Dynamic Pricing Engine", "Run enterprise pricing rules with season, demand, and occupancy multipliers."],
+  ["travel-documentation-assistant", "Travel Documentation Assistant", "Manage visa, vaccine, insurance, and entry-requirement guidance by traveler market."],
+  ["multi-language-ai-assistant", "Multi-Language AI Assistant", "Create multilingual guest communication packs and localized AI support setups."],
   ["whatsapp-automation", "WhatsApp Automation", "Enable WhatsApp Business messaging flows."],
   ["guide-driver-management", "Guide & Driver Management", "Manage safari field staff, availability, assignment planning, and booking-linked operations."],
 ];
 
 const growthPlanFeatureKeys = growthSuiteFeatures
   .filter(([key]) =>
-    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management", "accommodation-coordination", "airport-pickup-coordination", "partner-portal", "dynamic-pricing-engine"].includes(key)
+    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management", "accommodation-coordination", "airport-pickup-coordination", "partner-portal", "dynamic-pricing-engine", "multi-language-ai-assistant"].includes(key)
   )
   .map(([key]) => key);
 

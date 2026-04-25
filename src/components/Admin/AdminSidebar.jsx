@@ -12,6 +12,8 @@ import {
   FaEnvelopeOpenText,
   FaCreditCard,
   FaChartLine,
+  FaGlobeAfrica,
+  FaPassport,
   FaHotel,
   FaImages,
   FaInbox,
@@ -93,6 +95,14 @@ const groupedMenuItems = [
       { id: "dynamic-pricing", label: "Dynamic Pricing", icon: <FaChartLine />, accessKey: "dynamicPricingEngine" },
     ],
   },
+  {
+    id: "guest-assist",
+    label: "Guest Assist",
+    items: [
+      { id: "language-assistant", label: "Languages", icon: <FaGlobeAfrica />, accessKey: "multilingualAiAssistant" },
+      { id: "travel-docs", label: "Travel Docs", icon: <FaPassport />, accessKey: "travelDocumentationAssistant" },
+    ],
+  },
 ];
 
 const getGroupIdByTab = (tabId) =>
@@ -114,6 +124,7 @@ const AdminSidebar = ({
     site: false,
     operations: false,
     revenue: false,
+    "guest-assist": false,
   }));
 
   const activeGroupId = useMemo(() => getGroupIdByTab(activeTab), [activeTab]);

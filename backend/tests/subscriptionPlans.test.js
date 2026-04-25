@@ -135,6 +135,30 @@ test("enterprise plan includes dynamic pricing engine", () => {
   assert.equal(allowed, true);
 });
 
+test("growth plan includes travel documentation assistant", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "growth",
+      status: "active",
+    },
+    "travel-documentation-assistant"
+  );
+
+  assert.equal(allowed, true);
+});
+
+test("enterprise plan includes multi-language AI assistant", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "enterprise",
+      status: "active",
+    },
+    "multi-language-ai-assistant"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {

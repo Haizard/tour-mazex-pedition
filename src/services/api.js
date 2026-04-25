@@ -393,6 +393,14 @@ export const fetchDynamicPricingRules = () => cachedGet("/dynamic-pricing");
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
 export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);
+export const fetchLanguageAssistantProfiles = () => cachedGet("/language-assistants");
+export const createLanguageAssistantProfile = (data) => API.post("/language-assistants", data);
+export const updateLanguageAssistantProfile = (id, data) => API.patch(`/language-assistants/${id}`, data);
+export const deleteLanguageAssistantProfile = (id) => API.delete(`/language-assistants/${id}`);
+export const fetchTravelDocumentationGuides = () => cachedGet("/travel-docs");
+export const createTravelDocumentationGuide = (data) => API.post("/travel-docs", data);
+export const updateTravelDocumentationGuide = (id, data) => API.patch(`/travel-docs/${id}`, data);
+export const deleteTravelDocumentationGuide = (id) => API.delete(`/travel-docs/${id}`);
 
 // Bookings
 export const fetchBookings = () => cachedGet("/bookings");

@@ -15,6 +15,8 @@ const FEATURE_LABELS = {
   "airport-pickup-coordination": "airport pickup coordination",
   "payment-automation": "payment automation",
   "dynamic-pricing-engine": "dynamic pricing engine",
+  "multi-language-ai-assistant": "multi-language AI assistant",
+  "travel-documentation-assistant": "travel documentation assistant",
   "partner-portal": "partner portal",
   campaigns: "campaign automation",
   "whatsapp-automation": "WhatsApp automation",

@@ -76,6 +76,7 @@ import AirportPickupManager from "../components/Admin/AirportPickupManager";
 import PartnerPortalManager from "../components/Admin/PartnerPortalManager";
 import PaymentAutomationManager from "../components/Admin/PaymentAutomationManager";
 import DynamicPricingManager from "../components/Admin/DynamicPricingManager";
+import TravelerAssistanceManager from "../components/Admin/TravelerAssistanceManager";
 import SiteSettings from "../components/Admin/SiteSettings";
 import SubscriptionManager from "../components/Admin/SubscriptionManager";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -123,6 +124,8 @@ const AdminDashboard = () => {
     partners: featureAccess.partnerPortal,
     payments: featureAccess.paymentAutomation,
     "dynamic-pricing": featureAccess.dynamicPricingEngine,
+    "language-assistant": featureAccess.multilingualAiAssistant,
+    "travel-docs": featureAccess.travelDocumentationAssistant,
   };
   const handleLogout = () => {
     logout();
@@ -3611,6 +3614,8 @@ const AdminDashboard = () => {
           {activeTab === "payments" && <PaymentAutomationManager />}
 
           {activeTab === "dynamic-pricing" && <DynamicPricingManager />}
+
+          {(activeTab === "language-assistant" || activeTab === "travel-docs") && <TravelerAssistanceManager />}
 
           {activeTab === "subscription" && <SubscriptionManager />}
 

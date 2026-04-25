@@ -14,8 +14,8 @@ Last audit date: `2026-04-25`
 
 - Total roadmap features audited: `26`
 - Complete: `6`
-- Partial: `17`
-- Not Started: `3`
+- Partial: `19`
+- Not Started: `1`
 
 ## Product Vision
 
@@ -57,8 +57,8 @@ An all-in-one SaaS platform that helps tour operators:
 | 20 | Airport Pickup Coordination | Partial | Tenant admins can now schedule airport transfers, assign drivers, track airport codes and flight details, capture dispatch notes, and manage pickup status from an operations workspace. It still needs automated notifications, arrival monitoring, and tighter linkage to driver availability conflicts. |
 | 21 | Payment Automation | Partial | Tenant admins can now create Stripe, PayPal, and manual payment flows linked to bookings, track collection status, and calculate transaction fees in a dedicated revenue workspace. Live gateway credentials, webhooks, and customer-facing checkout completion are still integration-ready rather than fully live. |
 | 22 | Dynamic Pricing Engine | Partial | Enterprise tenants can now create dynamic pricing rules with season, demand, and occupancy multipliers, minimum floors, and final price previews in a revenue workspace. It still needs deeper linkage into live package pricing and public booking flows. |
-| 23 | Multi-Language AI Assistant | Not Started | No language package or multilingual AI assistant feature was found. |
-| 24 | Visa/Travel Documentation Assistant | Not Started | No dedicated visa/vaccine/insurance/travel documentation assistant was found. |
+| 23 | Multi-Language AI Assistant | Partial | Enterprise tenants can now create multilingual language packs with locale codes, tone, use cases, glossary terms, and activation status in a traveler-assistance workspace. It still needs runtime response generation and public chatbot localization. |
+| 24 | Visa/Travel Documentation Assistant | Partial | Growth+ tenants can now maintain traveler-market guidance for visas, vaccines, insurance, and entry requirements with review dates and source labels in a dedicated guidance library. It still needs direct traveler-facing delivery and source-sync automation. |
 | 25 | Competitor Intelligence | Not Started | No competitor pricing or market intelligence tracking system was found. |
 | 26 | Partner Portal | Partial | Tenant admins can now manage hotels, agencies, and suppliers through a dedicated partner workspace with status, commercial notes, contract labels, payout terms, and contact details. It still needs true external partner login, shared workflows, and partner-facing self-service views. |
 
