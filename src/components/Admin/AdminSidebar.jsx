@@ -10,6 +10,8 @@ import {
   FaCog,
   FaEdit,
   FaEnvelopeOpenText,
+  FaCreditCard,
+  FaChartLine,
   FaHotel,
   FaImages,
   FaInbox,
@@ -83,6 +85,14 @@ const groupedMenuItems = [
       { id: "partners", label: "Partner Portal", icon: <FaHandshake />, accessKey: "partnerPortal" },
     ],
   },
+  {
+    id: "revenue",
+    label: "Revenue",
+    items: [
+      { id: "payments", label: "Payments", icon: <FaCreditCard />, accessKey: "paymentAutomation" },
+      { id: "dynamic-pricing", label: "Dynamic Pricing", icon: <FaChartLine />, accessKey: "dynamicPricingEngine" },
+    ],
+  },
 ];
 
 const getGroupIdByTab = (tabId) =>
@@ -103,6 +113,7 @@ const AdminSidebar = ({
     sales: false,
     site: false,
     operations: false,
+    revenue: false,
   }));
 
   const activeGroupId = useMemo(() => getGroupIdByTab(activeTab), [activeTab]);

@@ -14,8 +14,8 @@ Last audit date: `2026-04-25`
 
 - Total roadmap features audited: `26`
 - Complete: `6`
-- Partial: `15`
-- Not Started: `5`
+- Partial: `17`
+- Not Started: `3`
 
 ## Product Vision
 
@@ -55,8 +55,8 @@ An all-in-one SaaS platform that helps tour operators:
 | 18 | Guide & Driver Management | Partial | Tenant admins can now create guides and drivers, track availability, capture specialties and license details, and assign field staff to bookings. It still needs deeper scheduling, conflict detection, and dispatch-style workflow polish. |
 | 19 | Accommodation Coordination | Partial | Tenant admins can now coordinate hotel reservations, supplier contacts, room plans, guest counts, and booking-linked stay windows from an operations workspace. It still needs conflict detection, supplier messaging, and itinerary-level lodging automation. |
 | 20 | Airport Pickup Coordination | Partial | Tenant admins can now schedule airport transfers, assign drivers, track airport codes and flight details, capture dispatch notes, and manage pickup status from an operations workspace. It still needs automated notifications, arrival monitoring, and tighter linkage to driver availability conflicts. |
-| 21 | Payment Automation | Not Started | No Stripe, PayPal, or payment gateway integration was found in the current codebase. |
-| 22 | Dynamic Pricing Engine | Not Started | No pricing engine based on season, demand, or occupancy was found. |
+| 21 | Payment Automation | Partial | Tenant admins can now create Stripe, PayPal, and manual payment flows linked to bookings, track collection status, and calculate transaction fees in a dedicated revenue workspace. Live gateway credentials, webhooks, and customer-facing checkout completion are still integration-ready rather than fully live. |
+| 22 | Dynamic Pricing Engine | Partial | Enterprise tenants can now create dynamic pricing rules with season, demand, and occupancy multipliers, minimum floors, and final price previews in a revenue workspace. It still needs deeper linkage into live package pricing and public booking flows. |
 | 23 | Multi-Language AI Assistant | Not Started | No language package or multilingual AI assistant feature was found. |
 | 24 | Visa/Travel Documentation Assistant | Not Started | No dedicated visa/vaccine/insurance/travel documentation assistant was found. |
 | 25 | Competitor Intelligence | Not Started | No competitor pricing or market intelligence tracking system was found. |

@@ -51,9 +51,19 @@ const featureCards = [
     description: "Plan airport transfers, dispatch drivers, track arrivals, and keep ground transport aligned with bookings.",
   },
   {
+    key: "payment-automation",
+    label: "Payments",
+    description: "Create checkout flows, payment links, and fee-aware booking collections through Stripe, PayPal, or manual finance ops.",
+  },
+  {
     key: "partner-portal",
     label: "Partner Portal",
     description: "Manage hotels, agencies, and suppliers through a tenant-owned commercial relationship workspace.",
+  },
+  {
+    key: "dynamic-pricing-engine",
+    label: "Dynamic Pricing",
+    description: "Apply enterprise pricing rules using season, demand, and occupancy multipliers with previewed final pricing.",
   },
   {
     key: "campaigns",
@@ -77,7 +87,9 @@ const featureAccessKeyMap = {
   "guide-driver-management": "guideDriverManagement",
   "accommodation-coordination": "accommodationCoordination",
   "airport-pickup-coordination": "airportPickupCoordination",
+  "payment-automation": "paymentAutomation",
   "partner-portal": "partnerPortal",
+  "dynamic-pricing-engine": "dynamicPricingEngine",
 };
 
 const SubscriptionManager = () => {

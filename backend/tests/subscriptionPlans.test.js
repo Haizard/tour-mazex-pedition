@@ -111,6 +111,30 @@ test("enterprise plan includes partner portal", () => {
   assert.equal(allowed, true);
 });
 
+test("starter plan includes payment automation", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "starter",
+      status: "active",
+    },
+    "payment-automation"
+  );
+
+  assert.equal(allowed, true);
+});
+
+test("enterprise plan includes dynamic pricing engine", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "enterprise",
+      status: "active",
+    },
+    "dynamic-pricing-engine"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {

@@ -44,14 +44,16 @@ const growthSuiteFeatures = [
   ["repeat-customer-automation", "Repeat Customer", "Run referral, anniversary, and guest reactivation follow-up."],
   ["accommodation-coordination", "Accommodation Coordination", "Manage hotel suppliers, reservation tracking, and stay planning for tenant bookings."],
   ["airport-pickup-coordination", "Airport Pickup Coordination", "Schedule airport transfers, assign drivers, and manage arrival dispatch operations."],
+  ["payment-automation", "Payment Automation", "Create checkout flows, transaction tracking, and fee-aware collections for booking revenue."],
   ["partner-portal", "Partner Portal", "Manage hotels, agencies, and suppliers through a tenant-specific enterprise partner workspace."],
+  ["dynamic-pricing-engine", "Dynamic Pricing Engine", "Run enterprise pricing rules with season, demand, and occupancy multipliers."],
   ["whatsapp-automation", "WhatsApp Automation", "Enable WhatsApp Business messaging flows."],
   ["guide-driver-management", "Guide & Driver Management", "Manage safari field staff, availability, assignment planning, and booking-linked operations."],
 ];
 
 const growthPlanFeatureKeys = growthSuiteFeatures
   .filter(([key]) =>
-    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management", "accommodation-coordination", "airport-pickup-coordination", "partner-portal"].includes(key)
+    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management", "accommodation-coordination", "airport-pickup-coordination", "partner-portal", "dynamic-pricing-engine"].includes(key)
   )
   .map(([key]) => key);
 
@@ -63,7 +65,7 @@ const subscriptionPlans = [
     name: "Starter",
     price: "$29",
     description: "Entry plan for smaller operators launching their first managed site.",
-    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai"],
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", "payment-automation"],
     limits: ["20 AI generations", "50 chatbot interactions", "1 social account"],
   },
   {

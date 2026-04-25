@@ -11,6 +11,7 @@ export const PRICING_PLANS = [
       "Manage tours, bookings, and inquiries",
       "AI-generated blogs and tour descriptions",
       "Basic chatbot support",
+      "Payment automation",
       "1 connected social account",
     ],
     limits: {
@@ -33,6 +34,7 @@ export const PRICING_PLANS = [
       "Lead inbox and qualification flows",
       "Email follow-up automation",
       "Review automation",
+      "Payment automation",
     ],
     limits: {
       aiGenerations: 200,
@@ -56,6 +58,7 @@ export const PRICING_PLANS = [
       "Accommodation coordination",
       "Airport pickup coordination",
       "Repeat customer automation",
+      "Payment automation",
       "Advanced analytics and priority support",
     ],
     limits: {
@@ -70,9 +73,11 @@ export const PRICING_PLANS = [
     priceMonthlyUsd: 399,
     highlighted: false,
     description: "Large travel brands with partner operations and advanced coordination",
+    cta: "Talk to Sales",
     features: [
       "Everything in Pro",
       "Partner portal",
+      "Dynamic pricing engine",
       "Advanced operational controls",
       "Enterprise relationship management",
     ],
@@ -90,11 +95,13 @@ export const FEATURE_PLAN_REQUIREMENTS = {
   "lead-inbox": "growth",
   repurposing: "growth",
   "review-automation": "growth",
+  "payment-automation": "starter",
   campaigns: "pro",
   "guide-driver-management": "pro",
   "accommodation-coordination": "pro",
   "airport-pickup-coordination": "pro",
   "partner-portal": "enterprise",
+  "dynamic-pricing-engine": "enterprise",
   "repeat-customer-automation": "pro",
   "whatsapp-automation": "pro",
 };

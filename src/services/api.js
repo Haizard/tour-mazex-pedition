@@ -385,6 +385,14 @@ export const fetchPartnerAccounts = () => cachedGet("/partners");
 export const createPartnerAccount = (data) => API.post("/partners", data);
 export const updatePartnerAccount = (id, data) => API.patch(`/partners/${id}`, data);
 export const deletePartnerAccount = (id) => API.delete(`/partners/${id}`);
+export const fetchPaymentTransactions = () => cachedGet("/payments");
+export const createPaymentTransaction = (data) => API.post("/payments", data);
+export const updatePaymentTransaction = (id, data) => API.patch(`/payments/${id}`, data);
+export const deletePaymentTransaction = (id) => API.delete(`/payments/${id}`);
+export const fetchDynamicPricingRules = () => cachedGet("/dynamic-pricing");
+export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
+export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
+export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);
 
 // Bookings
 export const fetchBookings = () => cachedGet("/bookings");
