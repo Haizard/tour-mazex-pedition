@@ -428,6 +428,8 @@ export const fetchPublicFeedback = (token) =>
   API.get(`/bookings/public-feedback/${token}`);
 export const submitPublicFeedback = (token, data) =>
   API.post(`/bookings/public-feedback/${token}`, data);
+export const fetchPublicTestimonials = () =>
+  API.get("/bookings/public-testimonials");
 
 // Blogs
 export const fetchBlogs = () => cachedGet("/blogs");

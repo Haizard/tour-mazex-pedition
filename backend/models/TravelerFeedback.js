@@ -33,6 +33,11 @@ const travelerFeedbackSchema = new mongoose.Schema(
       default: "pending",
     },
     submittedAt: { type: Date },
+    aiSentiment: { type: String, enum: ["positive", "neutral", "negative"] },
+    aiScore: { type: Number, min: 0, max: 1 },
+    aiSummary: { type: String },
+    aiKeyTopics: [{ type: String }],
+    aiImprovementSuggestion: { type: String },
   },
   { timestamps: true }
 );

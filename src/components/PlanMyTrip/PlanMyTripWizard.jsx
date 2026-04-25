@@ -25,6 +25,7 @@ const initialFormData = {
   accommodationPreferences: [],
   message: "",
   contactPreference: "whatsapp",
+  referralCode: "",
 };
 
 const destinationOptions = [
@@ -201,6 +202,22 @@ const PlanMyTripWizard = ({
     if (currentStep === 3) {
       if (!formData.message.trim() || !formData.contactPreference) {
         return "Please share your trip notes and preferred contact method.";
+
+                  <div className="space-y-1">
+                    <label className="ml-1 text-[9px] md:text-[10px] font-black uppercase text-gray-400">
+                      Referral Code (Optional)
+                    </label>
+                    <input 
+                      type="text" 
+                      value={formData.referralCode} 
+                      onChange={(e) => setField("referralCode", e.target.value)} 
+                      placeholder="e.g. SR-A1B2C" 
+                      className="w-full rounded-xl md:rounded-2xl border bg-gray-50 p-3.5 md:p-4 text-sm font-bold outline-none focus:border-primary uppercase" 
+                    />
+                    <p className="ml-1 text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                      Have a code from a friend? Enter it here to unlock rewards.
+                    </p>
+                  </div>
       }
     }
 

@@ -80,6 +80,7 @@ import TravelerAssistanceManager from "../components/Admin/TravelerAssistanceMan
 import CompetitorIntelligenceManager from "../components/Admin/CompetitorIntelligenceManager";
 import SiteSettings from "../components/Admin/SiteSettings";
 import SubscriptionManager from "../components/Admin/SubscriptionManager";
+import ReputationGuardianManager from "../components/Admin/ReputationGuardianManager";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import { useTenant } from "../context/TenantContext";
 
@@ -4222,6 +4223,22 @@ const AdminDashboard = () => {
             <PageBuilderManager mode="content" tenantName={tenant?.name || ""} />
           )}
 
+          {activeTab === "reputation" && <ReputationGuardianManager />}
+          {activeTab === "lead-inbox" && <LeadInboxManager />}
+          {activeTab === "email-inbox" && <UnifiedInboxManager />}
+          {activeTab === "campaigns" && <CampaignManager />}
+          {activeTab === "repurposing" && <ContentRepurposingManager />}
+          {activeTab === "social-posts" && <SocialPostsManager />}
+          {activeTab === "social-accounts" && <SocialAccountsManager />}
+          {activeTab === "guide-drivers" && <GuideDriverManager />}
+          {activeTab === "accommodations" && <AccommodationManager />}
+          {activeTab === "airport-pickups" && <AirportPickupManager />}
+          {activeTab === "partners" && <PartnerPortalManager />}
+          {activeTab === "payments" && <PaymentAutomationManager />}
+          {activeTab === "dynamic-pricing" && <DynamicPricingManager />}
+          {activeTab === "competitor-intelligence" && <CompetitorIntelligenceManager />}
+          {activeTab === "language-assistant" && <TravelerAssistanceManager />}
+          {activeTab === "subscription" && <SubscriptionManager />}
           {activeTab === "settings" && <SiteSettings />}
 
         </div>

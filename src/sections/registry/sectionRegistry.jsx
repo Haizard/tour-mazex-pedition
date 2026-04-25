@@ -9,6 +9,7 @@ import AfricanDestinations from "../../components/Home/AfricanDestinations";
 import Testimonial from "../../components/Testimonial/Testimonial";
 import TripCtaSection from "../cta/TripCtaSection";
 import LogoSlider from "../../components/Home/LogoSlider";
+import ReviewWall from "../../components/Public/ReviewWall";
 
 const BlogDetail = React.lazy(() => import("../../components/Blogs/BlogDetail"));
 const PackageDetail = React.lazy(() => import("../../components/Blogs/PackageDetail"));
@@ -26,6 +27,7 @@ const sectionComponents = {
   tourDetail: PackageDetail,
   cta: TripCtaSection,
   logoCloud: LogoSlider,
+  reviewWall: ReviewWall,
 };
 
 const sharedStyleSchema = [
@@ -595,6 +597,25 @@ const metadata = {
         path: "notes",
         type: "textarea",
         placeholder: "This section uses the live blog detail template for the current blog URL.",
+        rows: 3,
+        colSpan: 2,
+      },
+    ],
+    styleSchema: sharedStyleSchema,
+  },
+  reviewWall: {
+    key: "reviewWall",
+    label: "Review Wall",
+    category: "social-proof",
+    supportedVariants: ["default"],
+    allowMultiple: false,
+    presets: [{ value: "default", label: "Autonomous Review Wall" }],
+    editorSchema: [
+      {
+        group: "contentConfig",
+        path: "notes",
+        type: "textarea",
+        placeholder: "This section automatically pulls 4-5 star verified reviews from your travelers.",
         rows: 3,
         colSpan: 2,
       },

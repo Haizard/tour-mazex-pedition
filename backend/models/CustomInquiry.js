@@ -60,7 +60,8 @@ const customInquirySchema = new mongoose.Schema({
             default: 'not-sent'
         }
     },
-    status: { type: String, enum: ['Pending', 'Contacted', 'Booked', 'Cancelled'], default: 'Pending' }
+    status: { type: String, enum: ['Pending', 'Contacted', 'Booked', 'Cancelled'], default: 'Pending' },
+    referralCode: { type: String, trim: true }
 }, { timestamps: true });
 
 const CustomInquiry = mongoose.model('CustomInquiry', customInquirySchema);

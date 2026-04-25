@@ -97,3 +97,49 @@
 
 - [x] **Step 2: Update Roadmap**
     Mark "Review Automation" as `Complete`.
+
+---
+
+## Task 5: Review Wall (The Showcase)
+
+**Files:**
+- Create: `src/components/Public/ReviewWall.jsx`
+- Modify: `src/pages/Home.jsx` (or a landing page)
+
+- [ ] **Step 1: Build ReviewWall.jsx**
+    - Fetch 4-5 star feedback via a new public endpoint.
+    - Premium layout (masonry or grid) with traveler names and ratings.
+
+- [ ] **Step 2: Integrate into Website**
+    Add the `ReviewWall` to the homepage or a dedicated "Testimonials" section.
+
+---
+
+## Task 6: Referral Redemption Loop
+
+**Files:**
+- Modify: `backend/models/Booking.js`
+- Modify: `src/pages/PlanMyTrip.jsx` (The booking form)
+
+- [ ] **Step 1: Update Booking Model**
+    Add `appliedReferralCode` field.
+
+- [ ] **Step 2: Update Booking Form**
+    Add an "Optional Referral Code" field to the UI.
+
+- [ ] **Step 3: Logic for Rewards**
+    If a booking is created with a code, link it to the referring `TravelerFeedback` record.
+
+---
+
+## Task 7: AI Sentiment Analysis & Reports
+
+**Files:**
+- Create: `backend/routes/reportRoutes.js`
+- Create: `backend/utils/sentimentAnalysis.js`
+
+- [ ] **Step 1: Create Sentiment Aggregator**
+    AI-powered script to summarize `privateNote` fields for the tenant admin.
+
+- [ ] **Step 2: Admin Dashboard Report**
+    Show "What Travelers Love" vs "What to Improve" in a new tab.

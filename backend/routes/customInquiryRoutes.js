@@ -25,6 +25,7 @@ const buildInquiryPayload = (body = {}, sourceChannel = 'website') => ({
     children6To15: Number(body.children6To15 || 0),
     duration: body.duration || (body.tripLengthDays ? `${body.tripLengthDays} days` : undefined),
     sourceChannel,
+    referralCode: body.referralCode || undefined,
 });
 
 // Get all inquiries (Admin)
@@ -86,6 +87,13 @@ router.post('/', async (req, res) => {
             whatsappNumber,
         });
         const scoring = scoreInquiryLead(inquiryData);
+
+        if (inquiryData.referralCode) {
+            scoring.leadScore = Math.min(100, (scoring.leadScore || 0) + 15);
+            scoring.leadScoreReasons = scoring.leadScoreReasons || [];
+            scoring.leadScoreReasons.push(`Referred traveler (Code: ${inquiryData.referralCode})`);
+            scoring.leadTemperature = 'hot';
+        }
         const newInquiry = new CustomInquiry(withTenantId(req, {
             ...inquiryData,
             ...scoring,
@@ -133,6 +141,13 @@ router.post('/whatsapp-lead', async (req, res) => {
             whatsappNumber,
         });
         const scoring = scoreInquiryLead(inquiryData);
+
+        if (inquiryData.referralCode) {
+            scoring.leadScore = Math.min(100, (scoring.leadScore || 0) + 15);
+            scoring.leadScoreReasons = scoring.leadScoreReasons || [];
+            scoring.leadScoreReasons.push(`Referred traveler (Code: ${inquiryData.referralCode})`);
+            scoring.leadTemperature = 'hot';
+        }
         const newInquiry = new CustomInquiry(withTenantId(req, {
             ...inquiryData,
             ...scoring,

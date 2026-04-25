@@ -12,6 +12,7 @@ import TravelerFeedback from "../models/TravelerFeedback.js";
 import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
 import Tenant from "../models/Tenant.js";
 import { generateReviewSequence } from "../utils/followUpSequencing.js";
+import { analyzeFeedbackSentiment, generateMonthlyImprovementReport } from "../utils/sentimentAnalysis.js";
 
 const router = express.Router();
 
@@ -381,8 +382,63 @@ router.post("/public-feedback/:token", async (req, res) => {
             feedback.referralCode = `SR-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
         }
 
+        // AI Sentiment Analysis
+        if (privateNote && privateNote.length > 10) {
+            const analysis = await analyzeFeedbackSentiment(privateNote);
+            feedback.aiSentiment = analysis.sentiment;
+            feedback.aiScore = analysis.score;
+            feedback.aiSummary = analysis.summary;
+            feedback.aiKeyTopics = analysis.keyTopics;
+            feedback.aiImprovementSuggestion = analysis.improvementSuggestion;
+        }
+
         await feedback.save();
         res.status(200).json(feedback);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.get("/public-testimonials", async (req, res) => {
+    try {
+        const reviews = await TravelerFeedback.find(buildTenantFilter(req, {
+            rating: { $gte: 4 },
+            status: "submitted"
+        }))
+        .select("rating privateNote submittedAt")
+        .populate("bookingId", "name")
+        .sort({ submittedAt: -1 })
+        .limit(12)
+        .lean();
+
+        // Anonymize names (e.g. John Doe -> John D.)
+        const anonymized = reviews.map(r => ({
+            ...r,
+            name: r.bookingId?.name ? `${r.bookingId.name.split(' ')[0]} ${r.bookingId.name.split(' ')[1]?.charAt(0) || ''}.` : "Verified Traveler"
+        }));
+
+        res.status(200).json(anonymized);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.get("/feedback-report", requireTenantAdmin, async (req, res) => {
+    try {
+        const last30Days = new Date();
+        last30Days.setDate(last30Days.getDate() - 30);
+
+        const feedbacks = await TravelerFeedback.find(buildTenantFilter(req, {
+            status: "submitted",
+            submittedAt: { $gte: last30Days }
+        })).lean();
+
+        if (feedbacks.length === 0) {
+            return res.status(200).json({ report: "No feedback collected in the last 30 days to generate a report." });
+        }
+
+        const report = await generateMonthlyImprovementReport(feedbacks);
+        res.status(200).json({ report });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
