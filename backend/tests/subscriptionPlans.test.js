@@ -159,6 +159,18 @@ test("enterprise plan includes multi-language AI assistant", () => {
   assert.equal(allowed, true);
 });
 
+test("enterprise plan includes competitor intelligence", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "enterprise",
+      status: "active",
+    },
+    "competitor-intelligence"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {

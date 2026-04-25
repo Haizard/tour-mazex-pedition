@@ -21,6 +21,7 @@ import {
   FaLock,
   FaHandshake,
   FaQuestionCircle,
+  FaSearch,
   FaTruck,
   FaRetweet,
   FaRoute,
@@ -103,6 +104,13 @@ const groupedMenuItems = [
       { id: "travel-docs", label: "Travel Docs", icon: <FaPassport />, accessKey: "travelDocumentationAssistant" },
     ],
   },
+  {
+    id: "intelligence",
+    label: "Intelligence",
+    items: [
+      { id: "competitor-intelligence", label: "Competitors", icon: <FaSearch />, accessKey: "competitorIntelligence" },
+    ],
+  },
 ];
 
 const getGroupIdByTab = (tabId) =>
@@ -125,6 +133,7 @@ const AdminSidebar = ({
     operations: false,
     revenue: false,
     "guest-assist": false,
+    intelligence: false,
   }));
 
   const activeGroupId = useMemo(() => getGroupIdByTab(activeTab), [activeTab]);

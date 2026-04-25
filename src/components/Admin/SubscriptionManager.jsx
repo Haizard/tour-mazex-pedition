@@ -66,6 +66,11 @@ const featureCards = [
     description: "Apply enterprise pricing rules using season, demand, and occupancy multipliers with previewed final pricing.",
   },
   {
+    key: "competitor-intelligence",
+    label: "Competitor Intelligence",
+    description: "Track competitor pricing, route focus, market trends, and commercial risk signals in an enterprise strategy workspace.",
+  },
+  {
     key: "travel-documentation-assistant",
     label: "Travel Docs",
     description: "Maintain traveler guidance for visas, vaccines, insurance, and entry requirements by market.",
@@ -100,6 +105,7 @@ const featureAccessKeyMap = {
   "payment-automation": "paymentAutomation",
   "partner-portal": "partnerPortal",
   "dynamic-pricing-engine": "dynamicPricingEngine",
+  "competitor-intelligence": "competitorIntelligence",
   "travel-documentation-assistant": "travelDocumentationAssistant",
   "multi-language-ai-assistant": "multilingualAiAssistant",
 };

@@ -14,8 +14,8 @@ Last audit date: `2026-04-25`
 
 - Total roadmap features audited: `26`
 - Complete: `6`
-- Partial: `19`
-- Not Started: `1`
+- Partial: `20`
+- Not Started: `0`
 
 ## Product Vision
 
@@ -59,7 +59,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 22 | Dynamic Pricing Engine | Partial | Enterprise tenants can now create dynamic pricing rules with season, demand, and occupancy multipliers, minimum floors, and final price previews in a revenue workspace. It still needs deeper linkage into live package pricing and public booking flows. |
 | 23 | Multi-Language AI Assistant | Partial | Enterprise tenants can now create multilingual language packs with locale codes, tone, use cases, glossary terms, and activation status in a traveler-assistance workspace. It still needs runtime response generation and public chatbot localization. |
 | 24 | Visa/Travel Documentation Assistant | Partial | Growth+ tenants can now maintain traveler-market guidance for visas, vaccines, insurance, and entry requirements with review dates and source labels in a dedicated guidance library. It still needs direct traveler-facing delivery and source-sync automation. |
-| 25 | Competitor Intelligence | Not Started | No competitor pricing or market intelligence tracking system was found. |
+| 25 | Competitor Intelligence | Partial | Enterprise tenants can now maintain competitor watchlists with pricing observations, route focus, market trend notes, strength and risk signals, and strategic source tracking in a dedicated intelligence workspace. It still needs automated market data ingestion, benchmarking dashboards, and alerting. |
 | 26 | Partner Portal | Partial | Tenant admins can now manage hotels, agencies, and suppliers through a dedicated partner workspace with status, commercial notes, contract labels, payout terms, and contact details. It still needs true external partner login, shared workflows, and partner-facing self-service views. |
 
 ## Pricing Model Status

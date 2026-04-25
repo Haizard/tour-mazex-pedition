@@ -47,6 +47,7 @@ const growthSuiteFeatures = [
   ["payment-automation", "Payment Automation", "Create checkout flows, transaction tracking, and fee-aware collections for booking revenue."],
   ["partner-portal", "Partner Portal", "Manage hotels, agencies, and suppliers through a tenant-specific enterprise partner workspace."],
   ["dynamic-pricing-engine", "Dynamic Pricing Engine", "Run enterprise pricing rules with season, demand, and occupancy multipliers."],
+  ["competitor-intelligence", "Competitor Intelligence", "Track competitor pricing, route strategy, and market movement in a tenant-owned intelligence library."],
   ["travel-documentation-assistant", "Travel Documentation Assistant", "Manage visa, vaccine, insurance, and entry-requirement guidance by traveler market."],
   ["multi-language-ai-assistant", "Multi-Language AI Assistant", "Create multilingual guest communication packs and localized AI support setups."],
   ["whatsapp-automation", "WhatsApp Automation", "Enable WhatsApp Business messaging flows."],
@@ -55,11 +56,17 @@ const growthSuiteFeatures = [
 
 const growthPlanFeatureKeys = growthSuiteFeatures
   .filter(([key]) =>
-    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management", "accommodation-coordination", "airport-pickup-coordination", "partner-portal", "dynamic-pricing-engine", "multi-language-ai-assistant"].includes(key)
+    !["campaigns", "repeat-customer-automation", "whatsapp-automation", "guide-driver-management", "accommodation-coordination", "airport-pickup-coordination", "partner-portal", "dynamic-pricing-engine", "multi-language-ai-assistant", "competitor-intelligence"].includes(key)
   )
   .map(([key]) => key);
 
-const proPlanFeatureKeys = growthSuiteFeatures.map(([key]) => key);
+const proPlanFeatureKeys = growthSuiteFeatures
+  .filter(([key]) =>
+    !["partner-portal", "dynamic-pricing-engine", "multi-language-ai-assistant", "competitor-intelligence"].includes(key)
+  )
+  .map(([key]) => key);
+
+const enterprisePlanFeatureKeys = growthSuiteFeatures.map(([key]) => key);
 
 const subscriptionPlans = [
   {
@@ -91,7 +98,7 @@ const subscriptionPlans = [
     name: "Enterprise",
     price: "Custom",
     description: "Negotiated packaging for multi-brand or high-touch managed accounts.",
-    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...proPlanFeatureKeys, "priority-support"],
+    features: ["website-cms", "basic-bookings", "basic-chatbot", "blog-ai", "tour-ai", ...enterprisePlanFeatureKeys, "priority-support"],
     limits: ["Custom limits", "Custom integrations", "Managed rollout"],
   },
 ];

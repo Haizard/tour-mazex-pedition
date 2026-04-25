@@ -109,6 +109,7 @@ export const PRICING_PLANS = [
       "airport-pickup-coordination",
       "payment-automation",
       "dynamic-pricing-engine",
+      "competitor-intelligence",
       "multi-language-ai-assistant",
       "travel-documentation-assistant",
       "whatsapp-automation",

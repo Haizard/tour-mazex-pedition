@@ -129,6 +129,7 @@ router.get("/bootstrap", async (req, res) => {
           airportPickupCoordination: canAccessFeature(req.tenant.subscription, "airport-pickup-coordination"),
           paymentAutomation: canAccessFeature(req.tenant.subscription, "payment-automation"),
           dynamicPricingEngine: canAccessFeature(req.tenant.subscription, "dynamic-pricing-engine"),
+          competitorIntelligence: canAccessFeature(req.tenant.subscription, "competitor-intelligence"),
           multilingualAiAssistant: canAccessFeature(req.tenant.subscription, "multi-language-ai-assistant"),
           travelDocumentationAssistant: canAccessFeature(req.tenant.subscription, "travel-documentation-assistant"),
           partnerPortal: canAccessFeature(req.tenant.subscription, "partner-portal"),
