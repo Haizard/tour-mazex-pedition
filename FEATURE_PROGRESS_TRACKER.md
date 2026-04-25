@@ -14,8 +14,8 @@ Last audit date: `2026-04-25`
 
 - Total roadmap features audited: `26`
 - Complete: `6`
-- Partial: `13`
-- Not Started: `7`
+- Partial: `14`
+- Not Started: `6`
 
 ## Product Vision
 
@@ -54,7 +54,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 17 | Repeat Customer Automation | Partial | Confirmed bookings can now generate repeat-customer campaign drafts with referral or anniversary messaging, tracked status, and tenant-admin controls. Live outbound delivery, customer segmentation, and retargeting channel integrations are still missing. |
 | 18 | Guide & Driver Management | Partial | Tenant admins can now create guides and drivers, track availability, capture specialties and license details, and assign field staff to bookings. It still needs deeper scheduling, conflict detection, and dispatch-style workflow polish. |
 | 19 | Accommodation Coordination | Partial | Tenant admins can now coordinate hotel reservations, supplier contacts, room plans, guest counts, and booking-linked stay windows from an operations workspace. It still needs conflict detection, supplier messaging, and itinerary-level lodging automation. |
-| 20 | Airport Pickup Coordination | Not Started | No pickup scheduling/assignment/notification module found. |
+| 20 | Airport Pickup Coordination | Partial | Tenant admins can now schedule airport transfers, assign drivers, track airport codes and flight details, capture dispatch notes, and manage pickup status from an operations workspace. It still needs automated notifications, arrival monitoring, and tighter linkage to driver availability conflicts. |
 | 21 | Payment Automation | Not Started | No Stripe, PayPal, or payment gateway integration was found in the current codebase. |
 | 22 | Dynamic Pricing Engine | Not Started | No pricing engine based on season, demand, or occupancy was found. |
 | 23 | Multi-Language AI Assistant | Not Started | No language package or multilingual AI assistant feature was found. |

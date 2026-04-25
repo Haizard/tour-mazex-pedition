@@ -46,6 +46,11 @@ const featureCards = [
     description: "Coordinate hotel suppliers, room plans, guest stays, and lodge confirmations for each booking.",
   },
   {
+    key: "airport-pickup-coordination",
+    label: "Airport Pickups",
+    description: "Plan airport transfers, dispatch drivers, track arrivals, and keep ground transport aligned with bookings.",
+  },
+  {
     key: "campaigns",
     label: "Campaigns",
     description: "Run automated seasonal, migration, and destination campaigns.",
@@ -66,6 +71,7 @@ const featureAccessKeyMap = {
   "whatsapp-automation": "whatsappAutomation",
   "guide-driver-management": "guideDriverManagement",
   "accommodation-coordination": "accommodationCoordination",
+  "airport-pickup-coordination": "airportPickupCoordination",
 };
 
 const SubscriptionManager = () => {

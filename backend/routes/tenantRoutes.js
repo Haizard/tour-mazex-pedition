@@ -126,6 +126,7 @@ router.get("/bootstrap", async (req, res) => {
           repeatCustomerAutomation: canAccessFeature(req.tenant.subscription, "repeat-customer-automation"),
           guideDriverManagement: canAccessFeature(req.tenant.subscription, "guide-driver-management"),
           accommodationCoordination: canAccessFeature(req.tenant.subscription, "accommodation-coordination"),
+          airportPickupCoordination: canAccessFeature(req.tenant.subscription, "airport-pickup-coordination"),
           campaigns: canAccessFeature(req.tenant.subscription, "campaigns"),
           whatsappAutomation: canAccessFeature(req.tenant.subscription, "whatsapp-automation"),
         },

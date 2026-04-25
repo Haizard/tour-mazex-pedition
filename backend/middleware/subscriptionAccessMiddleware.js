@@ -12,6 +12,7 @@ const FEATURE_LABELS = {
   "repeat-customer-automation": "repeat customer automation",
   "guide-driver-management": "guide and driver management",
   "accommodation-coordination": "accommodation coordination",
+  "airport-pickup-coordination": "airport pickup coordination",
   campaigns: "campaign automation",
   "whatsapp-automation": "WhatsApp automation",
 };

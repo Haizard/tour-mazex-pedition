@@ -54,6 +54,7 @@ export const PRICING_PLANS = [
       "Campaign automation",
       "Guide & driver management",
       "Accommodation coordination",
+      "Airport pickup coordination",
       "Repeat customer automation",
       "Advanced analytics and priority support",
     ],
@@ -74,6 +75,7 @@ export const FEATURE_PLAN_REQUIREMENTS = {
   campaigns: "pro",
   "guide-driver-management": "pro",
   "accommodation-coordination": "pro",
+  "airport-pickup-coordination": "pro",
   "repeat-customer-automation": "pro",
   "whatsapp-automation": "pro",
 };

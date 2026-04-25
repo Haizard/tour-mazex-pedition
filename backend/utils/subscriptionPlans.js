@@ -68,6 +68,7 @@ export const PRICING_PLANS = [
       "repeat-customer-automation",
       "guide-driver-management",
       "accommodation-coordination",
+      "airport-pickup-coordination",
       "whatsapp-automation",
       "priority-support",
     ],

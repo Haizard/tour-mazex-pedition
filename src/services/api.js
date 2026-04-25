@@ -376,6 +376,11 @@ export const updateAccommodationReservation = (id, data) =>
   API.patch(`/accommodations/${id}`, data);
 export const deleteAccommodationReservation = (id) =>
   API.delete(`/accommodations/${id}`);
+export const fetchAirportPickups = () => cachedGet("/airport-pickups");
+export const createAirportPickup = (data) => API.post("/airport-pickups", data);
+export const updateAirportPickup = (id, data) =>
+  API.patch(`/airport-pickups/${id}`, data);
+export const deleteAirportPickup = (id) => API.delete(`/airport-pickups/${id}`);
 
 // Bookings
 export const fetchBookings = () => cachedGet("/bookings");
