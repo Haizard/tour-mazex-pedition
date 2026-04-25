@@ -15,6 +15,7 @@ import {
   FaInbox,
   FaLink,
   FaLock,
+  FaHandshake,
   FaQuestionCircle,
   FaTruck,
   FaRetweet,
@@ -79,6 +80,7 @@ const groupedMenuItems = [
       { id: "guide-drivers", label: "Guides & Drivers", icon: <FaTruck />, accessKey: "guideDriverManagement" },
       { id: "accommodations", label: "Accommodations", icon: <FaHotel />, accessKey: "accommodationCoordination" },
       { id: "airport-pickups", label: "Airport Pickups", icon: <FaCarSide />, accessKey: "airportPickupCoordination" },
+      { id: "partners", label: "Partner Portal", icon: <FaHandshake />, accessKey: "partnerPortal" },
     ],
   },
 ];

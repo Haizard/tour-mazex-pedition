@@ -99,6 +99,18 @@ test("pro plan includes airport pickup coordination", () => {
   assert.equal(allowed, true);
 });
 
+test("enterprise plan includes partner portal", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "enterprise",
+      status: "active",
+    },
+    "partner-portal"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {

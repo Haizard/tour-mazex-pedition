@@ -14,8 +14,8 @@ Last audit date: `2026-04-25`
 
 - Total roadmap features audited: `26`
 - Complete: `6`
-- Partial: `14`
-- Not Started: `6`
+- Partial: `15`
+- Not Started: `5`
 
 ## Product Vision
 
@@ -60,7 +60,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 23 | Multi-Language AI Assistant | Not Started | No language package or multilingual AI assistant feature was found. |
 | 24 | Visa/Travel Documentation Assistant | Not Started | No dedicated visa/vaccine/insurance/travel documentation assistant was found. |
 | 25 | Competitor Intelligence | Not Started | No competitor pricing or market intelligence tracking system was found. |
-| 26 | Partner Portal | Not Started | No partner-facing portal for hotels, agencies, or suppliers was found. |
+| 26 | Partner Portal | Partial | Tenant admins can now manage hotels, agencies, and suppliers through a dedicated partner workspace with status, commercial notes, contract labels, payout terms, and contact details. It still needs true external partner login, shared workflows, and partner-facing self-service views. |
 
 ## Pricing Model Status
 

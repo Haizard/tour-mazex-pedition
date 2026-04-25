@@ -73,6 +73,7 @@ import SocialAccountsManager from "../components/Admin/SocialAccountsManager";
 import GuideDriverManager from "../components/Admin/GuideDriverManager";
 import AccommodationManager from "../components/Admin/AccommodationManager";
 import AirportPickupManager from "../components/Admin/AirportPickupManager";
+import PartnerPortalManager from "../components/Admin/PartnerPortalManager";
 import SiteSettings from "../components/Admin/SiteSettings";
 import SubscriptionManager from "../components/Admin/SubscriptionManager";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -117,6 +118,7 @@ const AdminDashboard = () => {
     campaigns: featureAccess.campaigns,
     accommodations: featureAccess.accommodationCoordination,
     "airport-pickups": featureAccess.airportPickupCoordination,
+    partners: featureAccess.partnerPortal,
   };
   const handleLogout = () => {
     logout();
@@ -3599,6 +3601,8 @@ const AdminDashboard = () => {
           {activeTab === "accommodations" && <AccommodationManager />}
 
           {activeTab === "airport-pickups" && <AirportPickupManager />}
+
+          {activeTab === "partners" && <PartnerPortalManager />}
 
           {activeTab === "subscription" && <SubscriptionManager />}
 

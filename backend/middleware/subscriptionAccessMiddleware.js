@@ -13,6 +13,7 @@ const FEATURE_LABELS = {
   "guide-driver-management": "guide and driver management",
   "accommodation-coordination": "accommodation coordination",
   "airport-pickup-coordination": "airport pickup coordination",
+  "partner-portal": "partner portal",
   campaigns: "campaign automation",
   "whatsapp-automation": "WhatsApp automation",
 };

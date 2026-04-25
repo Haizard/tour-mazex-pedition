@@ -51,6 +51,11 @@ const featureCards = [
     description: "Plan airport transfers, dispatch drivers, track arrivals, and keep ground transport aligned with bookings.",
   },
   {
+    key: "partner-portal",
+    label: "Partner Portal",
+    description: "Manage hotels, agencies, and suppliers through a tenant-owned commercial relationship workspace.",
+  },
+  {
     key: "campaigns",
     label: "Campaigns",
     description: "Run automated seasonal, migration, and destination campaigns.",
@@ -72,6 +77,7 @@ const featureAccessKeyMap = {
   "guide-driver-management": "guideDriverManagement",
   "accommodation-coordination": "accommodationCoordination",
   "airport-pickup-coordination": "airportPickupCoordination",
+  "partner-portal": "partnerPortal",
 };
 
 const SubscriptionManager = () => {

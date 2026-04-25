@@ -64,6 +64,24 @@ export const PRICING_PLANS = [
       socialAccounts: 10,
     },
   },
+  {
+    code: "enterprise",
+    name: "Enterprise",
+    priceMonthlyUsd: 399,
+    highlighted: false,
+    description: "Large travel brands with partner operations and advanced coordination",
+    features: [
+      "Everything in Pro",
+      "Partner portal",
+      "Advanced operational controls",
+      "Enterprise relationship management",
+    ],
+    limits: {
+      aiGenerations: 5000,
+      chatbotInteractions: 10000,
+      socialAccounts: 50,
+    },
+  },
 ];
 
 export const FEATURE_PLAN_REQUIREMENTS = {
@@ -76,6 +94,7 @@ export const FEATURE_PLAN_REQUIREMENTS = {
   "guide-driver-management": "pro",
   "accommodation-coordination": "pro",
   "airport-pickup-coordination": "pro",
+  "partner-portal": "enterprise",
   "repeat-customer-automation": "pro",
   "whatsapp-automation": "pro",
 };
