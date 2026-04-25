@@ -1,6 +1,7 @@
 import express from "express";
 import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
 import CustomInquiry from "../models/CustomInquiry.js";
+import Tenant from "../models/Tenant.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { generateFollowUpSequence } from "../utils/followUpSequencing.js";
@@ -29,7 +30,10 @@ router.post("/start/:inquiryId", async (req, res) => {
       return res.status(400).json({ message: "An active follow-up sequence already exists for this lead." });
     }
 
-    const touchpoints = generateFollowUpSequence(inquiry);
+    const tenant = await Tenant.findById(req.tenantId).lean();
+    const touchpoints = generateFollowUpSequence(inquiry, { 
+      tenantName: tenant?.brandName || tenant?.name || "our team" 
+    });
     
     const sequence = new LeadFollowUpSequence(
       withTenantId(req, {

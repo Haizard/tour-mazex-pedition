@@ -476,6 +476,8 @@ export const fetchInquiryFollowUp = (inquiryId) =>
   API.get(`/follow-ups/inquiry/${inquiryId}`);
 export const updateFollowUpStatus = (id, status) =>
   API.patch(`/follow-ups/${id}/status`, { status });
+export const fetchWhatsAppTemplates = () =>
+  API.get("/social-accounts/whatsapp/templates");
 
 // FAQs
 export const fetchFaqs = () => cachedGet("/faqs");

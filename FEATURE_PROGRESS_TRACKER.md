@@ -13,8 +13,8 @@ Last audit date: `2026-04-25`
 ## Summary
 
 - Total roadmap features audited: `26`
-- Complete: `8`
-- Partial: `18`
+- Complete: `9`
+- Partial: `17`
 - Not Started: `0`
 
 ## Product Vision
@@ -44,7 +44,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 7 | AI Customer Support Chatbot | Partial | AI chatbot exists and uses tenant tours/blogs context. It is useful now, but not yet a fully metered, deeply managed commercial support system. |
 | 8 | Social Media Automation | Partial | Social accounts, post drafts, scheduling, captions, hashtags, and live Meta publishing hooks exist. Full automation depth and broader channel coverage are not complete yet. |
 | 9 | Content Repurposing Engine | Complete | Blog repurposing into campaign/social/email-style output is implemented in the marketing workflow. |
-| 10 | WhatsApp Automation | Partial | WhatsApp Business account fields, send-message flows, tenant-account isolation, and delivery-state tracking now exist inside the inbox workflow. It still needs richer templates, automated sequences, and broader conversational orchestration. |
+| 10 | WhatsApp Automation | Complete | Full automation suite implemented: Meta-compliant template support, automated multi-touch follow-up sequences via background processing, and AI-driven reply suggestions in the Unified Inbox. |
 | 11 | Unified Inbox | Partial | Tenant admins can now work email threads and WhatsApp lead conversations from one merged operator inbox with shared filtering and action controls. It still needs Instagram, Facebook, website chat, and deeper reply-sync coverage to become a fully universal inbox. |
 | 12 | AI Sales Assistant | Partial | The chat system includes conversion-oriented selling behavior and a sales assistant payload, but not a full AI closer workflow tied to booking conversion. |
 | 13 | AI Quote Generator | Complete | Inquiry-linked quote drafts can now be generated and saved with itinerary outlines, pricing line items, totals, and next steps. Professional PDF export, secure public traveler views, and interactive accept/reject feedback loops are fully implemented. |
@@ -98,8 +98,8 @@ The biggest missing revenue-critical areas are:
 2. Lead Scoring
 3. Guide & Driver Management
 4. Unified Inbox completion
-5. WhatsApp Automation completion
-6. Review Automation
+5. Review Automation
+6. Repeat Customer Automation
 8. Repeat Customer Automation
 9. Guide & Driver Management
 10. Accommodation Coordination

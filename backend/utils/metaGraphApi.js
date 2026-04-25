@@ -32,6 +32,19 @@ export const buildWhatsAppTextPayload = ({ phone = "", message = "" }) => ({
   },
 });
 
+export const buildWhatsAppTemplatePayload = ({ phone = "", templateName = "", language = "en_US", components = [] }) => ({
+  messaging_product: "whatsapp",
+  to: phone.toString().replace(/[^\d]/g, ""),
+  type: "template",
+  template: {
+    name: templateName,
+    language: {
+      code: language,
+    },
+    components,
+  },
+});
+
 export const verifyMetaAccountConnection = async (account) => {
   const response = await fetch(
     `${buildGraphUrl(account.pageId)}?fields=id,name&access_token=${encodeURIComponent(
@@ -112,6 +125,29 @@ export const sendWhatsAppTextMessage = async (account, { phone, message }) => {
         buildWhatsAppTextPayload({
           phone,
           message,
+        })
+      ),
+    }
+  );
+
+  return assertResponse(response);
+};
+
+export const sendWhatsAppTemplateMessage = async (account, { phone, templateName, language = "en_US", components = [] }) => {
+  const response = await fetch(
+    buildGraphUrl(`${account.whatsappPhoneNumberId}/messages`),
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${account.accessToken}`,
+      },
+      body: JSON.stringify(
+        buildWhatsAppTemplatePayload({
+          phone,
+          templateName,
+          language,
+          components,
         })
       ),
     }

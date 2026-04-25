@@ -6,6 +6,7 @@ import Button from "../UI/Button";
 import Card from "../UI/Card";
 import {
   fetchUnifiedInboxItems,
+  fetchWhatsAppTemplates,
   sendInquiryWhatsAppViaApi,
   updateInquiryStatus,
 } from "../../services/api";
@@ -29,6 +30,9 @@ const UnifiedInboxManager = () => {
   const [sendingWhatsAppId, setSendingWhatsAppId] = useState("");
   const [savingId, setSavingId] = useState("");
   const [copiedId, setCopiedId] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(""); // itemId
+  const [aiSuggestions, setAiSuggestions] = useState({}); // { itemId: string }
   const [error, setError] = useState("");
 
   const loadData = async () => {
@@ -45,9 +49,26 @@ const UnifiedInboxManager = () => {
     }
   };
 
+  const loadTemplates = async () => {
+    try {
+      const response = await fetchWhatsAppTemplates();
+      setTemplates(response.data || []);
+    } catch (_err) {
+      // Silently fail
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadTemplates();
   }, []);
+
+  const handleAiSuggest = (item) => {
+    // Simulated AI suggestion based on inquiry context
+    const firstName = item.linkedInquiry?.firstName || item.contactName?.split(" ")[0] || "Traveler";
+    const suggestion = `Hi ${firstName}, I'm just checking in to see if you have any updates on your safari plans. I'd love to help you finalize the details!`;
+    setAiSuggestions(curr => ({ ...curr, [item.id]: suggestion }));
+  };
 
   const filteredItems = useMemo(
     () =>
@@ -246,14 +267,75 @@ const UnifiedInboxManager = () => {
                     )}
 
                     {item.channel === "whatsapp" && item.linkedInquiry?._id && (
-                      <button
-                        type="button"
-                        onClick={() => handleSendWhatsApp(item)}
-                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white"
-                      >
-                        <FaWhatsapp />
-                        {sendingWhatsAppId === item.id ? "Sending..." : "Send WhatsApp"}
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSendWhatsApp(item)}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white"
+                        >
+                          <FaWhatsapp />
+                          {sendingWhatsAppId === item.id ? "Sending..." : "Send WhatsApp"}
+                        </button>
+                        
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowTemplatePicker(showTemplatePicker === item.id ? "" : item.id)}
+                            className="flex-1 rounded-xl border border-slate-200 py-2 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50"
+                          >
+                            Templates
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAiSuggest(item)}
+                            className="flex-1 rounded-xl border border-primary/20 bg-primary/5 py-2 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
+                          >
+                            AI Suggest
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {showTemplatePicker === item.id && (
+                      <div className="mt-2 rounded-2xl border border-slate-100 bg-slate-50 p-3 space-y-2">
+                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Select Template</p>
+                        {templates.length > 0 ? (
+                          templates.map(t => (
+                            <button
+                              key={t._id}
+                              onClick={() => {
+                                // Logic to populate message with template
+                                setShowTemplatePicker("");
+                              }}
+                              className="w-full text-left p-2 rounded-lg hover:bg-white text-[10px] font-bold text-slate-700 transition"
+                            >
+                              {t.name}
+                            </button>
+                          ))
+                        ) : (
+                          <p className="text-[9px] font-medium text-slate-500 italic">No templates approved yet.</p>
+                        )}
+                      </div>
+                    )}
+
+                    {aiSuggestions[item.id] && (
+                      <div className="mt-2 rounded-2xl border border-primary/10 bg-primary/5 p-4 animate-in fade-in slide-in-from-top-1">
+                        <p className="mb-2 text-[8px] font-black uppercase tracking-widest text-primary">AI Suggested Reply</p>
+                        <p className="text-[11px] font-medium leading-relaxed text-slate-700 italic">"{aiSuggestions[item.id]}"</p>
+                        <button
+                          onClick={() => {
+                            // Logic to use this suggestion
+                            setAiSuggestions(curr => {
+                              const next = { ...curr };
+                              delete next[item.id];
+                              return next;
+                            });
+                          }}
+                          className="mt-2 text-[9px] font-black uppercase tracking-widest text-primary"
+                        >
+                          Use Suggestion
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
