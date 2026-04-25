@@ -9,6 +9,7 @@ import AdminRoute from "./components/Admin/AdminRoute";
 import PlatformAdminRoute from "./components/Admin/PlatformAdminRoute";
 import PlatformAdminLogin from "./pages/PlatformAdminLogin";
 
+
 const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
 const PlatformAdminDashboard = React.lazy(() => import("./pages/PlatformAdminDashboard"));
 const Blogs = React.lazy(() => import("./pages/Blogs"));
@@ -25,6 +26,7 @@ const PlanMyTrip = React.lazy(() => import("./pages/PlanMyTrip"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 const QuotePublicView = React.lazy(() => import("./pages/QuotePublicView"));
+const FeedbackPublicView = React.lazy(() => import("./pages/FeedbackPublicView"));
 
 const DashboardRouteFallback = ({ label }) => (
   <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
@@ -79,6 +81,7 @@ const tenantSiteRoutes = (
     <Route path="privacy-policy" element={withPublicSuspense(<PrivacyPolicy />)} />
     <Route path="terms" element={withPublicSuspense(<TermsConditions />)} />
     <Route path="quote/:token" element={withPublicSuspense(<QuotePublicView />)} />
+    <Route path="feedback/:token" element={withPublicSuspense(<FeedbackPublicView />)} />
   </>
 );
 

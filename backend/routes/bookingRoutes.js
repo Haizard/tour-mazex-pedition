@@ -8,6 +8,10 @@ import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMidd
 import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
 import { buildRepeatCustomerAutomation } from "../utils/repeatCustomerAutomation.js";
 import { buildReviewRequestDraft } from "../utils/reviewAutomation.js";
+import TravelerFeedback from "../models/TravelerFeedback.js";
+import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
+import Tenant from "../models/Tenant.js";
+import { generateReviewSequence } from "../utils/followUpSequencing.js";
 
 const router = express.Router();
 
@@ -104,6 +108,32 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
         if (!updatedBooking) {
             return res.status(404).json({ message: 'Booking not found' });
         }
+
+        // Trigger Review Automation if Completed
+        if (status === "Completed") {
+            const existingFeedback = await TravelerFeedback.findOne({ bookingId: updatedBooking._id });
+            if (!existingFeedback) {
+                const feedback = new TravelerFeedback({
+                    tenantId: updatedBooking.tenantId,
+                    bookingId: updatedBooking._id,
+                });
+                await feedback.save();
+
+                const tenant = await Tenant.findById(updatedBooking.tenantId).lean();
+                const touchpoints = generateReviewSequence(updatedBooking, feedback.publicToken, {
+                    tenantName: tenant?.brandName || tenant?.name || "our team"
+                });
+
+                const sequence = new LeadFollowUpSequence({
+                    tenantId: updatedBooking.tenantId,
+                    inquiryId: null, // This is for bookings
+                    bookingId: updatedBooking._id,
+                    touchpoints,
+                });
+                await sequence.save();
+            }
+        }
+
         res.status(200).json(updatedBooking);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -311,6 +341,48 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
     try {
         await Booking.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id }));
         res.status(200).json({ message: 'Booking deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Public Feedback Routes
+router.get("/public-feedback/:token", async (req, res) => {
+    try {
+        const feedback = await TravelerFeedback.findOne({ publicToken: req.params.token }).lean();
+        if (!feedback) {
+            return res.status(404).json({ message: "Feedback link invalid" });
+        }
+        if (feedback.status === "submitted") {
+            return res.status(400).json({ message: "Feedback already submitted" });
+        }
+        res.status(200).json(feedback);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.post("/public-feedback/:token", async (req, res) => {
+    try {
+        const { rating, privateNote } = req.body;
+        const feedback = await TravelerFeedback.findOne({ publicToken: req.params.token });
+        
+        if (!feedback) {
+            return res.status(404).json({ message: "Feedback link invalid" });
+        }
+
+        feedback.rating = rating;
+        feedback.privateNote = privateNote;
+        feedback.status = "submitted";
+        feedback.submittedAt = new Date();
+        
+        if (rating >= 4) {
+            // Generate a simple referral code if they loved it
+            feedback.referralCode = `SR-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        }
+
+        await feedback.save();
+        res.status(200).json(feedback);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -424,6 +424,10 @@ export const generateRepeatCustomerCampaign = (id) =>
   API.post(`/bookings/${id}/repeat-customer-campaign`);
 export const updateRepeatCustomerCampaign = (id, data) =>
   API.patch(`/bookings/repeat-customer-campaigns/${id}`, data);
+export const fetchPublicFeedback = (token) =>
+  API.get(`/bookings/public-feedback/${token}`);
+export const submitPublicFeedback = (token, data) =>
+  API.post(`/bookings/public-feedback/${token}`, data);
 
 // Blogs
 export const fetchBlogs = () => cachedGet("/blogs");

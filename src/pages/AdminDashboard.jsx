@@ -2490,21 +2490,41 @@ const AdminDashboard = () => {
                         >
                           View Booking Details
                         </button>
+                        {b.status?.toLowerCase() === "confirmed" ? (
+                          <button 
+                            onClick={() => {
+                              updateBookingStatus(b._id, "Completed").then(loadBookings);
+                            }} 
+                            className="mt-1 text-[9px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
+                          >
+                            Mark Trip as Completed
+                          </button>
+                        ) : b.status?.toLowerCase() === "completed" ? (
+                          <div className="mt-1 flex items-center gap-2">
+                            <div className="px-2 py-0.5 rounded-md bg-primary text-white text-[8px] font-black uppercase tracking-widest">
+                              Completed
+                            </div>
+                            <button 
+                              onClick={() => updateBookingStatus(b._id, "Confirmed").then(loadBookings)} 
+                              className="text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600"
+                            >
+                              Revert
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => updateBookingStatus(b._id, "Confirmed").then(loadBookings)} 
+                            className="mt-1 text-[9px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-700 font-black"
+                          >
+                            Confirm Booking
+                          </button>
+                        )}
                         <button 
-                          onClick={() => {
-                            const newStatus = b.status?.toLowerCase() === "confirmed" ? "Pending" : "Confirmed";
-                            updateBookingStatus(b._id, newStatus).then(loadBookings);
-                          }} 
-                          className={`mt-1 text-[9px] font-black uppercase tracking-widest transition-colors ${b.status?.toLowerCase() === "confirmed" ? "text-slate-400 hover:text-orange-500 underline underline-offset-4" : "text-emerald-500 hover:text-emerald-700 font-black"}`}
+                          onClick={() => deleteBooking(b._id).then(loadBookings)} 
+                          className="mt-1 text-[8px] font-black text-slate-200 hover:text-red-500 uppercase tracking-widest transition-colors text-right w-full"
                         >
-                          {b.status?.toLowerCase() === "confirmed" ? "Set to Pending" : "Confirm Booking"}
+                          Archive Record
                         </button>
-                         <button 
-                           onClick={() => deleteBooking(b._id).then(loadBookings)} 
-                           className="mt-1 text-[8px] font-black text-slate-200 hover:text-red-500 uppercase tracking-widest transition-colors"
-                         >
-                           Archive Record
-                         </button>
                       </div>
                     </div>
                   </div>

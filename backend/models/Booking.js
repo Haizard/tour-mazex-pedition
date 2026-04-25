@@ -18,7 +18,7 @@ const bookingSchema = new mongoose.Schema({
     notes: { type: String },
     totalPrice: { type: Number, required: true },
     date: { type: Date, default: Date.now },
-    status: { type: String, enum: ['Pending', 'Confirmed', 'Cancelled'], default: 'Pending' }
+    status: { type: String, enum: ['Pending', 'Confirmed', 'Cancelled', 'Completed'], default: 'Pending' }
 }, { timestamps: true });
 
 const Booking = mongoose.model('Booking', bookingSchema);

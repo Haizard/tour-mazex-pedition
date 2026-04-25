@@ -13,8 +13,8 @@ Last audit date: `2026-04-25`
 ## Summary
 
 - Total roadmap features audited: `26`
-- Complete: `9`
-- Partial: `17`
+- Complete: `10`
+- Partial: `16`
 - Not Started: `0`
 
 ## Product Vision
@@ -50,7 +50,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 13 | AI Quote Generator | Complete | Inquiry-linked quote drafts can now be generated and saved with itinerary outlines, pricing line items, totals, and next steps. Professional PDF export, secure public traveler views, and interactive accept/reject feedback loops are fully implemented. |
 | 14 | Automated Follow-Up System | Complete | Multi-touch automated follow-up engine implemented with 1, 3, and 7-day touchpoints. Admins can activate sequences, monitor the touchpoint timeline, and manage delivery status directly from the Lead Inbox. |
 | 15 | Lead Scoring | Complete | Inquiries now receive automatic lead scores, hot/warm/cold classification, scoring reasons, and tenant-admin visibility in the inquiry workflow. |
-| 16 | Review Automation | Partial | Tenants can now generate post-booking review request drafts, track review-request status, and manage Google/Tripadvisor/Booking.com review follow-up from the booking workflow. Live third-party delivery and direct review-platform integrations are still missing. |
+| 16 | Review Automation | Complete | Autonomous Reputation Guardian system implemented: Automatically filters post-trip feedback via WhatsApp. Happy customers are routed to public review platforms with incentivized referral codes, while negative feedback is captured privately for owner resolution. |
 | 17 | Repeat Customer Automation | Partial | Confirmed bookings can now generate repeat-customer campaign drafts with referral or anniversary messaging, tracked status, and tenant-admin controls. Live outbound delivery, customer segmentation, and retargeting channel integrations are still missing. |
 | 18 | Guide & Driver Management | Partial | Tenant admins can now create guides and drivers, track availability, capture specialties and license details, and assign field staff to bookings. It still needs deeper scheduling, conflict detection, and dispatch-style workflow polish. |
 | 19 | Accommodation Coordination | Partial | Tenant admins can now coordinate hotel reservations, supplier contacts, room plans, guest counts, and booking-linked stay windows from an operations workspace. It still needs conflict detection, supplier messaging, and itinerary-level lodging automation. |
@@ -98,8 +98,7 @@ The biggest missing revenue-critical areas are:
 2. Lead Scoring
 3. Guide & Driver Management
 4. Unified Inbox completion
-5. Review Automation
-6. Repeat Customer Automation
+5. Repeat Customer Automation
 8. Repeat Customer Automation
 9. Guide & Driver Management
 10. Accommodation Coordination

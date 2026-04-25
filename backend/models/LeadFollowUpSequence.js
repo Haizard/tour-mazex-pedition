@@ -11,7 +11,13 @@ const leadFollowUpSequenceSchema = new mongoose.Schema(
     inquiryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CustomInquiry",
-      required: true,
+      required: false,
+      index: true,
+    },
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      required: false,
       index: true,
     },
     status: {
