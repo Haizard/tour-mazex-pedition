@@ -31,6 +31,11 @@ const featureCards = [
     description: "Generate and track post-trip review requests for Google, Tripadvisor, and Booking.com.",
   },
   {
+    key: "repeat-customer-automation",
+    label: "Repeat Customer",
+    description: "Draft loyalty, referral, and anniversary re-engagement offers for past safari guests.",
+  },
+  {
     key: "campaigns",
     label: "Campaigns",
     description: "Run automated seasonal, migration, and destination campaigns.",
@@ -266,6 +271,8 @@ const SubscriptionManager = () => {
                         ? "leadInbox"
                       : feature.key === "review-automation"
                         ? "reviewAutomation"
+                      : feature.key === "repeat-customer-automation"
+                        ? "repeatCustomerAutomation"
                       : feature.key === "whatsapp-automation"
                         ? "whatsappAutomation"
                         : feature.key

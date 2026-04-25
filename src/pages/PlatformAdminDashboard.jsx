@@ -39,7 +39,9 @@ const growthSuiteFeatures = [
   ["social-posts", "Social Posts", "Schedule and publish AI-assisted posts."],
   ["lead-inbox", "Lead Inbox", "Capture and qualify leads from forms, chat, and campaigns."],
   ["repurposing", "Repurposing", "Turn blogs and tours into marketing content."],
+  ["review-automation", "Review Automation", "Generate and track post-trip review request workflows."],
   ["campaigns", "Campaigns", "Create seasonal offers and campaign workflows."],
+  ["repeat-customer-automation", "Repeat Customer", "Run referral, anniversary, and guest reactivation follow-up."],
   ["whatsapp-automation", "WhatsApp Automation", "Enable WhatsApp Business messaging flows."],
 ];
 

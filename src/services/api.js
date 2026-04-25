@@ -376,6 +376,12 @@ export const generateBookingReviewRequest = (id) =>
   API.post(`/bookings/${id}/review-request`);
 export const updateReviewRequest = (id, data) =>
   API.patch(`/bookings/review-requests/${id}`, data);
+export const fetchRepeatCustomerCampaigns = () =>
+  cachedGet("/bookings/repeat-customer-campaigns");
+export const generateRepeatCustomerCampaign = (id) =>
+  API.post(`/bookings/${id}/repeat-customer-campaign`);
+export const updateRepeatCustomerCampaign = (id, data) =>
+  API.patch(`/bookings/repeat-customer-campaigns/${id}`, data);
 
 // Blogs
 export const fetchBlogs = () => cachedGet("/blogs");

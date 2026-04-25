@@ -123,6 +123,7 @@ router.get("/bootstrap", async (req, res) => {
           leadInbox: canAccessFeature(req.tenant.subscription, "lead-inbox"),
           repurposing: canAccessFeature(req.tenant.subscription, "repurposing"),
           reviewAutomation: canAccessFeature(req.tenant.subscription, "review-automation"),
+          repeatCustomerAutomation: canAccessFeature(req.tenant.subscription, "repeat-customer-automation"),
           campaigns: canAccessFeature(req.tenant.subscription, "campaigns"),
           whatsappAutomation: canAccessFeature(req.tenant.subscription, "whatsapp-automation"),
         },

@@ -18,6 +18,9 @@ import {
   fetchReviewRequests,
   generateBookingReviewRequest,
   updateReviewRequest,
+  fetchRepeatCustomerCampaigns,
+  generateRepeatCustomerCampaign,
+  updateRepeatCustomerCampaign,
   fetchBlogs,
   createBlog,
   updateBlog,
@@ -127,7 +130,16 @@ const AdminDashboard = () => {
     }
 
     setSelectedBookingReviewRequest(getReviewRequestForBooking(selectedBooking._id));
+    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(selectedBooking._id));
   }, [reviewRequests, selectedBooking]);
+
+  useEffect(() => {
+    if (!selectedBooking?._id) {
+      return;
+    }
+
+    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(selectedBooking._id));
+  }, [repeatCustomerCampaigns, selectedBooking]);
 
   // Form States
   const [tourFormData, setTourFormData] = useState({
@@ -223,8 +235,15 @@ const AdminDashboard = () => {
   const [generatingReviewRequest, setGeneratingReviewRequest] = useState(false);
   const [savingReviewRequest, setSavingReviewRequest] = useState(false);
   const [reviewRequestError, setReviewRequestError] = useState("");
+  const [repeatCustomerCampaigns, setRepeatCustomerCampaigns] = useState([]);
+  const [selectedBookingRepeatCampaign, setSelectedBookingRepeatCampaign] = useState(null);
+  const [generatingRepeatCampaign, setGeneratingRepeatCampaign] = useState(false);
+  const [savingRepeatCampaign, setSavingRepeatCampaign] = useState(false);
+  const [repeatCampaignError, setRepeatCampaignError] = useState("");
   const getReviewRequestForBooking = (bookingId) =>
     reviewRequests.find((item) => item.bookingId === bookingId) || null;
+  const getRepeatCampaignForBooking = (bookingId) =>
+    repeatCustomerCampaigns.find((item) => item.bookingId === bookingId) || null;
 
   const [editingTourId, setEditingTourId] = useState(null);
   const [editingBlogId, setEditingBlogId] = useState(null);
@@ -358,6 +377,7 @@ const AdminDashboard = () => {
     loadGallery();
     loadBookings();
     loadReviewRequests();
+    loadRepeatCustomerCampaigns();
     loadBlogs();
     loadInquiries();
     loadContactMessages();
@@ -400,6 +420,19 @@ const AdminDashboard = () => {
     } catch (e) {
       if (e.response?.status === 403) {
         setReviewRequests([]);
+        return;
+      }
+
+      console.error(e);
+    }
+  };
+  const loadRepeatCustomerCampaigns = async () => {
+    try {
+      const res = await fetchRepeatCustomerCampaigns();
+      setRepeatCustomerCampaigns(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      if (e.response?.status === 403) {
+        setRepeatCustomerCampaigns([]);
         return;
       }
 
@@ -467,6 +500,8 @@ const AdminDashboard = () => {
     setSelectedBooking(booking);
     setReviewRequestError("");
     setSelectedBookingReviewRequest(getReviewRequestForBooking(booking._id));
+    setRepeatCampaignError("");
+    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(booking._id));
   };
 
   const handleGenerateReviewRequest = async (bookingId) => {
@@ -511,6 +546,51 @@ const AdminDashboard = () => {
       );
     } finally {
       setSavingReviewRequest(false);
+    }
+  };
+
+  const handleGenerateRepeatCampaign = async (bookingId) => {
+    setGeneratingRepeatCampaign(true);
+    setRepeatCampaignError("");
+    try {
+      const response = await generateRepeatCustomerCampaign(bookingId);
+      const nextCampaign = response.data;
+      setRepeatCustomerCampaigns((current) => {
+        const existingIndex = current.findIndex((item) => item._id === nextCampaign._id);
+        if (existingIndex >= 0) {
+          const clone = [...current];
+          clone[existingIndex] = nextCampaign;
+          return clone;
+        }
+
+        return [nextCampaign, ...current];
+      });
+      setSelectedBookingRepeatCampaign(nextCampaign);
+    } catch (error) {
+      setRepeatCampaignError(
+        error.response?.data?.message || "Unable to generate the repeat customer campaign right now."
+      );
+    } finally {
+      setGeneratingRepeatCampaign(false);
+    }
+  };
+
+  const handleRepeatCampaignStatusChange = async (campaignId, status) => {
+    setSavingRepeatCampaign(true);
+    setRepeatCampaignError("");
+    try {
+      const response = await updateRepeatCustomerCampaign(campaignId, { status });
+      const nextCampaign = response.data;
+      setRepeatCustomerCampaigns((current) =>
+        current.map((item) => (item._id === nextCampaign._id ? nextCampaign : item))
+      );
+      setSelectedBookingRepeatCampaign(nextCampaign);
+    } catch (error) {
+      setRepeatCampaignError(
+        error.response?.data?.message || "Unable to update repeat campaign status."
+      );
+    } finally {
+      setSavingRepeatCampaign(false);
     }
   };
 
@@ -2357,6 +2437,11 @@ const AdminDashboard = () => {
                               Review {bookingReviewRequest.status}
                             </div>
                           )}
+                          {getRepeatCampaignForBooking(b._id) && (
+                            <div className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-violet-50 text-violet-700 border border-violet-100">
+                              Loyalty {getRepeatCampaignForBooking(b._id).status}
+                            </div>
+                          )}
                         </div>
                         <p className="text-slate-400 font-bold text-xs mb-4 truncate">{b.email}</p>
                         
@@ -2423,7 +2508,9 @@ const AdminDashboard = () => {
                   onClick={() => {
                     setSelectedBooking(null);
                     setSelectedBookingReviewRequest(null);
+                    setSelectedBookingRepeatCampaign(null);
                     setReviewRequestError("");
+                    setRepeatCampaignError("");
                   }}
                   className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 flex"
                 >
@@ -2657,6 +2744,132 @@ const AdminDashboard = () => {
                     ) : (
                       <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-6 text-sm font-medium text-slate-500">
                         No review request has been generated for this booking yet.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-100 bg-violet-50/60 p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-violet-500">
+                          Repeat Customer Automation
+                        </p>
+                        <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-slate-900">
+                          Re-engage happy guests with referral and return offers
+                        </h3>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                          Generate a loyalty-ready follow-up for repeat bookings, anniversary
+                          reactivation, or guest referral outreach once the trip is confirmed.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {tenant?.access?.repeatCustomerAutomation ? (
+                          <button
+                            type="button"
+                            disabled={
+                              generatingRepeatCampaign ||
+                              selectedBooking.status !== "Confirmed" ||
+                              Boolean(selectedBookingRepeatCampaign)
+                            }
+                            onClick={() => handleGenerateRepeatCampaign(selectedBooking._id)}
+                            className="rounded-full bg-violet-700 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {generatingRepeatCampaign
+                              ? "Generating..."
+                              : selectedBookingRepeatCampaign
+                                ? "Retention Draft Ready"
+                                : "Generate Retention Draft"}
+                          </button>
+                        ) : (
+                          <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">
+                            Pro plan required
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {repeatCampaignError && (
+                      <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                        {repeatCampaignError}
+                      </div>
+                    )}
+
+                    {selectedBookingRepeatCampaign ? (
+                      <div className="mt-6 space-y-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Badge variant="secondary">
+                            {selectedBookingRepeatCampaign.campaignType}
+                          </Badge>
+                          <span className="rounded-full bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700">
+                            {selectedBookingRepeatCampaign.offerLabel}
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                            Send timing: {selectedBookingRepeatCampaign.recommendedSendAtLabel}
+                          </span>
+                        </div>
+
+                        <div className="rounded-2xl border border-violet-100 bg-white p-5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Campaign Subject
+                          </p>
+                          <p className="mt-2 text-sm font-bold text-slate-900">
+                            {selectedBookingRepeatCampaign.subject}
+                          </p>
+                          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Guest Message
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                            {selectedBookingRepeatCampaign.message}
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-violet-100 bg-white p-5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Next Steps
+                          </p>
+                          <div className="mt-3 space-y-2">
+                            {(selectedBookingRepeatCampaign.nextStepChecklist || []).map((step, index) => (
+                              <div
+                                key={`${selectedBookingRepeatCampaign._id}-retention-step-${index}`}
+                                className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+                              >
+                                {step}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            disabled={savingRepeatCampaign}
+                            onClick={() => handleRepeatCampaignStatusChange(selectedBookingRepeatCampaign._id, "scheduled")}
+                            className="rounded-full border border-violet-200 bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-violet-700 disabled:opacity-50"
+                          >
+                            Mark Scheduled
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingRepeatCampaign}
+                            onClick={() => handleRepeatCampaignStatusChange(selectedBookingRepeatCampaign._id, "sent")}
+                            className="rounded-full border border-violet-200 bg-violet-100 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-violet-800 disabled:opacity-50"
+                          >
+                            Mark Sent
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingRepeatCampaign}
+                            onClick={() => handleRepeatCampaignStatusChange(selectedBookingRepeatCampaign._id, "converted")}
+                            className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700 disabled:opacity-50"
+                          >
+                            Mark Converted
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-5 rounded-2xl border border-dashed border-violet-200 bg-white px-5 py-6 text-sm font-medium text-slate-500">
+                        No repeat-customer campaign has been generated for this booking yet.
                       </div>
                     )}
                   </div>

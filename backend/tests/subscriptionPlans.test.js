@@ -51,6 +51,18 @@ test("growth plan includes review automation", () => {
   assert.equal(allowed, true);
 });
 
+test("pro plan includes repeat customer automation", () => {
+  const allowed = canAccessFeature(
+    {
+      plan: "pro",
+      status: "active",
+    },
+    "repeat-customer-automation"
+  );
+
+  assert.equal(allowed, true);
+});
+
 test("free trial grants access using the assigned plan", () => {
   const allowed = canAccessFeature(
     {

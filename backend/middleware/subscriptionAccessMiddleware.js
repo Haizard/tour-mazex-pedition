@@ -9,6 +9,7 @@ const FEATURE_LABELS = {
   "lead-inbox": "lead inbox",
   repurposing: "content repurposing",
   "review-automation": "review automation",
+  "repeat-customer-automation": "repeat customer automation",
   campaigns: "campaign automation",
   "whatsapp-automation": "WhatsApp automation",
 };

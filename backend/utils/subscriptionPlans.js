@@ -65,6 +65,7 @@ export const PRICING_PLANS = [
       "repurposing",
       "review-automation",
       "campaigns",
+      "repeat-customer-automation",
       "whatsapp-automation",
       "priority-support",
     ],
