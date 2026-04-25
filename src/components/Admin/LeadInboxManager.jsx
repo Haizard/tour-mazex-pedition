@@ -6,9 +6,16 @@ import Button from "../UI/Button";
 import Card from "../UI/Card";
 import {
   fetchInquiries,
+  fetchInquiryFollowUp,
+  fetchInquiryQuotes,
+  generateInquiryQuote,
+  sendInquiryQuote,
   sendInquiryWhatsAppViaApi,
+  startFollowUpSequence,
+  updateFollowUpStatus,
   updateInquiryStatus,
 } from "../../services/api";
+import { generateQuotePdf } from "../../utils/quotePdfGenerator";
 
 const STATUS_FILTERS = ["all", "Pending", "Contacted", "Booked", "Cancelled"];
 const SOURCE_FILTERS = ["all", "website", "plan-my-trip", "whatsapp-button", "chatbot"];
@@ -21,6 +28,10 @@ const LeadInboxManager = () => {
   const [savingId, setSavingId] = useState("");
   const [copiedId, setCopiedId] = useState("");
   const [sendingWhatsAppId, setSendingWhatsAppId] = useState("");
+  const [inquiryQuotes, setInquiryQuotes] = useState({}); // { inquiryId: [quotes] }
+  const [inquiryFollowUps, setInquiryFollowUps] = useState({}); // { inquiryId: sequence }
+  const [generatingQuoteId, setGeneratingQuoteId] = useState("");
+  const [startingFollowUpId, setStartingFollowUpId] = useState("");
   const [error, setError] = useState("");
 
   const loadInquiries = async () => {
@@ -122,6 +133,74 @@ const LeadInboxManager = () => {
       );
     } finally {
       setSendingWhatsAppId("");
+    }
+  };
+
+  const loadQuotesForInquiry = async (inquiryId) => {
+    try {
+      const response = await fetchInquiryQuotes(inquiryId);
+      setInquiryQuotes((current) => ({
+        ...current,
+        [inquiryId]: response.data,
+      }));
+    } catch (_error) {
+      // Silently fail quote loading or show a small indicator
+    }
+  };
+
+  const handleGenerateQuote = async (inquiryId) => {
+    setGeneratingQuoteId(inquiryId);
+    setError("");
+    try {
+      await generateInquiryQuote(inquiryId);
+      await loadQuotesForInquiry(inquiryId);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Failed to generate a quote for this lead.");
+    } finally {
+      setGeneratingQuoteId("");
+    }
+  };
+
+  const handleSendQuote = async (inquiryId, quoteId) => {
+    try {
+      await sendInquiryQuote(inquiryId, quoteId);
+      await loadQuotesForInquiry(inquiryId);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Failed to mark the quote as sent.");
+    }
+  };
+
+  const loadFollowUpForInquiry = async (inquiryId) => {
+    try {
+      const response = await fetchInquiryFollowUp(inquiryId);
+      setInquiryFollowUps((current) => ({
+        ...current,
+        [inquiryId]: response.data,
+      }));
+    } catch (_error) {
+      // Silently fail
+    }
+  };
+
+  const handleStartFollowUp = async (inquiryId) => {
+    setStartingFollowUpId(inquiryId);
+    setError("");
+    try {
+      await startFollowUpSequence(inquiryId);
+      await loadFollowUpForInquiry(inquiryId);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Failed to start follow-up sequence.");
+    } finally {
+      setStartingFollowUpId("");
+    }
+  };
+
+  const handleUpdateFollowUpStatus = async (inquiryId, sequenceId, status) => {
+    try {
+      await updateFollowUpStatus(sequenceId, status);
+      await loadFollowUpForInquiry(inquiryId);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Failed to update follow-up status.");
     }
   };
 
@@ -266,6 +345,169 @@ const LeadInboxManager = () => {
                       <p className="text-sm font-medium leading-6 text-slate-700">
                         {inquiry.followUpMessage || inquiry.automationSummary}
                       </p>
+                    </div>
+
+                    {/* Quotes Section */}
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900">
+                          Custom Proposals
+                        </h4>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleGenerateQuote(inquiry._id)}
+                          disabled={generatingQuoteId === inquiry._id}
+                        >
+                          {generatingQuoteId === inquiry._id ? "Generating..." : "Generate New Quote"}
+                        </Button>
+                      </div>
+
+                      <div className="grid gap-3">
+                        {inquiryQuotes[inquiry._id]?.length > 0 ? (
+                          inquiryQuotes[inquiry._id].map((quote) => (
+                            <div key={quote._id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-3">
+                              <div>
+                                <p className="text-[11px] font-bold text-slate-900">{quote.title}</p>
+                                <div className="mt-1 flex gap-2">
+                                  <span className={`text-[9px] font-black uppercase tracking-widest ${quote.status === "sent" ? "text-primary" : quote.status === "accepted" ? "text-emerald-600" : "text-slate-400"}`}>
+                                    {quote.status}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-slate-400">
+                                    {quote.currency} {quote.totalPrice.toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => window.open(`/quote/${quote.publicToken}`, "_blank")}
+                                  className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-primary transition"
+                                >
+                                  Preview
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => generateQuotePdf(quote)}
+                                  className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-primary transition"
+                                >
+                                  PDF
+                                </button>
+                                {quote.status === "draft" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSendQuote(inquiry._id, quote._id)}
+                                    className="text-[10px] font-black uppercase tracking-widest text-primary transition"
+                                  >
+                                    Mark Sent
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 py-4">
+                            <button
+                              type="button"
+                              onClick={() => loadQuotesForInquiry(inquiry._id)}
+                              className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600"
+                            >
+                              Load existing quotes
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Follow-Up Sequence Section */}
+                    <div className="mt-8 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900">
+                          Automated Follow-Up
+                        </h4>
+                        {!inquiryFollowUps[inquiry._id] && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleStartFollowUp(inquiry._id)}
+                            disabled={startingFollowUpId === inquiry._id}
+                          >
+                            {startingFollowUpId === inquiry._id ? "Starting..." : "Start Sequence"}
+                          </Button>
+                        )}
+                      </div>
+
+                      {inquiryFollowUps[inquiry._id] ? (
+                        <div className="rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm">
+                          <div className="mb-4 flex items-center justify-between">
+                            <Badge variant={inquiryFollowUps[inquiry._id].status === "active" ? "accent" : "secondary"}>
+                              {inquiryFollowUps[inquiry._id].status}
+                            </Badge>
+                            <div className="flex gap-2">
+                              {inquiryFollowUps[inquiry._id].status === "active" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateFollowUpStatus(inquiry._id, inquiryFollowUps[inquiry._id]._id, "paused")}
+                                  className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600"
+                                >
+                                  Pause
+                                </button>
+                              ) : inquiryFollowUps[inquiry._id].status === "paused" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateFollowUpStatus(inquiry._id, inquiryFollowUps[inquiry._id]._id, "active")}
+                                  className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-dark"
+                                >
+                                  Resume
+                                </button>
+                              ) : null}
+                              {["active", "paused"].includes(inquiryFollowUps[inquiry._id].status) && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateFollowUpStatus(inquiry._id, inquiryFollowUps[inquiry._id]._id, "cancelled")}
+                                  className="text-[10px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-600"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            {inquiryFollowUps[inquiry._id].touchpoints.map((tp, idx) => (
+                              <div key={idx} className="flex gap-4">
+                                <div className="mt-1 flex flex-col items-center gap-1">
+                                  <div className={`h-2 w-2 rounded-full ${tp.status === "sent" ? "bg-emerald-500" : "bg-slate-200"}`}></div>
+                                  {idx < inquiryFollowUps[inquiry._id].touchpoints.length - 1 && <div className="h-full w-[1px] bg-slate-100"></div>}
+                                </div>
+                                <div className="pb-4">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-900">
+                                      {new Date(tp.scheduledAt).toLocaleDateString()}
+                                    </p>
+                                    <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${tp.status === "sent" ? "text-emerald-600" : "text-slate-400"}`}>
+                                      {tp.status}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 text-[11px] font-medium leading-relaxed text-slate-500 line-clamp-1 italic">
+                                    "{tp.content}"
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 py-4">
+                          <button
+                            type="button"
+                            onClick={() => loadFollowUpForInquiry(inquiry._id)}
+                            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600"
+                          >
+                            Check for active sequence
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 

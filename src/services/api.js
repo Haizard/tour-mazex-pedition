@@ -463,7 +463,19 @@ export const fetchInquiryQuotes = (id) =>
   API.get(`/custom-inquiries/${id}/quotes`);
 export const generateInquiryQuote = (id) =>
   API.post(`/custom-inquiries/${id}/generate-quote`);
+export const sendInquiryQuote = (inquiryId, quoteId) =>
+  API.post(`/custom-inquiries/${inquiryId}/quotes/${quoteId}/send`);
+export const fetchPublicQuote = (token) =>
+  API.get(`/custom-inquiries/public-quote/${token}`);
+export const respondToPublicQuote = (token, data) =>
+  API.post(`/custom-inquiries/public-quote/${token}/respond`, data);
 export const deleteInquiry = (id) => API.delete(`/custom-inquiries/${id}`);
+export const startFollowUpSequence = (inquiryId) =>
+  API.post(`/follow-ups/start/${inquiryId}`);
+export const fetchInquiryFollowUp = (inquiryId) =>
+  API.get(`/follow-ups/inquiry/${inquiryId}`);
+export const updateFollowUpStatus = (id, status) =>
+  API.patch(`/follow-ups/${id}/status`, { status });
 
 // FAQs
 export const fetchFaqs = () => cachedGet("/faqs");

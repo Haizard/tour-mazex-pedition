@@ -151,6 +151,57 @@ router.post('/whatsapp-lead', async (req, res) => {
     }
 });
 
+// Public Quote Access (No Auth Required)
+router.get('/public-quote/:token', async (req, res) => {
+    try {
+        const quote = await QuoteProposal.findOne({ publicToken: req.params.token })
+            .populate('inquiryId', 'firstName lastName email destinations tripLengthDays adults status')
+            .lean();
+
+        if (!quote) {
+            return res.status(404).json({ message: 'Quote not found or invalid link.' });
+        }
+
+        res.status(200).json(quote);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Public Quote Response (Accept/Reject)
+router.post('/public-quote/:token/respond', async (req, res) => {
+    try {
+        const { action, notes, reason } = req.body; // action: 'accept' | 'reject'
+        
+        const status = action === 'accept' ? 'accepted' : 'draft'; // if rejected, stays draft or we can add 'rejected' status
+        const update = {
+            status: action === 'accept' ? 'accepted' : 'draft',
+            travelerNotes: notes || '',
+        };
+
+        if (action === 'reject') {
+            update.rejectionReason = reason || '';
+        }
+
+        const quote = await QuoteProposal.findOneAndUpdate(
+            { publicToken: req.params.token },
+            { $set: update },
+            { new: true }
+        ).lean();
+
+        if (!quote) {
+            return res.status(404).json({ message: 'Quote not found.' });
+        }
+
+        res.status(200).json({
+            message: `Quote successfully ${action === 'accept' ? 'accepted' : 'feedback received'}.`,
+            quote
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Update status (Admin)
 router.patch('/:id', requireTenantAdmin, async (req, res) => {
     try {
@@ -226,6 +277,25 @@ router.post('/:id/generate-quote', requireTenantAdmin, async (req, res) => {
         );
 
         res.status(201).json(quote);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Mark Quote as Sent (Admin)
+router.post('/:id/quotes/:quoteId/send', requireTenantAdmin, async (req, res) => {
+    try {
+        const quote = await QuoteProposal.findOneAndUpdate(
+            buildTenantFilter(req, { _id: req.params.quoteId, inquiryId: req.params.id }),
+            { $set: { status: 'sent' } },
+            { new: true }
+        ).lean();
+
+        if (!quote) {
+            return res.status(404).json({ message: 'Quote not found.' });
+        }
+
+        res.status(200).json({ message: 'Quote marked as sent to traveler.', quote });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -61,9 +61,33 @@ const quoteProposalSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    publicToken: {
+      type: String,
+      unique: true,
+      index: true,
+    },
+    travelerNotes: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
+      default: "",
+    },
   },
   { timestamps: true }
 );
+
+quoteProposalSchema.pre("save", function (next) {
+  if (!this.publicToken) {
+    this.publicToken =
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
+  }
+  next();
+});
 
 const QuoteProposal = mongoose.model("QuoteProposal", quoteProposalSchema);
 export default QuoteProposal;

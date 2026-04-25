@@ -13,8 +13,8 @@ Last audit date: `2026-04-25`
 ## Summary
 
 - Total roadmap features audited: `26`
-- Complete: `6`
-- Partial: `20`
+- Complete: `8`
+- Partial: `18`
 - Not Started: `0`
 
 ## Product Vision
@@ -47,8 +47,8 @@ An all-in-one SaaS platform that helps tour operators:
 | 10 | WhatsApp Automation | Partial | WhatsApp Business account fields, send-message flows, tenant-account isolation, and delivery-state tracking now exist inside the inbox workflow. It still needs richer templates, automated sequences, and broader conversational orchestration. |
 | 11 | Unified Inbox | Partial | Tenant admins can now work email threads and WhatsApp lead conversations from one merged operator inbox with shared filtering and action controls. It still needs Instagram, Facebook, website chat, and deeper reply-sync coverage to become a fully universal inbox. |
 | 12 | AI Sales Assistant | Partial | The chat system includes conversion-oriented selling behavior and a sales assistant payload, but not a full AI closer workflow tied to booking conversion. |
-| 13 | AI Quote Generator | Partial | Inquiry-linked quote drafts can now be generated and saved with itinerary outlines, pricing line items, totals, and next steps. PDF export and full send/accept workflows are still missing. |
-| 14 | Automated Follow-Up System | Partial | Lead follow-up fields and some outreach support exist, but abandoned booking reminders and full sales sequencing are not fully implemented. |
+| 13 | AI Quote Generator | Complete | Inquiry-linked quote drafts can now be generated and saved with itinerary outlines, pricing line items, totals, and next steps. Professional PDF export, secure public traveler views, and interactive accept/reject feedback loops are fully implemented. |
+| 14 | Automated Follow-Up System | Complete | Multi-touch automated follow-up engine implemented with 1, 3, and 7-day touchpoints. Admins can activate sequences, monitor the touchpoint timeline, and manage delivery status directly from the Lead Inbox. |
 | 15 | Lead Scoring | Complete | Inquiries now receive automatic lead scores, hot/warm/cold classification, scoring reasons, and tenant-admin visibility in the inquiry workflow. |
 | 16 | Review Automation | Partial | Tenants can now generate post-booking review request drafts, track review-request status, and manage Google/Tripadvisor/Booking.com review follow-up from the booking workflow. Live third-party delivery and direct review-platform integrations are still missing. |
 | 17 | Repeat Customer Automation | Partial | Confirmed bookings can now generate repeat-customer campaign drafts with referral or anniversary messaging, tracked status, and tenant-admin controls. Live outbound delivery, customer segmentation, and retargeting channel integrations are still missing. |
@@ -86,7 +86,6 @@ The strongest implemented areas right now are:
 The biggest missing revenue-critical areas are:
 
 - Payment automation
-- Quote generation
 - Lead scoring
 - Review automation
 - Repeat customer automation
@@ -96,13 +95,11 @@ The biggest missing revenue-critical areas are:
 ## Recommended Next Build Order
 
 1. Payment Automation
-2. AI Quote Generator
-3. Lead Scoring
-4. Automated Follow-Up System
-5. Guide & Driver Management
-5. Unified Inbox completion
-6. WhatsApp Automation completion
-7. Review Automation
+2. Lead Scoring
+3. Guide & Driver Management
+4. Unified Inbox completion
+5. WhatsApp Automation completion
+6. Review Automation
 8. Repeat Customer Automation
 9. Guide & Driver Management
 10. Accommodation Coordination

@@ -24,6 +24,7 @@ const BlogCategory = React.lazy(() => import("./pages/BlogCategory"));
 const PlanMyTrip = React.lazy(() => import("./pages/PlanMyTrip"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
+const QuotePublicView = React.lazy(() => import("./pages/QuotePublicView"));
 
 const DashboardRouteFallback = ({ label }) => (
   <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
@@ -77,6 +78,7 @@ const tenantSiteRoutes = (
     <Route path="landing" element={<ConfiguredPage pageType="landing" />} />
     <Route path="privacy-policy" element={withPublicSuspense(<PrivacyPolicy />)} />
     <Route path="terms" element={withPublicSuspense(<TermsConditions />)} />
+    <Route path="quote/:token" element={withPublicSuspense(<QuotePublicView />)} />
   </>
 );
 
