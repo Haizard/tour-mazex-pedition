@@ -1,0 +1,69 @@
+import mongoose from "mongoose";
+
+const quoteLineItemSchema = new mongoose.Schema(
+  {
+    label: { type: String, required: true, trim: true },
+    quantity: { type: Number, default: 1 },
+    amount: { type: Number, required: true, min: 0 },
+    notes: { type: String, trim: true, default: "" },
+  },
+  { _id: false }
+);
+
+const quoteProposalSchema = new mongoose.Schema(
+  {
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      index: true,
+    },
+    inquiryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CustomInquiry",
+      required: true,
+      index: true,
+    },
+    title: { type: String, required: true, trim: true },
+    travelerName: { type: String, trim: true, default: "" },
+    destinationLabel: { type: String, trim: true, default: "" },
+    summary: { type: String, trim: true, default: "" },
+    currency: { type: String, trim: true, default: "USD" },
+    status: {
+      type: String,
+      enum: ["draft", "sent", "accepted", "expired"],
+      default: "draft",
+    },
+    travelerCount: { type: Number, default: 1, min: 1 },
+    tripLengthDays: { type: Number, default: 0, min: 0 },
+    lineItems: {
+      type: [quoteLineItemSchema],
+      default: [],
+    },
+    subtotal: { type: Number, default: 0, min: 0 },
+    totalPrice: { type: Number, default: 0, min: 0 },
+    recommendedTourIds: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "TourPackage",
+      default: [],
+    },
+    itineraryOutline: {
+      type: [String],
+      default: [],
+    },
+    nextSteps: {
+      type: [String],
+      default: [],
+    },
+    validUntil: { type: Date, default: null },
+    generatedBy: { type: String, default: "" },
+    generationMeta: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+  },
+  { timestamps: true }
+);
+
+const QuoteProposal = mongoose.model("QuoteProposal", quoteProposalSchema);
+export default QuoteProposal;

@@ -26,6 +26,8 @@ import {
   generateFullTourPackage,
   fetchInquiries,
 
+  fetchInquiryQuotes,
+  generateInquiryQuote,
   updateInquiryStatus,
   updateInquiryLeadStage,
   deleteInquiry,
@@ -201,6 +203,8 @@ const AdminDashboard = () => {
   });
 
   const [selectedInquiry, setSelectedInquiry] = useState(null);
+  const [selectedInquiryQuote, setSelectedInquiryQuote] = useState(null);
+  const [generatingInquiryQuote, setGeneratingInquiryQuote] = useState(false);
   const [selectedContactMessage, setSelectedContactMessage] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
@@ -2511,7 +2515,17 @@ const AdminDashboard = () => {
                       <Button
                         variant="primary"
                         className="py-2.5 px-5 text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all"
-                        onClick={() => setSelectedInquiry(i)}
+                        onClick={() => {
+                          setSelectedInquiry(i);
+                          setSelectedInquiryQuote(null);
+                          fetchInquiryQuotes(i._id)
+                            .then((response) => {
+                              setSelectedInquiryQuote(response.data?.[0] || null);
+                            })
+                            .catch(() => {
+                              setSelectedInquiryQuote(null);
+                            });
+                        }}
                       >
                         Details
                       </Button>
@@ -2529,7 +2543,10 @@ const AdminDashboard = () => {
                     className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
                   >
                     <button
-                      onClick={() => setSelectedInquiry(null)}
+                      onClick={() => {
+                        setSelectedInquiry(null);
+                        setSelectedInquiryQuote(null);
+                      }}
                       className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 flex"
                     >
                       <span className="text-xl md:text-2xl">&times;</span>
@@ -2676,6 +2693,90 @@ const AdminDashboard = () => {
                           "{selectedInquiry.message}"
                         </p>
                       </div>
+
+                      <div className="mb-4 flex flex-wrap gap-3">
+                        <Button
+                          variant="secondary"
+                          className="rounded-2xl"
+                          disabled={generatingInquiryQuote}
+                          onClick={() => {
+                            setGeneratingInquiryQuote(true);
+                            generateInquiryQuote(selectedInquiry._id)
+                              .then((response) => {
+                                setSelectedInquiryQuote(response.data || null);
+                              })
+                              .finally(() => {
+                                setGeneratingInquiryQuote(false);
+                              });
+                          }}
+                        >
+                          {generatingInquiryQuote ? "Generating Quote..." : "Generate Quote"}
+                        </Button>
+                      </div>
+
+                      {selectedInquiryQuote && (
+                        <div className="mb-8 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6">
+                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Quote Draft</p>
+                              <h3 className="mt-2 text-2xl font-black text-slate-900">{selectedInquiryQuote.title}</h3>
+                              <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{selectedInquiryQuote.summary}</p>
+                            </div>
+                            <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estimated Total</p>
+                              <p className="mt-2 text-3xl font-black text-emerald-600">
+                                {selectedInquiryQuote.currency || "USD"} {Number(selectedInquiryQuote.totalPrice || 0).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Line Items</p>
+                              <div className="mt-3 space-y-3">
+                                {(selectedInquiryQuote.lineItems || []).map((item, idx) => (
+                                  <div key={`${item.label}-${idx}`} className="rounded-2xl bg-white p-4 shadow-sm">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div>
+                                        <p className="font-black text-slate-900">{item.label}</p>
+                                        {item.notes && (
+                                          <p className="mt-1 text-xs font-medium text-slate-500">{item.notes}</p>
+                                        )}
+                                      </div>
+                                      <p className="text-sm font-black text-slate-900">
+                                        {selectedInquiryQuote.currency || "USD"} {Number(item.amount || 0).toLocaleString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-6">
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Itinerary Outline</p>
+                                <div className="mt-3 space-y-2">
+                                  {(selectedInquiryQuote.itineraryOutline || []).map((item, idx) => (
+                                    <div key={`${item}-${idx}`} className="rounded-2xl bg-white p-4 text-sm font-medium text-slate-600 shadow-sm">
+                                      {item}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Next Steps</p>
+                                <div className="mt-3 space-y-2">
+                                  {(selectedInquiryQuote.nextSteps || []).map((item, idx) => (
+                                    <div key={`${item}-${idx}`} className="rounded-2xl bg-white p-4 text-sm font-medium text-slate-600 shadow-sm">
+                                      {item}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="mb-4 flex flex-wrap gap-2">
                         <Button

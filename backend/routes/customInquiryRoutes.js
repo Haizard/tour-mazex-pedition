@@ -1,10 +1,13 @@
 import express from 'express';
 import CustomInquiry from '../models/CustomInquiry.js';
+import QuoteProposal from '../models/QuoteProposal.js';
 import SiteSettings from '../models/SiteSettings.js';
+import TourPackage from '../models/TourPackage.js';
 import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
 import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
 import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
+import { generateQuoteProposal } from '../utils/quoteProposal.js';
 
 const router = express.Router();
 
@@ -171,6 +174,58 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
             { new: true }
         );
         res.status(200).json(updated);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.get('/:id/quotes', requireTenantAdmin, async (req, res) => {
+    try {
+        const quotes = await QuoteProposal.find(
+            buildTenantFilter(req, { inquiryId: req.params.id })
+        )
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.status(200).json(quotes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.post('/:id/generate-quote', requireTenantAdmin, async (req, res) => {
+    try {
+        const inquiry = await CustomInquiry.findOne(
+            buildTenantFilter(req, { _id: req.params.id })
+        ).lean();
+
+        if (!inquiry) {
+            return res.status(404).json({ message: 'Inquiry not found.' });
+        }
+
+        const tours = await TourPackage.find(buildTenantFilter(req)).lean();
+
+        if (!tours.length) {
+            return res.status(400).json({
+                message: 'Create at least one tour package before generating quotes.'
+            });
+        }
+
+        const proposal = generateQuoteProposal({
+            inquiry,
+            tours,
+            tenantName: req.tenant?.name || 'Tour Operator',
+            generatedBy: req.admin?.username || req.admin?._id?.toString() || '',
+        });
+
+        const quote = await QuoteProposal.create(
+            withTenantId(req, {
+                inquiryId: inquiry._id,
+                ...proposal,
+            })
+        );
+
+        res.status(201).json(quote);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

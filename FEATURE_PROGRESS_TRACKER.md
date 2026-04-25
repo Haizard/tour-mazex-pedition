@@ -14,8 +14,8 @@ Last audit date: `2026-04-24`
 
 - Total roadmap features audited: `26`
 - Complete: `6`
-- Partial: `8`
-- Not Started: `12`
+- Partial: `9`
+- Not Started: `11`
 
 ## Product Vision
 
@@ -47,7 +47,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 10 | WhatsApp Automation | Partial | WhatsApp Business account fields and send-message flows exist, but the full automation journey is not yet complete. |
 | 11 | Unified Inbox | Partial | Email thread handling and support linking exist, but there is not yet one true inbox that unifies website chat, WhatsApp, Instagram, Facebook, and email together. |
 | 12 | AI Sales Assistant | Partial | The chat system includes conversion-oriented selling behavior and a sales assistant payload, but not a full AI closer workflow tied to booking conversion. |
-| 13 | AI Quote Generator | Not Started | No dedicated quote/PDF/proposal generation system found. |
+| 13 | AI Quote Generator | Partial | Inquiry-linked quote drafts can now be generated and saved with itinerary outlines, pricing line items, totals, and next steps. PDF export and full send/accept workflows are still missing. |
 | 14 | Automated Follow-Up System | Partial | Lead follow-up fields and some outreach support exist, but abandoned booking reminders and full sales sequencing are not fully implemented. |
 | 15 | Lead Scoring | Complete | Inquiries now receive automatic lead scores, hot/warm/cold classification, scoring reasons, and tenant-admin visibility in the inquiry workflow. |
 | 16 | Review Automation | Not Started | Review display fields exist, but no automation for Google, Tripadvisor, or Booking.com review collection was found. |

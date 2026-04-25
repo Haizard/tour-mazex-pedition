@@ -406,6 +406,10 @@ export const updateInquiryStatus = (id, status) =>
   API.patch(`/custom-inquiries/${id}`, { status });
 export const updateInquiryLeadStage = (id, leadStage) =>
   API.patch(`/custom-inquiries/${id}`, { leadStage });
+export const fetchInquiryQuotes = (id) =>
+  API.get(`/custom-inquiries/${id}/quotes`);
+export const generateInquiryQuote = (id) =>
+  API.post(`/custom-inquiries/${id}/generate-quote`);
 export const deleteInquiry = (id) => API.delete(`/custom-inquiries/${id}`);
 
 // FAQs
