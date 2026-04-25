@@ -124,23 +124,6 @@ const AdminDashboard = () => {
     }
   }, [activeTab, gatedTabAccess]);
 
-  useEffect(() => {
-    if (!selectedBooking?._id) {
-      return;
-    }
-
-    setSelectedBookingReviewRequest(getReviewRequestForBooking(selectedBooking._id));
-    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(selectedBooking._id));
-  }, [reviewRequests, selectedBooking]);
-
-  useEffect(() => {
-    if (!selectedBooking?._id) {
-      return;
-    }
-
-    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(selectedBooking._id));
-  }, [repeatCustomerCampaigns, selectedBooking]);
-
   // Form States
   const [tourFormData, setTourFormData] = useState({
     title: "",
@@ -244,6 +227,23 @@ const AdminDashboard = () => {
     reviewRequests.find((item) => item.bookingId === bookingId) || null;
   const getRepeatCampaignForBooking = (bookingId) =>
     repeatCustomerCampaigns.find((item) => item.bookingId === bookingId) || null;
+
+  useEffect(() => {
+    if (!selectedBooking?._id) {
+      return;
+    }
+
+    setSelectedBookingReviewRequest(getReviewRequestForBooking(selectedBooking._id));
+    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(selectedBooking._id));
+  }, [reviewRequests, selectedBooking]);
+
+  useEffect(() => {
+    if (!selectedBooking?._id) {
+      return;
+    }
+
+    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(selectedBooking._id));
+  }, [repeatCustomerCampaigns, selectedBooking]);
 
   const [editingTourId, setEditingTourId] = useState(null);
   const [editingBlogId, setEditingBlogId] = useState(null);
