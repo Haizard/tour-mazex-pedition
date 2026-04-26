@@ -20,6 +20,20 @@ const ensureChatSessionId = () => {
   return generated;
 };
 
+const getVisitorProfile = () => {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  return {
+    preferredLocale: window.navigator?.language || "",
+    browserLanguage: window.navigator?.language || "",
+    timezone:
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    currentPage: window.location?.pathname || "",
+  };
+};
+
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -30,6 +44,7 @@ const ChatBot = () => {
       content:
         "Hi! I'm your MAZ Expeditions assistant. Ready to plan your dream safari?",
       salesAssistant: null,
+      assistantSignals: null,
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,6 +78,7 @@ const ChatBot = () => {
         message: message,
         history: chatHistory,
         sessionId: nextSessionId,
+        visitorProfile: getVisitorProfile(),
       });
       setChatHistory((prev) => [
         ...prev,
@@ -70,6 +86,7 @@ const ChatBot = () => {
           role: "model",
           content: response.data.message,
           salesAssistant: response.data.salesAssistant || null,
+          assistantSignals: response.data.assistantSignals || null,
         },
       ]);
     } catch (error) {
@@ -78,7 +95,12 @@ const ChatBot = () => {
         "Oops! I'm having a technical moment. Please try again or message us on WhatsApp!";
       setChatHistory((prev) => [
         ...prev,
-        { role: "model", content: errorMsg, salesAssistant: null },
+        {
+          role: "model",
+          content: errorMsg,
+          salesAssistant: null,
+          assistantSignals: null,
+        },
       ]);
     } finally {
       setIsLoading(false);
@@ -152,6 +174,25 @@ const ChatBot = () => {
                           </Link>
                         ))}
                       </div>
+                    </div>
+                  )}
+                  {msg.role === "model" && msg.assistantSignals && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {msg.assistantSignals.matchedLanguage?.language && (
+                        <span className="rounded-full bg-secondary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-secondary">
+                          {msg.assistantSignals.matchedLanguage.language}
+                        </span>
+                      )}
+                      {msg.assistantSignals.travelDocumentation?.length > 0 && (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-800">
+                          Travel Docs Active
+                        </span>
+                      )}
+                      {msg.assistantSignals.preferredLocale && (
+                        <span className="rounded-full bg-gray-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-gray-700">
+                          {msg.assistantSignals.preferredLocale}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

@@ -41,7 +41,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 4 | AI Blog Generator | Complete | AI blog generation, regeneration, and SEO-oriented content creation are implemented. |
 | 5 | AI Tour Package Generator | Complete | AI-assisted tour package generation, itinerary/description support, and admin-side creation tools are implemented. |
 | 6 | Auto SEO Optimization | Complete | SEO metadata and generation flows exist for blogs, tours, and configurable pages. |
-| 7 | AI Customer Support Chatbot | Partial | AI chatbot exists and uses tenant tours/blogs context. It is useful now, but not yet a fully metered, deeply managed commercial support system. |
+| 7 | AI Customer Support Chatbot | Partial | AI chatbot now uses modular support-context assembly with tenant tours/blogs plus feature-gated travel-documentation and multilingual guidance. It is stronger for real traveler support, but still needs richer human handoff, analytics, and deeper channel orchestration to be fully complete. |
 | 8 | Social Media Automation | Partial | Social accounts, AI-assisted post drafts, scheduling, captions, hashtags, live Meta publishing hooks, and a tenant-run scheduled-post automation queue now exist. Full automation depth, recurring queue orchestration, and broader channel coverage are not complete yet. |
 | 9 | Content Repurposing Engine | Complete | Blog repurposing into campaign/social/email-style output is implemented in the marketing workflow. |
 | 10 | WhatsApp Automation | Complete | Full automation suite implemented: Meta-compliant template support, automated multi-touch follow-up sequences via background processing, and AI-driven reply suggestions in the Unified Inbox. |
