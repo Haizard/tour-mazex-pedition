@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { summarizePaymentTransaction } from "../utils/paymentAutomation.js";
+import {
+  buildPublicPaymentCheckoutUrl,
+  summarizePaymentTransaction,
+} from "../utils/paymentAutomation.js";
 
 test("summarizePaymentTransaction highlights payable checkout links", () => {
   const result = summarizePaymentTransaction({
@@ -19,7 +22,7 @@ test("summarizePaymentTransaction highlights payable checkout links", () => {
 
 test("summarizePaymentTransaction highlights completed collections", () => {
   const result = summarizePaymentTransaction({
-    provider: "paypal",
+    provider: "pesapal",
     amount: 1800,
     currency: "USD",
     status: "paid",
@@ -27,4 +30,10 @@ test("summarizePaymentTransaction highlights completed collections", () => {
 
   assert.equal(result.badgeLabel, "Paid");
   assert.equal(result.summary.includes("captured successfully"), true);
+});
+
+test("buildPublicPaymentCheckoutUrl creates tenant-facing checkout links", () => {
+  const result = buildPublicPaymentCheckoutUrl("https://example.com/", "abc123");
+
+  assert.equal(result, "https://example.com/payment/abc123");
 });

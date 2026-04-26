@@ -392,6 +392,9 @@ export const fetchPaymentTransactions = () => cachedGet("/payments");
 export const createPaymentTransaction = (data) => API.post("/payments", data);
 export const updatePaymentTransaction = (id, data) => API.patch(`/payments/${id}`, data);
 export const deletePaymentTransaction = (id) => API.delete(`/payments/${id}`);
+export const fetchPublicPaymentCheckout = (token) => API.get(`/payments/checkout/${token}`);
+export const respondToPublicPaymentCheckout = (token, data) =>
+  API.post(`/payments/checkout/${token}/respond`, data);
 export const fetchDynamicPricingRules = () => cachedGet("/dynamic-pricing");
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);

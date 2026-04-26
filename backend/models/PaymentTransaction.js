@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 const paymentTransactionSchema = new mongoose.Schema(
   {
@@ -20,7 +21,7 @@ const paymentTransactionSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
-      enum: ["stripe", "paypal", "manual"],
+      enum: ["stripe", "pesapal"],
       default: "stripe",
       index: true,
     },
@@ -44,6 +45,12 @@ const paymentTransactionSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    publicToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: () => crypto.randomBytes(16).toString("hex"),
+    },
     checkoutUrl: {
       type: String,
       trim: true,
@@ -59,6 +66,18 @@ const paymentTransactionSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+    paidAt: {
+      type: Date,
+      default: null,
+    },
+    failedAt: {
+      type: Date,
+      default: null,
+    },
+    cancelledAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

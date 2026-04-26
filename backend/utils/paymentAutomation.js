@@ -1,6 +1,11 @@
 const formatMoney = (amount = 0, currency = "USD") =>
   `${currency.toUpperCase()} ${Number(amount || 0).toFixed(0)}`;
 
+export const buildPublicPaymentCheckoutUrl = (baseUrl = "", token = "") => {
+  const normalizedBaseUrl = (baseUrl || "").replace(/\/$/, "");
+  return `${normalizedBaseUrl}/payment/${token}`;
+};
+
 export const summarizePaymentTransaction = (transaction = {}) => {
   const provider = (transaction.provider || "payment").toUpperCase();
   const amountLabel = formatMoney(transaction.amount, transaction.currency);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { FaCopy, FaExternalLinkAlt } from "react-icons/fa";
 
 import Badge from "../UI/Badge";
 import Button from "../UI/Button";
@@ -35,6 +36,7 @@ const PaymentAutomationManager = () => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState("");
   const [error, setError] = useState("");
 
   const selectedBooking = useMemo(
@@ -127,6 +129,20 @@ const PaymentAutomationManager = () => {
     }
   };
 
+  const handleCopyLink = async (payment) => {
+    if (!payment.checkoutUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(payment.checkoutUrl);
+      setCopiedId(payment._id);
+      window.setTimeout(() => setCopiedId(""), 1800);
+    } catch (_error) {
+      setError("Copy failed. Your browser blocked clipboard access.");
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -138,7 +154,7 @@ const PaymentAutomationManager = () => {
             Payment Automation
           </h2>
           <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
-            Create Stripe, PayPal, or manual payment flows for bookings and track collection status with transaction fees.
+            Create Stripe or Pesapal payment flows for bookings and track collection status with transaction fees.
           </p>
         </div>
         <Badge variant="accent">{payments.length} Transactions</Badge>
@@ -185,8 +201,7 @@ const PaymentAutomationManager = () => {
                 className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
               >
                 <option value="stripe">Stripe</option>
-                <option value="paypal">PayPal</option>
-                <option value="manual">Manual</option>
+                <option value="pesapal">Pesapal</option>
               </select>
               <select
                 value={form.status}
@@ -282,6 +297,26 @@ const PaymentAutomationManager = () => {
                         <Badge variant="secondary">Fee {payment.feePercent}%</Badge>
                         {payment.checkoutUrl && <Badge variant="secondary">Checkout Ready</Badge>}
                       </div>
+                      {payment.checkoutUrl && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => window.open(payment.checkoutUrl, "_blank", "noopener,noreferrer")}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700"
+                          >
+                            <FaExternalLinkAlt />
+                            Open Checkout
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyLink(payment)}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700"
+                          >
+                            <FaCopy />
+                            {copiedId === payment._id ? "Copied" : "Copy Link"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <button type="button" onClick={() => handleEdit(payment)} className="rounded-2xl border border-slate-200 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700">
