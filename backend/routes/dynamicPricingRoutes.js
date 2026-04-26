@@ -1,8 +1,12 @@
 import express from "express";
 import DynamicPricingRule from "../models/DynamicPricingRule.js";
+import TourPackage from "../models/TourPackage.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
-import { calculateDynamicPricePreview } from "../utils/dynamicPricingEngine.js";
+import {
+  buildDynamicPricingImpactBoard,
+  calculateDynamicPricePreview,
+} from "../utils/dynamicPricingEngine.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 
 const router = express.Router();
@@ -22,6 +26,37 @@ router.get("/", async (req, res) => {
         preview: calculateDynamicPricePreview(rule),
       }))
     );
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/dashboard", async (req, res) => {
+  try {
+    const [rules, tours] = await Promise.all([
+      DynamicPricingRule.find(buildTenantFilter(req))
+        .sort({ updatedAt: -1 })
+        .lean(),
+      TourPackage.find(buildTenantFilter(req))
+        .sort({ title: 1 })
+        .lean(),
+    ]);
+
+    const enrichedRules = rules.map((rule) => ({
+      ...rule,
+      preview: calculateDynamicPricePreview(rule),
+    }));
+    const impactBoard = buildDynamicPricingImpactBoard(enrichedRules, tours);
+
+    res.status(200).json({
+      rules: enrichedRules,
+      impactBoard,
+      stats: {
+        totalRules: enrichedRules.length,
+        activeRules: enrichedRules.filter((rule) => rule.status === "active").length,
+        impactedTours: impactBoard.reduce((total, item) => total + item.impactedTourCount, 0),
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

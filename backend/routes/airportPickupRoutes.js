@@ -4,7 +4,11 @@ import Booking from "../models/Booking.js";
 import GuideDriver from "../models/GuideDriver.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
-import { summarizeAirportPickup } from "../utils/airportPickupCoordination.js";
+import {
+  buildAirportPickupDashboard,
+  enrichAirportPickups,
+  hasAirportPickupTimingConflict,
+} from "../utils/airportPickupCoordination.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 
 const router = express.Router();
@@ -12,18 +16,107 @@ const router = express.Router();
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("airport-pickup-coordination"));
 
+const enrichPickupContext = async (req, payload = {}) => {
+  const nextPayload = { ...payload };
+
+  if (nextPayload.bookingId && (!nextPayload.guestName || !nextPayload.assignedTourTitle || !nextPayload.guestCount)) {
+    const booking = await Booking.findOne(buildTenantFilter(req, { _id: nextPayload.bookingId })).lean();
+
+    if (!booking) {
+      throw new Error("Linked booking was not found.");
+    }
+
+    nextPayload.guestName = nextPayload.guestName || booking.name || "";
+    nextPayload.assignedTourTitle = nextPayload.assignedTourTitle || booking.packageTour || "";
+    nextPayload.guestCount = nextPayload.guestCount || booking.pax || 1;
+    nextPayload.pickupDateTime = nextPayload.pickupDateTime || booking.travelDate || null;
+  }
+
+  if (nextPayload.driverId && !nextPayload.driverName) {
+    const driver = await GuideDriver.findOne(buildTenantFilter(req, { _id: nextPayload.driverId })).lean();
+
+    if (!driver) {
+      throw new Error("Assigned driver was not found.");
+    }
+
+    nextPayload.driverName = driver.fullName || "";
+  }
+
+  return nextPayload;
+};
+
+const validatePickupPayload = async (req, payload = {}, currentPickupId = null) => {
+  if (payload.driverId) {
+    const driver = await GuideDriver.findOne(buildTenantFilter(req, { _id: payload.driverId })).lean();
+
+    if (!driver) {
+      throw new Error("Assigned driver was not found.");
+    }
+
+    if (driver.staffType !== "driver") {
+      throw new Error("Only driver team members can be assigned to airport pickups.");
+    }
+
+    if (driver.availabilityStatus === "off-duty") {
+      throw new Error(`${driver.fullName || "This driver"} is marked off duty and cannot be assigned.`);
+    }
+
+    const existingPickups = await AirportPickup.find(
+      buildTenantFilter(req, {
+        _id: { $ne: currentPickupId || null },
+        driverId: payload.driverId,
+        status: { $ne: "cancelled" },
+      })
+    ).lean();
+
+    const conflictingPickup = existingPickups.find((pickup) => hasAirportPickupTimingConflict(payload, pickup));
+
+    if (conflictingPickup) {
+      throw new Error(
+        `${driver.fullName || "This driver"} already has another transfer scheduled too close to this pickup window.`
+      );
+    }
+  }
+};
+
 router.get("/", async (req, res) => {
   try {
-    const pickups = await AirportPickup.find(buildTenantFilter(req))
-      .sort({ pickupDateTime: 1, createdAt: -1 })
-      .lean();
+    const [pickups, drivers] = await Promise.all([
+      AirportPickup.find(buildTenantFilter(req))
+        .sort({ pickupDateTime: 1, createdAt: -1 })
+        .lean(),
+      GuideDriver.find(buildTenantFilter(req, { staffType: "driver" })).lean(),
+    ]);
 
-    res.status(200).json(
-      pickups.map((pickup) => ({
-        ...pickup,
-        coordinationSummary: summarizeAirportPickup(pickup),
-      }))
-    );
+    res.status(200).json(enrichAirportPickups(pickups, drivers));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/dashboard", async (req, res) => {
+  try {
+    const [pickups, drivers, bookings] = await Promise.all([
+      AirportPickup.find(buildTenantFilter(req))
+        .sort({ pickupDateTime: 1, createdAt: -1 })
+        .lean(),
+      GuideDriver.find(buildTenantFilter(req, { staffType: "driver" })).lean(),
+      Booking.find(buildTenantFilter(req))
+        .sort({ travelDate: 1, createdAt: -1 })
+        .lean(),
+    ]);
+    const enrichedPickups = enrichAirportPickups(pickups, drivers);
+
+    res.status(200).json({
+      pickups: enrichedPickups,
+      board: buildAirportPickupDashboard(bookings, enrichedPickups),
+      stats: {
+        total: enrichedPickups.length,
+        scheduled: enrichedPickups.filter((pickup) => pickup.status === "scheduled").length,
+        pending: enrichedPickups.filter((pickup) => pickup.status === "pending").length,
+        conflicts: enrichedPickups.filter((pickup) => pickup.conflictCount > 0).length,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -47,25 +140,17 @@ router.post("/", async (req, res) => {
       notes: req.body.notes,
     });
 
-    if (payload.bookingId && (!payload.guestName || !payload.assignedTourTitle || !payload.guestCount)) {
-      const booking = await Booking.findOne(buildTenantFilter(req, { _id: payload.bookingId })).lean();
-      payload.guestName = payload.guestName || booking?.name || "";
-      payload.assignedTourTitle = payload.assignedTourTitle || booking?.packageTour || "";
-      payload.guestCount = payload.guestCount || booking?.pax || 1;
-    }
+    const normalizedPayload = await enrichPickupContext(req, payload);
+    await validatePickupPayload(req, normalizedPayload);
 
-    if (payload.driverId && !payload.driverName) {
-      const driver = await GuideDriver.findOne(buildTenantFilter(req, { _id: payload.driverId })).lean();
-      payload.driverName = driver?.fullName || "";
-    }
-
-    const pickup = new AirportPickup(payload);
+    const pickup = new AirportPickup(normalizedPayload);
     await pickup.save();
 
-    res.status(201).json({
-      ...pickup.toObject(),
-      coordinationSummary: summarizeAirportPickup(pickup.toObject()),
-    });
+    const [driver] = normalizedPayload.driverId
+      ? await Promise.all([GuideDriver.findOne(buildTenantFilter(req, { _id: normalizedPayload.driverId })).lean()])
+      : [null];
+
+    res.status(201).json(enrichAirportPickups([pickup.toObject()], driver ? [driver] : [])[0]);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -101,18 +186,6 @@ router.patch("/:id", async (req, res) => {
       }
     });
 
-    if (updates.bookingId && (!updates.guestName || !updates.assignedTourTitle || !updates.guestCount)) {
-      const booking = await Booking.findOne(buildTenantFilter(req, { _id: updates.bookingId })).lean();
-      updates.guestName = updates.guestName || booking?.name || "";
-      updates.assignedTourTitle = updates.assignedTourTitle || booking?.packageTour || "";
-      updates.guestCount = updates.guestCount || booking?.pax || 1;
-    }
-
-    if (updates.driverId && !updates.driverName) {
-      const driver = await GuideDriver.findOne(buildTenantFilter(req, { _id: updates.driverId })).lean();
-      updates.driverName = driver?.fullName || "";
-    }
-
     if (updates.bookingId === null) {
       updates.guestName = "";
       updates.assignedTourTitle = "";
@@ -122,20 +195,40 @@ router.patch("/:id", async (req, res) => {
       updates.driverName = "";
     }
 
-    const pickup = await AirportPickup.findOneAndUpdate(
-      buildTenantFilter(req, { _id: req.params.id }),
-      { $set: updates },
-      { new: true }
+    const currentPickup = await AirportPickup.findOne(
+      buildTenantFilter(req, { _id: req.params.id })
     ).lean();
 
-    if (!pickup) {
+    if (!currentPickup) {
       return res.status(404).json({ message: "Airport pickup not found" });
     }
 
-    res.status(200).json({
-      ...pickup,
-      coordinationSummary: summarizeAirportPickup(pickup),
+    const mergedPayload = await enrichPickupContext(req, {
+      ...currentPickup,
+      ...updates,
     });
+    await validatePickupPayload(req, mergedPayload, req.params.id);
+
+    const pickup = await AirportPickup.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      {
+        $set: {
+          ...updates,
+          guestName: mergedPayload.guestName,
+          assignedTourTitle: mergedPayload.assignedTourTitle,
+          guestCount: mergedPayload.guestCount,
+          pickupDateTime: mergedPayload.pickupDateTime,
+          driverName: mergedPayload.driverName,
+        },
+      },
+      { new: true }
+    ).lean();
+
+    const driver = pickup.driverId
+      ? await GuideDriver.findOne(buildTenantFilter(req, { _id: pickup.driverId })).lean()
+      : null;
+
+    res.status(200).json(enrichAirportPickups([pickup], driver ? [driver] : [])[0]);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

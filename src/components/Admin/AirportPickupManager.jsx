@@ -6,6 +6,7 @@ import Card from "../UI/Card";
 import {
   createAirportPickup,
   deleteAirportPickup,
+  fetchAirportPickupDashboard,
   fetchAirportPickups,
   fetchBookings,
   fetchGuideDrivers,
@@ -34,8 +35,10 @@ const statusTone = {
 
 const AirportPickupManager = () => {
   const [pickups, setPickups] = useState([]);
+  const [dispatchBoard, setDispatchBoard] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [stats, setStats] = useState({ total: 0, scheduled: 0, pending: 0, conflicts: 0 });
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,13 +59,16 @@ const AirportPickupManager = () => {
     setLoading(true);
     setError("");
     try {
-      const [pickupResponse, bookingsResponse, driverResponse] = await Promise.all([
+      const [pickupResponse, dashboardResponse, bookingsResponse, driverResponse] = await Promise.all([
         fetchAirportPickups(),
+        fetchAirportPickupDashboard(),
         fetchBookings(),
         fetchGuideDrivers(),
       ]);
 
       setPickups(Array.isArray(pickupResponse.data) ? pickupResponse.data : []);
+      setDispatchBoard(Array.isArray(dashboardResponse.data?.board) ? dashboardResponse.data.board : []);
+      setStats(dashboardResponse.data?.stats || { total: 0, scheduled: 0, pending: 0, conflicts: 0 });
       setBookings(Array.isArray(bookingsResponse.data) ? bookingsResponse.data : []);
       setDrivers(
         Array.isArray(driverResponse.data)
@@ -174,7 +180,12 @@ const AirportPickupManager = () => {
             Schedule airport transfers, assign drivers, track flights, and keep arrivals aligned with each booking.
           </p>
         </div>
-        <Badge variant="accent">{pickups.length} Transfers</Badge>
+        <div className="flex flex-wrap gap-3">
+          <Badge variant="accent">{stats.total} Transfers</Badge>
+          <Badge variant="secondary">{stats.scheduled} Scheduled</Badge>
+          <Badge variant="secondary">{stats.pending} Pending</Badge>
+          <Badge variant="secondary">{stats.conflicts} Conflicts</Badge>
+        </div>
       </div>
 
       {error && (
@@ -331,6 +342,9 @@ const AirportPickupManager = () => {
                           {pickup.status}
                         </span>
                         <Badge variant="secondary">{pickup.airportCode}</Badge>
+                        {pickup.conflictCount > 0 && (
+                          <Badge variant="secondary">{pickup.conflictCount} Conflict{pickup.conflictCount > 1 ? "s" : ""}</Badge>
+                        )}
                       </div>
                       <p className="text-sm font-medium leading-6 text-slate-600">
                         {pickup.coordinationSummary?.summary || "No airport pickup summary available."}
@@ -349,6 +363,16 @@ const AirportPickupManager = () => {
                           <Badge variant="secondary">{pickup.vehicleLabel}</Badge>
                         )}
                       </div>
+                      {pickup.conflictCount > 0 && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                          {pickup.conflicts.map((conflict) => conflict.summary).join(". ")}
+                        </div>
+                      )}
+                      {pickup.dispatchBrief && (
+                        <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+                          {pickup.dispatchBrief}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -373,6 +397,71 @@ const AirportPickupManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+          Arrival Dispatch Board
+        </h3>
+
+        <div className="space-y-4">
+          {dispatchBoard.length === 0 && (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">
+              No active safari arrivals need transfer planning yet.
+            </div>
+          )}
+
+          {dispatchBoard.map((item) => (
+            <div
+              key={item.bookingId}
+              className="rounded-[28px] border border-slate-200 bg-white px-5 py-5"
+            >
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                    {item.travelerName}
+                  </p>
+                  <p className="text-sm font-medium text-slate-600">{item.packageTour}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                    {item.travelDate ? new Date(item.travelDate).toLocaleDateString() : "Date pending"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={item.needsPickup ? "secondary" : "accent"}>
+                    {item.needsPickup ? "Needs Transfer" : `${item.pickups.length} Transfer Plan${item.pickups.length > 1 ? "s" : ""}`}
+                  </Badge>
+                  {item.unassignedCount > 0 && (
+                    <Badge variant="secondary">{item.unassignedCount} Unassigned</Badge>
+                  )}
+                  {item.hasConflict && <Badge variant="secondary">Conflict</Badge>}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Assigned Drivers
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-700">
+                    {item.assignedDrivers.length > 0
+                      ? item.assignedDrivers.join(", ")
+                      : "No driver assigned yet."}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Transfer Status
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-700">
+                    {item.pickups.length > 0
+                      ? item.pickups.map((pickup) => `${pickup.airportCode} ${pickup.status}`).join(", ")
+                      : "No pickup workflow created yet."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };

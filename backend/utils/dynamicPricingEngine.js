@@ -1,5 +1,7 @@
 const roundCurrency = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 
+const normalizeLabel = (value = "") => value.toString().trim().toLowerCase();
+
 export const calculateDynamicPricePreview = ({
   basePrice = 0,
   seasonMultiplier = 1,
@@ -27,3 +29,56 @@ export const calculateDynamicPricePreview = ({
     minimumApplied: floorPrice > 0 && finalPrice === floorPrice && finalPrice !== roundedRawPrice,
   };
 };
+
+export const doesDynamicPricingRuleMatchTour = (rule = {}, tour = {}) => {
+  const routeLabel = normalizeLabel(rule.routeLabel);
+
+  if (!routeLabel) {
+    return false;
+  }
+
+  const tourCandidates = [
+    tour.title,
+    tour.location,
+    tour.destinationSlug,
+    ...(Array.isArray(tour.destinationsVisited) ? tour.destinationsVisited : []),
+  ]
+    .map((value) => normalizeLabel(value))
+    .filter(Boolean);
+
+  return tourCandidates.some(
+    (candidate) => candidate.includes(routeLabel) || routeLabel.includes(candidate)
+  );
+};
+
+export const buildDynamicPricingImpactBoard = (rules = [], tours = []) =>
+  (rules || [])
+    .filter((rule) => rule.status === "active")
+    .map((rule) => {
+      const matchedTours = (tours || [])
+        .filter((tour) => doesDynamicPricingRuleMatchTour(rule, tour))
+        .map((tour) => {
+          const preview = calculateDynamicPricePreview({
+            ...rule,
+            basePrice: tour.price || rule.basePrice || 0,
+          });
+
+          return {
+            tourId: tour._id,
+            title: tour.title,
+            location: tour.location,
+            basePrice: Number(tour.price || 0),
+            adjustedPrice: preview.finalPrice,
+            adjustmentPercent: preview.adjustmentPercent,
+            minimumApplied: preview.minimumApplied,
+          };
+        });
+
+      return {
+        ruleId: rule._id,
+        ruleName: rule.ruleName,
+        routeLabel: rule.routeLabel,
+        matchedTours,
+        impactedTourCount: matchedTours.length,
+      };
+    });

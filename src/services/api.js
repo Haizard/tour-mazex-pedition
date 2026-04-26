@@ -382,6 +382,7 @@ export const updateAccommodationReservation = (id, data) =>
 export const deleteAccommodationReservation = (id) =>
   API.delete(`/accommodations/${id}`);
 export const fetchAirportPickups = () => cachedGet("/airport-pickups");
+export const fetchAirportPickupDashboard = () => cachedGet("/airport-pickups/dashboard");
 export const createAirportPickup = (data) => API.post("/airport-pickups", data);
 export const updateAirportPickup = (id, data) =>
   API.patch(`/airport-pickups/${id}`, data);
@@ -398,6 +399,7 @@ export const fetchPublicPaymentCheckout = (token) => API.get(`/payments/checkout
 export const respondToPublicPaymentCheckout = (token, data) =>
   API.post(`/payments/checkout/${token}/respond`, data);
 export const fetchDynamicPricingRules = () => cachedGet("/dynamic-pricing");
+export const fetchDynamicPricingDashboard = () => cachedGet("/dynamic-pricing/dashboard");
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
 export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);

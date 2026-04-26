@@ -6,6 +6,7 @@ import Card from "../UI/Card";
 import {
   createDynamicPricingRule,
   deleteDynamicPricingRule,
+  fetchDynamicPricingDashboard,
   fetchDynamicPricingRules,
   updateDynamicPricingRule,
 } from "../../services/api";
@@ -30,6 +31,8 @@ const statusTone = {
 
 const DynamicPricingManager = () => {
   const [rules, setRules] = useState([]);
+  const [impactBoard, setImpactBoard] = useState([]);
+  const [stats, setStats] = useState({ totalRules: 0, activeRules: 0, impactedTours: 0 });
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,8 +43,13 @@ const DynamicPricingManager = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetchDynamicPricingRules();
+      const [response, dashboardResponse] = await Promise.all([
+        fetchDynamicPricingRules(),
+        fetchDynamicPricingDashboard(),
+      ]);
       setRules(Array.isArray(response.data) ? response.data : []);
+      setImpactBoard(Array.isArray(dashboardResponse.data?.impactBoard) ? dashboardResponse.data.impactBoard : []);
+      setStats(dashboardResponse.data?.stats || { totalRules: 0, activeRules: 0, impactedTours: 0 });
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load dynamic pricing rules right now.");
     } finally {
@@ -133,7 +141,11 @@ const DynamicPricingManager = () => {
             Create enterprise pricing rules using season, demand, and occupancy multipliers with previewed final pricing.
           </p>
         </div>
-        <Badge variant="accent">{rules.length} Pricing Rules</Badge>
+        <div className="flex flex-wrap gap-3">
+          <Badge variant="accent">{stats.totalRules} Pricing Rules</Badge>
+          <Badge variant="secondary">{stats.activeRules} Active</Badge>
+          <Badge variant="secondary">{stats.impactedTours} Tour Matches</Badge>
+        </div>
       </div>
 
       {error && (
@@ -293,6 +305,64 @@ const DynamicPricingManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+          Live Package Impact
+        </h3>
+
+        <div className="space-y-4">
+          {impactBoard.length === 0 && (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">
+              No active pricing rules are matched to live tour packages yet.
+            </div>
+          )}
+
+          {impactBoard.map((item) => (
+            <div key={item.ruleId} className="rounded-[28px] border border-slate-200 bg-white px-5 py-5">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                    {item.ruleName}
+                  </p>
+                  <p className="text-sm font-medium text-slate-600">
+                    Route match: {item.routeLabel || "All routes"}
+                  </p>
+                </div>
+                <Badge variant={item.impactedTourCount > 0 ? "accent" : "secondary"}>
+                  {item.impactedTourCount} Impacted Tour{item.impactedTourCount === 1 ? "" : "s"}
+                </Badge>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {item.matchedTours.length === 0 && (
+                  <div className="rounded-2xl bg-slate-50 p-4 text-sm font-medium text-slate-500">
+                    No published package currently matches this rule label.
+                  </div>
+                )}
+
+                {item.matchedTours.map((tour) => (
+                  <div key={tour.tourId} className="rounded-2xl bg-slate-50 p-4">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                          {tour.title}
+                        </p>
+                        <p className="text-sm font-medium text-slate-500">{tour.location}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary">Base USD {tour.basePrice}</Badge>
+                        <Badge variant="accent">Adjusted USD {tour.adjustedPrice}</Badge>
+                        <Badge variant="secondary">{tour.adjustmentPercent}%</Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };
