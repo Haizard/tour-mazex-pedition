@@ -15,10 +15,37 @@ const formatDate = (value) => {
   });
 };
 
+const toDate = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+export const hasAssignmentWindowConflict = (left = {}, right = {}) => {
+  const leftStart = toDate(left.assignmentStartDate || left.assignmentDate);
+  const leftEnd = toDate(left.assignmentEndDate || left.assignmentStartDate || left.assignmentDate);
+  const rightStart = toDate(right.assignmentStartDate || right.assignmentDate);
+  const rightEnd = toDate(right.assignmentEndDate || right.assignmentStartDate || right.assignmentDate);
+
+  if (!leftStart || !leftEnd || !rightStart || !rightEnd) {
+    return false;
+  }
+
+  return leftStart <= rightEnd && rightStart <= leftEnd;
+};
+
 export const summarizeGuideDriverAssignment = (member = {}) => {
   const availability = member.availabilityStatus || "available";
   const staffLabel = member.staffType === "driver" ? "Driver" : "Guide";
-  const dateLabel = formatDate(member.assignmentDate);
+  const startLabel = formatDate(member.assignmentStartDate || member.assignmentDate);
+  const endLabel = formatDate(member.assignmentEndDate);
+  const dateLabel =
+    startLabel && endLabel && startLabel !== endLabel
+      ? `${startLabel} to ${endLabel}`
+      : startLabel;
 
   if (availability === "assigned" && member.assignedTourTitle) {
     return {
@@ -39,3 +66,27 @@ export const summarizeGuideDriverAssignment = (member = {}) => {
     summary: `${staffLabel} is available and ready for assignment.`,
   };
 };
+
+export const buildGuideDriverDispatchBoard = (bookings = [], team = []) =>
+  (bookings || [])
+    .filter((booking) => ["Confirmed", "Completed"].includes(booking.status))
+    .map((booking) => {
+      const assignedGuides = team.filter(
+        (member) => member.staffType === "guide" && String(member.assignedBookingId || "") === String(booking._id)
+      );
+      const assignedDrivers = team.filter(
+        (member) => member.staffType === "driver" && String(member.assignedBookingId || "") === String(booking._id)
+      );
+
+      return {
+        bookingId: booking._id,
+        travelerName: booking.name,
+        packageTour: booking.packageTour,
+        travelDate: booking.travelDate,
+        assignedGuides,
+        assignedDrivers,
+        needsGuide: assignedGuides.length === 0,
+        needsDriver: assignedDrivers.length === 0,
+      };
+    })
+    .sort((left, right) => new Date(left.travelDate || 0).getTime() - new Date(right.travelDate || 0).getTime());

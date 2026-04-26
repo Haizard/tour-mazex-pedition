@@ -34,6 +34,8 @@ const guideDriverSchema = new mongoose.Schema(
     },
     assignedTourTitle: { type: String, default: "", trim: true },
     assignmentDate: { type: Date, default: null },
+    assignmentStartDate: { type: Date, default: null },
+    assignmentEndDate: { type: Date, default: null },
     assignmentNotes: { type: String, default: "", trim: true },
     licenseCategory: { type: String, default: "", trim: true },
   },

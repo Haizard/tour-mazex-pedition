@@ -370,6 +370,7 @@ export const deleteGallery = (id) => API.delete(`/gallery/${id}`);
 
 // Guide & Drivers
 export const fetchGuideDrivers = () => cachedGet("/guide-drivers");
+export const fetchGuideDriverDashboard = () => cachedGet("/guide-drivers/dashboard");
 export const createGuideDriver = (data) => API.post("/guide-drivers", data);
 export const updateGuideDriver = (id, data) => API.patch(`/guide-drivers/${id}`, data);
 export const deleteGuideDriver = (id) => API.delete(`/guide-drivers/${id}`);

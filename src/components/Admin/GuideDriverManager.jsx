@@ -7,6 +7,7 @@ import {
   createGuideDriver,
   deleteGuideDriver,
   fetchBookings,
+  fetchGuideDriverDashboard,
   fetchGuideDrivers,
   updateGuideDriver,
 } from "../../services/api";
@@ -22,6 +23,8 @@ const initialForm = {
   specialties: "",
   assignedBookingId: "",
   assignmentDate: "",
+  assignmentStartDate: "",
+  assignmentEndDate: "",
   assignmentNotes: "",
   licenseCategory: "",
 };
@@ -34,28 +37,48 @@ const availabilityTone = {
 
 const GuideDriverManager = () => {
   const [team, setTeam] = useState([]);
+  const [dispatchBoard, setDispatchBoard] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [stats, setStats] = useState({ total: 0, available: 0, assigned: 0, offDuty: 0 });
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [selectedStaffType, setSelectedStaffType] = useState("all");
+  const [selectedAvailability, setSelectedAvailability] = useState("all");
 
   const assignedBooking = useMemo(
     () => bookings.find((booking) => booking._id === form.assignedBookingId),
     [bookings, form.assignedBookingId]
   );
 
+  const filteredTeam = useMemo(
+    () =>
+      team.filter((member) => {
+        const staffTypeMatch = selectedStaffType === "all" || member.staffType === selectedStaffType;
+        const availabilityMatch =
+          selectedAvailability === "all" || member.availabilityStatus === selectedAvailability;
+        return staffTypeMatch && availabilityMatch;
+      }),
+    [selectedAvailability, selectedStaffType, team]
+  );
+
   const loadData = async () => {
     setLoading(true);
     setError("");
     try {
-      const [teamResponse, bookingsResponse] = await Promise.all([
+      const [teamResponse, dashboardResponse, bookingsResponse] = await Promise.all([
         fetchGuideDrivers(),
+        fetchGuideDriverDashboard(),
         fetchBookings(),
       ]);
 
       setTeam(Array.isArray(teamResponse.data) ? teamResponse.data : []);
+      setDispatchBoard(
+        Array.isArray(dashboardResponse.data?.dispatchBoard) ? dashboardResponse.data.dispatchBoard : []
+      );
+      setStats(dashboardResponse.data?.stats || { total: 0, available: 0, assigned: 0, offDuty: 0 });
       setBookings(Array.isArray(bookingsResponse.data) ? bookingsResponse.data : []);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load guide and driver operations.");
@@ -91,6 +114,8 @@ const GuideDriverManager = () => {
       assignedTourTitle: assignedBooking?.packageTour || "",
       assignedBookingId: form.assignedBookingId || null,
       assignmentDate: form.assignmentDate || null,
+      assignmentStartDate: form.assignmentStartDate || form.assignmentDate || null,
+      assignmentEndDate: form.assignmentEndDate || form.assignmentStartDate || form.assignmentDate || null,
     };
 
     try {
@@ -122,6 +147,8 @@ const GuideDriverManager = () => {
       specialties: Array.isArray(member.specialties) ? member.specialties.join(", ") : "",
       assignedBookingId: member.assignedBookingId || "",
       assignmentDate: member.assignmentDate ? new Date(member.assignmentDate).toISOString().slice(0, 10) : "",
+      assignmentStartDate: member.assignmentStartDate ? new Date(member.assignmentStartDate).toISOString().slice(0, 10) : "",
+      assignmentEndDate: member.assignmentEndDate ? new Date(member.assignmentEndDate).toISOString().slice(0, 10) : "",
       assignmentNotes: member.assignmentNotes || "",
       licenseCategory: member.licenseCategory || "",
     });
@@ -157,7 +184,12 @@ const GuideDriverManager = () => {
             Track your safari field team, mark availability, and attach each guide or driver to a live booking before departure.
           </p>
         </div>
-        <Badge variant="accent">{team.length} Team Members</Badge>
+        <div className="flex flex-wrap gap-3">
+          <Badge variant="accent">{stats.total} Team Members</Badge>
+          <Badge variant="secondary">{stats.available} Available</Badge>
+          <Badge variant="secondary">{stats.assigned} Assigned</Badge>
+          <Badge variant="secondary">{stats.offDuty} Off Duty</Badge>
+        </div>
       </div>
 
       {error && (
@@ -266,6 +298,20 @@ const GuideDriverManager = () => {
                 className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
               />
             </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <input
+                type="date"
+                value={form.assignmentStartDate}
+                onChange={(event) => setForm((current) => ({ ...current, assignmentStartDate: event.target.value }))}
+                className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+              />
+              <input
+                type="date"
+                value={form.assignmentEndDate}
+                onChange={(event) => setForm((current) => ({ ...current, assignmentEndDate: event.target.value }))}
+                className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
             <textarea
               rows={4}
               value={form.assignmentNotes}
@@ -288,23 +334,55 @@ const GuideDriverManager = () => {
         </Card>
 
         <Card className="p-8 border-none shadow-xl">
-          <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 mb-6">
+          <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
             Field Team Roster
-          </h3>
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {["all", "guide", "driver"].map((staffType) => (
+                <button
+                  key={staffType}
+                  type="button"
+                  onClick={() => setSelectedStaffType(staffType)}
+                  className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest ${
+                    selectedStaffType === staffType
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-500"
+                  }`}
+                >
+                  {staffType}
+                </button>
+              ))}
+              {["all", "available", "assigned", "off-duty"].map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setSelectedAvailability(status)}
+                  className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest ${
+                    selectedAvailability === status
+                      ? "border-primary bg-primary text-white"
+                      : "border-slate-200 bg-white text-slate-500"
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="space-y-4">
             {loading && (
               <p className="text-sm font-medium text-slate-500">Loading guide and driver roster...</p>
             )}
 
-            {!loading && team.length === 0 && (
+            {!loading && filteredTeam.length === 0 && (
               <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">
                 No guides or drivers added yet.
               </div>
             )}
 
             {!loading &&
-              team.map((member) => (
+              filteredTeam.map((member) => (
                 <div key={member._id} className="rounded-[28px] border border-slate-200 bg-white px-5 py-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-3">
@@ -356,6 +434,64 @@ const GuideDriverManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="p-8 border-none shadow-xl">
+        <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+          Dispatch Board
+        </h3>
+        <div className="space-y-4">
+          {dispatchBoard.length === 0 && (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">
+              No confirmed safari departures need dispatching yet.
+            </div>
+          )}
+
+          {dispatchBoard.map((item) => (
+            <div key={item.bookingId} className="rounded-[28px] border border-slate-200 bg-white px-5 py-5">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                    {item.travelerName}
+                  </p>
+                  <p className="text-sm font-medium text-slate-600">
+                    {item.packageTour}
+                  </p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                    {item.travelDate ? new Date(item.travelDate).toLocaleDateString() : "Date pending"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={item.needsGuide ? "secondary" : "accent"}>
+                    {item.needsGuide ? "Needs Guide" : `${item.assignedGuides.length} Guide Assigned`}
+                  </Badge>
+                  <Badge variant={item.needsDriver ? "secondary" : "accent"}>
+                    {item.needsDriver ? "Needs Driver" : `${item.assignedDrivers.length} Driver Assigned`}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Guide Coverage</p>
+                  <p className="mt-2 text-sm font-medium text-slate-700">
+                    {item.assignedGuides.length > 0
+                      ? item.assignedGuides.map((member) => member.fullName).join(", ")
+                      : "No guide assigned yet."}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Driver Coverage</p>
+                  <p className="mt-2 text-sm font-medium text-slate-700">
+                    {item.assignedDrivers.length > 0
+                      ? item.assignedDrivers.map((member) => member.fullName).join(", ")
+                      : "No driver assigned yet."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };
