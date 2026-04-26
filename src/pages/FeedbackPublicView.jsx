@@ -13,6 +13,7 @@ const FeedbackPublicView = () => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [privateNote, setPrivateNote] = useState("");
+  const [publicReview, setPublicReview] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
@@ -37,6 +38,7 @@ const FeedbackPublicView = () => {
       const response = await submitPublicFeedback(token, {
         rating,
         privateNote,
+        publicReview,
       });
       setFeedback(response.data);
       setSubmitted(true);
@@ -99,6 +101,18 @@ const FeedbackPublicView = () => {
                     className="h-32 w-full rounded-3xl border-slate-100 bg-slate-50 p-6 text-sm font-medium text-slate-900 focus:border-primary focus:ring-primary placeholder:text-slate-300"
                   />
                 </div>
+
+                {rating >= 4 && (
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Public review for our website</p>
+                    <textarea
+                      value={publicReview}
+                      onChange={(e) => setPublicReview(e.target.value)}
+                      placeholder="Optional: share a short testimonial you're happy for us to display publicly."
+                      className="h-28 w-full rounded-3xl border-slate-100 bg-white p-6 text-sm font-medium text-slate-900 focus:border-primary focus:ring-primary placeholder:text-slate-300"
+                    />
+                  </div>
+                )}
 
                 <Button
                   onClick={handleSubmit}

@@ -32,13 +32,37 @@ test("buildUnifiedInboxItems merges email threads and inquiries into a recency-s
         },
       },
     ],
+    contactMessages: [
+      {
+        _id: "website-1",
+        name: "Website Visitor",
+        email: "visitor@example.com",
+        status: "New",
+        message: "Can someone help me plan a Serengeti safari?",
+        createdAt: "2026-04-19T09:00:00.000Z",
+      },
+    ],
+    chatConversations: [
+      {
+        _id: "chat-1",
+        visitorLabel: "Live Chat Guest",
+        visitorEmail: "chat@example.com",
+        status: "new",
+        lastVisitorMessage: "Do you have availability for July?",
+        lastActivityAt: "2026-04-22T12:30:00.000Z",
+      },
+    ],
   });
 
-  assert.equal(items.length, 2);
-  assert.equal(items[0].channel, "whatsapp");
-  assert.equal(items[0].sourceId, "inquiry-1");
-  assert.equal(items[1].channel, "email");
-  assert.equal(items[1].sourceId, "thread-1");
+  assert.equal(items.length, 4);
+  assert.equal(items[0].channel, "website");
+  assert.equal(items[0].sourceId, "chat-1");
+  assert.equal(items[1].channel, "whatsapp");
+  assert.equal(items[1].sourceId, "inquiry-1");
+  assert.equal(items[2].channel, "email");
+  assert.equal(items[2].sourceId, "thread-1");
+  assert.equal(items[3].channel, "website");
+  assert.equal(items[3].sourceId, "website-1");
 });
 
 test("buildWhatsAppAutomationSnapshot increments counters and records delivery state", () => {

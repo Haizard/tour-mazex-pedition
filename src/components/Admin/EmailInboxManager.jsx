@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Card from "../UI/Card";
 import Button from "../UI/Button";
 import Badge from "../UI/Badge";
@@ -50,6 +51,9 @@ const EmailInboxManager = () => {
   const [syncingConnectionId, setSyncingConnectionId] = useState("");
   const [linkingThreadId, setLinkingThreadId] = useState("");
   const [error, setError] = useState("");
+  const [searchParams] = useSearchParams();
+  const focusedThreadId =
+    searchParams.get("recordType") === "email-thread" ? searchParams.get("recordId") || "" : "";
 
   const selectedProvider = useMemo(
     () => providers.find((provider) => provider.id === selectedProviderId) || null,
@@ -617,11 +621,15 @@ const EmailInboxManager = () => {
           </div>
 
           <div className="space-y-4">
-            {threads.map((thread) => (
-              <div
-                key={thread._id}
-                className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm"
-              >
+              {threads.map((thread) => (
+                <div
+                  key={thread._id}
+                  className={`rounded-3xl border bg-white p-5 shadow-sm ${
+                    focusedThreadId === String(thread._id)
+                      ? "border-primary shadow-lg shadow-primary/10"
+                      : "border-slate-100"
+                  }`}
+                >
                 <div className="flex justify-between items-start gap-4">
                   <div>
                     <p className="text-lg font-black text-slate-900">{thread.subject}</p>

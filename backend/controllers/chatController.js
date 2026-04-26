@@ -1,11 +1,64 @@
 import { GoogleGenAI } from "@google/genai";
 import TourPackage from "../models/TourPackage.js";
 import Blog from "../models/Blog.js";
+import ChatConversation from "../models/ChatConversation.js";
 import { buildTenantFilter } from "../utils/tenantContext.js";
 import { buildSalesAssistantPayload } from "../utils/chatSalesAssistant.js";
 
+const normalizeTranscript = (items = []) =>
+    (items || [])
+        .filter((item) => item && typeof item.content === "string" && item.content.trim())
+        .map((item) => ({
+            role: item.role === "user" ? "user" : "model",
+            content: item.content.trim(),
+            createdAt: new Date(),
+        }))
+        .slice(-40);
+
+const persistConversation = async (req, { sessionId, history = [], userMessage, assistantMessage, visitorProfile = {} }) => {
+    if (!sessionId) {
+        return;
+    }
+
+    const transcript = normalizeTranscript([
+        ...history,
+        { role: "user", content: userMessage },
+        { role: "model", content: assistantMessage },
+    ]);
+
+    const lastVisitorMessage = (userMessage || "").trim();
+    const visitorLabel =
+        visitorProfile.name?.toString().trim() ||
+        visitorProfile.email?.toString().trim() ||
+        "Website Visitor";
+
+    await ChatConversation.findOneAndUpdate(
+        { tenantId: req.tenantId, sessionId },
+        {
+            $set: {
+                sourceChannel: "website-chat",
+                visitorLabel,
+                visitorEmail: visitorProfile.email?.toString().trim() || "",
+                visitorPhone: visitorProfile.phone?.toString().trim() || "",
+                status: "new",
+                lastVisitorMessage,
+                transcript,
+                lastActivityAt: new Date(),
+                metadata: {
+                    lastSyncedFrom: "chatbot",
+                },
+            },
+        },
+        {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true,
+        }
+    );
+};
+
 export const handleChat = async (req, res) => {
-    const { message, history } = req.body;
+    const { message, history, sessionId, visitorProfile } = req.body;
 
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
         return res.status(500).json({ error: "Gemini API Key is not configured." });
@@ -113,6 +166,14 @@ export const handleChat = async (req, res) => {
             tours,
         });
 
+        await persistConversation(req, {
+            sessionId,
+            history,
+            userMessage: message,
+            assistantMessage: response.text,
+            visitorProfile,
+        });
+
         res.json({
             message: response.text,
             salesAssistant,
@@ -137,5 +198,52 @@ export const handleChat = async (req, res) => {
             });
         }
         res.status(500).json({ error: "Something went wrong with the AI service. Please try our WhatsApp support! 🦁" });
+    }
+};
+
+export const listChatConversations = async (req, res) => {
+    try {
+        const conversations = await ChatConversation.find({ tenantId: req.tenantId })
+            .sort({ lastActivityAt: -1, updatedAt: -1 })
+            .lean();
+
+        res.status(200).json(conversations);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const updateChatConversation = async (req, res) => {
+    try {
+        const updates = {};
+        const allowedStatuses = new Set(["new", "open", "replied", "closed"]);
+
+        if (req.body.status && allowedStatuses.has(req.body.status)) {
+            updates.status = req.body.status;
+        }
+
+        if (typeof req.body.visitorLabel === "string") {
+            updates.visitorLabel = req.body.visitorLabel.trim();
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ message: "No chat updates were provided." });
+        }
+
+        updates.lastActivityAt = new Date();
+
+        const conversation = await ChatConversation.findOneAndUpdate(
+            { _id: req.params.id, tenantId: req.tenantId },
+            { $set: updates },
+            { new: true }
+        ).lean();
+
+        if (!conversation) {
+            return res.status(404).json({ message: "Chat conversation not found." });
+        }
+
+        res.status(200).json(conversation);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };

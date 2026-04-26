@@ -3,9 +3,27 @@ import { IoSend, IoClose, IoChatbubbleEllipses } from "react-icons/io5";
 import { Link } from "react-router-dom";
 import { sendChatMessage } from "../../services/api";
 
+const CHAT_SESSION_STORAGE_KEY = "tourmazeChatSessionId";
+
+const ensureChatSessionId = () => {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const existing = window.localStorage.getItem(CHAT_SESSION_STORAGE_KEY);
+  if (existing) {
+    return existing;
+  }
+
+  const generated = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  window.localStorage.setItem(CHAT_SESSION_STORAGE_KEY, generated);
+  return generated;
+};
+
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [sessionId, setSessionId] = useState("");
   const [chatHistory, setChatHistory] = useState([
     {
       role: "model",
@@ -23,9 +41,17 @@ const ChatBot = () => {
     }
   }, [chatHistory]);
 
+  useEffect(() => {
+    setSessionId(ensureChatSessionId());
+  }, []);
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
+    const nextSessionId = sessionId || ensureChatSessionId();
+    if (!sessionId && nextSessionId) {
+      setSessionId(nextSessionId);
+    }
 
     const userMsg = { role: "user", content: message };
     setChatHistory((prev) => [...prev, userMsg]);
@@ -36,6 +62,7 @@ const ChatBot = () => {
       const response = await sendChatMessage({
         message: message,
         history: chatHistory,
+        sessionId: nextSessionId,
       });
       setChatHistory((prev) => [
         ...prev,

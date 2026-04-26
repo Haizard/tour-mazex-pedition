@@ -2,6 +2,7 @@ import express from "express";
 
 import ContactMessage from "../models/ContactMessage.js";
 import CustomInquiry from "../models/CustomInquiry.js";
+import ChatConversation from "../models/ChatConversation.js";
 import EmailThread from "../models/EmailThread.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
@@ -29,7 +30,7 @@ router.use(requireSubscriptionFeature("unified-inbox"));
 
 router.get("/", async (req, res) => {
   try {
-    const [threads, inquiries, messages] = await Promise.all([
+    const [threads, inquiries, messages, chatConversations] = await Promise.all([
       EmailThread.find({ tenantId: req.tenantId })
         .sort({ lastMessageAt: -1, updatedAt: -1 })
         .lean(),
@@ -38,6 +39,9 @@ router.get("/", async (req, res) => {
         .lean(),
       ContactMessage.find({ tenantId: req.tenantId })
         .select("_id name email status createdAt message")
+        .lean(),
+      ChatConversation.find({ tenantId: req.tenantId })
+        .sort({ lastActivityAt: -1, updatedAt: -1 })
         .lean(),
     ]);
 
@@ -74,6 +78,8 @@ router.get("/", async (req, res) => {
     const inboxItems = buildUnifiedInboxItems({
       emailThreads: decoratedThreads,
       inquiries,
+      contactMessages: messages,
+      chatConversations,
     });
 
     res.status(200).json({
@@ -82,8 +88,9 @@ router.get("/", async (req, res) => {
         total: inboxItems.length,
         whatsapp: inboxItems.filter((item) => item.channel === "whatsapp").length,
         email: inboxItems.filter((item) => item.channel === "email").length,
+        website: inboxItems.filter((item) => item.channel === "website").length,
         open: inboxItems.filter((item) =>
-          ["open", "pending", "Pending", "Contacted"].includes(item.status)
+          ["open", "pending", "Pending", "Contacted", "New", "Read", "new", "open"].includes(item.status)
         ).length,
       },
     });

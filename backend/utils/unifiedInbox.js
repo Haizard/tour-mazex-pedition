@@ -56,12 +56,52 @@ const normalizeInquiryItem = (inquiry = {}) => ({
     null,
 });
 
+const normalizeContactMessageItem = (message = {}) => ({
+  id: `website-${message._id}`,
+  sourceId: String(message._id),
+  sourceType: "contact-message",
+  channel: "website",
+  title: "Website contact message",
+  contactName: message.name || "Website visitor",
+  contactAddress: message.email || message.phone || "",
+  status: message.status || "New",
+  preview: message.message || "",
+  linkedInquiry: null,
+  linkedContactMessage: message,
+  whatsappAutomation: null,
+  lastActivityAt: message.updatedAt || message.createdAt || null,
+});
+
+const normalizeChatConversationItem = (conversation = {}) => ({
+  id: `chat-${conversation._id}`,
+  sourceId: String(conversation._id),
+  sourceType: "chat-conversation",
+  channel: "website",
+  title: "Live chat conversation",
+  contactName: conversation.visitorLabel || "Website Visitor",
+  contactAddress: conversation.visitorEmail || conversation.visitorPhone || "",
+  status: conversation.status || "new",
+  preview:
+    conversation.lastVisitorMessage ||
+    conversation.transcript?.[conversation.transcript.length - 1]?.content ||
+    "",
+  linkedInquiry: null,
+  linkedContactMessage: null,
+  linkedChatConversation: conversation,
+  whatsappAutomation: null,
+  lastActivityAt: conversation.lastActivityAt || conversation.updatedAt || conversation.createdAt || null,
+});
+
 export const buildUnifiedInboxItems = ({
   emailThreads = [],
   inquiries = [],
+  contactMessages = [],
+  chatConversations = [],
 } = {}) =>
   [
     ...emailThreads.map(normalizeEmailThreadItem),
     ...inquiries.map(normalizeInquiryItem),
+    ...contactMessages.map(normalizeContactMessageItem),
+    ...chatConversations.map(normalizeChatConversationItem),
   ].sort((left, right) => toTimestamp(right.lastActivityAt) - toTimestamp(left.lastActivityAt));
 

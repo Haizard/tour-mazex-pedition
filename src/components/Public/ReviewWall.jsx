@@ -54,7 +54,7 @@ const ReviewWall = () => {
               <div className="relative">
                 <FaQuoteLeft className="absolute -top-4 -left-2 text-slate-200 text-4xl -z-10 opacity-50" />
                 <p className="text-slate-600 font-medium leading-relaxed italic relative z-10">
-                  "{review.privateNote || "An incredible experience from start to finish. The team went above and beyond to make our safari unforgettable."}"
+                  "{review.publicReview}"
                 </p>
               </div>
 

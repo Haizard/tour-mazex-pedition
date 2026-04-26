@@ -16,6 +16,7 @@ const travelerFeedbackSchema = new mongoose.Schema(
     },
     rating: { type: Number, min: 1, max: 5 },
     privateNote: { type: String },
+    publicReview: { type: String, trim: true },
     publicToken: {
       type: String,
       required: true,

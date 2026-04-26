@@ -23,16 +23,16 @@ export const calculateCustomerSegment = (bookingHistory = []) => {
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
+    if (count > 0 && lastTrip < twelveMonthsAgo) {
+        return "Lapsed";
+    }
+
     if (count >= 3 || totalSpend >= 10000) {
         return "VIP";
     }
 
     if (count >= 2) {
         return "Loyal";
-    }
-
-    if (count === 1 && lastTrip < twelveMonthsAgo) {
-        return "Lapsed";
     }
 
     return "First-Timer";

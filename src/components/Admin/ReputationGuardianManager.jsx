@@ -198,7 +198,7 @@ const ReputationGuardianManager = () => {
                     </div>
                   </div>
                   <p className="mt-3 text-xs italic font-medium text-slate-600 line-clamp-2">
-                    "{t.privateNote || "No text provided."}"
+                    "{t.publicReview || "No text provided."}"
                   </p>
                 </div>
               ))

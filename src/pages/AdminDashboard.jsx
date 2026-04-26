@@ -4,6 +4,7 @@ import { FaSearch } from "react-icons/fa";
 
 import { motion } from "framer-motion";
 import {
+  fetchInquiryQuotes,
   fetchTours,
   createTour,
   updateTour,
@@ -32,7 +33,6 @@ import {
   generateFullTourPackage,
   fetchInquiries,
 
-  fetchInquiryQuotes,
   generateInquiryQuote,
   updateInquiryStatus,
   updateInquiryLeadStage,
@@ -57,13 +57,14 @@ import {
   updateVisionary,
   deleteVisionary,
 } from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import AdminSidebar from "../components/Admin/AdminSidebar";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
+import EmailInboxManager from "../components/Admin/EmailInboxManager";
 import UnifiedInboxManager from "../components/Admin/UnifiedInboxManager";
 import LeadInboxManager from "../components/Admin/LeadInboxManager";
 import CampaignManager from "../components/Admin/CampaignManager";
@@ -102,9 +103,10 @@ const AdminDashboard = () => {
     fallbackName;
 
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { logout } = useAdminAuth();
   const { tenant } = useTenant();
-  const [activeTab, setActiveTab] = useState("packages");
+  const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "packages");
   const [tours, setTours] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -121,6 +123,7 @@ const AdminDashboard = () => {
     "social-posts": featureAccess.socialPosts,
     "lead-inbox": featureAccess.leadInbox,
     "email-inbox": featureAccess.unifiedInbox,
+    "email-foundation": featureAccess.unifiedInbox,
     repurposing: featureAccess.repurposing,
     campaigns: featureAccess.campaigns,
     accommodations: featureAccess.accommodationCoordination,
@@ -135,6 +138,28 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  useEffect(() => {
+    const tabFromQuery = searchParams.get("tab");
+    if (tabFromQuery && tabFromQuery !== activeTab) {
+      setActiveTab(tabFromQuery);
+    }
+  }, [activeTab, searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextParams.get("tab") !== activeTab) {
+      nextParams.set("tab", activeTab);
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [activeTab, searchParams, setSearchParams]);
+
+  const clearFocusedRecord = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("recordId");
+    nextParams.delete("recordType");
+    setSearchParams(nextParams, { replace: true });
   };
 
   useEffect(() => {
@@ -482,6 +507,37 @@ const AdminDashboard = () => {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    const recordType = searchParams.get("recordType");
+    const recordId = searchParams.get("recordId");
+
+    if ((activeTab === "inquiries" || activeTab === "plan-my-trip") && recordType === "inquiry" && recordId) {
+      const inquiry = inquiries.find((item) => String(item._id) === recordId);
+      if (inquiry) {
+        setSelectedInquiry(inquiry);
+        fetchInquiryQuotes(inquiry._id)
+          .then((response) => {
+            setSelectedInquiryQuote(response.data?.[0] || null);
+          })
+          .catch(() => {
+            setSelectedInquiryQuote(null);
+          });
+      }
+    }
+  }, [activeTab, inquiries, searchParams]);
+
+  useEffect(() => {
+    const recordType = searchParams.get("recordType");
+    const recordId = searchParams.get("recordId");
+
+    if (activeTab === "contact-messages" && recordType === "contact" && recordId) {
+      const message = contactMessages.find((item) => String(item._id) === recordId);
+      if (message) {
+        setSelectedContactMessage(message);
+      }
+    }
+  }, [activeTab, contactMessages, searchParams]);
   const loadMenuItems = async () => {
     try {
       const res = await fetchMenuItems();
@@ -3030,10 +3086,11 @@ const AdminDashboard = () => {
                     className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
                   >
                     <button
-                      onClick={() => {
-                        setSelectedInquiry(null);
-                        setSelectedInquiryQuote(null);
-                      }}
+                        onClick={() => {
+                          clearFocusedRecord();
+                          setSelectedInquiry(null);
+                          setSelectedInquiryQuote(null);
+                        }}
                       className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 flex"
                     >
                       <span className="text-xl md:text-2xl">&times;</span>
@@ -3315,10 +3372,13 @@ const AdminDashboard = () => {
                         <Button
                           variant="outline"
                           className="flex-1 rounded-2xl border-slate-200 text-slate-600"
-                          onClick={() => setSelectedInquiry(null)}
-                        >
-                          Close Preview
-                        </Button>
+                          onClick={() => {
+                            clearFocusedRecord();
+                            setSelectedInquiry(null);
+                          }}
+                          >
+                            Close Preview
+                          </Button>
                       </div>
                     </div>
                   </motion.div>
@@ -3384,7 +3444,10 @@ const AdminDashboard = () => {
                     className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
                   >
                     <button
-                      onClick={() => setSelectedContactMessage(null)}
+                      onClick={() => {
+                        clearFocusedRecord();
+                        setSelectedContactMessage(null);
+                      }}
                       className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 shadow-sm"
                     >
                       <span className="text-xl md:text-2xl">&times;</span>
@@ -3437,6 +3500,7 @@ const AdminDashboard = () => {
                           variant="outline"
                           className="rounded-2xl border-red-200 text-red-500"
                           onClick={() => deleteContactMessage(selectedContactMessage._id).then(() => {
+                            clearFocusedRecord();
                             setSelectedContactMessage(null);
                             loadContactMessages();
                           })}
@@ -3617,6 +3681,7 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === "email-inbox" && <UnifiedInboxManager />}
+          {activeTab === "email-foundation" && <EmailInboxManager />}
 
           {activeTab === "lead-inbox" && <LeadInboxManager />}
 
@@ -4226,21 +4291,6 @@ const AdminDashboard = () => {
 
           {activeTab === "reputation" && <ReputationGuardianManager />}
           {activeTab === "repeat-customers" && <RepeatCustomerManager />}
-          {activeTab === "lead-inbox" && <LeadInboxManager />}
-          {activeTab === "email-inbox" && <UnifiedInboxManager />}
-          {activeTab === "campaigns" && <CampaignManager />}
-          {activeTab === "repurposing" && <ContentRepurposingManager />}
-          {activeTab === "social-posts" && <SocialPostsManager />}
-          {activeTab === "social-accounts" && <SocialAccountsManager />}
-          {activeTab === "guide-drivers" && <GuideDriverManager />}
-          {activeTab === "accommodations" && <AccommodationManager />}
-          {activeTab === "airport-pickups" && <AirportPickupManager />}
-          {activeTab === "partners" && <PartnerPortalManager />}
-          {activeTab === "payments" && <PaymentAutomationManager />}
-          {activeTab === "dynamic-pricing" && <DynamicPricingManager />}
-          {activeTab === "competitor-intelligence" && <CompetitorIntelligenceManager />}
-          {activeTab === "language-assistant" && <TravelerAssistanceManager />}
-          {activeTab === "subscription" && <SubscriptionManager />}
           {activeTab === "settings" && <SiteSettings />}
 
         </div>

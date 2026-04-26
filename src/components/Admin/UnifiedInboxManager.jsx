@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaCopy, FaEnvelopeOpenText, FaInbox, FaWhatsapp } from "react-icons/fa";
+import { FaCopy, FaEnvelopeOpenText, FaGlobeAfrica, FaInbox, FaWhatsapp } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 import Badge from "../UI/Badge";
 import Button from "../UI/Button";
@@ -8,23 +9,33 @@ import {
   fetchUnifiedInboxItems,
   fetchWhatsAppTemplates,
   sendInquiryWhatsAppViaApi,
+  updateChatConversationStatus,
+  updateContactMessageStatus,
+  updateEmailThread,
   updateInquiryStatus,
 } from "../../services/api";
 
-const CHANNEL_FILTERS = ["all", "whatsapp", "email", "lead"];
+const CHANNEL_FILTERS = ["all", "whatsapp", "email", "website", "lead"];
 
 const statusTone = {
   Pending: "bg-amber-50 text-amber-700",
   Contacted: "bg-emerald-50 text-emerald-700",
+  New: "bg-amber-50 text-amber-700",
+  Read: "bg-sky-50 text-sky-700",
+  Replied: "bg-emerald-50 text-emerald-700",
   open: "bg-emerald-50 text-emerald-700",
   pending: "bg-amber-50 text-amber-700",
   closed: "bg-slate-100 text-slate-600",
   archived: "bg-slate-100 text-slate-600",
+  new: "bg-amber-50 text-amber-700",
+  open: "bg-emerald-50 text-emerald-700",
+  replied: "bg-sky-50 text-sky-700",
 };
 
 const UnifiedInboxManager = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
-  const [counts, setCounts] = useState({ total: 0, whatsapp: 0, email: 0, open: 0 });
+  const [counts, setCounts] = useState({ total: 0, whatsapp: 0, email: 0, website: 0, open: 0 });
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [loading, setLoading] = useState(true);
   const [sendingWhatsAppId, setSendingWhatsAppId] = useState("");
@@ -41,7 +52,7 @@ const UnifiedInboxManager = () => {
     try {
       const response = await fetchUnifiedInboxItems();
       setItems(Array.isArray(response.data?.items) ? response.data.items : []);
-      setCounts(response.data?.counts || { total: 0, whatsapp: 0, email: 0, open: 0 });
+      setCounts(response.data?.counts || { total: 0, whatsapp: 0, email: 0, website: 0, open: 0 });
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load the unified inbox right now.");
     } finally {
@@ -131,6 +142,94 @@ const UnifiedInboxManager = () => {
     }
   };
 
+  const handleUpdateContactMessage = async (item, status) => {
+    if (!item.linkedContactMessage?._id) {
+      return;
+    }
+
+    setSavingId(item.id);
+    setError("");
+    try {
+      await updateContactMessageStatus(item.linkedContactMessage._id, status);
+      await loadData();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to update the website message status.");
+    } finally {
+      setSavingId("");
+    }
+  };
+
+  const handleUpdateChatConversation = async (item, status) => {
+    if (!item.linkedChatConversation?._id) {
+      return;
+    }
+
+    setSavingId(item.id);
+    setError("");
+    try {
+      await updateChatConversationStatus(item.linkedChatConversation._id, status);
+      await loadData();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to update the live chat status.");
+    } finally {
+      setSavingId("");
+    }
+  };
+
+  const handleReplyByEmail = async (item) => {
+    const targetEmail =
+      item.linkedContactMessage?.email ||
+      item.linkedChatConversation?.visitorEmail ||
+      item.contactAddress;
+
+    if (!targetEmail || !targetEmail.includes("@")) {
+      setError("No email address is available for this conversation yet.");
+      return;
+    }
+
+    setSavingId(item.id);
+    setError("");
+
+    try {
+      if (item.sourceType === "email-thread") {
+        await updateEmailThread(item.sourceId, {
+          replyInitiated: true,
+          replyChannel: "email",
+          replySource: "unified-inbox",
+          status: "pending",
+          aiDraftStatus: "sent",
+        });
+      } else if (item.linkedContactMessage?._id) {
+        await updateContactMessageStatus(item.linkedContactMessage._id, "Replied");
+      } else if (item.linkedChatConversation?._id) {
+        await updateChatConversationStatus(item.linkedChatConversation._id, "replied");
+      }
+
+      window.location.href = `mailto:${targetEmail}`;
+      await loadData();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to sync the reply state.");
+    } finally {
+      setSavingId("");
+    }
+  };
+
+  const handleOpenSourceRecord = (item) => {
+    if (item.linkedInquiry?._id) {
+      navigate(`/admin?tab=inquiries&recordType=inquiry&recordId=${item.linkedInquiry._id}`);
+      return;
+    }
+
+    if (item.linkedContactMessage?._id) {
+      navigate(`/admin?tab=contact-messages&recordType=contact&recordId=${item.linkedContactMessage._id}`);
+      return;
+    }
+
+    if (item.sourceType === "email-thread") {
+      navigate(`/admin?tab=email-foundation&recordType=email-thread&recordId=${item.sourceId}`);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -139,16 +238,17 @@ const UnifiedInboxManager = () => {
             Unified Inbox
           </p>
           <h2 className="text-3xl font-black uppercase tracking-tighter text-gray-900">
-            One Queue For Email And WhatsApp
+            One Queue For Email, WhatsApp, And Website Leads
           </h2>
           <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
-            Work email threads and WhatsApp lead conversations in one operator inbox, with follow-up copy and send actions ready from the same screen.
+            Work email threads, WhatsApp lead conversations, and website contact messages in one operator inbox, with follow-up copy and send actions ready from the same screen.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Badge variant="primary">{counts.total} Items</Badge>
           <Badge variant="secondary">{counts.email} Email</Badge>
           <Badge variant="accent">{counts.whatsapp} WhatsApp</Badge>
+          <Badge variant="secondary">{counts.website} Website</Badge>
         </div>
       </div>
 
@@ -225,6 +325,37 @@ const UnifiedInboxManager = () => {
 
                     <p className="text-sm leading-6 text-slate-600">{item.preview || "No preview available yet."}</p>
 
+                    {item.channel === "website" && (
+                      <div className="rounded-[24px] bg-slate-50 px-4 py-4">
+                        <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                          Website Lead
+                        </p>
+                        <p className="text-sm font-medium leading-6 text-slate-700">
+                          {item.sourceType === "chat-conversation"
+                            ? "Live website chat captured from the public AI assistant."
+                            : "Submitted from the public contact flow and waiting for operator follow-up."}
+                        </p>
+                      </div>
+                    )}
+
+                    {item.linkedChatConversation?.transcript?.length > 0 && (
+                      <div className="rounded-[24px] bg-white border border-slate-100 px-4 py-4">
+                        <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                          Recent Chat Transcript
+                        </p>
+                        <div className="space-y-2">
+                          {item.linkedChatConversation.transcript.slice(-3).map((entry, index) => (
+                            <p key={`${item.id}-transcript-${index}`} className="text-sm leading-6 text-slate-600">
+                              <span className="font-black text-slate-900">
+                                {entry.role === "user" ? "Visitor:" : "Assistant:"}
+                              </span>{" "}
+                              {entry.content}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {item.whatsappAutomation?.lastMessagePreview && (
                       <div className="rounded-[24px] bg-slate-50 px-4 py-4">
                         <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
@@ -254,6 +385,13 @@ const UnifiedInboxManager = () => {
                       </div>
                     )}
 
+                    {item.channel === "website" && (
+                      <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white">
+                        <FaGlobeAfrica />
+                        Website Lead
+                      </div>
+                    )}
+
                     {item.linkedInquiry?._id && (
                       <button
                         type="button"
@@ -264,6 +402,75 @@ const UnifiedInboxManager = () => {
                         <FaInbox />
                         {savingId === item.id ? "Saving..." : "Mark Contacted"}
                       </button>
+                    )}
+
+                    {(item.linkedInquiry?._id || item.linkedContactMessage?._id || item.sourceType === "email-thread") && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSourceRecord(item)}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-primary"
+                      >
+                        <FaInbox />
+                        Open Source Record
+                      </button>
+                    )}
+
+                    {(item.sourceType === "email-thread" || item.linkedContactMessage?._id || item.linkedChatConversation?.visitorEmail) && (
+                      <button
+                        type="button"
+                        onClick={() => handleReplyByEmail(item)}
+                        disabled={savingId === item.id}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-700 disabled:opacity-50"
+                      >
+                        <FaEnvelopeOpenText />
+                        {savingId === item.id ? "Syncing..." : "Reply By Email"}
+                      </button>
+                    )}
+
+                    {item.linkedContactMessage?._id && (
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateContactMessage(item, "Read")}
+                          disabled={savingId === item.id || item.status === "Read" || item.status === "Replied"}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white disabled:opacity-50"
+                        >
+                          <FaInbox />
+                          {savingId === item.id ? "Saving..." : "Mark Read"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateContactMessage(item, "Replied")}
+                          disabled={savingId === item.id || item.status === "Replied"}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-700 disabled:opacity-50"
+                        >
+                          <FaCopy />
+                          Mark Replied
+                        </button>
+                      </div>
+                    )}
+
+                    {item.linkedChatConversation?._id && (
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateChatConversation(item, "replied")}
+                          disabled={savingId === item.id || item.status === "replied" || item.status === "closed"}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white disabled:opacity-50"
+                        >
+                          <FaInbox />
+                          {savingId === item.id ? "Saving..." : "Mark Replied"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateChatConversation(item, "closed")}
+                          disabled={savingId === item.id || item.status === "closed"}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-700 disabled:opacity-50"
+                        >
+                          <FaCopy />
+                          Close Chat
+                        </button>
+                      </div>
                     )}
 
                     {item.channel === "whatsapp" && item.linkedInquiry?._id && (

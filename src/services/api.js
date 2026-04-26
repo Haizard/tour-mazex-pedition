@@ -303,6 +303,8 @@ export const runEmailConnectionSync = (connectionId) =>
 export const fetchEmailThreads = () => API.get("/email/threads");
 export const linkEmailThread = (threadId, data) =>
   API.post(`/email/threads/${threadId}/link`, data);
+export const updateEmailThread = (threadId, data) =>
+  API.patch(`/email/threads/${threadId}`, data);
 export const createEmailThread = (data) => API.post("/email/threads", data);
 export const fetchUnifiedInboxItems = () => API.get("/unified-inbox");
 export const fetchTenantBootstrap = () => cachedGet("/tenant/bootstrap");
@@ -527,6 +529,8 @@ export const updateSiteSettings = (data) => API.put("/site-settings", data);
 
 // Chat
 export const sendChatMessage = (data) => API.post("/chat", data);
+export const updateChatConversationStatus = (id, status) =>
+  API.patch(`/chat/conversations/${id}`, { status });
 
 // Media
 export const uploadMedia = (file, tenantId) => {

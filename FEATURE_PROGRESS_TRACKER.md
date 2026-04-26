@@ -8,13 +8,13 @@ Status legend:
 - `Partial`: some important parts exist, but the feature is not fully end-to-end or production-complete
 - `Not Started`: no meaningful implementation found yet
 
-Last audit date: `2026-04-25`
+Last audit date: `2026-04-26`
 
 ## Summary
 
 - Total roadmap features audited: `26`
-- Complete: `13`
-- Partial: `13`
+- Complete: `11`
+- Partial: `15`
 - Not Started: `0`
 
 ## Product Vision
@@ -94,11 +94,11 @@ The biggest missing revenue-critical areas are:
 
 ## Recommended Next Build Order
 
-1. Payment Automation
-2. Lead Scoring
+1. Unified Inbox completion
+2. Payment Automation
 3. Guide & Driver Management
-4. Unified Inbox completion
-5. Repeat Customer Automation
-8. Repeat Customer Automation
-9. Guide & Driver Management
-10. Accommodation Coordination
+4. Accommodation Coordination
+5. Airport Pickup Coordination
+6. AI Customer Support Chatbot
+7. Social Media Automation
+8. Partner Portal

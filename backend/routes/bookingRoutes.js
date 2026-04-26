@@ -5,7 +5,7 @@ import ReviewRequest from "../models/ReviewRequest.js";
 import TourPackage from '../models/TourPackage.js';
 import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
-import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
+import { buildTenantFilter, resolveTenantBaseUrl, withTenantId } from '../utils/tenantContext.js';
 import { buildRepeatCustomerAutomation } from "../utils/repeatCustomerAutomation.js";
 import { buildReviewRequestDraft } from "../utils/reviewAutomation.js";
 import TravelerFeedback from "../models/TravelerFeedback.js";
@@ -117,6 +117,7 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
         if (status === "Completed") {
             const tenant = await Tenant.findById(updatedBooking.tenantId).lean();
             const tenantName = tenant?.brandName || tenant?.name || "our team";
+            const baseUrl = resolveTenantBaseUrl(req);
 
             // 1. Reputation Guardian (Review Request)
             const existingFeedback = await TravelerFeedback.findOne({ bookingId: updatedBooking._id });
@@ -127,7 +128,10 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
                 });
                 await feedback.save();
 
-                const touchpoints = generateReviewSequence(updatedBooking, feedback.publicToken, { tenantName });
+                const touchpoints = generateReviewSequence(updatedBooking, feedback.publicToken, {
+                    tenantName,
+                    baseUrl,
+                });
 
                 const sequence = new LeadFollowUpSequence({
                     tenantId: updatedBooking.tenantId,
@@ -396,15 +400,20 @@ router.get("/public-feedback/:token", async (req, res) => {
 
 router.post("/public-feedback/:token", async (req, res) => {
     try {
-        const { rating, privateNote } = req.body;
+        const { rating, privateNote, publicReview } = req.body;
         const feedback = await TravelerFeedback.findOne({ publicToken: req.params.token });
         
         if (!feedback) {
             return res.status(404).json({ message: "Feedback link invalid" });
         }
 
+        if (feedback.status === "submitted") {
+            return res.status(400).json({ message: "Feedback already submitted" });
+        }
+
         feedback.rating = rating;
         feedback.privateNote = privateNote;
+        feedback.publicReview = typeof publicReview === "string" ? publicReview.trim() : "";
         feedback.status = "submitted";
         feedback.submittedAt = new Date();
         
@@ -434,9 +443,10 @@ router.get("/public-testimonials", async (req, res) => {
     try {
         const reviews = await TravelerFeedback.find(buildTenantFilter(req, {
             rating: { $gte: 4 },
-            status: "submitted"
+            status: "submitted",
+            publicReview: { $exists: true, $nin: ["", null] }
         }))
-        .select("rating privateNote submittedAt")
+        .select("rating publicReview submittedAt")
         .populate("bookingId", "name")
         .sort({ submittedAt: -1 })
         .limit(12)
