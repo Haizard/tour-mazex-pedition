@@ -342,8 +342,12 @@ export const generateFullTourPackage = (data) =>
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>
   cachedGet("/social-posts", { params });
+export const fetchSocialAutomationDashboard = () =>
+  cachedGet("/social-posts/dashboard");
 export const generateSocialPost = (data) =>
   API.post("/social-posts/generate", data);
+export const runScheduledSocialAutomation = () =>
+  API.post("/social-posts/run-scheduled");
 export const createSocialPost = (data) =>
   API.post("/social-posts", data);
 export const updateSocialPost = (id, data) =>

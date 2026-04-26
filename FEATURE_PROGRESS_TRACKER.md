@@ -42,7 +42,7 @@ An all-in-one SaaS platform that helps tour operators:
 | 5 | AI Tour Package Generator | Complete | AI-assisted tour package generation, itinerary/description support, and admin-side creation tools are implemented. |
 | 6 | Auto SEO Optimization | Complete | SEO metadata and generation flows exist for blogs, tours, and configurable pages. |
 | 7 | AI Customer Support Chatbot | Partial | AI chatbot exists and uses tenant tours/blogs context. It is useful now, but not yet a fully metered, deeply managed commercial support system. |
-| 8 | Social Media Automation | Partial | Social accounts, post drafts, scheduling, captions, hashtags, and live Meta publishing hooks exist. Full automation depth and broader channel coverage are not complete yet. |
+| 8 | Social Media Automation | Partial | Social accounts, AI-assisted post drafts, scheduling, captions, hashtags, live Meta publishing hooks, and a tenant-run scheduled-post automation queue now exist. Full automation depth, recurring queue orchestration, and broader channel coverage are not complete yet. |
 | 9 | Content Repurposing Engine | Complete | Blog repurposing into campaign/social/email-style output is implemented in the marketing workflow. |
 | 10 | WhatsApp Automation | Complete | Full automation suite implemented: Meta-compliant template support, automated multi-touch follow-up sequences via background processing, and AI-driven reply suggestions in the Unified Inbox. |
 | 11 | Unified Inbox | Partial | Tenant admins can now work email threads and WhatsApp lead conversations from one merged operator inbox with shared filtering and action controls. It still needs Instagram, Facebook, website chat, and deeper reply-sync coverage to become a fully universal inbox. |

@@ -109,6 +109,11 @@ const tenantSchema = new mongoose.Schema(
         default: "monthly",
       },
       manualOverride: { type: Boolean, default: true },
+      featureOverrides: {
+        type: Map,
+        of: Boolean,
+        default: {},
+      },
     },
     domainService: {
       type: domainServiceSchema,

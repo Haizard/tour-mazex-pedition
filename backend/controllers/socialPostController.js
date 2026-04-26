@@ -1,6 +1,11 @@
 import SocialPost from "../models/SocialPost.js";
 import TourPackage from "../models/TourPackage.js";
+import SocialAccount from "../models/SocialAccount.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import {
+  buildSocialAutomationDashboard,
+  publishSocialPostToPlatforms,
+} from "../utils/socialAutomation.js";
 import { generateSocialPostSuggestions } from "../utils/socialPostGeneration.js";
 
 const sanitizePlatforms = (platforms = []) =>
@@ -85,6 +90,23 @@ export const getSocialPosts = async (req, res) => {
       .lean();
 
     res.status(200).json(socialPosts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getSocialAutomationDashboard = async (req, res) => {
+  try {
+    const [socialPosts, socialAccounts] = await Promise.all([
+      SocialPost.find(buildTenantFilter(req))
+        .sort({ scheduledFor: 1, updatedAt: -1 })
+        .lean(),
+      SocialAccount.find(buildTenantFilter(req))
+        .sort({ createdAt: -1 })
+        .lean(),
+    ]);
+
+    res.status(200).json(buildSocialAutomationDashboard(socialPosts, socialAccounts));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -210,6 +232,73 @@ export const deleteSocialPost = async (req, res) => {
     }
 
     res.status(200).json({ message: "Social post deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const runScheduledSocialPosts = async (req, res) => {
+  try {
+    const now = new Date();
+    const duePosts = await SocialPost.find(
+      buildTenantFilter(req, {
+        status: "scheduled",
+        scheduledFor: { $lte: now },
+      })
+    ).sort({ scheduledFor: 1, createdAt: 1 });
+
+    if (duePosts.length === 0) {
+      return res.status(200).json({
+        processedCount: 0,
+        publishedCount: 0,
+        failedCount: 0,
+        results: [],
+      });
+    }
+
+    const metaAccount = await SocialAccount.findOne(
+      buildTenantFilter(req, { provider: "meta", status: "active" })
+    );
+
+    if (!metaAccount) {
+      return res.status(400).json({
+        message: "Connect an active Meta account before running the social automation queue.",
+      });
+    }
+
+    const results = [];
+
+    for (const socialPost of duePosts) {
+      try {
+        const publishResult = await publishSocialPostToPlatforms(socialPost, metaAccount);
+        socialPost.status = "published";
+        socialPost.publishResult = publishResult;
+        socialPost.lastError = "";
+        await socialPost.save();
+        results.push({
+          postId: socialPost._id,
+          title: socialPost.title,
+          status: "published",
+        });
+      } catch (error) {
+        socialPost.status = "failed";
+        socialPost.lastError = error.message;
+        await socialPost.save();
+        results.push({
+          postId: socialPost._id,
+          title: socialPost.title,
+          status: "failed",
+          error: error.message,
+        });
+      }
+    }
+
+    res.status(200).json({
+      processedCount: results.length,
+      publishedCount: results.filter((item) => item.status === "published").length,
+      failedCount: results.filter((item) => item.status === "failed").length,
+      results,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -32,6 +32,20 @@ const router = express.Router();
 
 router.use(requirePlatformAdmin);
 
+const normalizeFeatureOverrides = (value = {}) => {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  return Object.entries(value).reduce((accumulator, [key, enabled]) => {
+    if (typeof enabled === "boolean") {
+      accumulator[key] = enabled;
+    }
+
+    return accumulator;
+  }, {});
+};
+
 const getPlatformDomainTarget = () =>
   process.env.PLATFORM_DOMAIN_TARGET || "app.mazex-platform.example";
 
@@ -658,6 +672,9 @@ router.post("/tenants", async (req, res) => {
         currentPeriodEndsAt: req.body.subscription?.currentPeriodEndsAt || null,
         billingInterval: req.body.subscription?.billingInterval || "monthly",
         manualOverride: req.body.subscription?.manualOverride ?? true,
+        featureOverrides: normalizeFeatureOverrides(
+          req.body.subscription?.featureOverrides || {}
+        ),
       },
       domainService: {
         serviceStatus: req.body.domainService?.serviceStatus || "active",
@@ -816,6 +833,11 @@ router.put("/tenants/:tenantId", async (req, res) => {
       update.subscription = {
         ...(existingTenant.subscription || {}),
         ...req.body.subscription,
+        featureOverrides: normalizeFeatureOverrides(
+          req.body.subscription.featureOverrides ??
+            existingTenant.subscription?.featureOverrides ??
+            {}
+        ),
       };
     }
 

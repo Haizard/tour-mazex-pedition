@@ -2,11 +2,10 @@ import CustomInquiry from "../models/CustomInquiry.js";
 import SocialAccount from "../models/SocialAccount.js";
 import SocialPost from "../models/SocialPost.js";
 import {
-  publishFacebookPost,
-  publishInstagramPost,
   sendWhatsAppTextMessage,
   verifyMetaAccountConnection,
 } from "../utils/metaGraphApi.js";
+import { publishSocialPostToPlatforms } from "../utils/socialAutomation.js";
 import { buildWhatsAppAutomationSnapshot } from "../utils/unifiedInbox.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 
@@ -137,21 +136,7 @@ export const publishSocialPostLive = async (req, res) => {
       });
     }
 
-    const publishResult = {};
-
-    if (socialPost.platforms.includes("facebook")) {
-      publishResult.facebook = await publishFacebookPost(metaAccount, socialPost);
-    }
-
-    if (socialPost.platforms.includes("instagram")) {
-      if (!metaAccount.instagramBusinessAccountId) {
-        return res.status(400).json({
-          message: "Instagram publishing requires an Instagram Business Account ID.",
-        });
-      }
-
-      publishResult.instagram = await publishInstagramPost(metaAccount, socialPost);
-    }
+    const publishResult = await publishSocialPostToPlatforms(socialPost, metaAccount);
 
     socialPost.status = "published";
     socialPost.publishResult = publishResult;

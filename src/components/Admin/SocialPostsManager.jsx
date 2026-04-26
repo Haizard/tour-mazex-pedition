@@ -7,11 +7,13 @@ import Card from "../UI/Card";
 import {
   createSocialPost,
   deleteSocialPost,
+  fetchSocialAutomationDashboard,
   fetchSocialAccounts,
   fetchSocialPosts,
   fetchTours,
   generateSocialPost,
   publishSocialPostLive,
+  runScheduledSocialAutomation,
   updateSocialPost,
 } from "../../services/api";
 
@@ -67,12 +69,17 @@ const SocialPostsManager = () => {
   const [tours, setTours] = useState([]);
   const [posts, setPosts] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [automationSummary, setAutomationSummary] = useState({
+    stats: { totalPosts: 0, scheduledPosts: 0, dueNow: 0, publishedPosts: 0, activeAccounts: 0 },
+    duePosts: [],
+  });
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedTourId, setSelectedTourId] = useState("");
   const [editor, setEditor] = useState(createEmptyEditor());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [runningAutomation, setRunningAutomation] = useState(false);
   const [error, setError] = useState("");
 
   const loadData = useCallback(async (statusFilter = "all") => {
@@ -85,10 +92,17 @@ const SocialPostsManager = () => {
         fetchSocialPosts(statusFilter !== "all" ? { status: statusFilter } : {}),
         fetchSocialAccounts(),
       ]);
+      const automationResponse = await fetchSocialAutomationDashboard();
 
       setTours(Array.isArray(tourResponse.data) ? tourResponse.data : []);
       setPosts(Array.isArray(postResponse.data) ? postResponse.data : []);
       setAccounts(Array.isArray(accountResponse.data) ? accountResponse.data : []);
+      setAutomationSummary(
+        automationResponse.data || {
+          stats: { totalPosts: 0, scheduledPosts: 0, dueNow: 0, publishedPosts: 0, activeAccounts: 0 },
+          duePosts: [],
+        }
+      );
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load social publishing data.");
     } finally {
@@ -115,8 +129,9 @@ const SocialPostsManager = () => {
       scheduled: posts.filter((post) => post.status === "scheduled").length,
       drafts: posts.filter((post) => post.status === "draft").length,
       liveAccounts: accounts.filter((account) => account.status === "active").length,
+      dueNow: automationSummary.stats?.dueNow || 0,
     }),
-    [accounts, posts]
+    [accounts, automationSummary.stats, posts]
   );
 
   const filteredPosts = useMemo(
@@ -268,6 +283,23 @@ const SocialPostsManager = () => {
     }
   };
 
+  const handleRunAutomation = async () => {
+    setRunningAutomation(true);
+    setError("");
+
+    try {
+      await runScheduledSocialAutomation();
+      await loadData(selectedStatus);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to run the scheduled social automation queue."
+      );
+    } finally {
+      setRunningAutomation(false);
+    }
+  };
+
   const availableImages = useMemo(() => {
     if (!selectedTour) {
       return editor.imageUrls;
@@ -295,6 +327,7 @@ const SocialPostsManager = () => {
         <div className="flex flex-wrap gap-3">
           <Badge variant="primary">{stats.total} Posts</Badge>
           <Badge variant="secondary">{stats.scheduled} Scheduled</Badge>
+          <Badge variant="secondary">{stats.dueNow} Due Now</Badge>
           <Badge variant="accent">{stats.drafts} Drafts</Badge>
           <Badge variant="luxury">{stats.liveAccounts} Live Accounts</Badge>
         </div>
@@ -602,6 +635,55 @@ const SocialPostsManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="p-8 border-none shadow-xl">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">
+              Automation Queue
+            </p>
+            <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+              Scheduled Publishing
+            </h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Run due scheduled posts for this tenant and confirm the queue is processing correctly.
+            </p>
+          </div>
+          <Button type="button" onClick={handleRunAutomation} disabled={runningAutomation || stats.dueNow === 0}>
+            {runningAutomation ? "Running..." : "Run Queue Now"}
+          </Button>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {(automationSummary.duePosts || []).length === 0 && (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">
+              No scheduled posts are due right now.
+            </div>
+          )}
+
+          {(automationSummary.duePosts || []).map((post) => (
+            <div key={post._id} className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                    {post.title}
+                  </p>
+                  <p className="text-sm font-medium text-slate-500">
+                    Due {post.scheduledFor ? new Date(post.scheduledFor).toLocaleString() : "now"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(post.platforms || []).map((platform) => (
+                    <Badge key={`${post._id}-${platform}`} variant="secondary">
+                      {platform}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };

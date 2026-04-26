@@ -136,7 +136,8 @@ const createTenantFormState = (tenant) => ({
   ...Object.fromEntries(
     growthSuiteFeatures.map(([key]) => [
       `feature_${key}`,
-      tenant?.subscription?.featureOverrides?.[key] === true,
+      tenant?.subscription?.featureOverrides?.[key] === true ||
+        getSubscriptionPlanMeta(tenant?.subscription?.plan).features.includes(key),
     ])
   ),
   domainServiceStatus: tenant?.domainService?.serviceStatus || "active",
@@ -200,6 +201,23 @@ const PlatformAdminDashboard = () => {
     () => tenants.find((tenant) => tenant._id === selectedTenantId) || null,
     [selectedTenantId, tenants]
   );
+
+  const buildFeatureOverridesPayload = () => {
+    const selectedPlan = getSubscriptionPlanMeta(tenantForm.subscriptionPlan);
+
+    return Object.fromEntries(
+      growthSuiteFeatures.flatMap(([key]) => {
+        const enabled = Boolean(tenantForm[`feature_${key}`]);
+        const includedByPlan = selectedPlan.features.includes(key);
+
+        if (enabled === includedByPlan) {
+          return [];
+        }
+
+        return [[key, enabled]];
+      })
+    );
+  };
 
   const loadPlatformData = async (preferredTenantId = "") => {
     setLoading(true);
@@ -307,9 +325,7 @@ const PlatformAdminDashboard = () => {
           trialEndsAt: tenantForm.trialEndsAt || null,
           currentPeriodEndsAt: tenantForm.currentPeriodEndsAt || null,
           manualOverride: tenantForm.manualOverride,
-          featureOverrides: Object.fromEntries(
-            growthSuiteFeatures.map(([key]) => [key, Boolean(tenantForm[`feature_${key}`])])
-          ),
+          featureOverrides: buildFeatureOverridesPayload(),
         },
         domainService: {
           ...(selectedTenant.domainService || {}),
