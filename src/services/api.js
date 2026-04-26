@@ -375,6 +375,7 @@ export const createGuideDriver = (data) => API.post("/guide-drivers", data);
 export const updateGuideDriver = (id, data) => API.patch(`/guide-drivers/${id}`, data);
 export const deleteGuideDriver = (id) => API.delete(`/guide-drivers/${id}`);
 export const fetchAccommodationReservations = () => cachedGet("/accommodations");
+export const fetchAccommodationDashboard = () => cachedGet("/accommodations/dashboard");
 export const createAccommodationReservation = (data) => API.post("/accommodations", data);
 export const updateAccommodationReservation = (id, data) =>
   API.patch(`/accommodations/${id}`, data);

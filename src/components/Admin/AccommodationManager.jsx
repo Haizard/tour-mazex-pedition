@@ -4,6 +4,7 @@ import Badge from "../UI/Badge";
 import Button from "../UI/Button";
 import Card from "../UI/Card";
 import {
+  fetchAccommodationDashboard,
   createAccommodationReservation,
   deleteAccommodationReservation,
   fetchAccommodationReservations,
@@ -34,7 +35,9 @@ const statusTone = {
 
 const AccommodationManager = () => {
   const [reservations, setReservations] = useState([]);
+  const [coordinationBoard, setCoordinationBoard] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [stats, setStats] = useState({ total: 0, confirmed: 0, pending: 0, conflicts: 0 });
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,12 +53,15 @@ const AccommodationManager = () => {
     setLoading(true);
     setError("");
     try {
-      const [reservationResponse, bookingsResponse] = await Promise.all([
+      const [reservationResponse, dashboardResponse, bookingsResponse] = await Promise.all([
         fetchAccommodationReservations(),
+        fetchAccommodationDashboard(),
         fetchBookings(),
       ]);
 
       setReservations(Array.isArray(reservationResponse.data) ? reservationResponse.data : []);
+      setCoordinationBoard(Array.isArray(dashboardResponse.data?.board) ? dashboardResponse.data.board : []);
+      setStats(dashboardResponse.data?.stats || { total: 0, confirmed: 0, pending: 0, conflicts: 0 });
       setBookings(Array.isArray(bookingsResponse.data) ? bookingsResponse.data : []);
     } catch (requestError) {
       setError(
@@ -165,7 +171,12 @@ const AccommodationManager = () => {
             Manage hotel reservations, supplier contacts, room plans, and guest stays for each booking.
           </p>
         </div>
-        <Badge variant="accent">{reservations.length} Reservations</Badge>
+        <div className="flex flex-wrap gap-3">
+          <Badge variant="accent">{stats.total} Reservations</Badge>
+          <Badge variant="secondary">{stats.confirmed} Confirmed</Badge>
+          <Badge variant="secondary">{stats.pending} Pending</Badge>
+          <Badge variant="secondary">{stats.conflicts} Conflicts</Badge>
+        </div>
       </div>
 
       {error && (
@@ -333,6 +344,9 @@ const AccommodationManager = () => {
                         {reservation.destination && (
                           <Badge variant="secondary">{reservation.destination}</Badge>
                         )}
+                        {reservation.conflictCount > 0 && (
+                          <Badge variant="secondary">{reservation.conflictCount} Conflict{reservation.conflictCount > 1 ? "s" : ""}</Badge>
+                        )}
                       </div>
                       <p className="text-sm font-medium leading-6 text-slate-600">
                         {reservation.coordinationSummary?.summary ||
@@ -352,6 +366,16 @@ const AccommodationManager = () => {
                           <Badge variant="secondary">Ref {reservation.reservationCode}</Badge>
                         )}
                       </div>
+                      {reservation.conflictCount > 0 && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                          {reservation.conflicts.map((conflict) => conflict.summary).join(". ")}
+                        </div>
+                      )}
+                      {reservation.supplierMessageDraft && (
+                        <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+                          {reservation.supplierMessageDraft}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -376,6 +400,68 @@ const AccommodationManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+          Lodging Board
+        </h3>
+
+        <div className="space-y-4">
+          {coordinationBoard.length === 0 && (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">
+              No confirmed safari departures need lodging coordination yet.
+            </div>
+          )}
+
+          {coordinationBoard.map((item) => (
+            <div
+              key={item.bookingId}
+              className="rounded-[28px] border border-slate-200 bg-white px-5 py-5"
+            >
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                    {item.travelerName}
+                  </p>
+                  <p className="text-sm font-medium text-slate-600">{item.packageTour}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                    {item.travelDate ? new Date(item.travelDate).toLocaleDateString() : "Date pending"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={item.needsAccommodation ? "secondary" : "accent"}>
+                    {item.needsAccommodation ? "Needs Lodging" : `${item.reservations.length} Stay Plan${item.reservations.length > 1 ? "s" : ""}`}
+                  </Badge>
+                  {item.hasConflict && <Badge variant="secondary">Conflict</Badge>}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Confirmed Stays
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-700">
+                    {item.confirmedReservations.length > 0
+                      ? item.confirmedReservations.map((reservation) => reservation.hotelName).join(", ")
+                      : "No confirmed stays yet."}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Pending Follow-Up
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-700">
+                    {item.pendingReservations.length > 0
+                      ? item.pendingReservations.map((reservation) => reservation.hotelName).join(", ")
+                      : "No pending supplier follow-ups."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };

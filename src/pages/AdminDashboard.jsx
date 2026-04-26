@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
 import { FaSearch } from "react-icons/fa";
 
@@ -57,7 +57,7 @@ import {
   updateVisionary,
   deleteVisionary,
 } from "../services/api";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
@@ -103,10 +103,14 @@ const AdminDashboard = () => {
     fallbackName;
 
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const tabFromSearch = searchParams.get("tab") || "";
+  const recordTypeFromSearch = searchParams.get("recordType") || "";
+  const recordIdFromSearch = searchParams.get("recordId") || "";
   const { logout } = useAdminAuth();
   const { tenant } = useTenant();
-  const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "packages");
+  const [activeTab, setActiveTab] = useState(() => tabFromSearch || "packages");
   const [tours, setTours] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -140,27 +144,39 @@ const AdminDashboard = () => {
     navigate("/login");
   };
 
-  useEffect(() => {
-    const tabFromQuery = searchParams.get("tab");
-    if (tabFromQuery && tabFromQuery !== activeTab) {
-      setActiveTab(tabFromQuery);
+  const replaceAdminSearchParams = useCallback((mutateParams) => {
+    if (typeof window === "undefined") {
+      return;
     }
-  }, [activeTab, searchParams]);
+
+    const nextParams = new URLSearchParams(window.location.search);
+    mutateParams(nextParams);
+
+    const nextQuery = nextParams.toString();
+    const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash || ""}`;
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, []);
 
   useEffect(() => {
-    const nextParams = new URLSearchParams(searchParams);
-    if (nextParams.get("tab") !== activeTab) {
-      nextParams.set("tab", activeTab);
-      setSearchParams(nextParams, { replace: true });
+    if (tabFromSearch && tabFromSearch !== activeTab) {
+      setActiveTab(tabFromSearch);
     }
-  }, [activeTab, searchParams, setSearchParams]);
+  }, [activeTab, tabFromSearch]);
 
-  const clearFocusedRecord = () => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete("recordId");
-    nextParams.delete("recordType");
-    setSearchParams(nextParams, { replace: true });
-  };
+  useEffect(() => {
+    if (tabFromSearch !== activeTab) {
+      replaceAdminSearchParams((nextParams) => {
+        nextParams.set("tab", activeTab);
+      });
+    }
+  }, [activeTab, replaceAdminSearchParams, tabFromSearch]);
+
+  const clearFocusedRecord = useCallback(() => {
+    replaceAdminSearchParams((nextParams) => {
+      nextParams.delete("recordId");
+      nextParams.delete("recordType");
+    });
+  }, [replaceAdminSearchParams]);
 
   useEffect(() => {
     if (Object.prototype.hasOwnProperty.call(gatedTabAccess, activeTab) && gatedTabAccess[activeTab] === false) {
@@ -509,11 +525,12 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    const recordType = searchParams.get("recordType");
-    const recordId = searchParams.get("recordId");
-
-    if ((activeTab === "inquiries" || activeTab === "plan-my-trip") && recordType === "inquiry" && recordId) {
-      const inquiry = inquiries.find((item) => String(item._id) === recordId);
+    if (
+      (activeTab === "inquiries" || activeTab === "plan-my-trip") &&
+      recordTypeFromSearch === "inquiry" &&
+      recordIdFromSearch
+    ) {
+      const inquiry = inquiries.find((item) => String(item._id) === recordIdFromSearch);
       if (inquiry) {
         setSelectedInquiry(inquiry);
         fetchInquiryQuotes(inquiry._id)
@@ -525,19 +542,20 @@ const AdminDashboard = () => {
           });
       }
     }
-  }, [activeTab, inquiries, searchParams]);
+  }, [activeTab, inquiries, recordIdFromSearch, recordTypeFromSearch]);
 
   useEffect(() => {
-    const recordType = searchParams.get("recordType");
-    const recordId = searchParams.get("recordId");
-
-    if (activeTab === "contact-messages" && recordType === "contact" && recordId) {
-      const message = contactMessages.find((item) => String(item._id) === recordId);
+    if (
+      activeTab === "contact-messages" &&
+      recordTypeFromSearch === "contact" &&
+      recordIdFromSearch
+    ) {
+      const message = contactMessages.find((item) => String(item._id) === recordIdFromSearch);
       if (message) {
         setSelectedContactMessage(message);
       }
     }
-  }, [activeTab, contactMessages, searchParams]);
+  }, [activeTab, contactMessages, recordIdFromSearch, recordTypeFromSearch]);
   const loadMenuItems = async () => {
     try {
       const res = await fetchMenuItems();
