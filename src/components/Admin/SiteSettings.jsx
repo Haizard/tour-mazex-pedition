@@ -3,8 +3,11 @@ import { FaCog, FaImage, FaPalette } from "react-icons/fa";
 import Card from "../UI/Card";
 import Button from "../UI/Button";
 import Badge from "../UI/Badge";
-import { fetchSiteSettings, fetchTenantSiteConfig, updateSiteSettings, updateTenantSiteConfig, fetchTenantTheme, updateTenantTheme } from "../../services/api";
+import { fetchSiteSettings, fetchTenantSiteConfig, updateSiteSettings, updateTenantSiteConfig, fetchTenantTheme, updateTenantTheme, uploadMedia } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
+import MediaUploadField from "../UI/MediaUploadField";
+import { useAdminAuth } from "../../context/AdminAuthContext";
+
 
 const SiteSettings = () => {
   const { refreshTenant } = useTenant();
@@ -192,18 +195,18 @@ const SiteSettings = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
               <div className="md:col-span-2 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Logo URL</label>
-                  <input
-                    type="text"
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Logo (URL or Upload)</label>
+                  <MediaUploadField
                     value={settingsFormData.logoUrl}
-                    onChange={(e) => setSettingsFormData({...settingsFormData, logoUrl: e.target.value})}
-                    className="w-full bg-white p-4 rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-primary font-bold"
+                    onChange={(val) => setSettingsFormData({...settingsFormData, logoUrl: val})}
                     placeholder="https://your-domain.com/logo.png"
+                    id="site-logo"
                   />
                   <p className="text-[9px] text-slate-400 italic pl-1">
                     Pro tip: Use a high-quality PNG or JPEG. Our system will automatically blend it with the theme.
                   </p>
                 </div>
+
               </div>
               <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[120px]">
                 <p className="text-[8px] font-black uppercase text-slate-300 tracking-[0.2em] mb-3">Live Preview</p>
