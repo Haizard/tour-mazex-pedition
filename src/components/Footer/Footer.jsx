@@ -152,7 +152,7 @@ const Footer = () => {
               <img
                 src={settings?.logoUrl || FooterLogo}
                 alt={brandName || "Tenant logo"}
-                className="h-12 w-auto object-contain"
+                className="h-12 w-auto object-contain mix-blend-multiply brightness-110"
               />
             </Link>
           )}

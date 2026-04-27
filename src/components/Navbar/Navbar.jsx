@@ -284,7 +284,7 @@ const Navbar = ({ handleOrderPopup }) => {
               <img
                 src={settings?.logoUrl || Logo}
                 alt="Logo"
-                className="h-12 sm:h-14 md:h-20 w-auto object-contain transition-all duration-300"
+                className="h-12 sm:h-14 md:h-20 w-auto object-contain mix-blend-multiply brightness-110 transition-all duration-300"
               />
             ) : (
               <span className={`font-black uppercase tracking-widest ${isScrolled ? "text-[#2f2418]" : "text-white"}`}>
