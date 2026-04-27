@@ -130,17 +130,20 @@ export const getPlanDefinition = (planCode = "starter") =>
   PRICING_PLANS.find((plan) => plan.code === planCode) || PRICING_PLANS[0];
 
 export const canAccessFeature = (subscription = {}, featureKey = "") => {
-  const status = subscription.status || "inactive";
-
-  if (!["active", "trialing"].includes(status)) {
-    return false;
-  }
-
+  // Check explicit per-feature overrides FIRST. These are set by the platform
+  // admin and must take effect regardless of the subscription status. This is
+  // the whole point of the manualOverride / featureOverrides mechanism.
   if (
     subscription.featureOverrides &&
     Object.prototype.hasOwnProperty.call(subscription.featureOverrides, featureKey)
   ) {
     return Boolean(subscription.featureOverrides[featureKey]);
+  }
+
+  // Only allow plan-based access when the subscription is in a billable state.
+  const status = subscription.status || "inactive";
+  if (!["active", "trialing"].includes(status)) {
+    return false;
   }
 
   const plan = getPlanDefinition(subscription.plan);
