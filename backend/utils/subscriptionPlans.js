@@ -159,13 +159,17 @@ export const canAccessFeature = (subscription = {}, featureKey = "") => {
   // 3. For billing-governed subscriptions (manualOverride false), require an
   //    active payment state before unlocking plan features.
   const status = subscription.status || "inactive";
-  if (!["active", "trialing"].includes(status)) {
+  const isActive = ["active", "trialing"].includes(status);
+  
+  if (!isActive) {
     return false;
   }
 
   const plan = getPlanDefinition(subscription.plan);
   return plan.features.includes(featureKey);
 };
+
+
 
 
 export const getPlanLimit = (subscription = {}, limitKey = "") => {
