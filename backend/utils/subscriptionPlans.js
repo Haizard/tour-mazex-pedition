@@ -130,16 +130,13 @@ export const getPlanDefinition = (planCode = "starter") =>
   PRICING_PLANS.find((plan) => plan.code === planCode) || PRICING_PLANS[0];
 
 export const canAccessFeature = (subscription = {}, featureKey = "") => {
-  // Check explicit per-feature overrides FIRST. These are set by the platform
-  // admin and must take effect regardless of the subscription status. This is
-  // the whole point of the manualOverride / featureOverrides mechanism.
-  //
-  // featureOverrides can be a plain object (from .lean() queries) or a
-  // Mongoose Map (from hydrated documents). Handle both defensively.
+  // 1. Check explicit per-feature overrides first — these are set by the
+  //    platform admin and take priority over everything including plan and status.
+  //    Handle both plain objects (from .lean()) and Mongoose Map objects.
   const overrides = subscription.featureOverrides;
   if (overrides) {
-    // Mongoose Map — use .has() / .get()
     if (typeof overrides.has === "function") {
+      // Mongoose Map object
       if (overrides.has(featureKey)) {
         return Boolean(overrides.get(featureKey));
       }
@@ -149,7 +146,18 @@ export const canAccessFeature = (subscription = {}, featureKey = "") => {
     }
   }
 
-  // Only allow plan-based access when the subscription is in a billable state.
+  // 2. When the platform admin has manually assigned a plan (manualOverride is
+  //    true by default for all tenants), bypass the billing status gate and
+  //    grant access based purely on plan features. This is the correct semantic:
+  //    the admin has explicitly assigned the plan so the payment status is
+  //    irrelevant.
+  if (subscription.manualOverride) {
+    const plan = getPlanDefinition(subscription.plan);
+    return plan.features.includes(featureKey);
+  }
+
+  // 3. For billing-governed subscriptions (manualOverride false), require an
+  //    active payment state before unlocking plan features.
   const status = subscription.status || "inactive";
   if (!["active", "trialing"].includes(status)) {
     return false;
@@ -158,6 +166,7 @@ export const canAccessFeature = (subscription = {}, featureKey = "") => {
   const plan = getPlanDefinition(subscription.plan);
   return plan.features.includes(featureKey);
 };
+
 
 export const getPlanLimit = (subscription = {}, limitKey = "") => {
   const plan = getPlanDefinition(subscription.plan);
