@@ -27,6 +27,8 @@ import {
 import { legacyHomePage } from "../../pageBuilder/defaultPages";
 import { sectionRegistry } from "../../sections/registry/sectionRegistry";
 import { useAdminAuth } from "../../context/AdminAuthContext";
+import MediaUploadField from "../UI/MediaUploadField";
+
 
 const getSectionLabel = (type) =>
   sectionRegistry.metadata?.[type]?.label || type;
@@ -200,83 +202,20 @@ const parseFieldValue = (rawValue, field) => {
 
   return rawValue;
 };
-
-const getFieldClassName = (field) =>
+const getFieldClassName = (field) =>
   `${field.type === "textarea" || field.type === "stringList" ? TEXTAREA_CLASS : INPUT_CLASS} ${
     field.colSpan === 2 ? "md:col-span-2" : ""
   }`.trim();
 
-const MediaUploadField = ({ field, value, onChange, inputIdPrefix }) => {
-  const { admin } = useAdminAuth();
-  const [uploading, setUploading] = React.useState(false);
-  const fileInputRef = React.useRef(null);
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 15 * 1024 * 1024) {
-      alert("File is too large! Maximum allowed is 15MB for MongoDB storage.");
-      return;
-    }
-
-    setUploading(true);
-    try {
-      // Use tenantId from admin or default to maz-expeditions ID if not found
-      // (In production, the admin object will have this populated)
-      const tenantId = admin?.tenantId || "65de1234567890abcdef1234"; 
-      
-      const response = await uploadMedia(file, tenantId);
-      const mediaUrl = response.data.url;
-      onChange(mediaUrl);
-      alert("Successfully uploaded!");
-    } catch (error) {
-      console.error("Upload failed:", error);
-      alert(`Upload failed: ${error.response?.data?.message || error.message}`);
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
+const MediaUploadFieldWrapper = ({ field, value, onChange, inputIdPrefix }) => {
   return (
     <div className={`space-y-2 ${field.colSpan === 2 ? "md:col-span-2" : ""}`}>
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <input
-            id={`${inputIdPrefix}-${field.path}`}
-            type="text"
-            value={value || ""}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={field.placeholder || "Enter URL or upload a file"}
-            className={INPUT_CLASS}
-          />
-        </div>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept="video/mp4,image/*"
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className={`px-4 rounded-2xl flex items-center justify-center transition shadow-sm ${
-            uploading 
-              ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
-              : "bg-primary text-white hover:bg-primary/90"
-          }`}
-          title="Upload file to MongoDB"
-        >
-          {uploading ? (
-            <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
-          ) : (
-            <FaUpload className="text-lg" />
-          )}
-        </button>
-      </div>
+      <MediaUploadField
+        id={`${inputIdPrefix}-${field.path}`}
+        value={value}
+        onChange={onChange}
+        placeholder={field.placeholder}
+      />
       {value && (
         <div className="mt-2 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 h-24 flex items-center justify-center relative group">
           {typeof value === "string" && (value.endsWith(".mp4") || value.includes("/video")) ? (
@@ -304,7 +243,7 @@ const MediaUploadField = ({ field, value, onChange, inputIdPrefix }) => {
         </div>
       )}
       <p className="text-[9px] font-medium text-slate-400 pl-1">
-        Max size: 15MB. Best for background videos and images.
+        Max size: 4MB. Best for background videos and images.
       </p>
     </div>
   );
@@ -312,6 +251,7 @@ const MediaUploadField = ({ field, value, onChange, inputIdPrefix }) => {
 
 const SimpleEditorField = ({ field, value, onChange, inputIdPrefix }) => {
   if (field.type === "select") {
+
     return (
       <select
         id={`${inputIdPrefix}-${field.path}`}
@@ -335,7 +275,7 @@ const SimpleEditorField = ({ field, value, onChange, inputIdPrefix }) => {
 
   if (field.type === "media") {
     return (
-      <MediaUploadField
+      <MediaUploadFieldWrapper
         field={field}
         value={value}
         onChange={onChange}

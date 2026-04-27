@@ -15,10 +15,11 @@ const MediaUploadField = ({ value, onChange, placeholder, id, className = "" }) 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      alert("File is too large! Maximum allowed is 15MB for MongoDB storage.");
+    if (file.size > 4 * 1024 * 1024) {
+      alert("File is too large! Maximum allowed for logos is 4MB to ensure compatibility with all hosting providers.");
       return;
     }
+
 
     setUploading(true);
     try {
