@@ -133,11 +133,20 @@ export const canAccessFeature = (subscription = {}, featureKey = "") => {
   // Check explicit per-feature overrides FIRST. These are set by the platform
   // admin and must take effect regardless of the subscription status. This is
   // the whole point of the manualOverride / featureOverrides mechanism.
-  if (
-    subscription.featureOverrides &&
-    Object.prototype.hasOwnProperty.call(subscription.featureOverrides, featureKey)
-  ) {
-    return Boolean(subscription.featureOverrides[featureKey]);
+  //
+  // featureOverrides can be a plain object (from .lean() queries) or a
+  // Mongoose Map (from hydrated documents). Handle both defensively.
+  const overrides = subscription.featureOverrides;
+  if (overrides) {
+    // Mongoose Map — use .has() / .get()
+    if (typeof overrides.has === "function") {
+      if (overrides.has(featureKey)) {
+        return Boolean(overrides.get(featureKey));
+      }
+    } else if (Object.prototype.hasOwnProperty.call(overrides, featureKey)) {
+      // Plain JS object (from .lean())
+      return Boolean(overrides[featureKey]);
+    }
   }
 
   // Only allow plan-based access when the subscription is in a billable state.
