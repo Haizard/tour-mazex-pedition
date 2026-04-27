@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaCog } from "react-icons/fa";
+import { FaCog, FaImage, FaPalette } from "react-icons/fa";
 import Card from "../UI/Card";
 import Button from "../UI/Button";
 import Badge from "../UI/Badge";
@@ -183,12 +183,52 @@ const SiteSettings = () => {
       </div>
 
       <Card className="p-8 border-none shadow-2xl bg-white">
-        <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
-          <FaCog className="text-primary" />
-          Social Media & Links
-        </h3>
-
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-8">
+            <h4 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+              <FaImage className="text-primary" />
+              Branding & Logo
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+              <div className="md:col-span-2 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Logo URL</label>
+                  <input
+                    type="text"
+                    value={settingsFormData.logoUrl}
+                    onChange={(e) => setSettingsFormData({...settingsFormData, logoUrl: e.target.value})}
+                    className="w-full bg-white p-4 rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-primary font-bold"
+                    placeholder="https://your-domain.com/logo.png"
+                  />
+                  <p className="text-[9px] text-slate-400 italic pl-1">
+                    Pro tip: Use a high-quality PNG or JPEG. Our system will automatically blend it with the theme.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[120px]">
+                <p className="text-[8px] font-black uppercase text-slate-300 tracking-[0.2em] mb-3">Live Preview</p>
+                {settingsFormData.logoUrl ? (
+                  <img 
+                    src={settingsFormData.logoUrl} 
+                    alt="Logo Preview" 
+                    className="h-16 w-auto object-contain mix-blend-multiply"
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center text-slate-200">
+                    <FaImage size={24} />
+                    <span className="text-[9px] mt-2 font-bold italic">No Logo Set</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <h3 className="text-xl font-bold mb-4 italic flex items-center gap-3 pt-4">
+            <FaCog className="text-primary" />
+            Social Media & Links
+          </h3>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Facebook URL</label>
@@ -483,7 +523,7 @@ const SiteSettings = () => {
 
       <Card className="p-8 border-none shadow-2xl bg-white mt-8 mb-20">
         <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
-          <FaCog className="text-primary" />
+          <FaPalette className="text-primary" />
           Theme & Visual Identity
         </h3>
 
