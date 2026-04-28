@@ -52,7 +52,7 @@ const PaymentAutomationManager = () => {
     setError("");
     try {
       const [paymentResponse, bookingsResponse] = await Promise.all([
-        fetchPaymentTransactions(),
+        fetchPaymentTransactions({ source: "postgres" }),
         fetchBookings(),
       ]);
 

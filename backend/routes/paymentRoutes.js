@@ -19,6 +19,7 @@ import {
   syncPaymentRevenueRecord,
   syncQuoteRevenueRecord,
 } from "../utils/postgresRevenueRecords.js";
+import { fetchPrimaryPayments } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
 
@@ -280,6 +281,11 @@ router.use(requireSubscriptionFeature("payment-automation"));
 
 router.get("/", async (req, res) => {
   try {
+    if (String(req.query.source || "").toLowerCase() === "postgres") {
+      const payments = await fetchPrimaryPayments(String(req.tenantId || ""));
+      return res.status(200).json(payments);
+    }
+
     const payments = await PaymentTransaction.find(buildTenantFilter(req))
       .populate("bookingId", "name packageTour status revenueStage paymentStatus totalPrice")
       .sort({ createdAt: -1 })

@@ -39,7 +39,7 @@ const LeadInboxManager = () => {
     setError("");
 
     try {
-      const response = await fetchInquiries();
+      const response = await fetchInquiries({ source: "postgres" });
       setInquiries(Array.isArray(response.data) ? response.data : []);
     } catch (requestError) {
       setError(
@@ -490,7 +490,7 @@ const LeadInboxManager = () => {
                                     </span>
                                   </div>
                                   <p className="mt-1 text-[11px] font-medium leading-relaxed text-slate-500 line-clamp-1 italic">
-                                    "{tp.content}"
+                                    &quot;{tp.content}&quot;
                                   </p>
                                 </div>
                               </div>

@@ -9,6 +9,7 @@ import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
 import { generateQuoteProposal } from '../utils/quoteProposal.js';
 import { syncMongoDocumentToShadowStore } from '../utils/postgresShadowWrites.js';
+import { fetchPrimaryInquiries } from '../utils/postgresPrimaryReads.js';
 import { syncTravelerInquiryRecord } from '../utils/postgresTravelerInquiryRecords.js';
 import { syncQuoteRevenueRecord } from '../utils/postgresRevenueRecords.js';
 
@@ -64,6 +65,11 @@ const syncTravelerInquiryViews = async (inquiry = {}) => {
 // Get all inquiries (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
+        if (String(req.query.source || '').toLowerCase() === 'postgres') {
+            const inquiries = await fetchPrimaryInquiries(String(req.tenantId || ''));
+            return res.status(200).json(inquiries);
+        }
+
         const inquiries = await CustomInquiry.find(buildTenantFilter(req)).sort({ createdAt: -1 });
         const updates = [];
 

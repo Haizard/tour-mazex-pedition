@@ -395,7 +395,7 @@ export const fetchPartnerAccounts = () => cachedGet("/partners");
 export const createPartnerAccount = (data) => API.post("/partners", data);
 export const updatePartnerAccount = (id, data) => API.patch(`/partners/${id}`, data);
 export const deletePartnerAccount = (id) => API.delete(`/partners/${id}`);
-export const fetchPaymentTransactions = () => cachedGet("/payments");
+export const fetchPaymentTransactions = (params = {}) => cachedGet("/payments", { params });
 export const createPaymentTransaction = (data) => API.post("/payments", data);
 export const updatePaymentTransaction = (id, data) => API.patch(`/payments/${id}`, data);
 export const deletePaymentTransaction = (id) => API.delete(`/payments/${id}`);
@@ -489,7 +489,7 @@ export const deleteCampaign = (id) =>
   API.delete(`/marketing/campaigns/${id}`);
 
 // Custom Inquiries
-export const fetchInquiries = () => cachedGet("/custom-inquiries");
+export const fetchInquiries = (params = {}) => cachedGet("/custom-inquiries", { params });
 export const createInquiry = (data) => API.post("/custom-inquiries", data);
 export const createWhatsAppLead = (data) =>
   API.post("/custom-inquiries/whatsapp-lead", data);
