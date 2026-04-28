@@ -5,6 +5,7 @@ import Card from "../UI/Card";
 import {
   fetchBusinessTruthRegistry,
   fetchInfrastructureHealth,
+  fetchMediaRecordReadModel,
   fetchOperationsRecordReadModel,
   fetchPartnerRecordReadModel,
   fetchRevenueRecordReadModel,
@@ -22,6 +23,7 @@ const InfrastructureReadinessManager = () => {
   const [health, setHealth] = useState(null);
   const [operationsReadModel, setOperationsReadModel] = useState(null);
   const [partnerReadModel, setPartnerReadModel] = useState(null);
+  const [mediaReadModel, setMediaReadModel] = useState(null);
   const [revenueReadModel, setRevenueReadModel] = useState(null);
   const [travelerReadModel, setTravelerReadModel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +38,7 @@ const InfrastructureReadinessManager = () => {
         const [
           registryResponse,
           healthResponse,
+          mediaResponse,
           operationsResponse,
           partnerResponse,
           revenueResponse,
@@ -43,6 +46,7 @@ const InfrastructureReadinessManager = () => {
         ] = await Promise.all([
           fetchBusinessTruthRegistry(),
           fetchInfrastructureHealth(),
+          fetchMediaRecordReadModel(),
           fetchOperationsRecordReadModel(),
           fetchPartnerRecordReadModel(),
           fetchRevenueRecordReadModel(),
@@ -51,6 +55,7 @@ const InfrastructureReadinessManager = () => {
 
         setRegistry(registryResponse.data);
         setHealth(healthResponse.data);
+        setMediaReadModel(mediaResponse.data);
         setOperationsReadModel(operationsResponse.data);
         setPartnerReadModel(partnerResponse.data);
         setRevenueReadModel(revenueResponse.data);
@@ -68,6 +73,8 @@ const InfrastructureReadinessManager = () => {
   const services = health?.services || [];
   const entities = registry?.entities || [];
   const cutoverPlan = registry?.cutoverPlan || [];
+  const mediaSummary = mediaReadModel?.summary || [];
+  const recentMediaRecords = mediaReadModel?.recentRecords || [];
   const operationsSummary = operationsReadModel?.summary || [];
   const recentOperationsRecords = operationsReadModel?.recentRecords || [];
   const partnerSummary = partnerReadModel?.summary || [];
@@ -171,6 +178,90 @@ const InfrastructureReadinessManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
+              PostgreSQL Media Read Model
+            </h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Upload metadata and storage-provider distribution queried directly from the
+              PostgreSQL media asset table.
+            </p>
+          </div>
+          <Badge variant={mediaReadModel?.configured ? "accent" : "secondary"}>
+            {mediaReadModel?.configured ? "Live From PostgreSQL" : "Not Connected"}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {loading && <p className="text-sm font-medium text-slate-500">Loading media records...</p>}
+          {!loading &&
+            mediaSummary.map((item) => (
+              <div key={item.storageProvider} className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+                  {item.storageProvider}
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                  {item.totalRecords}
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-500">
+                  Bytes {item.totalBytes.toLocaleString()}
+                </p>
+              </div>
+            ))}
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+              Recent Media Records
+            </h4>
+            {mediaReadModel?.generatedAt && (
+              <p className="text-xs font-bold text-slate-400">
+                Snapshot {new Date(mediaReadModel.generatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {loading && <p className="text-sm font-medium text-slate-500">Loading recent media...</p>}
+          {!loading && recentMediaRecords.length === 0 && (
+            <p className="text-sm font-medium text-slate-500">
+              No PostgreSQL media records have been synced for this tenant yet.
+            </p>
+          )}
+          {!loading &&
+            recentMediaRecords.map((record) => (
+              <div
+                key={record.sourceId}
+                className="rounded-[24px] border border-slate-200 bg-white px-5 py-4"
+              >
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        {record.filename || record.sourceId}
+                      </p>
+                      <Badge variant="secondary">{record.storageProvider}</Badge>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      {record.contentType}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-sm font-black text-slate-900">
+                      {record.size.toLocaleString()} bytes
+                    </p>
+                    <p className="text-xs font-bold text-slate-400">
+                      {record.updatedAt ? new Date(record.updatedAt).toLocaleString() : "Unknown sync"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Card>
 
       <Card className="border-none p-8 shadow-xl">
         <div className="mb-6 flex items-center justify-between gap-3">
