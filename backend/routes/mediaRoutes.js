@@ -7,8 +7,24 @@ import {
   getObjectStorageStrategy,
   persistMediaAsset,
 } from "../utils/objectStorage.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncMediaAssetRecord } from "../utils/postgresMediaRecords.js";
 
 const router = express.Router();
+
+const syncMediaViews = async (media = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "media-assets",
+    document: media,
+    model: Media,
+  });
+
+  try {
+    await syncMediaAssetRecord(media);
+  } catch (error) {
+    console.error("Media asset record sync failed:", error.message);
+  }
+};
 
 // POST /api/media/upload
 router.post("/upload", async (req, res) => {
@@ -50,6 +66,7 @@ router.post("/upload", async (req, res) => {
     });
 
     await media.save();
+    await syncMediaViews(media.toObject());
 
     res.status(201).json({
       message: "Media uploaded successfully",
