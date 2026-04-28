@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildShadowEntitySnapshot,
   buildShadowUpsertStatement,
+  replayQueuedShadowWrites,
   syncShadowEntity,
 } from "../utils/postgresShadowWrites.js";
 
@@ -75,4 +76,52 @@ test("syncShadowEntity falls back to queueing when the shadow write fails", asyn
   assert.equal(result.enqueued, true);
   assert.equal(result.businessTruthPatch.migrationStatus, "pending");
   assert.equal(result.businessTruthPatch.lastShadowError.includes("ENOTFOUND"), true);
+});
+
+test("replayQueuedShadowWrites drains queued snapshots until empty", async () => {
+  const queued = [
+    { entityType: "bookings", sourceId: "one", tenantId: "tenant-1", canonicalId: "bookings:one", payload: {} },
+    { entityType: "quotes", sourceId: "two", tenantId: "tenant-1", canonicalId: "quotes:two", payload: {} },
+  ];
+  const replayed = [];
+
+  const result = await replayQueuedShadowWrites({
+    limit: 10,
+    dequeue: async () => queued.shift() || null,
+    enqueue: async () => true,
+    upsertShadow: async (snapshot) => {
+      replayed.push(snapshot.canonicalId);
+    },
+    env: {},
+  });
+
+  assert.equal(result.attempted, 2);
+  assert.equal(result.succeeded, 2);
+  assert.deepEqual(replayed, ["bookings:one", "quotes:two"]);
+  assert.equal(result.remaining, false);
+});
+
+test("replayQueuedShadowWrites reports remaining work when a replay fails", async () => {
+  const queued = [
+    { entityType: "bookings", sourceId: "one", tenantId: "tenant-1", canonicalId: "bookings:one", payload: {} },
+  ];
+  const requeued = [];
+
+  const result = await replayQueuedShadowWrites({
+    limit: 1,
+    env: {},
+    dequeue: async () => queued.shift() || null,
+    enqueue: async (snapshot) => {
+      requeued.push(snapshot.canonicalId);
+      return true;
+    },
+    upsertShadow: async () => {
+      throw new Error("temporary failure");
+    },
+  });
+
+  assert.equal(result.attempted, 1);
+  assert.equal(result.failed, 1);
+  assert.equal(result.remaining, true);
+  assert.deepEqual(requeued, ["bookings:one"]);
 });

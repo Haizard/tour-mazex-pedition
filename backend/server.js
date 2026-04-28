@@ -1,3 +1,4 @@
+/* global process */
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -57,6 +58,7 @@ import {
   getDatabaseHealth,
   registerMongooseListeners,
 } from "./utils/database.js";
+import { startShadowWriteReplayLoop } from "./utils/postgresShadowWrites.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -215,7 +217,8 @@ app.get("/", (_req, res) => {
   res.send("Tourism API is running...");
 });
 
-app.use((error, req, res, _next) => {
+app.use((error, req, res, next) => {
+  void next;
   console.error(`[Unhandled Error][${req.requestId || "unknown"}]`, error);
 
   if (res.headersSent) {
@@ -232,6 +235,8 @@ if (!isVercelRuntime) {
   connectDB().catch((error) => {
     console.error("Initial MongoDB connection failed:", error.message);
   });
+
+  startShadowWriteReplayLoop();
 
   app.listen(PORT, () => {
     console.log(`Server is listening on port: ${PORT}`);

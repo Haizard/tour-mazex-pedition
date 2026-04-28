@@ -104,6 +104,11 @@ router.post('/', async (req, res) => {
             followUpMessage: automation.followUpMessage,
         }));
         await newInquiry.save();
+        await syncMongoDocumentToShadowStore({
+            entityType: "travelers",
+            document: newInquiry.toObject(),
+            model: CustomInquiry,
+        });
         res.status(201).json({
             inquiry: newInquiry,
             automation,
@@ -159,6 +164,11 @@ router.post('/whatsapp-lead', async (req, res) => {
         }));
 
         await newInquiry.save();
+        await syncMongoDocumentToShadowStore({
+            entityType: "travelers",
+            document: newInquiry.toObject(),
+            model: CustomInquiry,
+        });
 
         res.status(201).json({
             inquiry: newInquiry,
@@ -260,6 +270,13 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
             nextFields,
             { new: true }
         );
+        if (updated) {
+            await syncMongoDocumentToShadowStore({
+                entityType: "travelers",
+                document: updated.toObject(),
+                model: CustomInquiry,
+            });
+        }
         res.status(200).json(updated);
     } catch (error) {
         res.status(500).json({ message: error.message });

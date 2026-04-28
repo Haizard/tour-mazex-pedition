@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const customInquirySchema = new mongoose.Schema({
     tenantId: {
@@ -64,7 +65,14 @@ const customInquirySchema = new mongoose.Schema({
         }
     },
     status: { type: String, enum: ['Pending', 'Contacted', 'Booked', 'Cancelled'], default: 'Pending' },
-    referralCode: { type: String, trim: true }
+    referralCode: { type: String, trim: true },
+    businessTruth: {
+        type: new mongoose.Schema(
+            createBusinessTruthMetadataSchemaDefinition({ entityKey: "travelers" }),
+            { _id: false }
+        ),
+        default: () => ({}),
+    },
 }, { timestamps: true });
 
 const CustomInquiry = mongoose.model('CustomInquiry', customInquirySchema);
