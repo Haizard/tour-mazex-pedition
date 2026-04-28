@@ -31,7 +31,7 @@ const quoteProposalSchema = new mongoose.Schema(
     currency: { type: String, trim: true, default: "USD" },
     status: {
       type: String,
-      enum: ["draft", "sent", "accepted", "expired"],
+      enum: ["draft", "sent", "accepted", "expired", "rejected"],
       default: "draft",
     },
     travelerCount: { type: Number, default: 1, min: 1 },
@@ -76,6 +76,26 @@ const quoteProposalSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null,
+    },
+    conversionStage: {
+      type: String,
+      enum: ["draft", "sent", "accepted", "converted", "expired", "rejected"],
+      default: "draft",
+      index: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["not-started", "pending", "paid", "failed", "cancelled", "refunded"],
+      default: "not-started",
+      index: true,
+    },
+    sentAt: { type: Date, default: null },
+    acceptedAt: { type: Date, default: null },
+    lastPaymentAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

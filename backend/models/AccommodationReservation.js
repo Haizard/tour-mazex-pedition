@@ -71,6 +71,10 @@ const accommodationReservationSchema = new mongoose.Schema(
       enum: ["pending", "confirmed", "cancelled"],
       default: "pending",
     },
+    lastSupplierMessageSharedAt: {
+      type: Date,
+      default: null,
+    },
     notes: {
       type: String,
       trim: true,

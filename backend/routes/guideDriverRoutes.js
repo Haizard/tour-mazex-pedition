@@ -4,6 +4,7 @@ import GuideDriver from "../models/GuideDriver.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import {
+  buildGuideDriverCalendarView,
   buildGuideDriverDispatchBoard,
   summarizeGuideDriverAssignment,
 } from "../utils/guideDriverPlanning.js";
@@ -103,11 +104,16 @@ router.get("/dashboard", async (req, res) => {
     const roster = team.map((member) => ({
       ...member,
       assignmentSummary: summarizeGuideDriverAssignment(member),
+      notificationReady: Boolean(member.availabilityStatus === "assigned" && member.assignedBookingId),
     }));
 
     res.status(200).json({
       team: roster,
       dispatchBoard: buildGuideDriverDispatchBoard(bookings, roster),
+      calendarView: buildGuideDriverCalendarView(roster),
+      needsAttention: roster.filter(
+        (member) => member.availabilityStatus === "assigned" && !member.lastDispatchSharedAt
+      ),
       stats: {
         total: roster.length,
         available: roster.filter((member) => member.availabilityStatus === "available").length,
@@ -138,6 +144,9 @@ router.post("/", async (req, res) => {
       assignmentEndDate: req.body.assignmentEndDate || null,
       assignmentNotes: req.body.assignmentNotes,
       licenseCategory: req.body.licenseCategory,
+      lastDispatchSharedAt: Object.prototype.hasOwnProperty.call(req.body, "lastDispatchSharedAt")
+        ? req.body.lastDispatchSharedAt || null
+        : undefined,
     });
 
     const normalizedPayload = await enrichAssignmentWindow(req, payload);
@@ -181,6 +190,9 @@ router.patch("/:id", async (req, res) => {
         : undefined,
       assignmentNotes: req.body.assignmentNotes,
       licenseCategory: req.body.licenseCategory,
+      lastDispatchSharedAt: Object.prototype.hasOwnProperty.call(req.body, "lastDispatchSharedAt")
+        ? req.body.lastDispatchSharedAt || null
+        : undefined,
     };
 
     Object.keys(updates).forEach((key) => {

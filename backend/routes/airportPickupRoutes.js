@@ -5,6 +5,7 @@ import GuideDriver from "../models/GuideDriver.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import {
+  buildAirportArrivalTimeline,
   buildAirportPickupDashboard,
   enrichAirportPickups,
   hasAirportPickupTimingConflict,
@@ -110,6 +111,13 @@ router.get("/dashboard", async (req, res) => {
     res.status(200).json({
       pickups: enrichedPickups,
       board: buildAirportPickupDashboard(bookings, enrichedPickups),
+      arrivalTimeline: buildAirportArrivalTimeline(enrichedPickups),
+      needsAttention: enrichedPickups.filter(
+        (pickup) =>
+          pickup.status !== "cancelled" &&
+          ((pickup.conflictCount || 0) > 0 ||
+            (pickup.status === "scheduled" && !pickup.lastDriverBriefSharedAt))
+      ),
       stats: {
         total: enrichedPickups.length,
         scheduled: enrichedPickups.filter((pickup) => pickup.status === "scheduled").length,
@@ -137,6 +145,9 @@ router.post("/", async (req, res) => {
       vehicleLabel: req.body.vehicleLabel,
       guestCount: req.body.guestCount,
       status: req.body.status,
+      lastDriverBriefSharedAt: Object.prototype.hasOwnProperty.call(req.body, "lastDriverBriefSharedAt")
+        ? req.body.lastDriverBriefSharedAt || null
+        : undefined,
       notes: req.body.notes,
     });
 
@@ -177,6 +188,9 @@ router.patch("/:id", async (req, res) => {
       vehicleLabel: req.body.vehicleLabel,
       guestCount: req.body.guestCount,
       status: req.body.status,
+      lastDriverBriefSharedAt: Object.prototype.hasOwnProperty.call(req.body, "lastDriverBriefSharedAt")
+        ? req.body.lastDriverBriefSharedAt || null
+        : undefined,
       notes: req.body.notes,
     };
 

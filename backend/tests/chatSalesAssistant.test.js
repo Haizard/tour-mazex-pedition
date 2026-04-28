@@ -30,6 +30,9 @@ test("buildSalesAssistantPayload recommends a matching package and qualification
   assert.equal(payload.quickActions.length > 0, true);
   assert.ok(payload.quickActions.some((action) => action.href === "/plan-my-trip"));
   assert.ok(payload.qualificationQuestion.length > 0);
+  assert.equal(payload.intent, "recommend-package");
+  assert.equal(payload.recommendedNextStep, "view-package");
+  assert.equal(payload.matchedTourId, "tour-1");
 });
 
 test("buildSalesAssistantPayload falls back to trip-planning CTA when no tour matches", () => {
@@ -40,4 +43,6 @@ test("buildSalesAssistantPayload falls back to trip-planning CTA when no tour ma
 
   assert.ok(payload.summary.includes("custom"));
   assert.equal(payload.quickActions[0].href, "/plan-my-trip");
+  assert.equal(payload.intent, "custom-trip");
+  assert.equal(payload.recommendedNextStep, "open-planner");
 });

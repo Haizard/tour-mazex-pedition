@@ -83,3 +83,27 @@ test("buildWhatsAppAutomationSnapshot increments counters and records delivery s
   assert.equal(snapshot.lastExternalMessageId, "wamid.abc123");
   assert.equal(snapshot.lastMessagePreview.includes("Hello from MAZ"), true);
 });
+
+test("buildUnifiedInboxItems exposes conversion metadata for operator workflows", () => {
+  const items = buildUnifiedInboxItems({
+    inquiries: [
+      {
+        _id: "inquiry-9",
+        name: "Lulu Traveler",
+        email: "lulu@example.com",
+        phone: "+255700000000",
+        contactPreference: "email",
+        status: "Contacted",
+        sourceChannel: "chatbot",
+        leadStage: "qualified",
+        updatedAt: "2026-04-23T09:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(items.length, 1);
+  assert.equal(items[0].leadSource, "chatbot");
+  assert.equal(items[0].conversionStage, "qualified");
+  assert.equal(items[0].canReply, true);
+  assert.equal(items[0].canEscalate, true);
+});

@@ -31,6 +31,10 @@ const normalizeEmailThreadItem = (thread = {}) => ({
     "",
   linkedInquiry: thread.linkedInquiry || null,
   linkedContactMessage: thread.linkedContactMessage || null,
+  leadSource: thread.linkedInquiry?.sourceChannel || "email",
+  conversionStage: thread.linkedInquiry?.leadStage || thread.status || "open",
+  canReply: true,
+  canEscalate: true,
   lastActivityAt: thread.lastMessageAt || thread.updatedAt || thread.createdAt || null,
 });
 
@@ -49,6 +53,10 @@ const normalizeInquiryItem = (inquiry = {}) => ({
   linkedInquiry: inquiry,
   linkedContactMessage: null,
   whatsappAutomation: inquiry.whatsappAutomation || null,
+  leadSource: inquiry.sourceChannel || inquiry.contactPreference || "website",
+  conversionStage: inquiry.leadStage || inquiry.status || "new",
+  canReply: Boolean(inquiry.phone || inquiry.email),
+  canEscalate: true,
   lastActivityAt:
     inquiry.whatsappAutomation?.lastMessageAt ||
     inquiry.updatedAt ||
@@ -69,6 +77,10 @@ const normalizeContactMessageItem = (message = {}) => ({
   linkedInquiry: null,
   linkedContactMessage: message,
   whatsappAutomation: null,
+  leadSource: "website",
+  conversionStage: message.status || "New",
+  canReply: Boolean(message.email || message.phone),
+  canEscalate: true,
   lastActivityAt: message.updatedAt || message.createdAt || null,
 });
 
@@ -89,6 +101,10 @@ const normalizeChatConversationItem = (conversation = {}) => ({
   linkedContactMessage: null,
   linkedChatConversation: conversation,
   whatsappAutomation: null,
+  leadSource: "website-chat",
+  conversionStage: conversation.status || "new",
+  canReply: Boolean(conversation.visitorEmail || conversation.visitorPhone),
+  canEscalate: true,
   lastActivityAt: conversation.lastActivityAt || conversation.updatedAt || conversation.createdAt || null,
 });
 

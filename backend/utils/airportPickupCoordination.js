@@ -223,3 +223,19 @@ export const buildAirportPickupDashboard = (bookings = [], pickups = []) =>
       };
     })
     .sort((left, right) => new Date(left.travelDate || 0).getTime() - new Date(right.travelDate || 0).getTime());
+
+export const buildAirportArrivalTimeline = (pickups = []) =>
+  (pickups || [])
+    .filter((pickup) => pickup.status !== "cancelled")
+    .map((pickup) => ({
+      pickupId: String(pickup._id),
+      guestName: pickup.guestName || "Guest",
+      airportCode: pickup.airportCode || "",
+      pickupDateTime: pickup.pickupDateTime || null,
+      status: pickup.status || "pending",
+      driverName: pickup.driverName || "",
+    }))
+    .sort(
+      (left, right) =>
+        new Date(left.pickupDateTime || 0).getTime() - new Date(right.pickupDateTime || 0).getTime()
+    );

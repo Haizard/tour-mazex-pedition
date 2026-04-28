@@ -38,6 +38,7 @@ const guideDriverSchema = new mongoose.Schema(
     assignmentEndDate: { type: Date, default: null },
     assignmentNotes: { type: String, default: "", trim: true },
     licenseCategory: { type: String, default: "", trim: true },
+    lastDispatchSharedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

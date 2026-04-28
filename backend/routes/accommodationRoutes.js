@@ -5,6 +5,7 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import {
   buildAccommodationDashboard,
+  buildAccommodationStayTimeline,
   enrichAccommodationReservations,
 } from "../utils/accommodationCoordination.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
@@ -100,6 +101,13 @@ router.get("/dashboard", async (req, res) => {
     res.status(200).json({
       reservations: enrichedReservations,
       board: buildAccommodationDashboard(bookings, enrichedReservations),
+      stayTimeline: buildAccommodationStayTimeline(enrichedReservations),
+      needsAttention: enrichedReservations.filter(
+        (reservation) =>
+          reservation.status !== "cancelled" &&
+          ((reservation.conflictCount || 0) > 0 ||
+            (reservation.status === "confirmed" && !reservation.lastSupplierMessageSharedAt))
+      ),
       stats: {
         total: enrichedReservations.length,
         confirmed: enrichedReservations.filter((reservation) => reservation.status === "confirmed").length,
@@ -128,6 +136,9 @@ router.post("/", async (req, res) => {
       checkOutDate: req.body.checkOutDate || null,
       guestCount: req.body.guestCount,
       status: req.body.status,
+      lastSupplierMessageSharedAt: Object.prototype.hasOwnProperty.call(req.body, "lastSupplierMessageSharedAt")
+        ? req.body.lastSupplierMessageSharedAt || null
+        : undefined,
       notes: req.body.notes,
     });
 
@@ -165,6 +176,9 @@ router.patch("/:id", async (req, res) => {
         : undefined,
       guestCount: req.body.guestCount,
       status: req.body.status,
+      lastSupplierMessageSharedAt: Object.prototype.hasOwnProperty.call(req.body, "lastSupplierMessageSharedAt")
+        ? req.body.lastSupplierMessageSharedAt || null
+        : undefined,
       notes: req.body.notes,
     };
 

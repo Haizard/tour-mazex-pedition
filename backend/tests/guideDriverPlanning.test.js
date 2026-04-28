@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildGuideDriverCalendarView,
   buildGuideDriverDispatchBoard,
   hasAssignmentWindowConflict,
   summarizeGuideDriverAssignment,
@@ -71,4 +72,23 @@ test("buildGuideDriverDispatchBoard highlights coverage gaps", () => {
   assert.equal(result.length, 1);
   assert.equal(result[0].needsGuide, false);
   assert.equal(result[0].needsDriver, true);
+});
+
+test("buildGuideDriverCalendarView groups assignments by day and staff type", () => {
+  const result = buildGuideDriverCalendarView([
+    {
+      _id: "guide-1",
+      fullName: "Moses Lemala",
+      staffType: "guide",
+      assignmentStartDate: "2026-08-14T00:00:00.000Z",
+      assignmentEndDate: "2026-08-16T00:00:00.000Z",
+      assignedTourTitle: "Northern Circuit Safari",
+      availabilityStatus: "assigned",
+    },
+  ]);
+
+  assert.equal(result.length, 3);
+  assert.equal(result[0].date, "2026-08-14");
+  assert.equal(result[0].assignments[0].staffType, "guide");
+  assert.equal(result[0].assignments[0].assignedTourTitle, "Northern Circuit Safari");
 });

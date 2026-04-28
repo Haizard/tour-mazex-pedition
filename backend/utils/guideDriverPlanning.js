@@ -90,3 +90,42 @@ export const buildGuideDriverDispatchBoard = (bookings = [], team = []) =>
       };
     })
     .sort((left, right) => new Date(left.travelDate || 0).getTime() - new Date(right.travelDate || 0).getTime());
+
+export const buildGuideDriverCalendarView = (team = []) => {
+  const rows = new Map();
+
+  (team || [])
+    .filter((member) => member.availabilityStatus === "assigned")
+    .forEach((member) => {
+      const start = toDate(member.assignmentStartDate || member.assignmentDate);
+      const end = toDate(member.assignmentEndDate || member.assignmentStartDate || member.assignmentDate);
+
+      if (!start || !end) {
+        return;
+      }
+
+      const cursor = new Date(start);
+      while (cursor <= end) {
+        const dateKey = cursor.toISOString().slice(0, 10);
+        const current = rows.get(dateKey) || [];
+        current.push({
+          memberId: member._id,
+          fullName: member.fullName,
+          staffType: member.staffType,
+          assignedTourTitle: member.assignedTourTitle || "",
+          assignedBookingId: member.assignedBookingId || null,
+        });
+        rows.set(dateKey, current);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+    });
+
+  return Array.from(rows.entries())
+    .map(([date, assignments]) => ({
+      date,
+      assignments: assignments.sort((left, right) =>
+        `${left.staffType}:${left.fullName}`.localeCompare(`${right.staffType}:${right.fullName}`)
+      ),
+    }))
+    .sort((left, right) => left.date.localeCompare(right.date));
+};

@@ -38,6 +38,8 @@ const availabilityTone = {
 const GuideDriverManager = () => {
   const [team, setTeam] = useState([]);
   const [dispatchBoard, setDispatchBoard] = useState([]);
+  const [calendarView, setCalendarView] = useState([]);
+  const [needsAttention, setNeedsAttention] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState({ total: 0, available: 0, assigned: 0, offDuty: 0 });
   const [form, setForm] = useState(initialForm);
@@ -78,6 +80,8 @@ const GuideDriverManager = () => {
       setDispatchBoard(
         Array.isArray(dashboardResponse.data?.dispatchBoard) ? dashboardResponse.data.dispatchBoard : []
       );
+      setCalendarView(Array.isArray(dashboardResponse.data?.calendarView) ? dashboardResponse.data.calendarView : []);
+      setNeedsAttention(Array.isArray(dashboardResponse.data?.needsAttention) ? dashboardResponse.data.needsAttention : []);
       setStats(dashboardResponse.data?.stats || { total: 0, available: 0, assigned: 0, offDuty: 0 });
       setBookings(Array.isArray(bookingsResponse.data) ? bookingsResponse.data : []);
     } catch (requestError) {
@@ -189,6 +193,7 @@ const GuideDriverManager = () => {
           <Badge variant="secondary">{stats.available} Available</Badge>
           <Badge variant="secondary">{stats.assigned} Assigned</Badge>
           <Badge variant="secondary">{stats.offDuty} Off Duty</Badge>
+          <Badge variant="secondary">{needsAttention.length} Need Dispatch</Badge>
         </div>
       </div>
 
@@ -492,6 +497,56 @@ const GuideDriverManager = () => {
           ))}
         </div>
       </Card>
+
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+        <Card className="p-8 border-none shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+            Assignment Calendar
+          </h3>
+          <div className="space-y-4">
+            {calendarView.length === 0 && (
+              <p className="text-sm font-medium text-slate-500">No assignment calendar entries yet.</p>
+            )}
+            {calendarView.map((day) => (
+              <div key={day.date} className="rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{day.date}</p>
+                <div className="mt-3 space-y-2">
+                  {day.assignments.map((assignment) => (
+                    <div key={`${day.date}-${assignment.memberId}`} className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                      <span className="font-black text-slate-900">{assignment.fullName}</span> · {assignment.staffType} · {assignment.assignedTourTitle || "Assignment"}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="p-8 border-none shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+            Dispatch Attention
+          </h3>
+          <div className="space-y-4">
+            {needsAttention.length === 0 && (
+              <p className="text-sm font-medium text-slate-500">No pending dispatch follow-up right now.</p>
+            )}
+            {needsAttention.map((member) => (
+              <div key={member._id} className="rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-5">
+                <p className="text-sm font-black uppercase tracking-wide text-slate-900">{member.fullName}</p>
+                <p className="mt-2 text-sm font-medium text-slate-700">
+                  {member.assignmentSummary?.summary}
+                </p>
+                <p className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Dispatch Draft
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-700">
+                  Share assignment notes, guest preferences, meeting point, and timing with this {member.staffType}.
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

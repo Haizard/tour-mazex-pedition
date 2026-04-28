@@ -25,6 +25,8 @@ const buildInquiryPayload = (body = {}, sourceChannel = 'website') => ({
     children6To15: Number(body.children6To15 || 0),
     duration: body.duration || (body.tripLengthDays ? `${body.tripLengthDays} days` : undefined),
     sourceChannel,
+    firstTouchAt: body.firstTouchAt || new Date(),
+    campaignLabel: body.campaignLabel || '',
     referralCode: body.referralCode || undefined,
 });
 
@@ -188,11 +190,15 @@ router.post('/public-quote/:token/respond', async (req, res) => {
     try {
         const { action, notes, reason } = req.body; // action: 'accept' | 'reject'
         
-        const status = action === 'accept' ? 'accepted' : 'draft'; // if rejected, stays draft or we can add 'rejected' status
         const update = {
-            status: action === 'accept' ? 'accepted' : 'draft',
+            status: action === 'accept' ? 'accepted' : 'rejected',
+            conversionStage: action === 'accept' ? 'accepted' : 'rejected',
             travelerNotes: notes || '',
         };
+
+        if (action === 'accept') {
+            update.acceptedAt = new Date();
+        }
 
         if (action === 'reject') {
             update.rejectionReason = reason || '';
@@ -206,6 +212,14 @@ router.post('/public-quote/:token/respond', async (req, res) => {
 
         if (!quote) {
             return res.status(404).json({ message: 'Quote not found.' });
+        }
+
+        if (quote?.inquiryId) {
+            await CustomInquiry.findByIdAndUpdate(quote.inquiryId, {
+                $set: {
+                    leadStage: action === 'accept' ? 'qualified' : 'follow-up',
+                }
+            });
         }
 
         res.status(200).json({
@@ -302,7 +316,7 @@ router.post('/:id/quotes/:quoteId/send', requireTenantAdmin, async (req, res) =>
     try {
         const quote = await QuoteProposal.findOneAndUpdate(
             buildTenantFilter(req, { _id: req.params.quoteId, inquiryId: req.params.id }),
-            { $set: { status: 'sent' } },
+            { $set: { status: 'sent', conversionStage: 'sent', sentAt: new Date() } },
             { new: true }
         ).lean();
 

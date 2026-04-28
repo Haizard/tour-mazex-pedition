@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildAccommodationConflictMap,
   buildAccommodationDashboard,
+  buildAccommodationStayTimeline,
   buildAccommodationSupplierMessage,
   summarizeAccommodationReservation,
 } from "../utils/accommodationCoordination.js";
@@ -88,4 +89,21 @@ test("buildAccommodationDashboard highlights bookings that still need lodging", 
 
   assert.equal(result.length, 1);
   assert.equal(result[0].needsAccommodation, true);
+});
+
+test("buildAccommodationStayTimeline expands reservations into nightly timeline rows", () => {
+  const result = buildAccommodationStayTimeline([
+    {
+      _id: "stay-1",
+      hotelName: "Serengeti Serena Lodge",
+      bookingGuestName: "Anna Safari",
+      checkInDate: "2026-07-10T00:00:00.000Z",
+      checkOutDate: "2026-07-12T00:00:00.000Z",
+      status: "confirmed",
+    },
+  ]);
+
+  assert.equal(result.length, 3);
+  assert.equal(result[0].date, "2026-07-10");
+  assert.equal(result[0].stays[0].hotelName, "Serengeti Serena Lodge");
 });

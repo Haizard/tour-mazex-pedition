@@ -48,6 +48,8 @@ export const buildSalesAssistantPayload = ({ message = "", tours = [] }) => {
     return {
       summary:
         "This sounds like a custom trip request, so the best next step is to shape it in the tailor-made planner.",
+      intent: "custom-trip",
+      recommendedNextStep: "open-planner",
       qualificationQuestion:
         "What travel month and budget range should we design around?",
       quickActions: [
@@ -61,6 +63,9 @@ export const buildSalesAssistantPayload = ({ message = "", tours = [] }) => {
 
   return {
     summary: `${bestMatch.title} looks like the strongest fit based on your request.`,
+    intent: "recommend-package",
+    recommendedNextStep: "view-package",
+    matchedTourId: bestMatch._id || "",
     qualificationQuestion:
       "How many travelers and what date window should we plan around?",
     quickActions: [

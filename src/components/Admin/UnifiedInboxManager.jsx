@@ -12,6 +12,7 @@ import {
   updateChatConversationStatus,
   updateContactMessageStatus,
   updateEmailThread,
+  updateInquiryLeadStage,
   updateInquiryStatus,
 } from "../../services/api";
 
@@ -28,7 +29,6 @@ const statusTone = {
   closed: "bg-slate-100 text-slate-600",
   archived: "bg-slate-100 text-slate-600",
   new: "bg-amber-50 text-amber-700",
-  open: "bg-emerald-50 text-emerald-700",
   replied: "bg-sky-50 text-sky-700",
 };
 
@@ -133,7 +133,10 @@ const UnifiedInboxManager = () => {
     setSavingId(item.id);
     setError("");
     try {
-      await updateInquiryStatus(item.linkedInquiry._id, "Contacted");
+      await Promise.all([
+        updateInquiryStatus(item.linkedInquiry._id, "Contacted"),
+        updateInquiryLeadStage(item.linkedInquiry._id, "follow-up"),
+      ]);
       await loadData();
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to update the inquiry status.");
@@ -321,6 +324,12 @@ const UnifiedInboxManager = () => {
                       <p>
                         <span className="font-black text-slate-900">Contact:</span> {item.contactAddress || "Not provided"}
                       </p>
+                      <p>
+                        <span className="font-black text-slate-900">Lead Source:</span> {item.leadSource || "unknown"}
+                      </p>
+                      <p>
+                        <span className="font-black text-slate-900">Stage:</span> {item.conversionStage || "new"}
+                      </p>
                     </div>
 
                     <p className="text-sm leading-6 text-slate-600">{item.preview || "No preview available yet."}</p>
@@ -419,7 +428,7 @@ const UnifiedInboxManager = () => {
                       <button
                         type="button"
                         onClick={() => handleReplyByEmail(item)}
-                        disabled={savingId === item.id}
+                        disabled={savingId === item.id || item.canReply === false}
                         className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-700 disabled:opacity-50"
                       >
                         <FaEnvelopeOpenText />
@@ -528,7 +537,7 @@ const UnifiedInboxManager = () => {
                     {aiSuggestions[item.id] && (
                       <div className="mt-2 rounded-2xl border border-primary/10 bg-primary/5 p-4 animate-in fade-in slide-in-from-top-1">
                         <p className="mb-2 text-[8px] font-black uppercase tracking-widest text-primary">AI Suggested Reply</p>
-                        <p className="text-[11px] font-medium leading-relaxed text-slate-700 italic">"{aiSuggestions[item.id]}"</p>
+                        <p className="text-[11px] font-medium leading-relaxed text-slate-700 italic">&quot;{aiSuggestions[item.id]}&quot;</p>
                         <button
                           onClick={() => {
                             // Logic to use this suggestion

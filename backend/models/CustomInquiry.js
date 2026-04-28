@@ -35,11 +35,14 @@ const customInquirySchema = new mongoose.Schema({
         enum: ['website', 'plan-my-trip', 'whatsapp-button', 'chatbot'],
         default: 'website'
     },
+    campaignLabel: { type: String, trim: true, default: '' },
+    firstTouchAt: { type: Date, default: Date.now },
     leadStage: {
         type: String,
         enum: ['new', 'qualified', 'follow-up', 'booked', 'closed'],
         default: 'new'
     },
+    convertedAt: { type: Date, default: null },
     leadScore: { type: Number, min: 0, max: 100, default: 0 },
     leadTemperature: {
         type: String,

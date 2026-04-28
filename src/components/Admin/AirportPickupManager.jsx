@@ -36,6 +36,8 @@ const statusTone = {
 const AirportPickupManager = () => {
   const [pickups, setPickups] = useState([]);
   const [dispatchBoard, setDispatchBoard] = useState([]);
+  const [arrivalTimeline, setArrivalTimeline] = useState([]);
+  const [needsAttention, setNeedsAttention] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [stats, setStats] = useState({ total: 0, scheduled: 0, pending: 0, conflicts: 0 });
@@ -68,6 +70,8 @@ const AirportPickupManager = () => {
 
       setPickups(Array.isArray(pickupResponse.data) ? pickupResponse.data : []);
       setDispatchBoard(Array.isArray(dashboardResponse.data?.board) ? dashboardResponse.data.board : []);
+      setArrivalTimeline(Array.isArray(dashboardResponse.data?.arrivalTimeline) ? dashboardResponse.data.arrivalTimeline : []);
+      setNeedsAttention(Array.isArray(dashboardResponse.data?.needsAttention) ? dashboardResponse.data.needsAttention : []);
       setStats(dashboardResponse.data?.stats || { total: 0, scheduled: 0, pending: 0, conflicts: 0 });
       setBookings(Array.isArray(bookingsResponse.data) ? bookingsResponse.data : []);
       setDrivers(
@@ -185,6 +189,7 @@ const AirportPickupManager = () => {
           <Badge variant="secondary">{stats.scheduled} Scheduled</Badge>
           <Badge variant="secondary">{stats.pending} Pending</Badge>
           <Badge variant="secondary">{stats.conflicts} Conflicts</Badge>
+          <Badge variant="secondary">{needsAttention.length} Need Briefing</Badge>
         </div>
       </div>
 
@@ -462,6 +467,50 @@ const AirportPickupManager = () => {
           ))}
         </div>
       </Card>
+
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+        <Card className="border-none p-8 shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+            Arrival Timeline
+          </h3>
+          <div className="space-y-4">
+            {arrivalTimeline.length === 0 && (
+              <p className="text-sm font-medium text-slate-500">No arrival timeline entries yet.</p>
+            )}
+            {arrivalTimeline.map((pickup) => (
+              <div key={pickup.pickupId} className="rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-5">
+                <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                  {pickup.guestName} · {pickup.airportCode}
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-700">
+                  {pickup.pickupDateTime ? new Date(pickup.pickupDateTime).toLocaleString() : "Pickup time pending"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="border-none p-8 shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+            Dispatch Attention
+          </h3>
+          <div className="space-y-4">
+            {needsAttention.length === 0 && (
+              <p className="text-sm font-medium text-slate-500">No dispatch follow-up items right now.</p>
+            )}
+            {needsAttention.map((pickup) => (
+              <div key={pickup._id} className="rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-5">
+                <p className="text-sm font-black uppercase tracking-wide text-slate-900">{pickup.guestName || "Guest Pickup"}</p>
+                <p className="mt-2 text-sm font-medium text-slate-700">{pickup.coordinationSummary?.summary}</p>
+                <p className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Driver Brief
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-700">{pickup.dispatchBrief}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -37,3 +37,17 @@ test("buildPublicPaymentCheckoutUrl creates tenant-facing checkout links", () =>
 
   assert.equal(result, "https://example.com/payment/abc123");
 });
+
+test("summarizePaymentTransaction highlights refunded collections", () => {
+  const result = summarizePaymentTransaction({
+    provider: "stripe",
+    amount: 900,
+    currency: "USD",
+    status: "refunded",
+    customerName: "Amina",
+  });
+
+  assert.equal(result.badgeLabel, "Refunded");
+  assert.equal(result.summary.includes("refunded"), true);
+  assert.equal(result.summary.includes("USD 900"), true);
+});

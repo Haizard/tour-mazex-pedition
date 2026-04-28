@@ -16,6 +16,17 @@ import { analyzeFeedbackSentiment, generateMonthlyImprovementReport } from "../u
 
 const router = express.Router();
 
+const buildBookingRevenueDefaults = (bookingData = {}) => ({
+    leadSource: bookingData.leadSource || bookingData.sourceChannel || "website",
+    campaignLabel: bookingData.campaignLabel || "",
+    firstTouchAt: bookingData.firstTouchAt || new Date(),
+    revenueStage: bookingData.revenueStage || "new",
+    paymentStatus: bookingData.paymentStatus || "not-started",
+    paymentRequired: Object.prototype.hasOwnProperty.call(bookingData, "paymentRequired")
+        ? Boolean(bookingData.paymentRequired)
+        : true,
+});
+
 // Get all bookings (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
@@ -91,6 +102,7 @@ router.post('/', async (req, res) => {
 
         const newBooking = new Booking(withTenantId(req, {
             ...bookingData,
+            ...buildBookingRevenueDefaults(bookingData),
             referralCode: bookingData.referralCode || undefined
         }));
         await newBooking.save();
@@ -104,9 +116,19 @@ router.post('/', async (req, res) => {
 router.patch('/:id', requireTenantAdmin, async (req, res) => {
     try {
         const { status } = req.body;
+        const bookingPatch = { status };
+        if (status === "Confirmed") {
+            bookingPatch.revenueStage = "awaiting-payment";
+        }
+        if (status === "Cancelled") {
+            bookingPatch.revenueStage = "cancelled";
+        }
+        if (status === "Completed") {
+            bookingPatch.revenueStage = "paid";
+        }
         const updatedBooking = await Booking.findOneAndUpdate(
             buildTenantFilter(req, { _id: req.params.id }),
-            { status },
+            { $set: bookingPatch },
             { new: true }
         );
         if (!updatedBooking) {

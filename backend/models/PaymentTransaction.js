@@ -58,7 +58,7 @@ const paymentTransactionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "paid", "failed", "cancelled"],
+      enum: ["pending", "paid", "failed", "cancelled", "refunded"],
       default: "pending",
       index: true,
     },
@@ -66,6 +66,30 @@ const paymentTransactionSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+    providerReference: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
+    },
+    failureReason: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    processedEventIds: {
+      type: [String],
+      default: [],
+    },
+    lastWebhookEventId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    lastWebhookAt: {
+      type: Date,
+      default: null,
     },
     paidAt: {
       type: Date,
@@ -76,6 +100,10 @@ const paymentTransactionSchema = new mongoose.Schema(
       default: null,
     },
     cancelledAt: {
+      type: Date,
+      default: null,
+    },
+    refundedAt: {
       type: Date,
       default: null,
     },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { IoSend, IoClose, IoChatbubbleEllipses } from "react-icons/io5";
 import { Link } from "react-router-dom";
 import { sendChatMessage } from "../../services/api";
@@ -159,6 +159,11 @@ const ChatBot = () => {
                       <p className="text-xs font-bold leading-5">
                         {msg.salesAssistant.summary}
                       </p>
+                      {msg.salesAssistant.recommendedNextStep && (
+                        <p className="text-[10px] font-black uppercase tracking-widest text-secondary">
+                          Recommended: {msg.salesAssistant.recommendedNextStep.replace(/-/g, " ")}
+                        </p>
+                      )}
                       <p className="text-xs leading-5 text-gray-600">
                         {msg.salesAssistant.qualificationQuestion}
                       </p>

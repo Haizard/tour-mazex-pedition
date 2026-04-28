@@ -36,6 +36,8 @@ const statusTone = {
 const AccommodationManager = () => {
   const [reservations, setReservations] = useState([]);
   const [coordinationBoard, setCoordinationBoard] = useState([]);
+  const [stayTimeline, setStayTimeline] = useState([]);
+  const [needsAttention, setNeedsAttention] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState({ total: 0, confirmed: 0, pending: 0, conflicts: 0 });
   const [form, setForm] = useState(initialForm);
@@ -61,6 +63,8 @@ const AccommodationManager = () => {
 
       setReservations(Array.isArray(reservationResponse.data) ? reservationResponse.data : []);
       setCoordinationBoard(Array.isArray(dashboardResponse.data?.board) ? dashboardResponse.data.board : []);
+      setStayTimeline(Array.isArray(dashboardResponse.data?.stayTimeline) ? dashboardResponse.data.stayTimeline : []);
+      setNeedsAttention(Array.isArray(dashboardResponse.data?.needsAttention) ? dashboardResponse.data.needsAttention : []);
       setStats(dashboardResponse.data?.stats || { total: 0, confirmed: 0, pending: 0, conflicts: 0 });
       setBookings(Array.isArray(bookingsResponse.data) ? bookingsResponse.data : []);
     } catch (requestError) {
@@ -176,6 +180,7 @@ const AccommodationManager = () => {
           <Badge variant="secondary">{stats.confirmed} Confirmed</Badge>
           <Badge variant="secondary">{stats.pending} Pending</Badge>
           <Badge variant="secondary">{stats.conflicts} Conflicts</Badge>
+          <Badge variant="secondary">{needsAttention.length} Need Action</Badge>
         </div>
       </div>
 
@@ -462,6 +467,52 @@ const AccommodationManager = () => {
           ))}
         </div>
       </Card>
+
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+        <Card className="border-none p-8 shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+            Stay Timeline
+          </h3>
+          <div className="space-y-4">
+            {stayTimeline.length === 0 && (
+              <p className="text-sm font-medium text-slate-500">No stay timeline entries yet.</p>
+            )}
+            {stayTimeline.map((day) => (
+              <div key={day.date} className="rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{day.date}</p>
+                <div className="mt-3 space-y-2">
+                  {day.stays.map((stay) => (
+                    <div key={`${day.date}-${stay.reservationId}`} className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                      <span className="font-black text-slate-900">{stay.bookingGuestName || "Guest"}</span> · {stay.hotelName}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="border-none p-8 shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
+            Supplier Attention
+          </h3>
+          <div className="space-y-4">
+            {needsAttention.length === 0 && (
+              <p className="text-sm font-medium text-slate-500">No supplier action items right now.</p>
+            )}
+            {needsAttention.map((reservation) => (
+              <div key={reservation._id} className="rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-5">
+                <p className="text-sm font-black uppercase tracking-wide text-slate-900">{reservation.hotelName}</p>
+                <p className="mt-2 text-sm font-medium text-slate-700">{reservation.coordinationSummary?.summary}</p>
+                <p className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Supplier Draft
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-700">{reservation.supplierMessageDraft}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

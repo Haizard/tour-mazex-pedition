@@ -18,7 +18,9 @@ const initialForm = {
   amount: "",
   currency: "USD",
   feePercent: "2.9",
+  providerReference: "",
   status: "pending",
+  failureReason: "",
   notes: "",
 };
 
@@ -27,6 +29,7 @@ const statusTone = {
   paid: "bg-emerald-50 text-emerald-700",
   failed: "bg-rose-50 text-rose-700",
   cancelled: "bg-slate-100 text-slate-600",
+  refunded: "bg-violet-50 text-violet-700",
 };
 
 const PaymentAutomationManager = () => {
@@ -102,13 +105,19 @@ const PaymentAutomationManager = () => {
 
   const handleEdit = (payment) => {
     setEditingId(payment._id);
+    const linkedBookingId =
+      payment.bookingId && typeof payment.bookingId === "object"
+        ? payment.bookingId._id
+        : payment.bookingId || "";
     setForm({
-      bookingId: payment.bookingId || "",
+      bookingId: linkedBookingId,
       provider: payment.provider || "stripe",
       amount: String(payment.amount || ""),
       currency: payment.currency || "USD",
       feePercent: String(payment.feePercent ?? "2.9"),
+      providerReference: payment.providerReference || "",
       status: payment.status || "pending",
+      failureReason: payment.failureReason || "",
       notes: payment.notes || "",
     });
   };
@@ -212,6 +221,7 @@ const PaymentAutomationManager = () => {
                 <option value="paid">Paid</option>
                 <option value="failed">Failed</option>
                 <option value="cancelled">Cancelled</option>
+                <option value="refunded">Refunded</option>
               </select>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
@@ -237,6 +247,26 @@ const PaymentAutomationManager = () => {
                 value={form.feePercent}
                 onChange={(event) => setForm((current) => ({ ...current, feePercent: event.target.value }))}
                 placeholder="Fee %"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <input
+                type="text"
+                value={form.providerReference}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, providerReference: event.target.value }))
+                }
+                placeholder="Provider reference / intent ID"
+                className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
+              />
+              <input
+                type="text"
+                value={form.failureReason}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, failureReason: event.target.value }))
+                }
+                placeholder="Failure or refund reason"
                 className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -295,8 +325,37 @@ const PaymentAutomationManager = () => {
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="secondary">{payment.currency} {payment.amount}</Badge>
                         <Badge variant="secondary">Fee {payment.feePercent}%</Badge>
+                        {payment.bookingId?.name && (
+                          <Badge variant="secondary">{payment.bookingId.name}</Badge>
+                        )}
+                        {payment.bookingId?.revenueStage && (
+                          <Badge variant="secondary">Revenue {payment.bookingId.revenueStage}</Badge>
+                        )}
+                        {payment.bookingId?.paymentStatus && (
+                          <Badge variant="secondary">Booking Pay {payment.bookingId.paymentStatus}</Badge>
+                        )}
                         {payment.checkoutUrl && <Badge variant="secondary">Checkout Ready</Badge>}
                       </div>
+                      {(payment.providerReference || payment.failureReason || payment.lifecycle?.paymentUpdatedAt) && (
+                        <div className="grid gap-2 text-xs font-bold text-slate-500 md:grid-cols-2">
+                          {payment.providerReference && (
+                            <p>
+                              <span className="text-slate-900">Provider Ref:</span> {payment.providerReference}
+                            </p>
+                          )}
+                          {payment.failureReason && (
+                            <p>
+                              <span className="text-slate-900">Reason:</span> {payment.failureReason}
+                            </p>
+                          )}
+                          {payment.lifecycle?.paymentUpdatedAt && (
+                            <p>
+                              <span className="text-slate-900">Updated:</span>{" "}
+                              {new Date(payment.lifecycle.paymentUpdatedAt).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      )}
                       {payment.checkoutUrl && (
                         <div className="flex flex-wrap gap-2 pt-1">
                           <button

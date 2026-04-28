@@ -7,26 +7,94 @@ import {
   buildPublicPaymentCheckoutUrl,
   summarizePaymentTransaction,
 } from "../utils/paymentAutomation.js";
+import {
+  buildPaymentStatusPatch,
+  shouldIgnoreWebhookEvent,
+} from "../utils/paymentWebhookState.js";
 import { buildTenantFilter, resolveTenantBaseUrl, withTenantId } from "../utils/tenantContext.js";
+import QuoteProposal from "../models/QuoteProposal.js";
 
 const router = express.Router();
 
-const applyPaymentStatusTimestamps = (current = {}, updates = {}) => {
-  const next = { ...updates };
+const toPaymentResponse = (payment = {}) => ({
+  ...payment,
+  paymentSummary: summarizePaymentTransaction(payment),
+  lifecycle: {
+    status: payment.status,
+    paidAt: payment.paidAt || null,
+    failedAt: payment.failedAt || null,
+    cancelledAt: payment.cancelledAt || null,
+    refundedAt: payment.refundedAt || null,
+    paymentUpdatedAt:
+      payment.refundedAt ||
+      payment.paidAt ||
+      payment.failedAt ||
+      payment.cancelledAt ||
+      payment.updatedAt ||
+      null,
+  },
+});
 
-  if (updates.status === "paid" && current.status !== "paid") {
-    next.paidAt = new Date();
+const buildBookingPaymentState = (payment = {}) => {
+  if (payment.status === "paid") {
+    return { paymentStatus: "paid", revenueStage: "paid", paymentRequired: false };
   }
 
-  if (updates.status === "failed" && current.status !== "failed") {
-    next.failedAt = new Date();
+  if (payment.status === "pending") {
+    return { paymentStatus: "pending", revenueStage: "awaiting-payment", paymentRequired: true };
   }
 
-  if (updates.status === "cancelled" && current.status !== "cancelled") {
-    next.cancelledAt = new Date();
+  if (payment.status === "failed") {
+    return { paymentStatus: "failed", revenueStage: "awaiting-payment", paymentRequired: true };
   }
 
-  return next;
+  if (payment.status === "cancelled") {
+    return { paymentStatus: "cancelled", revenueStage: "cancelled", paymentRequired: true };
+  }
+
+  if (payment.status === "refunded") {
+    return { paymentStatus: "refunded", revenueStage: "cancelled", paymentRequired: true };
+  }
+
+  return { paymentStatus: "not-started", revenueStage: "new", paymentRequired: true };
+};
+
+const syncLinkedRevenueRecords = async (req, payment = {}) => {
+  const paymentTimestamp =
+    payment.refundedAt ||
+    payment.paidAt ||
+    payment.failedAt ||
+    payment.cancelledAt ||
+    payment.updatedAt ||
+    new Date();
+
+  if (payment.bookingId) {
+    const bookingPatch = {
+      ...buildBookingPaymentState(payment),
+      paymentUpdatedAt: paymentTimestamp,
+      convertedAt: payment.status === "paid" ? paymentTimestamp : undefined,
+    };
+
+    Object.keys(bookingPatch).forEach((key) => bookingPatch[key] === undefined && delete bookingPatch[key]);
+
+    await Booking.findOneAndUpdate(
+      buildTenantFilter(req, { _id: payment.bookingId }),
+      { $set: bookingPatch }
+    );
+
+    const quotePatch = {
+      paymentStatus: payment.status || "pending",
+      lastPaymentAt: paymentTimestamp,
+    };
+    if (payment.status === "paid") {
+      quotePatch.conversionStage = "converted";
+    }
+
+    await QuoteProposal.updateMany(
+      buildTenantFilter(req, { bookingId: payment.bookingId }),
+      { $set: quotePatch }
+    );
+  }
 };
 
 router.get("/checkout/:token", async (req, res) => {
@@ -41,7 +109,7 @@ router.get("/checkout/:token", async (req, res) => {
 
     res.status(200).json({
       ...payment,
-      paymentSummary: summarizePaymentTransaction(payment),
+      ...toPaymentResponse(payment),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -51,7 +119,7 @@ router.get("/checkout/:token", async (req, res) => {
 router.post("/checkout/:token/respond", async (req, res) => {
   try {
     const requestedStatus = req.body.status;
-    const allowedStatuses = new Set(["paid", "failed", "cancelled"]);
+    const allowedStatuses = new Set(["paid", "failed", "cancelled", "refunded"]);
 
     if (!allowedStatuses.has(requestedStatus)) {
       return res.status(400).json({ message: "Unsupported payment response status." });
@@ -63,19 +131,93 @@ router.post("/checkout/:token/respond", async (req, res) => {
       return res.status(404).json({ message: "Payment link not found." });
     }
 
-    const updates = applyPaymentStatusTimestamps(payment.toObject(), {
-      status: requestedStatus,
+    const updates = buildPaymentStatusPatch({
+      current: payment.toObject(),
+      incomingStatus: requestedStatus,
+      occurredAt: req.body.occurredAt,
+      externalEventId: req.body.externalEventId,
+      failureReason: req.body.failureReason,
     });
 
     Object.assign(payment, updates);
     await payment.save();
+    await syncLinkedRevenueRecords(req, payment.toObject());
 
     res.status(200).json({
-      ...payment.toObject(),
-      paymentSummary: summarizePaymentTransaction(payment.toObject()),
+      ...toPaymentResponse(payment.toObject()),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/webhooks/:provider", async (req, res) => {
+  try {
+    const provider = (req.params.provider || "").toLowerCase();
+    if (!["stripe", "pesapal"].includes(provider)) {
+      return res.status(400).json({ message: "Unsupported payment provider." });
+    }
+
+    const {
+      publicToken = "",
+      providerReference = "",
+      status,
+      externalEventId = "",
+      occurredAt,
+      failureReason = "",
+    } = req.body || {};
+
+    if (!status) {
+      return res.status(400).json({ message: "Webhook status is required." });
+    }
+
+    if (!publicToken && !providerReference) {
+      return res.status(400).json({ message: "publicToken or providerReference is required." });
+    }
+
+    const payment = await PaymentTransaction.findOne({
+      provider,
+      $or: [
+        publicToken ? { publicToken } : null,
+        providerReference ? { providerReference } : null,
+      ].filter(Boolean),
+    });
+
+    if (!payment) {
+      return res.status(404).json({ message: "Payment transaction not found." });
+    }
+
+    if (
+      shouldIgnoreWebhookEvent({
+        currentStatus: payment.status,
+        incomingStatus: status,
+        externalEventId,
+        processedEventIds: payment.processedEventIds,
+      })
+    ) {
+      return res.status(200).json({ ignored: true });
+    }
+
+    const patch = buildPaymentStatusPatch({
+      current: payment.toObject(),
+      incomingStatus: status,
+      occurredAt,
+      externalEventId,
+      failureReason,
+    });
+
+    Object.assign(payment, patch, {
+      providerReference: providerReference || payment.providerReference || "",
+    });
+    await payment.save();
+    await syncLinkedRevenueRecords(req, payment.toObject());
+
+    return res.status(200).json({
+      ignored: false,
+      payment: toPaymentResponse(payment.toObject()),
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
 });
 
@@ -85,13 +227,13 @@ router.use(requireSubscriptionFeature("payment-automation"));
 router.get("/", async (req, res) => {
   try {
     const payments = await PaymentTransaction.find(buildTenantFilter(req))
+      .populate("bookingId", "name packageTour status revenueStage paymentStatus totalPrice")
       .sort({ createdAt: -1 })
       .lean();
 
     res.status(200).json(
       payments.map((payment) => ({
-        ...payment,
-        paymentSummary: summarizePaymentTransaction(payment),
+        ...toPaymentResponse(payment),
       }))
     );
   } catch (error) {
@@ -111,8 +253,10 @@ router.post("/", async (req, res) => {
       feeAmount: req.body.feeAmount,
       checkoutUrl: req.body.checkoutUrl,
       publicToken: req.body.publicToken,
+      providerReference: req.body.providerReference,
       status: req.body.status,
       notes: req.body.notes,
+      failureReason: req.body.failureReason,
     });
 
     if (payload.bookingId && !payload.customerName) {
@@ -124,17 +268,16 @@ router.post("/", async (req, res) => {
     const amount = Number(payload.amount || 0);
     const feePercent = Number(payload.feePercent || 0);
     payload.feeAmount = Number(payload.feeAmount || ((amount * feePercent) / 100).toFixed(2));
-    const baseUrl = resolveTenantBaseUrl(req);
-    payload.checkoutUrl =
-      payload.checkoutUrl ||
-      buildPublicPaymentCheckoutUrl(baseUrl, payload.publicToken);
-
     const payment = new PaymentTransaction(payload);
+    const baseUrl = resolveTenantBaseUrl(req);
+    payment.checkoutUrl =
+      payment.checkoutUrl ||
+      buildPublicPaymentCheckoutUrl(baseUrl, payment.publicToken);
     await payment.save();
+    await syncLinkedRevenueRecords(req, payment.toObject());
 
     res.status(201).json({
-      ...payment.toObject(),
-      paymentSummary: summarizePaymentTransaction(payment.toObject()),
+      ...toPaymentResponse(payment.toObject()),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -155,8 +298,10 @@ router.patch("/:id", async (req, res) => {
       feeAmount: req.body.feeAmount,
       checkoutUrl: req.body.checkoutUrl,
       publicToken: req.body.publicToken,
+      providerReference: req.body.providerReference,
       status: req.body.status,
       notes: req.body.notes,
+      failureReason: req.body.failureReason,
     };
 
     Object.keys(updates).forEach((key) => {
@@ -181,7 +326,19 @@ router.patch("/:id", async (req, res) => {
       return res.status(404).json({ message: "Payment transaction not found" });
     }
 
-    const nextUpdates = applyPaymentStatusTimestamps(paymentBeforeUpdate, updates);
+    const nextUpdates =
+      updates.status
+        ? {
+            ...updates,
+            ...buildPaymentStatusPatch({
+              current: paymentBeforeUpdate,
+              incomingStatus: updates.status,
+              occurredAt: req.body.occurredAt,
+              externalEventId: req.body.externalEventId,
+              failureReason: req.body.failureReason,
+            }),
+          }
+        : updates;
 
     if (
       (nextUpdates.checkoutUrl === undefined || nextUpdates.checkoutUrl === "") &&
@@ -198,10 +355,10 @@ router.patch("/:id", async (req, res) => {
       { $set: nextUpdates },
       { new: true }
     ).lean();
+    await syncLinkedRevenueRecords(req, payment);
 
     res.status(200).json({
-      ...payment,
-      paymentSummary: summarizePaymentTransaction(payment),
+      ...toPaymentResponse(payment),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

@@ -67,6 +67,10 @@ const airportPickupSchema = new mongoose.Schema(
       enum: ["pending", "scheduled", "completed", "cancelled"],
       default: "pending",
     },
+    lastDriverBriefSharedAt: {
+      type: Date,
+      default: null,
+    },
     notes: {
       type: String,
       trim: true,

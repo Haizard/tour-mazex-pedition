@@ -5,6 +5,7 @@ import {
   buildAirportPickupConflictMap,
   buildAirportPickupDashboard,
   buildAirportPickupDispatchNote,
+  buildAirportArrivalTimeline,
   summarizeAirportPickup,
 } from "../utils/airportPickupCoordination.js";
 
@@ -97,4 +98,27 @@ test("buildAirportPickupDashboard highlights bookings that still need transfers"
 
   assert.equal(result.length, 1);
   assert.equal(result[0].needsPickup, true);
+});
+
+test("buildAirportArrivalTimeline orders airport pickups by pickup time", () => {
+  const result = buildAirportArrivalTimeline([
+    {
+      _id: "pickup-1",
+      guestName: "Amina Joseph",
+      airportCode: "JRO",
+      pickupDateTime: "2026-09-14T09:30:00.000Z",
+      status: "scheduled",
+    },
+    {
+      _id: "pickup-2",
+      guestName: "David Mollel",
+      airportCode: "ARK",
+      pickupDateTime: "2026-09-14T07:30:00.000Z",
+      status: "pending",
+    },
+  ]);
+
+  assert.equal(result.length, 2);
+  assert.equal(result[0].pickupId, "pickup-2");
+  assert.equal(result[1].pickupId, "pickup-1");
 });

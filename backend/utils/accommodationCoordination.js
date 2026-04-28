@@ -198,3 +198,41 @@ export const buildAccommodationDashboard = (bookings = [], reservations = []) =>
       };
     })
     .sort((left, right) => new Date(left.travelDate || 0).getTime() - new Date(right.travelDate || 0).getTime());
+
+export const buildAccommodationStayTimeline = (reservations = []) => {
+  const rows = new Map();
+
+  (reservations || [])
+    .filter((reservation) => reservation.status !== "cancelled")
+    .forEach((reservation) => {
+      const start = toDate(reservation.checkInDate);
+      const end = toDate(reservation.checkOutDate || reservation.checkInDate);
+
+      if (!start || !end) {
+        return;
+      }
+
+      const cursor = new Date(start);
+      while (cursor <= end) {
+        const dateKey = cursor.toISOString().slice(0, 10);
+        const current = rows.get(dateKey) || [];
+        current.push({
+          reservationId: reservation._id,
+          hotelName: reservation.hotelName || "",
+          bookingGuestName: reservation.bookingGuestName || "",
+          status: reservation.status || "pending",
+        });
+        rows.set(dateKey, current);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+    });
+
+  return Array.from(rows.entries())
+    .map(([date, stays]) => ({
+      date,
+      stays: stays.sort((left, right) =>
+        `${left.hotelName}:${left.bookingGuestName}`.localeCompare(`${right.hotelName}:${right.bookingGuestName}`)
+      ),
+    }))
+    .sort((left, right) => left.date.localeCompare(right.date));
+};

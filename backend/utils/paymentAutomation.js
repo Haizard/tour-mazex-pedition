@@ -32,6 +32,13 @@ export const summarizePaymentTransaction = (transaction = {}) => {
     };
   }
 
+  if (transaction.status === "refunded") {
+    return {
+      badgeLabel: "Refunded",
+      summary: `${provider} payment of ${amountLabel} for ${customerName} was refunded.`,
+    };
+  }
+
   return {
     badgeLabel: "Pending",
     summary: `${customerName} has a pending ${provider} checkout for ${amountLabel}.`,
