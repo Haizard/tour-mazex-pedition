@@ -4,6 +4,7 @@ import Badge from "../UI/Badge";
 import Card from "../UI/Card";
 import {
   fetchBusinessTruthRegistry,
+  fetchCompetitorRecordReadModel,
   fetchInfrastructureHealth,
   fetchMediaRecordReadModel,
   fetchOperationsRecordReadModel,
@@ -21,6 +22,7 @@ const toneClasses = {
 const InfrastructureReadinessManager = () => {
   const [registry, setRegistry] = useState(null);
   const [health, setHealth] = useState(null);
+  const [competitorReadModel, setCompetitorReadModel] = useState(null);
   const [operationsReadModel, setOperationsReadModel] = useState(null);
   const [partnerReadModel, setPartnerReadModel] = useState(null);
   const [mediaReadModel, setMediaReadModel] = useState(null);
@@ -38,6 +40,7 @@ const InfrastructureReadinessManager = () => {
         const [
           registryResponse,
           healthResponse,
+          competitorResponse,
           mediaResponse,
           operationsResponse,
           partnerResponse,
@@ -46,6 +49,7 @@ const InfrastructureReadinessManager = () => {
         ] = await Promise.all([
           fetchBusinessTruthRegistry(),
           fetchInfrastructureHealth(),
+          fetchCompetitorRecordReadModel(),
           fetchMediaRecordReadModel(),
           fetchOperationsRecordReadModel(),
           fetchPartnerRecordReadModel(),
@@ -55,6 +59,7 @@ const InfrastructureReadinessManager = () => {
 
         setRegistry(registryResponse.data);
         setHealth(healthResponse.data);
+        setCompetitorReadModel(competitorResponse.data);
         setMediaReadModel(mediaResponse.data);
         setOperationsReadModel(operationsResponse.data);
         setPartnerReadModel(partnerResponse.data);
@@ -73,6 +78,8 @@ const InfrastructureReadinessManager = () => {
   const services = health?.services || [];
   const entities = registry?.entities || [];
   const cutoverPlan = registry?.cutoverPlan || [];
+  const competitorSummary = competitorReadModel?.summary || [];
+  const recentCompetitorRecords = competitorReadModel?.recentRecords || [];
   const mediaSummary = mediaReadModel?.summary || [];
   const recentMediaRecords = mediaReadModel?.recentRecords || [];
   const operationsSummary = operationsReadModel?.summary || [];
@@ -178,6 +185,90 @@ const InfrastructureReadinessManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
+              PostgreSQL Competitor Read Model
+            </h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Competitor pricing and market-watch intelligence now queried directly from the
+              PostgreSQL insight table.
+            </p>
+          </div>
+          <Badge variant={competitorReadModel?.configured ? "accent" : "secondary"}>
+            {competitorReadModel?.configured ? "Live From PostgreSQL" : "Not Connected"}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {loading && <p className="text-sm font-medium text-slate-500">Loading competitor records...</p>}
+          {!loading &&
+            competitorSummary.map((item) => (
+              <div key={item.status} className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+                  {item.status}
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                  {item.totalRecords}
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-500">
+                  Avg USD {item.averagePriceUsd.toLocaleString()}
+                </p>
+              </div>
+            ))}
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+              Recent Competitor Records
+            </h4>
+            {competitorReadModel?.generatedAt && (
+              <p className="text-xs font-bold text-slate-400">
+                Snapshot {new Date(competitorReadModel.generatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {loading && <p className="text-sm font-medium text-slate-500">Loading recent competitors...</p>}
+          {!loading && recentCompetitorRecords.length === 0 && (
+            <p className="text-sm font-medium text-slate-500">
+              No PostgreSQL competitor records have been synced for this tenant yet.
+            </p>
+          )}
+          {!loading &&
+            recentCompetitorRecords.map((record) => (
+              <div
+                key={record.sourceId}
+                className="rounded-[24px] border border-slate-200 bg-white px-5 py-4"
+              >
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        {record.competitorName || record.sourceId}
+                      </p>
+                      <Badge variant="secondary">{record.status}</Badge>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      {record.focusRoute || "No focus route set"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-sm font-black text-slate-900">
+                      USD {record.observedPriceUsd.toLocaleString()}
+                    </p>
+                    <p className="text-xs font-bold text-slate-400">
+                      {record.updatedAt ? new Date(record.updatedAt).toLocaleString() : "Unknown sync"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Card>
 
       <Card className="border-none p-8 shadow-xl">
         <div className="mb-6 flex items-center justify-between gap-3">

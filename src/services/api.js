@@ -416,6 +416,8 @@ export const fetchPartnerRecordReadModel = (params = {}) =>
   API.get("/infrastructure/partner-records", { params });
 export const fetchMediaRecordReadModel = (params = {}) =>
   API.get("/infrastructure/media-records", { params });
+export const fetchCompetitorRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/competitor-records", { params });
 export const fetchDistributionSummary = () => API.get("/distribution/summary");
 export const fetchDistributionBootstrap = (params = {}) =>
   API.get("/distribution/bootstrap", { params });
