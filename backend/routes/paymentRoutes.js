@@ -14,6 +14,11 @@ import {
 import { buildTenantFilter, resolveTenantBaseUrl, withTenantId } from "../utils/tenantContext.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import {
+  syncBookingRevenueRecord,
+  syncPaymentRevenueRecord,
+  syncQuoteRevenueRecord,
+} from "../utils/postgresRevenueRecords.js";
 
 const router = express.Router();
 
@@ -105,6 +110,12 @@ const syncRevenueShadowWrites = async (req, payment = {}) => {
     model: PaymentTransaction,
   });
 
+  try {
+    await syncPaymentRevenueRecord(payment);
+  } catch (error) {
+    console.error("Payment revenue record sync failed:", error.message);
+  }
+
   if (payment.bookingId) {
     const booking = await Booking.findOne(buildTenantFilter(req, { _id: payment.bookingId })).lean();
     if (booking) {
@@ -113,6 +124,12 @@ const syncRevenueShadowWrites = async (req, payment = {}) => {
         document: booking,
         model: Booking,
       });
+
+      try {
+        await syncBookingRevenueRecord(booking);
+      } catch (error) {
+        console.error("Booking revenue record sync failed:", error.message);
+      }
     }
 
     const quotes = await QuoteProposal.find(buildTenantFilter(req, { bookingId: payment.bookingId })).lean();
@@ -122,6 +139,12 @@ const syncRevenueShadowWrites = async (req, payment = {}) => {
         document: quote,
         model: QuoteProposal,
       });
+
+      try {
+        await syncQuoteRevenueRecord(quote);
+      } catch (error) {
+        console.error("Quote revenue record sync failed:", error.message);
+      }
     }
   }
 };

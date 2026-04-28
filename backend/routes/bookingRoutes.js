@@ -14,6 +14,7 @@ import Tenant from "../models/Tenant.js";
 import { generateReviewSequence } from "../utils/followUpSequencing.js";
 import { analyzeFeedbackSentiment, generateMonthlyImprovementReport } from "../utils/sentimentAnalysis.js";
 import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncBookingRevenueRecord } from "../utils/postgresRevenueRecords.js";
 
 const router = express.Router();
 
@@ -27,6 +28,20 @@ const buildBookingRevenueDefaults = (bookingData = {}) => ({
         ? Boolean(bookingData.paymentRequired)
         : true,
 });
+
+const syncBookingRevenueViews = async (booking = {}) => {
+    await syncMongoDocumentToShadowStore({
+        entityType: "bookings",
+        document: booking,
+        model: Booking,
+    });
+
+    try {
+        await syncBookingRevenueRecord(booking);
+    } catch (error) {
+        console.error("Booking revenue record sync failed:", error.message);
+    }
+};
 
 // Get all bookings (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
@@ -107,11 +122,7 @@ router.post('/', async (req, res) => {
             referralCode: bookingData.referralCode || undefined
         }));
         await newBooking.save();
-        await syncMongoDocumentToShadowStore({
-            entityType: "bookings",
-            document: newBooking.toObject(),
-            model: Booking,
-        });
+        await syncBookingRevenueViews(newBooking.toObject());
         res.status(201).json(newBooking);
     } catch (error) {
         res.status(409).json({ message: error.message });
@@ -141,11 +152,7 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        await syncMongoDocumentToShadowStore({
-            entityType: "bookings",
-            document: updatedBooking.toObject(),
-            model: Booking,
-        });
+        await syncBookingRevenueViews(updatedBooking.toObject());
 
         // Trigger Growth Suite: Reputation Guardian & Repeat Customer Automation
         if (status === "Completed") {

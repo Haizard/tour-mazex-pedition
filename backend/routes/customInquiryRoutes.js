@@ -9,6 +9,7 @@ import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
 import { generateQuoteProposal } from '../utils/quoteProposal.js';
 import { syncMongoDocumentToShadowStore } from '../utils/postgresShadowWrites.js';
+import { syncQuoteRevenueRecord } from '../utils/postgresRevenueRecords.js';
 
 const router = express.Router();
 
@@ -30,6 +31,20 @@ const buildInquiryPayload = (body = {}, sourceChannel = 'website') => ({
     campaignLabel: body.campaignLabel || '',
     referralCode: body.referralCode || undefined,
 });
+
+const syncQuoteRevenueViews = async (quote = {}) => {
+    await syncMongoDocumentToShadowStore({
+        entityType: "quotes",
+        document: quote,
+        model: QuoteProposal,
+    });
+
+    try {
+        await syncQuoteRevenueRecord(quote);
+    } catch (error) {
+        console.error("Quote revenue record sync failed:", error.message);
+    }
+};
 
 // Get all inquiries (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
@@ -233,11 +248,7 @@ router.post('/public-quote/:token/respond', async (req, res) => {
             });
         }
 
-        await syncMongoDocumentToShadowStore({
-            entityType: "quotes",
-            document: quote,
-            model: QuoteProposal,
-        });
+        await syncQuoteRevenueViews(quote);
 
         res.status(200).json({
             message: `Quote successfully ${action === 'accept' ? 'accepted' : 'feedback received'}.`,
@@ -329,11 +340,7 @@ router.post('/:id/generate-quote', requireTenantAdmin, async (req, res) => {
             })
         );
 
-        await syncMongoDocumentToShadowStore({
-            entityType: "quotes",
-            document: quote.toObject(),
-            model: QuoteProposal,
-        });
+        await syncQuoteRevenueViews(quote.toObject());
 
         res.status(201).json(quote);
     } catch (error) {
@@ -354,11 +361,7 @@ router.post('/:id/quotes/:quoteId/send', requireTenantAdmin, async (req, res) =>
             return res.status(404).json({ message: 'Quote not found.' });
         }
 
-        await syncMongoDocumentToShadowStore({
-            entityType: "quotes",
-            document: quote,
-            model: QuoteProposal,
-        });
+        await syncQuoteRevenueViews(quote);
 
         res.status(200).json({ message: 'Quote marked as sent to traveler.', quote });
     } catch (error) {
