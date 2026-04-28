@@ -5,6 +5,7 @@ import Card from "../UI/Card";
 import {
   fetchBusinessTruthRegistry,
   fetchInfrastructureHealth,
+  fetchRevenueRecordReadModel,
 } from "../../services/api";
 
 const toneClasses = {
@@ -16,6 +17,7 @@ const toneClasses = {
 const InfrastructureReadinessManager = () => {
   const [registry, setRegistry] = useState(null);
   const [health, setHealth] = useState(null);
+  const [revenueReadModel, setRevenueReadModel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -25,13 +27,15 @@ const InfrastructureReadinessManager = () => {
       setError("");
 
       try {
-        const [registryResponse, healthResponse] = await Promise.all([
+        const [registryResponse, healthResponse, revenueResponse] = await Promise.all([
           fetchBusinessTruthRegistry(),
           fetchInfrastructureHealth(),
+          fetchRevenueRecordReadModel(),
         ]);
 
         setRegistry(registryResponse.data);
         setHealth(healthResponse.data);
+        setRevenueReadModel(revenueResponse.data);
       } catch (requestError) {
         setError(requestError.response?.data?.message || "Unable to load data-platform readiness.");
       } finally {
@@ -45,6 +49,8 @@ const InfrastructureReadinessManager = () => {
   const services = health?.services || [];
   const entities = registry?.entities || [];
   const cutoverPlan = registry?.cutoverPlan || [];
+  const revenueSummary = revenueReadModel?.summary || [];
+  const recentRevenueRecords = revenueReadModel?.recentRecords || [];
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -140,6 +146,91 @@ const InfrastructureReadinessManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
+              PostgreSQL Revenue Read Model
+            </h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              These totals come directly from the dedicated PostgreSQL revenue tables, not the
+              original MongoDB collections.
+            </p>
+          </div>
+          <Badge variant={revenueReadModel?.configured ? "accent" : "secondary"}>
+            {revenueReadModel?.configured ? "Live From PostgreSQL" : "Not Connected"}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {loading && <p className="text-sm font-medium text-slate-500">Loading revenue records...</p>}
+          {!loading &&
+            revenueSummary.map((item) => (
+              <div key={item.recordType} className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+                  {item.recordType}
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                  {item.totalRecords}
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-500">
+                  Value {item.currency} {item.totalValue.toLocaleString()}
+                </p>
+              </div>
+            ))}
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+              Recent Synced Records
+            </h4>
+            {revenueReadModel?.generatedAt && (
+              <p className="text-xs font-bold text-slate-400">
+                Snapshot {new Date(revenueReadModel.generatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {loading && <p className="text-sm font-medium text-slate-500">Loading recent records...</p>}
+          {!loading && recentRevenueRecords.length === 0 && (
+            <p className="text-sm font-medium text-slate-500">
+              No PostgreSQL revenue records have been synced for this tenant yet.
+            </p>
+          )}
+          {!loading &&
+            recentRevenueRecords.map((record) => (
+              <div
+                key={`${record.recordType}-${record.sourceId}`}
+                className="rounded-[24px] border border-slate-200 bg-white px-5 py-4"
+              >
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{record.recordType}</Badge>
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        {record.label || record.sourceId}
+                      </p>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      {record.sourceId}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="accent">{record.stage}</Badge>
+                    <p className="text-sm font-black text-slate-900">
+                      {record.currency} {record.amount.toLocaleString()}
+                    </p>
+                    <p className="text-xs font-bold text-slate-400">
+                      {record.updatedAt ? new Date(record.updatedAt).toLocaleString() : "Unknown sync"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Card>
 
       <Card className="border-none p-8 shadow-xl">
         <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">

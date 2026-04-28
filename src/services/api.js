@@ -406,6 +406,8 @@ export const fetchDynamicPricingRules = () => cachedGet("/dynamic-pricing");
 export const fetchDynamicPricingDashboard = () => cachedGet("/dynamic-pricing/dashboard");
 export const fetchBusinessTruthRegistry = () => API.get("/infrastructure/business-truth");
 export const fetchInfrastructureHealth = () => API.get("/infrastructure/health");
+export const fetchRevenueRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/revenue-records", { params });
 export const fetchDistributionSummary = () => API.get("/distribution/summary");
 export const fetchDistributionBootstrap = (params = {}) =>
   API.get("/distribution/bootstrap", { params });
