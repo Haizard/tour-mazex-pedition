@@ -9,6 +9,7 @@ import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
 import { generateQuoteProposal } from '../utils/quoteProposal.js';
 import { syncMongoDocumentToShadowStore } from '../utils/postgresShadowWrites.js';
+import { syncTravelerInquiryRecord } from '../utils/postgresTravelerInquiryRecords.js';
 import { syncQuoteRevenueRecord } from '../utils/postgresRevenueRecords.js';
 
 const router = express.Router();
@@ -43,6 +44,20 @@ const syncQuoteRevenueViews = async (quote = {}) => {
         await syncQuoteRevenueRecord(quote);
     } catch (error) {
         console.error("Quote revenue record sync failed:", error.message);
+    }
+};
+
+const syncTravelerInquiryViews = async (inquiry = {}) => {
+    await syncMongoDocumentToShadowStore({
+        entityType: "travelers",
+        document: inquiry,
+        model: CustomInquiry,
+    });
+
+    try {
+        await syncTravelerInquiryRecord(inquiry);
+    } catch (error) {
+        console.error("Traveler inquiry record sync failed:", error.message);
     }
 };
 
@@ -119,11 +134,7 @@ router.post('/', async (req, res) => {
             followUpMessage: automation.followUpMessage,
         }));
         await newInquiry.save();
-        await syncMongoDocumentToShadowStore({
-            entityType: "travelers",
-            document: newInquiry.toObject(),
-            model: CustomInquiry,
-        });
+        await syncTravelerInquiryViews(newInquiry.toObject());
         res.status(201).json({
             inquiry: newInquiry,
             automation,
@@ -179,11 +190,7 @@ router.post('/whatsapp-lead', async (req, res) => {
         }));
 
         await newInquiry.save();
-        await syncMongoDocumentToShadowStore({
-            entityType: "travelers",
-            document: newInquiry.toObject(),
-            model: CustomInquiry,
-        });
+        await syncTravelerInquiryViews(newInquiry.toObject());
 
         res.status(201).json({
             inquiry: newInquiry,
@@ -282,11 +289,7 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
             { new: true }
         );
         if (updated) {
-            await syncMongoDocumentToShadowStore({
-                entityType: "travelers",
-                document: updated.toObject(),
-                model: CustomInquiry,
-            });
+            await syncTravelerInquiryViews(updated.toObject());
         }
         res.status(200).json(updated);
     } catch (error) {
