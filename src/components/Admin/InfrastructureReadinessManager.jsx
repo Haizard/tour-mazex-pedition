@@ -6,6 +6,7 @@ import {
   fetchBusinessTruthRegistry,
   fetchInfrastructureHealth,
   fetchRevenueRecordReadModel,
+  fetchTravelerRecordReadModel,
 } from "../../services/api";
 
 const toneClasses = {
@@ -18,6 +19,7 @@ const InfrastructureReadinessManager = () => {
   const [registry, setRegistry] = useState(null);
   const [health, setHealth] = useState(null);
   const [revenueReadModel, setRevenueReadModel] = useState(null);
+  const [travelerReadModel, setTravelerReadModel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -27,15 +29,17 @@ const InfrastructureReadinessManager = () => {
       setError("");
 
       try {
-        const [registryResponse, healthResponse, revenueResponse] = await Promise.all([
+        const [registryResponse, healthResponse, revenueResponse, travelerResponse] = await Promise.all([
           fetchBusinessTruthRegistry(),
           fetchInfrastructureHealth(),
           fetchRevenueRecordReadModel(),
+          fetchTravelerRecordReadModel(),
         ]);
 
         setRegistry(registryResponse.data);
         setHealth(healthResponse.data);
         setRevenueReadModel(revenueResponse.data);
+        setTravelerReadModel(travelerResponse.data);
       } catch (requestError) {
         setError(requestError.response?.data?.message || "Unable to load data-platform readiness.");
       } finally {
@@ -51,6 +55,8 @@ const InfrastructureReadinessManager = () => {
   const cutoverPlan = registry?.cutoverPlan || [];
   const revenueSummary = revenueReadModel?.summary || [];
   const recentRevenueRecords = revenueReadModel?.recentRecords || [];
+  const travelerSummary = travelerReadModel?.summary || [];
+  const recentTravelerRecords = travelerReadModel?.recentRecords || [];
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -221,6 +227,92 @@ const InfrastructureReadinessManager = () => {
                     <Badge variant="accent">{record.stage}</Badge>
                     <p className="text-sm font-black text-slate-900">
                       {record.currency} {record.amount.toLocaleString()}
+                    </p>
+                    <p className="text-xs font-bold text-slate-400">
+                      {record.updatedAt ? new Date(record.updatedAt).toLocaleString() : "Unknown sync"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Card>
+
+      <Card className="border-none p-8 shadow-xl">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
+              PostgreSQL Traveler Read Model
+            </h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Lead qualification and traveler-source truth coming directly from the dedicated
+              PostgreSQL inquiry table.
+            </p>
+          </div>
+          <Badge variant={travelerReadModel?.configured ? "accent" : "secondary"}>
+            {travelerReadModel?.configured ? "Live From PostgreSQL" : "Not Connected"}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {loading && <p className="text-sm font-medium text-slate-500">Loading traveler records...</p>}
+          {!loading &&
+            travelerSummary.map((item) => (
+              <div key={item.leadStage} className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+                  {item.leadStage}
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                  {item.totalRecords}
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-500">
+                  Avg lead score {item.averageLeadScore.toLocaleString()}
+                </p>
+              </div>
+            ))}
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+              Recent Traveler Records
+            </h4>
+            {travelerReadModel?.generatedAt && (
+              <p className="text-xs font-bold text-slate-400">
+                Snapshot {new Date(travelerReadModel.generatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {loading && <p className="text-sm font-medium text-slate-500">Loading recent travelers...</p>}
+          {!loading && recentTravelerRecords.length === 0 && (
+            <p className="text-sm font-medium text-slate-500">
+              No PostgreSQL traveler records have been synced for this tenant yet.
+            </p>
+          )}
+          {!loading &&
+            recentTravelerRecords.map((record) => (
+              <div
+                key={record.sourceId}
+                className="rounded-[24px] border border-slate-200 bg-white px-5 py-4"
+              >
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        {record.travelerName || record.sourceId}
+                      </p>
+                      <Badge variant="secondary">{record.leadStage}</Badge>
+                      <Badge variant="secondary">{record.status}</Badge>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      {record.sourceChannel} • {record.destinations.join(", ") || "No destination set"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="accent">{record.leadTemperature}</Badge>
+                    <p className="text-sm font-black text-slate-900">
+                      Score {record.leadScore}
                     </p>
                     <p className="text-xs font-bold text-slate-400">
                       {record.updatedAt ? new Date(record.updatedAt).toLocaleString() : "Unknown sync"}
