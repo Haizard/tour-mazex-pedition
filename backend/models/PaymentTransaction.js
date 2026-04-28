@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import crypto from "crypto";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const paymentTransactionSchema = new mongoose.Schema(
   {
@@ -106,6 +107,13 @@ const paymentTransactionSchema = new mongoose.Schema(
     refundedAt: {
       type: Date,
       default: null,
+    },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({ entityKey: "payments" }),
+        { _id: false }
+      ),
+      default: () => ({}),
     },
   },
   { timestamps: true }

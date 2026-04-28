@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./pages/Layout";
@@ -28,6 +29,7 @@ const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 const QuotePublicView = React.lazy(() => import("./pages/QuotePublicView"));
 const FeedbackPublicView = React.lazy(() => import("./pages/FeedbackPublicView"));
 const PaymentPublicView = React.lazy(() => import("./pages/PaymentPublicView"));
+const EmbeddedPlanMyTrip = React.lazy(() => import("./pages/EmbeddedPlanMyTrip"));
 
 const DashboardRouteFallback = ({ label }) => (
   <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
@@ -84,6 +86,7 @@ const tenantSiteRoutes = (
     <Route path="quote/:token" element={withPublicSuspense(<QuotePublicView />)} />
     <Route path="feedback/:token" element={withPublicSuspense(<FeedbackPublicView />)} />
     <Route path="payment/:token" element={withPublicSuspense(<PaymentPublicView />)} />
+    <Route path="embed/plan-my-trip" element={withPublicSuspense(<EmbeddedPlanMyTrip />)} />
   </>
 );
 

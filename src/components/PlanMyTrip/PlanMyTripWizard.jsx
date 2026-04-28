@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+/* eslint-disable react/prop-types */
+import { useMemo, useState } from "react";
 import { createInquiry } from "../../services/api";
 import {
   FaArrowLeft,
@@ -27,6 +28,17 @@ const initialFormData = {
   contactPreference: "whatsapp",
   referralCode: "",
 };
+
+const createInitialFormData = ({
+  defaultReferralCode = "",
+  defaultMessage = "",
+  defaultDestinations = [],
+} = {}) => ({
+  ...initialFormData,
+  referralCode: defaultReferralCode || "",
+  message: defaultMessage || "",
+  destinations: Array.isArray(defaultDestinations) ? defaultDestinations.filter(Boolean) : [],
+});
 
 const destinationOptions = [
   "Tanzania Safari",
@@ -143,10 +155,17 @@ const PlanMyTripWizard = ({
   onCancel,
   onSuccess,
   className = "",
+  sourceChannel = "plan-my-trip",
+  campaignLabel = "",
+  defaultReferralCode = "",
+  defaultMessage = "",
+  defaultDestinations = [],
 }) => {
   const [showForm, setShowForm] = useState(!showIntro);
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState(
+    createInitialFormData({ defaultReferralCode, defaultMessage, defaultDestinations })
+  );
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -202,22 +221,6 @@ const PlanMyTripWizard = ({
     if (currentStep === 3) {
       if (!formData.message.trim() || !formData.contactPreference) {
         return "Please share your trip notes and preferred contact method.";
-
-                  <div className="space-y-1">
-                    <label className="ml-1 text-[9px] md:text-[10px] font-black uppercase text-gray-400">
-                      Referral Code (Optional)
-                    </label>
-                    <input 
-                      type="text" 
-                      value={formData.referralCode} 
-                      onChange={(e) => setField("referralCode", e.target.value)} 
-                      placeholder="e.g. SR-A1B2C" 
-                      className="w-full rounded-xl md:rounded-2xl border bg-gray-50 p-3.5 md:p-4 text-sm font-bold outline-none focus:border-primary uppercase" 
-                    />
-                    <p className="ml-1 text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
-                      Have a code from a friend? Enter it here to unlock rewards.
-                    </p>
-                  </div>
       }
     }
 
@@ -260,11 +263,13 @@ const PlanMyTripWizard = ({
     try {
       const response = await createInquiry({
         ...payload,
-        sourceChannel: "plan-my-trip",
+        sourceChannel,
+        campaignLabel,
+        referralCode: formData.referralCode || defaultReferralCode || "",
       });
       setSuccessAutomation(response.data?.automation || null);
       setSuccess(true);
-      setFormData(initialFormData);
+      setFormData(createInitialFormData({ defaultReferralCode, defaultMessage, defaultDestinations }));
       setCurrentStep(0);
 
       if (onSuccess) {
@@ -526,6 +531,22 @@ const PlanMyTripWizard = ({
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="ml-1 text-[9px] md:text-[10px] font-black uppercase text-gray-400">
+                      Referral Code (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.referralCode}
+                      onChange={(e) => setField("referralCode", e.target.value.toUpperCase())}
+                      placeholder="e.g. PARTNER42"
+                      className="w-full rounded-xl md:rounded-2xl border bg-gray-50 p-3.5 md:p-4 text-sm font-bold uppercase outline-none focus:border-primary"
+                    />
+                    <p className="ml-1 text-[8px] font-bold uppercase tracking-tight text-slate-400">
+                      Use this when a partner, affiliate, or hosted campaign gave you a referral code.
+                    </p>
                   </div>
                 </div>
               )}

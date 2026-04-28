@@ -1,4 +1,6 @@
+import { Buffer } from "node:buffer";
 import mongoose from "mongoose";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const mediaSchema = new mongoose.Schema(
   {
@@ -18,15 +20,52 @@ const mediaSchema = new mongoose.Schema(
     },
     data: {
       type: Buffer,
-      required: true,
+      default: null,
     },
     size: {
       type: Number,
       required: true,
     },
+    storageProvider: {
+      type: String,
+      enum: ["mongo-inline", "s3-compatible"],
+      default: "mongo-inline",
+      index: true,
+    },
+    storageKey: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    storageBucket: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    storageEndpoint: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    publicUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     uploadedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "PlatformAdmin",
+    },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({
+          entityKey: "media-assets",
+          targetOwner: "s3-compatible",
+          migrationMode: "shadow-prep",
+        }),
+        { _id: false }
+      ),
+      default: () => ({}),
     },
   },
   { timestamps: true }

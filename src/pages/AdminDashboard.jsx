@@ -76,6 +76,8 @@ import AccommodationManager from "../components/Admin/AccommodationManager";
 import AirportPickupManager from "../components/Admin/AirportPickupManager";
 import PartnerPortalManager from "../components/Admin/PartnerPortalManager";
 import PaymentAutomationManager from "../components/Admin/PaymentAutomationManager";
+import InfrastructureReadinessManager from "../components/Admin/InfrastructureReadinessManager";
+import DistributionManager from "../components/Admin/DistributionManager";
 import DynamicPricingManager from "../components/Admin/DynamicPricingManager";
 import TravelerAssistanceManager from "../components/Admin/TravelerAssistanceManager";
 import CompetitorIntelligenceManager from "../components/Admin/CompetitorIntelligenceManager";
@@ -125,6 +127,7 @@ const AdminDashboard = () => {
   const gatedTabAccess = {
     "social-accounts": featureAccess.socialAccounts,
     "social-posts": featureAccess.socialPosts,
+    distribution: featureAccess.socialPosts || featureAccess.partnerPortal,
     "lead-inbox": featureAccess.leadInbox,
     "email-inbox": featureAccess.unifiedInbox,
     "email-foundation": featureAccess.unifiedInbox,
@@ -3718,8 +3721,10 @@ const AdminDashboard = () => {
           {activeTab === "airport-pickups" && <AirportPickupManager />}
 
           {activeTab === "partners" && <PartnerPortalManager />}
+          {activeTab === "distribution" && <DistributionManager />}
 
           {activeTab === "payments" && <PaymentAutomationManager />}
+          {activeTab === "data-platform" && <InfrastructureReadinessManager />}
 
           {activeTab === "dynamic-pricing" && <DynamicPricingManager />}
 

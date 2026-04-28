@@ -25,6 +25,7 @@ import partnerPortalRoutes from "./routes/partnerPortalRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import followUpRoutes from "./routes/followUpRoutes.js";
 import dynamicPricingRoutes from "./routes/dynamicPricingRoutes.js";
+import distributionRoutes from "./routes/distributionRoutes.js";
 import competitorIntelligenceRoutes from "./routes/competitorIntelligenceRoutes.js";
 import languageAssistantRoutes from "./routes/languageAssistantRoutes.js";
 import travelDocumentationRoutes from "./routes/travelDocumentationRoutes.js";
@@ -43,6 +44,7 @@ import tenantRoutes from "./routes/tenantRoutes.js";
 import tourRoutes from "./routes/tourRoutes.js";
 import visionaryRoutes from "./routes/visionaryRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
+import infrastructureRoutes from "./routes/infrastructureRoutes.js";
 import {
   applySecurityHeaders,
   attachRequestMetadata,
@@ -186,6 +188,7 @@ app.use("/api/partners", partnerPortalRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/follow-ups", followUpRoutes);
 app.use("/api/dynamic-pricing", dynamicPricingRoutes);
+app.use("/api/distribution", distributionRoutes);
 app.use("/api/competitor-intelligence", competitorIntelligenceRoutes);
 app.use("/api/language-assistants", languageAssistantRoutes);
 app.use("/api/travel-docs", travelDocumentationRoutes);
@@ -204,6 +207,7 @@ app.use("/api/site-settings", siteSettingsRoutes);
 app.use("/api/social-accounts", socialAccountRoutes);
 app.use("/api/social-posts", socialPostRoutes);
 app.use("/api/media", mediaRoutes);
+app.use("/api/infrastructure", infrastructureRoutes);
 
 app.use("/", seoRoutes);
 

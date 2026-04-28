@@ -1,6 +1,6 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useMemo, useState } from "react";
 import {
-  FaBars,
   FaBlog,
   FaBox,
   FaBullhorn,
@@ -12,6 +12,7 @@ import {
   FaEnvelopeOpenText,
   FaCreditCard,
   FaChartLine,
+  FaDatabase,
   FaGlobeAfrica,
   FaPassport,
   FaHotel,
@@ -54,6 +55,7 @@ const groupedMenuItems = [
     items: [
       { id: "social-accounts", label: "Channels", icon: <FaLink />, accessKey: "socialAccounts" },
       { id: "social-posts", label: "Social Posts", icon: <FaShareAlt />, accessKey: "socialPosts" },
+      { id: "distribution", label: "Distribution", icon: <FaRoute /> },
       { id: "repurposing", label: "Repurposing", icon: <FaRetweet />, accessKey: "repurposing" },
       { id: "campaigns", label: "Campaigns", icon: <FaBullhorn />, accessKey: "campaigns" },
       { id: "repeat-customers", label: "Repeat Customers", icon: <FaUsers />, accessKey: "repeatCustomerAutomation" },
@@ -97,6 +99,7 @@ const groupedMenuItems = [
     items: [
       { id: "payments", label: "Payments", icon: <FaCreditCard />, accessKey: "paymentAutomation" },
       { id: "dynamic-pricing", label: "Dynamic Pricing", icon: <FaChartLine />, accessKey: "dynamicPricingEngine" },
+      { id: "data-platform", label: "Data Platform", icon: <FaDatabase /> },
     ],
   },
   {

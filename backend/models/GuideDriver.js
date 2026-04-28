@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const guideDriverSchema = new mongoose.Schema(
   {
@@ -39,6 +40,13 @@ const guideDriverSchema = new mongoose.Schema(
     assignmentNotes: { type: String, default: "", trim: true },
     licenseCategory: { type: String, default: "", trim: true },
     lastDispatchSharedAt: { type: Date, default: null },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({ entityKey: "guide-driver-assignments" }),
+        { _id: false }
+      ),
+      default: () => ({}),
+    },
   },
   { timestamps: true }
 );

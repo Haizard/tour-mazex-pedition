@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const quoteLineItemSchema = new mongoose.Schema(
   {
@@ -96,6 +97,13 @@ const quoteProposalSchema = new mongoose.Schema(
     sentAt: { type: Date, default: null },
     acceptedAt: { type: Date, default: null },
     lastPaymentAt: { type: Date, default: null },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({ entityKey: "quotes" }),
+        { _id: false }
+      ),
+      default: () => ({}),
+    },
   },
   { timestamps: true }
 );

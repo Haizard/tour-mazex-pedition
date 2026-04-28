@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const airportPickupSchema = new mongoose.Schema(
   {
@@ -75,6 +76,13 @@ const airportPickupSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({ entityKey: "airport-pickups" }),
+        { _id: false }
+      ),
+      default: () => ({}),
     },
   },
   { timestamps: true }

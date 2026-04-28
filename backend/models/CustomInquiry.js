@@ -32,7 +32,7 @@ const customInquirySchema = new mongoose.Schema({
     message: { type: String, required: true },
     sourceChannel: {
         type: String,
-        enum: ['website', 'plan-my-trip', 'whatsapp-button', 'chatbot'],
+        enum: ['website', 'plan-my-trip', 'whatsapp-button', 'chatbot', 'hosted-social', 'embed-widget', 'partner-referral', 'api'],
         default: 'website'
     },
     campaignLabel: { type: String, trim: true, default: '' },

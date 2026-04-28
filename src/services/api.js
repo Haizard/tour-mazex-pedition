@@ -404,6 +404,11 @@ export const respondToPublicPaymentCheckout = (token, data) =>
   API.post(`/payments/checkout/${token}/respond`, data);
 export const fetchDynamicPricingRules = () => cachedGet("/dynamic-pricing");
 export const fetchDynamicPricingDashboard = () => cachedGet("/dynamic-pricing/dashboard");
+export const fetchBusinessTruthRegistry = () => API.get("/infrastructure/business-truth");
+export const fetchInfrastructureHealth = () => API.get("/infrastructure/health");
+export const fetchDistributionSummary = () => API.get("/distribution/summary");
+export const fetchDistributionBootstrap = (params = {}) =>
+  API.get("/distribution/bootstrap", { params });
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
 export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);

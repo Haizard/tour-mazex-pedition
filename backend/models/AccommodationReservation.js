@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const accommodationReservationSchema = new mongoose.Schema(
   {
@@ -79,6 +80,13 @@ const accommodationReservationSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({ entityKey: "accommodation-reservations" }),
+        { _id: false }
+      ),
+      default: () => ({}),
     },
   },
   { timestamps: true }
