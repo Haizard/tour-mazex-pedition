@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const partnerAccountSchema = new mongoose.Schema(
   {
@@ -64,6 +65,13 @@ const partnerAccountSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "active", "inactive"],
       default: "pending",
+    },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({ entityKey: "partner-contracts-and-attribution" }),
+        { _id: false }
+      ),
+      default: () => ({}),
     },
   },
   { timestamps: true }

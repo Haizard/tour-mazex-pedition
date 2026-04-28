@@ -4,11 +4,27 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { summarizePartnerAccount } from "../utils/partnerPortal.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncPartnerAccountRecord } from "../utils/postgresPartnerRecords.js";
 
 const router = express.Router();
 
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("partner-portal"));
+
+const syncPartnerViews = async (partner = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "partner-contracts-and-attribution",
+    document: partner,
+    model: PartnerAccount,
+  });
+
+  try {
+    await syncPartnerAccountRecord(partner);
+  } catch (error) {
+    console.error("Partner account record sync failed:", error.message);
+  }
+};
 
 router.get("/", async (req, res) => {
   try {
@@ -46,6 +62,7 @@ router.post("/", async (req, res) => {
     );
 
     await partner.save();
+    await syncPartnerViews(partner.toObject());
 
     res.status(201).json({
       ...partner.toObject(),
@@ -87,6 +104,7 @@ router.patch("/:id", async (req, res) => {
     if (!partner) {
       return res.status(404).json({ message: "Partner account not found" });
     }
+    await syncPartnerViews(partner);
 
     res.status(200).json({
       ...partner,
