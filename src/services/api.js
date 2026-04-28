@@ -418,6 +418,8 @@ export const fetchMediaRecordReadModel = (params = {}) =>
   API.get("/infrastructure/media-records", { params });
 export const fetchCompetitorRecordReadModel = (params = {}) =>
   API.get("/infrastructure/competitor-records", { params });
+export const fetchAssistantRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/assistant-records", { params });
 export const fetchDistributionSummary = () => API.get("/distribution/summary");
 export const fetchDistributionBootstrap = (params = {}) =>
   API.get("/distribution/bootstrap", { params });

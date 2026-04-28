@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Badge from "../UI/Badge";
 import Card from "../UI/Card";
 import {
+  fetchAssistantRecordReadModel,
   fetchBusinessTruthRegistry,
   fetchCompetitorRecordReadModel,
   fetchInfrastructureHealth,
@@ -22,6 +23,7 @@ const toneClasses = {
 const InfrastructureReadinessManager = () => {
   const [registry, setRegistry] = useState(null);
   const [health, setHealth] = useState(null);
+  const [assistantReadModel, setAssistantReadModel] = useState(null);
   const [competitorReadModel, setCompetitorReadModel] = useState(null);
   const [operationsReadModel, setOperationsReadModel] = useState(null);
   const [partnerReadModel, setPartnerReadModel] = useState(null);
@@ -40,6 +42,7 @@ const InfrastructureReadinessManager = () => {
         const [
           registryResponse,
           healthResponse,
+          assistantResponse,
           competitorResponse,
           mediaResponse,
           operationsResponse,
@@ -49,6 +52,7 @@ const InfrastructureReadinessManager = () => {
         ] = await Promise.all([
           fetchBusinessTruthRegistry(),
           fetchInfrastructureHealth(),
+          fetchAssistantRecordReadModel(),
           fetchCompetitorRecordReadModel(),
           fetchMediaRecordReadModel(),
           fetchOperationsRecordReadModel(),
@@ -59,6 +63,7 @@ const InfrastructureReadinessManager = () => {
 
         setRegistry(registryResponse.data);
         setHealth(healthResponse.data);
+        setAssistantReadModel(assistantResponse.data);
         setCompetitorReadModel(competitorResponse.data);
         setMediaReadModel(mediaResponse.data);
         setOperationsReadModel(operationsResponse.data);
@@ -78,6 +83,8 @@ const InfrastructureReadinessManager = () => {
   const services = health?.services || [];
   const entities = registry?.entities || [];
   const cutoverPlan = registry?.cutoverPlan || [];
+  const assistantSummary = assistantReadModel?.summary || [];
+  const recentAssistantRecords = assistantReadModel?.recentRecords || [];
   const competitorSummary = competitorReadModel?.summary || [];
   const recentCompetitorRecords = competitorReadModel?.recentRecords || [];
   const mediaSummary = mediaReadModel?.summary || [];
@@ -185,6 +192,88 @@ const InfrastructureReadinessManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
+              PostgreSQL Assistant Read Model
+            </h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Language-assistant profiles and travel-doc guidance now queried directly from
+              their PostgreSQL assistant-domain tables.
+            </p>
+          </div>
+          <Badge variant={assistantReadModel?.configured ? "accent" : "secondary"}>
+            {assistantReadModel?.configured ? "Live From PostgreSQL" : "Not Connected"}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {loading && <p className="text-sm font-medium text-slate-500">Loading assistant records...</p>}
+          {!loading &&
+            assistantSummary.map((item) => (
+              <div key={item.domain} className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+                  {item.domain}
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                  {item.totalRecords}
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-500">
+                  Active {item.activeRecords}
+                </p>
+              </div>
+            ))}
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+              Recent Assistant Records
+            </h4>
+            {assistantReadModel?.generatedAt && (
+              <p className="text-xs font-bold text-slate-400">
+                Snapshot {new Date(assistantReadModel.generatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {loading && <p className="text-sm font-medium text-slate-500">Loading recent assistants...</p>}
+          {!loading && recentAssistantRecords.length === 0 && (
+            <p className="text-sm font-medium text-slate-500">
+              No PostgreSQL assistant records have been synced for this tenant yet.
+            </p>
+          )}
+          {!loading &&
+            recentAssistantRecords.map((record) => (
+              <div
+                key={`${record.domain}-${record.sourceId}`}
+                className="rounded-[24px] border border-slate-200 bg-white px-5 py-4"
+              >
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{record.domain}</Badge>
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        {record.label || record.sourceId}
+                      </p>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      {record.supportingLabel || "No secondary label"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="accent">{record.status}</Badge>
+                    <p className="text-xs font-bold text-slate-400">
+                      {record.updatedAt ? new Date(record.updatedAt).toLocaleString() : "Unknown sync"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Card>
 
       <Card className="border-none p-8 shadow-xl">
         <div className="mb-6 flex items-center justify-between gap-3">
