@@ -412,6 +412,8 @@ export const fetchTravelerRecordReadModel = (params = {}) =>
   API.get("/infrastructure/traveler-records", { params });
 export const fetchOperationsRecordReadModel = (params = {}) =>
   API.get("/infrastructure/operations-records", { params });
+export const fetchPartnerRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/partner-records", { params });
 export const fetchDistributionSummary = () => API.get("/distribution/summary");
 export const fetchDistributionBootstrap = (params = {}) =>
   API.get("/distribution/bootstrap", { params });

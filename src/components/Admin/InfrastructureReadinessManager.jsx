@@ -6,6 +6,7 @@ import {
   fetchBusinessTruthRegistry,
   fetchInfrastructureHealth,
   fetchOperationsRecordReadModel,
+  fetchPartnerRecordReadModel,
   fetchRevenueRecordReadModel,
   fetchTravelerRecordReadModel,
 } from "../../services/api";
@@ -20,6 +21,7 @@ const InfrastructureReadinessManager = () => {
   const [registry, setRegistry] = useState(null);
   const [health, setHealth] = useState(null);
   const [operationsReadModel, setOperationsReadModel] = useState(null);
+  const [partnerReadModel, setPartnerReadModel] = useState(null);
   const [revenueReadModel, setRevenueReadModel] = useState(null);
   const [travelerReadModel, setTravelerReadModel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,12 +37,14 @@ const InfrastructureReadinessManager = () => {
           registryResponse,
           healthResponse,
           operationsResponse,
+          partnerResponse,
           revenueResponse,
           travelerResponse,
         ] = await Promise.all([
           fetchBusinessTruthRegistry(),
           fetchInfrastructureHealth(),
           fetchOperationsRecordReadModel(),
+          fetchPartnerRecordReadModel(),
           fetchRevenueRecordReadModel(),
           fetchTravelerRecordReadModel(),
         ]);
@@ -48,6 +52,7 @@ const InfrastructureReadinessManager = () => {
         setRegistry(registryResponse.data);
         setHealth(healthResponse.data);
         setOperationsReadModel(operationsResponse.data);
+        setPartnerReadModel(partnerResponse.data);
         setRevenueReadModel(revenueResponse.data);
         setTravelerReadModel(travelerResponse.data);
       } catch (requestError) {
@@ -65,6 +70,8 @@ const InfrastructureReadinessManager = () => {
   const cutoverPlan = registry?.cutoverPlan || [];
   const operationsSummary = operationsReadModel?.summary || [];
   const recentOperationsRecords = operationsReadModel?.recentRecords || [];
+  const partnerSummary = partnerReadModel?.summary || [];
+  const recentPartnerRecords = partnerReadModel?.recentRecords || [];
   const revenueSummary = revenueReadModel?.summary || [];
   const recentRevenueRecords = revenueReadModel?.recentRecords || [];
   const travelerSummary = travelerReadModel?.summary || [];
@@ -164,6 +171,88 @@ const InfrastructureReadinessManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
+              PostgreSQL Partner Read Model
+            </h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Distribution partners and referral-network truth now queried directly from the
+              dedicated PostgreSQL partner table.
+            </p>
+          </div>
+          <Badge variant={partnerReadModel?.configured ? "accent" : "secondary"}>
+            {partnerReadModel?.configured ? "Live From PostgreSQL" : "Not Connected"}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {loading && <p className="text-sm font-medium text-slate-500">Loading partner records...</p>}
+          {!loading &&
+            partnerSummary.map((item) => (
+              <div key={item.partnerType} className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+                  {item.partnerType}
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                  {item.totalRecords}
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-500">
+                  Active {item.activeRecords}
+                </p>
+              </div>
+            ))}
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+              Recent Partner Records
+            </h4>
+            {partnerReadModel?.generatedAt && (
+              <p className="text-xs font-bold text-slate-400">
+                Snapshot {new Date(partnerReadModel.generatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {loading && <p className="text-sm font-medium text-slate-500">Loading recent partners...</p>}
+          {!loading && recentPartnerRecords.length === 0 && (
+            <p className="text-sm font-medium text-slate-500">
+              No PostgreSQL partner records have been synced for this tenant yet.
+            </p>
+          )}
+          {!loading &&
+            recentPartnerRecords.map((record) => (
+              <div
+                key={record.sourceId}
+                className="rounded-[24px] border border-slate-200 bg-white px-5 py-4"
+              >
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        {record.companyName || record.sourceId}
+                      </p>
+                      <Badge variant="secondary">{record.partnerType}</Badge>
+                      <Badge variant="secondary">{record.status}</Badge>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      {record.serviceFocus || "No service focus set"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-xs font-bold text-slate-400">
+                      {record.updatedAt ? new Date(record.updatedAt).toLocaleString() : "Unknown sync"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Card>
 
       <Card className="border-none p-8 shadow-xl">
         <div className="mb-6 flex items-center justify-between gap-3">
