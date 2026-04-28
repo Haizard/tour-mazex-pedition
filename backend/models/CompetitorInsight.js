@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const competitorInsightSchema = new mongoose.Schema(
   {
@@ -70,6 +71,13 @@ const competitorInsightSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({ entityKey: "competitor-intelligence" }),
+        { _id: false }
+      ),
+      default: () => ({}),
     },
   },
   { timestamps: true }

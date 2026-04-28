@@ -5,11 +5,27 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { summarizeCompetitorInsight } from "../utils/competitorIntelligence.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncCompetitorInsightRecord } from "../utils/postgresCompetitorRecords.js";
 
 const router = express.Router();
 
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("competitor-intelligence"));
+
+const syncCompetitorViews = async (insight = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "competitor-intelligence",
+    document: insight,
+    model: CompetitorInsight,
+  });
+
+  try {
+    await syncCompetitorInsightRecord(insight);
+  } catch (error) {
+    console.error("Competitor insight record sync failed:", error.message);
+  }
+};
 
 router.get("/", async (req, res) => {
   try {
@@ -51,6 +67,7 @@ router.post("/", async (req, res) => {
     await insight.save();
 
     const result = insight.toObject();
+    await syncCompetitorViews(result);
     res.status(201).json({
       ...result,
       intelligenceSummary: summarizeCompetitorInsight(result),
@@ -93,6 +110,7 @@ router.patch("/:id", async (req, res) => {
     if (!insight) {
       return res.status(404).json({ message: "Competitor insight not found" });
     }
+    await syncCompetitorViews(insight);
 
     res.status(200).json({
       ...insight,
