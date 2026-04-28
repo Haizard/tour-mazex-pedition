@@ -4,11 +4,27 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { summarizeLanguageAssistantProfile } from "../utils/languageAssistant.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncLanguageAssistantProfileRecord } from "../utils/postgresAssistantRecords.js";
 
 const router = express.Router();
 
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("multi-language-ai-assistant"));
+
+const syncLanguageAssistantViews = async (profile = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "language-assistant-profiles",
+    document: profile,
+    model: LanguageAssistantProfile,
+  });
+
+  try {
+    await syncLanguageAssistantProfileRecord(profile);
+  } catch (error) {
+    console.error("Language assistant profile sync failed:", error.message);
+  }
+};
 
 router.get("/", async (req, res) => {
   try {
@@ -42,6 +58,7 @@ router.post("/", async (req, res) => {
     );
 
     await profile.save();
+    await syncLanguageAssistantViews(profile.toObject());
 
     res.status(201).json({
       ...profile.toObject(),
@@ -79,6 +96,7 @@ router.patch("/:id", async (req, res) => {
     if (!profile) {
       return res.status(404).json({ message: "Language assistant profile not found" });
     }
+    await syncLanguageAssistantViews(profile);
 
     res.status(200).json({
       ...profile,

@@ -4,11 +4,27 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { summarizeTravelDocumentationGuide } from "../utils/travelDocumentationAssistant.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncTravelDocumentationGuideRecord } from "../utils/postgresAssistantRecords.js";
 
 const router = express.Router();
 
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("travel-documentation-assistant"));
+
+const syncTravelDocumentationViews = async (guide = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "travel-documentation-guides",
+    document: guide,
+    model: TravelDocumentationGuide,
+  });
+
+  try {
+    await syncTravelDocumentationGuideRecord(guide);
+  } catch (error) {
+    console.error("Travel documentation guide sync failed:", error.message);
+  }
+};
 
 router.get("/", async (req, res) => {
   try {
@@ -42,6 +58,7 @@ router.post("/", async (req, res) => {
     );
 
     await guide.save();
+    await syncTravelDocumentationViews(guide.toObject());
 
     res.status(201).json({
       ...guide.toObject(),
@@ -81,6 +98,7 @@ router.patch("/:id", async (req, res) => {
     if (!guide) {
       return res.status(404).json({ message: "Travel documentation guide not found" });
     }
+    await syncTravelDocumentationViews(guide);
 
     res.status(200).json({
       ...guide,

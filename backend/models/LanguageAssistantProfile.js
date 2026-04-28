@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const languageAssistantProfileSchema = new mongoose.Schema(
   {
@@ -41,6 +42,13 @@ const languageAssistantProfileSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+    businessTruth: {
+      type: new mongoose.Schema(
+        createBusinessTruthMetadataSchemaDefinition({ entityKey: "language-assistant-profiles" }),
+        { _id: false }
+      ),
+      default: () => ({}),
     },
   },
   { timestamps: true }
