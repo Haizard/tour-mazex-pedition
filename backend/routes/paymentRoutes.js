@@ -13,6 +13,7 @@ import {
 } from "../utils/paymentWebhookState.js";
 import { buildTenantFilter, resolveTenantBaseUrl, withTenantId } from "../utils/tenantContext.js";
 import QuoteProposal from "../models/QuoteProposal.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
 
 const router = express.Router();
 
@@ -97,6 +98,34 @@ const syncLinkedRevenueRecords = async (req, payment = {}) => {
   }
 };
 
+const syncRevenueShadowWrites = async (req, payment = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "payments",
+    document: payment,
+    model: PaymentTransaction,
+  });
+
+  if (payment.bookingId) {
+    const booking = await Booking.findOne(buildTenantFilter(req, { _id: payment.bookingId })).lean();
+    if (booking) {
+      await syncMongoDocumentToShadowStore({
+        entityType: "bookings",
+        document: booking,
+        model: Booking,
+      });
+    }
+
+    const quotes = await QuoteProposal.find(buildTenantFilter(req, { bookingId: payment.bookingId })).lean();
+    for (const quote of quotes) {
+      await syncMongoDocumentToShadowStore({
+        entityType: "quotes",
+        document: quote,
+        model: QuoteProposal,
+      });
+    }
+  }
+};
+
 router.get("/checkout/:token", async (req, res) => {
   try {
     const payment = await PaymentTransaction.findOne({ publicToken: req.params.token })
@@ -142,6 +171,7 @@ router.post("/checkout/:token/respond", async (req, res) => {
     Object.assign(payment, updates);
     await payment.save();
     await syncLinkedRevenueRecords(req, payment.toObject());
+    await syncRevenueShadowWrites(req, payment.toObject());
 
     res.status(200).json({
       ...toPaymentResponse(payment.toObject()),
@@ -211,6 +241,7 @@ router.post("/webhooks/:provider", async (req, res) => {
     });
     await payment.save();
     await syncLinkedRevenueRecords(req, payment.toObject());
+    await syncRevenueShadowWrites(req, payment.toObject());
 
     return res.status(200).json({
       ignored: false,
@@ -275,6 +306,7 @@ router.post("/", async (req, res) => {
       buildPublicPaymentCheckoutUrl(baseUrl, payment.publicToken);
     await payment.save();
     await syncLinkedRevenueRecords(req, payment.toObject());
+    await syncRevenueShadowWrites(req, payment.toObject());
 
     res.status(201).json({
       ...toPaymentResponse(payment.toObject()),
@@ -356,6 +388,7 @@ router.patch("/:id", async (req, res) => {
       { new: true }
     ).lean();
     await syncLinkedRevenueRecords(req, payment);
+    await syncRevenueShadowWrites(req, payment);
 
     res.status(200).json({
       ...toPaymentResponse(payment),

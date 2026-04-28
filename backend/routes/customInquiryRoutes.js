@@ -8,6 +8,7 @@ import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
 import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
 import { generateQuoteProposal } from '../utils/quoteProposal.js';
+import { syncMongoDocumentToShadowStore } from '../utils/postgresShadowWrites.js';
 
 const router = express.Router();
 
@@ -222,6 +223,12 @@ router.post('/public-quote/:token/respond', async (req, res) => {
             });
         }
 
+        await syncMongoDocumentToShadowStore({
+            entityType: "quotes",
+            document: quote,
+            model: QuoteProposal,
+        });
+
         res.status(200).json({
             message: `Quote successfully ${action === 'accept' ? 'accepted' : 'feedback received'}.`,
             quote
@@ -305,6 +312,12 @@ router.post('/:id/generate-quote', requireTenantAdmin, async (req, res) => {
             })
         );
 
+        await syncMongoDocumentToShadowStore({
+            entityType: "quotes",
+            document: quote.toObject(),
+            model: QuoteProposal,
+        });
+
         res.status(201).json(quote);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -323,6 +336,12 @@ router.post('/:id/quotes/:quoteId/send', requireTenantAdmin, async (req, res) =>
         if (!quote) {
             return res.status(404).json({ message: 'Quote not found.' });
         }
+
+        await syncMongoDocumentToShadowStore({
+            entityType: "quotes",
+            document: quote,
+            model: QuoteProposal,
+        });
 
         res.status(200).json({ message: 'Quote marked as sent to traveler.', quote });
     } catch (error) {

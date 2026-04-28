@@ -13,6 +13,7 @@ import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
 import Tenant from "../models/Tenant.js";
 import { generateReviewSequence } from "../utils/followUpSequencing.js";
 import { analyzeFeedbackSentiment, generateMonthlyImprovementReport } from "../utils/sentimentAnalysis.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
 
 const router = express.Router();
 
@@ -106,6 +107,11 @@ router.post('/', async (req, res) => {
             referralCode: bookingData.referralCode || undefined
         }));
         await newBooking.save();
+        await syncMongoDocumentToShadowStore({
+            entityType: "bookings",
+            document: newBooking.toObject(),
+            model: Booking,
+        });
         res.status(201).json(newBooking);
     } catch (error) {
         res.status(409).json({ message: error.message });
@@ -134,6 +140,12 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
         if (!updatedBooking) {
             return res.status(404).json({ message: 'Booking not found' });
         }
+
+        await syncMongoDocumentToShadowStore({
+            entityType: "bookings",
+            document: updatedBooking.toObject(),
+            model: Booking,
+        });
 
         // Trigger Growth Suite: Reputation Guardian & Repeat Customer Automation
         if (status === "Completed") {

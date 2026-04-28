@@ -13,7 +13,9 @@ export const createBusinessTruthMetadataDefaults = ({
   canonicalId: "",
   truthVersion: 1,
   lastShadowSyncAt: null,
+  lastShadowAttemptAt: null,
   lastCutoverAt: null,
+  lastShadowError: "",
 });
 
 export const createBusinessTruthMetadataSchemaDefinition = ({
@@ -36,7 +38,9 @@ export const createBusinessTruthMetadataSchemaDefinition = ({
   canonicalId: { type: String, default: "", trim: true },
   truthVersion: { type: Number, default: 1, min: 1 },
   lastShadowSyncAt: { type: Date, default: null },
+  lastShadowAttemptAt: { type: Date, default: null },
   lastCutoverAt: { type: Date, default: null },
+  lastShadowError: { type: String, default: "", trim: true },
 });
 
 export const markBusinessTruthSyncPending = (metadata = {}, patch = {}) => ({

@@ -20,7 +20,30 @@ const buildConnectionStringFromParts = (env = globalThis.process?.env || {}) => 
   return `postgresql://${user}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
 };
 
+const buildPoolerConnectionString = (env = globalThis.process?.env || {}) => {
+  const directPoolerUrl = String(env.SUPABASE_POOLER_URL || "").trim();
+  if (directPoolerUrl) {
+    return encodePasswordInConnectionString(directPoolerUrl);
+  }
+
+  const projectRef = String(env.SUPABASE_PROJECT_REF || "").trim();
+  const region = String(env.SUPABASE_REGION || "").trim();
+  const password = String(env.SUPABASE_DB_PASSWORD || "").trim();
+  const database = String(env.SUPABASE_DB_NAME || "postgres").trim();
+
+  if (!projectRef || !region || !password) {
+    return "";
+  }
+
+  return `postgresql://postgres.${projectRef}:${encodeURIComponent(password)}@aws-0-${region}.pooler.supabase.com:5432/${database}`;
+};
+
 export const getPostgresConnectionString = (env = globalThis.process?.env || {}) => {
+  const pooler = buildPoolerConnectionString(env);
+  if (pooler) {
+    return pooler;
+  }
+
   const direct = String(env.SUPABASE_DB_URL || env.POSTGRES_URL || env.DATABASE_URL || "").trim();
   if (direct) {
     return encodePasswordInConnectionString(direct);
