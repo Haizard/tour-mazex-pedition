@@ -9,11 +9,27 @@ import {
   summarizeGuideDriverAssignment,
 } from "../utils/guideDriverPlanning.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncGuideDriverAssignmentRecord } from "../utils/postgresOperationsRecords.js";
 
 const router = express.Router();
 
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("guide-driver-management"));
+
+const syncGuideDriverViews = async (member = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "guide-driver-assignments",
+    document: member,
+    model: GuideDriver,
+  });
+
+  try {
+    await syncGuideDriverAssignmentRecord(member);
+  } catch (error) {
+    console.error("Guide-driver record sync failed:", error.message);
+  }
+};
 
 const enrichAssignmentWindow = async (req, payload = {}) => {
   const nextPayload = { ...payload };
@@ -154,6 +170,7 @@ router.post("/", async (req, res) => {
 
     const member = new GuideDriver(normalizedPayload);
     await member.save();
+    await syncGuideDriverViews(member.toObject());
 
     res.status(201).json({
       ...member.toObject(),
@@ -240,6 +257,7 @@ router.patch("/:id", async (req, res) => {
       { $set: nextUpdateState },
       { new: true }
     ).lean();
+    await syncGuideDriverViews(member);
 
     res.status(200).json({
       ...member,

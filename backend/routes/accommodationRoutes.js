@@ -9,11 +9,27 @@ import {
   enrichAccommodationReservations,
 } from "../utils/accommodationCoordination.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncAccommodationReservationRecord } from "../utils/postgresOperationsRecords.js";
 
 const router = express.Router();
 
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("accommodation-coordination"));
+
+const syncAccommodationViews = async (reservation = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "accommodation-reservations",
+    document: reservation,
+    model: AccommodationReservation,
+  });
+
+  try {
+    await syncAccommodationReservationRecord(reservation);
+  } catch (error) {
+    console.error("Accommodation record sync failed:", error.message);
+  }
+};
 
 const enrichBookingContext = async (req, payload = {}) => {
   const nextPayload = { ...payload };
@@ -147,6 +163,7 @@ router.post("/", async (req, res) => {
 
     const reservation = new AccommodationReservation(normalizedPayload);
     await reservation.save();
+    await syncAccommodationViews(reservation.toObject());
 
     res.status(201).json(enrichAccommodationReservations([reservation.toObject()])[0]);
   } catch (error) {
@@ -221,6 +238,7 @@ router.patch("/:id", async (req, res) => {
       },
       { new: true }
     ).lean();
+    await syncAccommodationViews(reservation);
 
     res.status(200).json(enrichAccommodationReservations([reservation])[0]);
   } catch (error) {

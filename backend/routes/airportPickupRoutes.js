@@ -11,11 +11,27 @@ import {
   hasAirportPickupTimingConflict,
 } from "../utils/airportPickupCoordination.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
+import { syncAirportPickupRecord } from "../utils/postgresOperationsRecords.js";
 
 const router = express.Router();
 
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("airport-pickup-coordination"));
+
+const syncAirportPickupViews = async (pickup = {}) => {
+  await syncMongoDocumentToShadowStore({
+    entityType: "airport-pickups",
+    document: pickup,
+    model: AirportPickup,
+  });
+
+  try {
+    await syncAirportPickupRecord(pickup);
+  } catch (error) {
+    console.error("Airport pickup record sync failed:", error.message);
+  }
+};
 
 const enrichPickupContext = async (req, payload = {}) => {
   const nextPayload = { ...payload };
@@ -156,6 +172,7 @@ router.post("/", async (req, res) => {
 
     const pickup = new AirportPickup(normalizedPayload);
     await pickup.save();
+    await syncAirportPickupViews(pickup.toObject());
 
     const [driver] = normalizedPayload.driverId
       ? await Promise.all([GuideDriver.findOne(buildTenantFilter(req, { _id: normalizedPayload.driverId })).lean()])
@@ -237,6 +254,7 @@ router.patch("/:id", async (req, res) => {
       },
       { new: true }
     ).lean();
+    await syncAirportPickupViews(pickup);
 
     const driver = pickup.driverId
       ? await GuideDriver.findOne(buildTenantFilter(req, { _id: pickup.driverId })).lean()
