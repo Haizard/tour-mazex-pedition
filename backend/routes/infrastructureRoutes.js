@@ -6,6 +6,7 @@ import {
   listBusinessTruthEntities,
   summarizeInfrastructureTargets,
 } from "../utils/businessTruthRegistry.js";
+import { fetchOperationsReadModel } from "../utils/postgresOperationsReadModel.js";
 import { fetchRevenueRecordReadModel } from "../utils/postgresRevenueReadModel.js";
 import { fetchTravelerInquiryReadModel } from "../utils/postgresTravelerReadModel.js";
 
@@ -45,6 +46,18 @@ router.get("/revenue-records", async (req, res) => {
 router.get("/traveler-records", async (req, res) => {
   try {
     const report = await fetchTravelerInquiryReadModel({
+      tenantId: String(req.tenantId || ""),
+      limit: Number(req.query.limit || 12),
+    });
+    res.status(200).json(report);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/operations-records", async (req, res) => {
+  try {
+    const report = await fetchOperationsReadModel({
       tenantId: String(req.tenantId || ""),
       limit: Number(req.query.limit || 12),
     });
