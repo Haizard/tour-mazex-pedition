@@ -13,6 +13,10 @@ import {
     syncMongoDocumentToShadowStore,
 } from '../utils/postgresShadowWrites.js';
 import { fetchPrimaryInquiries } from '../utils/postgresPrimaryReads.js';
+import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
+import {
+    deleteLeadFollowUpSequenceRecord,
+} from "../utils/postgresEngagementRecords.js";
 import {
     deleteTravelerInquiryRecord,
     syncTravelerInquiryRecord,
@@ -402,7 +406,10 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
             sourceId: inquiry._id,
         });
 
-        const quotes = await QuoteProposal.find(buildTenantFilter(req, { inquiryId: inquiry._id })).lean();
+        const [quotes, sequences] = await Promise.all([
+            QuoteProposal.find(buildTenantFilter(req, { inquiryId: inquiry._id })).lean(),
+            LeadFollowUpSequence.find(buildTenantFilter(req, { inquiryId: inquiry._id })).lean(),
+        ]);
         for (const quote of quotes) {
             await deleteQuoteRevenueRecord(quote._id, quote.tenantId);
             await deleteMongoDocumentFromShadowStore({
@@ -410,6 +417,16 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
                 sourceId: quote._id,
             });
         }
+
+        for (const sequence of sequences) {
+            await deleteLeadFollowUpSequenceRecord(sequence._id, sequence.tenantId);
+            await deleteMongoDocumentFromShadowStore({
+                entityType: 'lead-follow-up-sequences',
+                sourceId: sequence._id,
+            });
+        }
+
+        await LeadFollowUpSequence.deleteMany(buildTenantFilter(req, { inquiryId: inquiry._id }));
 
         res.status(200).json({ message: 'Inquiry deleted' });
     } catch (error) {

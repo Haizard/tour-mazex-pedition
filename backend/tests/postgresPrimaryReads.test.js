@@ -14,6 +14,8 @@ import {
   normalizePrimaryPaymentRows,
   normalizePrimaryRepeatCustomerCampaignRows,
   normalizePrimaryReviewRequestRows,
+  normalizePrimaryTravelerFeedbackRows,
+  normalizePrimaryLeadFollowUpSequenceRows,
   normalizePrimaryTravelDocumentationRows,
 } from "../utils/postgresPrimaryReads.js";
 
@@ -324,6 +326,60 @@ test("normalizePrimaryRepeatCustomerCampaignRows rebuilds loyalty campaign rows 
   assert.equal(rows[0].segment, "VIP");
   assert.equal(rows[0].channel, "whatsapp");
   assert.equal(rows[0].nextStepChecklist[0], "Confirm channel");
+});
+
+test("normalizePrimaryTravelerFeedbackRows rebuilds testimonials and feedback rows from postgres rows", () => {
+  const rows = normalizePrimaryTravelerFeedbackRows([
+    {
+      source_id: "feedback-1",
+      tenant_id: "tenant-1",
+      booking_id: "booking-1",
+      rating: 5,
+      private_note: "Guide was amazing",
+      public_review: "Amazing safari",
+      public_token: "public-token",
+      referral_code: "SR-123",
+      status: "submitted",
+      submitted_at: "2026-04-29T10:00:00.000Z",
+      ai_sentiment: "positive",
+      ai_score: 0.98,
+      ai_summary: "Very happy traveler",
+      ai_key_topics: ["guide", "lodges"],
+      ai_improvement_suggestion: "Keep the same guide quality",
+      booking_name: "Amina Said",
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "feedback-1");
+  assert.equal(rows[0].publicReview, "Amazing safari");
+  assert.equal(rows[0].bookingId.name, "Amina Said");
+  assert.deepEqual(rows[0].aiKeyTopics, ["guide", "lodges"]);
+});
+
+test("normalizePrimaryLeadFollowUpSequenceRows rebuilds follow-up sequences from postgres rows", () => {
+  const rows = normalizePrimaryLeadFollowUpSequenceRows([
+    {
+      source_id: "sequence-1",
+      tenant_id: "tenant-1",
+      inquiry_id: "inquiry-1",
+      booking_id: null,
+      status: "active",
+      touchpoints: [
+        {
+          scheduledAt: "2026-05-01T10:00:00.000Z",
+          channel: "whatsapp",
+          content: "Hello again",
+          status: "pending",
+          sentAt: null,
+        },
+      ],
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "sequence-1");
+  assert.equal(rows[0].inquiryId, "inquiry-1");
+  assert.equal(rows[0].touchpoints[0].channel, "whatsapp");
+  assert.equal(rows[0].touchpoints[0].scheduledAt, "2026-05-01T10:00:00.000Z");
 });
 
 test("normalizePrimaryBookingRows rebuilds booking admin rows from postgres rows", () => {

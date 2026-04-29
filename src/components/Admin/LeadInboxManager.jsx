@@ -172,7 +172,7 @@ const LeadInboxManager = () => {
 
   const loadFollowUpForInquiry = async (inquiryId) => {
     try {
-      const response = await fetchInquiryFollowUp(inquiryId);
+      const response = await fetchInquiryFollowUp(inquiryId, { source: "postgres" });
       setInquiryFollowUps((current) => ({
         ...current,
         [inquiryId]: response.data,

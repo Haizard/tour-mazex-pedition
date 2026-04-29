@@ -33,7 +33,14 @@ import {
     fetchPrimaryBookings,
     fetchPrimaryRepeatCustomerCampaigns,
     fetchPrimaryReviewRequests,
+    fetchPrimaryTravelerFeedback,
 } from "../utils/postgresPrimaryReads.js";
+import {
+    deleteLeadFollowUpSequenceRecord,
+    deleteTravelerFeedbackRecord,
+    syncLeadFollowUpSequenceRecord,
+    syncTravelerFeedbackRecord,
+} from "../utils/postgresEngagementRecords.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 
@@ -89,6 +96,34 @@ const syncRepeatCustomerCampaignViews = async (campaign = {}) => {
         await syncRepeatCustomerCampaignRecord(campaign);
     } catch (error) {
         console.error("Repeat customer campaign record sync failed:", error.message);
+    }
+};
+
+const syncTravelerFeedbackViews = async (feedback = {}) => {
+    await syncMongoDocumentToShadowStore({
+        entityType: "traveler-feedback",
+        document: feedback,
+        model: TravelerFeedback,
+    });
+
+    try {
+        await syncTravelerFeedbackRecord(feedback);
+    } catch (error) {
+        console.error("Traveler feedback record sync failed:", error.message);
+    }
+};
+
+const syncLeadFollowUpSequenceViews = async (sequence = {}) => {
+    await syncMongoDocumentToShadowStore({
+        entityType: "lead-follow-up-sequences",
+        document: sequence,
+        model: LeadFollowUpSequence,
+    });
+
+    try {
+        await syncLeadFollowUpSequenceRecord(sequence);
+    } catch (error) {
+        console.error("Lead follow-up sequence record sync failed:", error.message);
     }
 };
 
@@ -232,6 +267,7 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
                     bookingId: updatedBooking._id,
                 });
                 await feedback.save();
+                await syncTravelerFeedbackViews(feedback.toObject());
 
                 const touchpoints = generateReviewSequence(updatedBooking, feedback.publicToken, {
                     tenantName,
@@ -245,6 +281,7 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
                     touchpoints,
                 });
                 await sequence.save();
+                await syncLeadFollowUpSequenceViews(sequence.toObject());
             }
 
             // 2. Repeat Customer Automation (Lifecycle Segmentation)
@@ -496,11 +533,13 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
             sourceId: booking._id,
         });
 
-        const [payments, quotes, reviewRequests, repeatCampaigns] = await Promise.all([
+        const [payments, quotes, reviewRequests, repeatCampaigns, feedbacks, sequences] = await Promise.all([
             PaymentTransaction.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
             QuoteProposal.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
             ReviewRequest.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
             RepeatCustomerCampaign.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
+            TravelerFeedback.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
+            LeadFollowUpSequence.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
         ]);
 
         for (const payment of payments) {
@@ -535,8 +574,26 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
             });
         }
 
+        for (const feedback of feedbacks) {
+            await deleteTravelerFeedbackRecord(feedback._id, feedback.tenantId);
+            await deleteMongoDocumentFromShadowStore({
+                entityType: 'traveler-feedback',
+                sourceId: feedback._id,
+            });
+        }
+
+        for (const sequence of sequences) {
+            await deleteLeadFollowUpSequenceRecord(sequence._id, sequence.tenantId);
+            await deleteMongoDocumentFromShadowStore({
+                entityType: 'lead-follow-up-sequences',
+                sourceId: sequence._id,
+            });
+        }
+
         await ReviewRequest.deleteMany(buildTenantFilter(req, { bookingId: booking._id }));
         await RepeatCustomerCampaign.deleteMany(buildTenantFilter(req, { bookingId: booking._id }));
+        await TravelerFeedback.deleteMany(buildTenantFilter(req, { bookingId: booking._id }));
+        await LeadFollowUpSequence.deleteMany(buildTenantFilter(req, { bookingId: booking._id }));
 
         res.status(200).json({ message: 'Booking deleted successfully' });
     } catch (error) {
@@ -595,6 +652,7 @@ router.post("/public-feedback/:token", async (req, res) => {
         }
 
         await feedback.save();
+        await syncTravelerFeedbackViews(feedback.toObject());
         res.status(200).json(feedback);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -603,22 +661,16 @@ router.post("/public-feedback/:token", async (req, res) => {
 
 router.get("/public-testimonials", async (req, res) => {
     try {
-        const reviews = await TravelerFeedback.find(buildTenantFilter(req, {
-            rating: { $gte: 4 },
-            status: "submitted",
-            publicReview: { $exists: true, $nin: ["", null] }
-        }))
-        .select("rating publicReview submittedAt")
-        .populate("bookingId", "name")
-        .sort({ submittedAt: -1 })
-        .limit(12)
-        .lean();
-
-        // Anonymize names (e.g. John Doe -> John D.)
-        const anonymized = reviews.map(r => ({
-            ...r,
-            name: r.bookingId?.name ? `${r.bookingId.name.split(' ')[0]} ${r.bookingId.name.split(' ')[1]?.charAt(0) || ''}.` : "Verified Traveler"
-        }));
+        const reviews = await fetchPrimaryTravelerFeedback(String(req.tenantId || ""));
+        const anonymized = reviews
+            .filter((review) => review.status === "submitted" && Number(review.rating || 0) >= 4 && review.publicReview)
+            .slice(0, 12)
+            .map((review) => ({
+                ...review,
+                name: review.bookingId?.name
+                    ? `${review.bookingId.name.split(' ')[0]} ${review.bookingId.name.split(' ')[1]?.charAt(0) || ''}.`
+                    : "Verified Traveler"
+            }));
 
         res.status(200).json(anonymized);
     } catch (error) {
@@ -631,10 +683,13 @@ router.get("/feedback-report", requireTenantAdmin, async (req, res) => {
         const last30Days = new Date();
         last30Days.setDate(last30Days.getDate() - 30);
 
-        const feedbacks = await TravelerFeedback.find(buildTenantFilter(req, {
-            status: "submitted",
-            submittedAt: { $gte: last30Days }
-        })).lean();
+        const feedbacks = (await fetchPrimaryTravelerFeedback(String(req.tenantId || ""))).filter((feedback) => {
+            if (feedback.status !== "submitted" || !feedback.submittedAt) {
+                return false;
+            }
+
+            return new Date(feedback.submittedAt).getTime() >= last30Days.getTime();
+        });
 
         if (feedbacks.length === 0) {
             return res.status(200).json({ report: "No feedback collected in the last 30 days to generate a report." });

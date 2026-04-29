@@ -5,6 +5,8 @@ import Tenant from "../models/Tenant.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { generateFollowUpSequence } from "../utils/followUpSequencing.js";
+import { fetchPrimaryLeadFollowUpSequence } from "../utils/postgresPrimaryReads.js";
+import { syncLeadFollowUpSequenceRecord } from "../utils/postgresEngagementRecords.js";
 
 const router = express.Router();
 
@@ -44,6 +46,7 @@ router.post("/start/:inquiryId", async (req, res) => {
     );
 
     await sequence.save();
+    await syncLeadFollowUpSequenceRecord(sequence.toObject());
 
     res.status(201).json(sequence);
   } catch (error) {
@@ -54,6 +57,12 @@ router.post("/start/:inquiryId", async (req, res) => {
 // Get active sequence for an inquiry
 router.get("/inquiry/:inquiryId", async (req, res) => {
   try {
+    if (String(req.query.source || "").toLowerCase() === "postgres") {
+      return res.status(200).json(
+        await fetchPrimaryLeadFollowUpSequence(req.params.inquiryId, String(req.tenantId || ""))
+      );
+    }
+
     const sequence = await LeadFollowUpSequence.findOne(
       buildTenantFilter(req, { inquiryId: req.params.inquiryId })
     ).sort({ createdAt: -1 }).lean();
@@ -82,6 +91,7 @@ router.patch("/:id/status", async (req, res) => {
       return res.status(404).json({ message: "Sequence not found." });
     }
 
+    await syncLeadFollowUpSequenceRecord(sequence);
     res.status(200).json(sequence);
   } catch (error) {
     res.status(500).json({ message: error.message });

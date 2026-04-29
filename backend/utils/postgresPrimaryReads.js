@@ -320,6 +320,48 @@ export const normalizePrimaryRepeatCustomerCampaignRows = (rows = []) =>
     convertedAt: toIso(row.converted_at),
   }));
 
+export const normalizePrimaryTravelerFeedbackRows = (rows = []) =>
+  rows.map((row = {}) => ({
+    _id: String(row.source_id || ""),
+    tenantId: String(row.tenant_id || ""),
+    bookingId: row.booking_id
+      ? {
+          _id: String(row.booking_id),
+          name: String(row.booking_name || ""),
+        }
+      : null,
+    rating:
+      row.rating === null || row.rating === undefined ? null : Number(row.rating || 0),
+    privateNote: String(row.private_note || ""),
+    publicReview: String(row.public_review || ""),
+    publicToken: String(row.public_token || ""),
+    referralCode: String(row.referral_code || ""),
+    status: String(row.status || "pending"),
+    submittedAt: toIso(row.submitted_at),
+    aiSentiment: String(row.ai_sentiment || ""),
+    aiScore:
+      row.ai_score === null || row.ai_score === undefined ? null : Number(row.ai_score || 0),
+    aiSummary: String(row.ai_summary || ""),
+    aiKeyTopics: Array.isArray(row.ai_key_topics) ? row.ai_key_topics : [],
+    aiImprovementSuggestion: String(row.ai_improvement_suggestion || ""),
+  }));
+
+export const normalizePrimaryLeadFollowUpSequenceRows = (rows = []) =>
+  rows.map((row = {}) => ({
+    _id: String(row.source_id || ""),
+    tenantId: String(row.tenant_id || ""),
+    inquiryId: row.inquiry_id ? String(row.inquiry_id) : null,
+    bookingId: row.booking_id ? String(row.booking_id) : null,
+    status: String(row.status || "active"),
+    touchpoints: Array.isArray(row.touchpoints)
+      ? row.touchpoints.map((touchpoint = {}) => ({
+          ...touchpoint,
+          scheduledAt: toIso(touchpoint.scheduledAt || touchpoint.scheduled_at),
+          sentAt: toIso(touchpoint.sentAt || touchpoint.sent_at),
+        }))
+      : [],
+  }));
+
 const normalizePrimaryBookingProjectionRows = (rows = []) =>
   rows.map((row = {}) => ({
     _id: String(row.source_id || ""),
@@ -980,6 +1022,80 @@ export const fetchPrimaryRepeatCustomerCampaigns = async (
     );
 
     return normalizePrimaryRepeatCustomerCampaignRows(result.rows);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+export const fetchPrimaryTravelerFeedback = async (
+  tenantId = "",
+  env = globalThis.process?.env || {}
+) => {
+  const client = createPostgresClient(env);
+  if (!client) return [];
+  await client.connect();
+  try {
+    const result = await client.query(
+      `
+        select
+          fr.source_id,
+          fr.tenant_id,
+          fr.booking_id,
+          fr.rating,
+          fr.private_note,
+          fr.public_review,
+          fr.public_token,
+          fr.referral_code,
+          fr.status,
+          fr.submitted_at,
+          fr.ai_sentiment,
+          fr.ai_score,
+          fr.ai_summary,
+          fr.ai_key_topics,
+          fr.ai_improvement_suggestion,
+          br.traveler_name as booking_name
+        from public.traveler_feedback_records fr
+        left join public.booking_records br
+          on br.source_id = fr.booking_id and br.tenant_id = fr.tenant_id
+        where fr.tenant_id = $1
+        order by fr.updated_at desc
+      `,
+      [tenantId]
+    );
+
+    return normalizePrimaryTravelerFeedbackRows(result.rows);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+export const fetchPrimaryLeadFollowUpSequence = async (
+  inquiryId = "",
+  tenantId = "",
+  env = globalThis.process?.env || {}
+) => {
+  const client = createPostgresClient(env);
+  if (!client) return null;
+  await client.connect();
+  try {
+    const result = await client.query(
+      `
+        select
+          source_id,
+          tenant_id,
+          inquiry_id,
+          booking_id,
+          status,
+          touchpoints
+        from public.lead_follow_up_sequence_records
+        where tenant_id = $1 and inquiry_id = $2
+        order by updated_at desc
+        limit 1
+      `,
+      [tenantId, inquiryId]
+    );
+
+    return normalizePrimaryLeadFollowUpSequenceRows(result.rows)[0] || null;
   } finally {
     await client.end().catch(() => {});
   }
