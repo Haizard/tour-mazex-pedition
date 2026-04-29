@@ -11,8 +11,14 @@ import {
   hasAirportPickupTimingConflict,
 } from "../utils/airportPickupCoordination.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncAirportPickupRecord } from "../utils/postgresOperationsRecords.js";
+import {
+  deleteMongoDocumentFromShadowStore,
+  syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+  deleteAirportPickupRecord,
+  syncAirportPickupRecord,
+} from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryAirportPickupData } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
@@ -44,8 +50,8 @@ const enrichPickupContext = async (req, payload = {}) => {
       throw new Error("Linked booking was not found.");
     }
 
-    nextPayload.guestName = nextPayload.guestName || booking.name || "";
-    nextPayload.assignedTourTitle = nextPayload.assignedTourTitle || booking.packageTour || "";
+    nextPayload.guestName = booking.name || "";
+    nextPayload.assignedTourTitle = booking.packageTour || "";
     nextPayload.guestCount = nextPayload.guestCount || booking.pax || 1;
     nextPayload.pickupDateTime = nextPayload.pickupDateTime || booking.travelDate || null;
   }
@@ -285,6 +291,12 @@ router.delete("/:id", async (req, res) => {
     if (!pickup) {
       return res.status(404).json({ message: "Airport pickup not found" });
     }
+
+    await deleteAirportPickupRecord(pickup._id, pickup.tenantId);
+    await deleteMongoDocumentFromShadowStore({
+      entityType: "airport-pickups",
+      sourceId: pickup._id,
+    });
 
     res.status(200).json({ message: "Airport pickup deleted" });
   } catch (error) {

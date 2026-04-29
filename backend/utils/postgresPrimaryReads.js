@@ -18,7 +18,14 @@ import {
 const toNumber = (value, fallback = 0) =>
   value === null || value === undefined || value === "" ? fallback : Number(value);
 
-const toIso = (value) => (value ? new Date(value).toISOString() : null);
+const toIso = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
 
 export const normalizePrimaryPaymentRows = (rows = []) =>
   rows.map((row = {}) => {
@@ -112,6 +119,13 @@ export const normalizePrimaryGuideDriverRows = (rows = []) =>
     assignmentNotes: String(row.assignment_notes || ""),
     licenseCategory: String(row.license_category || ""),
     lastDispatchSharedAt: toIso(row.source_payload?.lastDispatchSharedAt),
+  }));
+
+export const buildPrimaryGuideDriverTeam = (team = []) =>
+  (team || []).map((member) => ({
+    ...member,
+    assignmentSummary: summarizeGuideDriverAssignment(member),
+    notificationReady: Boolean(member.availabilityStatus === "assigned" && member.assignedBookingId),
   }));
 
 export const normalizePrimaryAccommodationRows = (rows = []) =>
@@ -321,10 +335,7 @@ export const fetchPrimaryGuideDriverData = async (
     );
     const bookings = await queryPrimaryOperationsBookings(client, tenantId);
 
-    const team = normalizePrimaryGuideDriverRows(teamResult.rows).map((member) => ({
-      ...member,
-      assignmentSummary: summarizeGuideDriverAssignment(member),
-    }));
+    const team = buildPrimaryGuideDriverTeam(normalizePrimaryGuideDriverRows(teamResult.rows));
 
     return {
       team,

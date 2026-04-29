@@ -9,8 +9,14 @@ import {
   summarizeGuideDriverAssignment,
 } from "../utils/guideDriverPlanning.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncGuideDriverAssignmentRecord } from "../utils/postgresOperationsRecords.js";
+import {
+  deleteMongoDocumentFromShadowStore,
+  syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+  deleteGuideDriverAssignmentRecord,
+  syncGuideDriverAssignmentRecord,
+} from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryGuideDriverData } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
@@ -44,7 +50,7 @@ const enrichAssignmentWindow = async (req, payload = {}) => {
       throw new Error("Assigned booking was not found.");
     }
 
-    nextPayload.assignedTourTitle = nextPayload.assignedTourTitle || booking.packageTour || "";
+    nextPayload.assignedTourTitle = booking.packageTour || "";
     nextPayload.assignmentStartDate =
       nextPayload.assignmentStartDate || nextPayload.assignmentDate || booking.travelDate || null;
     nextPayload.assignmentEndDate =
@@ -287,6 +293,12 @@ router.delete("/:id", async (req, res) => {
     if (!member) {
       return res.status(404).json({ message: "Team member not found" });
     }
+
+    await deleteGuideDriverAssignmentRecord(member._id, member.tenantId);
+    await deleteMongoDocumentFromShadowStore({
+      entityType: "guide-driver-assignments",
+      sourceId: member._id,
+    });
 
     res.status(200).json({ message: "Team member deleted successfully" });
   } catch (error) {

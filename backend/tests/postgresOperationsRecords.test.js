@@ -2,8 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildAccommodationReservationDelete,
   buildAccommodationReservationUpsert,
+  buildAirportPickupDelete,
   buildAirportPickupUpsert,
+  buildGuideDriverAssignmentDelete,
   buildGuideDriverAssignmentUpsert,
 } from "../utils/postgresOperationsRecords.js";
 
@@ -45,4 +48,28 @@ test("buildAirportPickupUpsert targets airport_pickup_records", () => {
   assert.equal(statement.text.includes("airport_pickup_records"), true);
   assert.equal(statement.values[0], "pickup-1");
   assert.equal(statement.values[5], "JRO");
+});
+
+test("buildGuideDriverAssignmentDelete targets guide_driver_assignment_records", () => {
+  const statement = buildGuideDriverAssignmentDelete("guide-1", "tenant-1");
+
+  assert.equal(statement.text.includes("guide_driver_assignment_records"), true);
+  assert.equal(statement.text.includes("delete from"), true);
+  assert.deepEqual(statement.values, ["guide-1", "tenant-1"]);
+});
+
+test("buildAccommodationReservationDelete targets accommodation_reservation_records", () => {
+  const statement = buildAccommodationReservationDelete("stay-1", "tenant-1");
+
+  assert.equal(statement.text.includes("accommodation_reservation_records"), true);
+  assert.equal(statement.text.includes("delete from"), true);
+  assert.deepEqual(statement.values, ["stay-1", "tenant-1"]);
+});
+
+test("buildAirportPickupDelete targets airport_pickup_records", () => {
+  const statement = buildAirportPickupDelete("pickup-1", "tenant-1");
+
+  assert.equal(statement.text.includes("airport_pickup_records"), true);
+  assert.equal(statement.text.includes("delete from"), true);
+  assert.deepEqual(statement.values, ["pickup-1", "tenant-1"]);
 });

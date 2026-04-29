@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildShadowDeleteStatement,
   buildShadowEntitySnapshot,
   buildShadowUpsertStatement,
   replayQueuedShadowWrites,
@@ -37,6 +38,14 @@ test("buildShadowUpsertStatement targets the generic snapshot table", () => {
   assert.equal(statement.text.includes("shadow_entity_snapshots"), true);
   assert.equal(statement.values[0], "payments");
   assert.equal(statement.values[1], "pay-1");
+});
+
+test("buildShadowDeleteStatement targets the generic snapshot table", () => {
+  const statement = buildShadowDeleteStatement("payments", "pay-1");
+
+  assert.equal(statement.text.includes("shadow_entity_snapshots"), true);
+  assert.equal(statement.text.includes("delete from"), true);
+  assert.deepEqual(statement.values, ["payments", "pay-1"]);
 });
 
 test("syncShadowEntity marks a successful shadow write as shadowed", async () => {

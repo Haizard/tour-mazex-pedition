@@ -7,7 +7,6 @@ import {
   fetchAccommodationDashboard,
   createAccommodationReservation,
   deleteAccommodationReservation,
-  fetchAccommodationReservations,
   fetchBookings,
   updateAccommodationReservation,
 } from "../../services/api";
@@ -55,13 +54,12 @@ const AccommodationManager = () => {
     setLoading(true);
     setError("");
     try {
-      const [reservationResponse, dashboardResponse, bookingsResponse] = await Promise.all([
-        fetchAccommodationReservations({ source: "postgres" }),
+      const [dashboardResponse, bookingsResponse] = await Promise.all([
         fetchAccommodationDashboard({ source: "postgres" }),
         fetchBookings(),
       ]);
 
-      setReservations(Array.isArray(reservationResponse.data) ? reservationResponse.data : []);
+      setReservations(Array.isArray(dashboardResponse.data?.reservations) ? dashboardResponse.data.reservations : []);
       setCoordinationBoard(Array.isArray(dashboardResponse.data?.board) ? dashboardResponse.data.board : []);
       setStayTimeline(Array.isArray(dashboardResponse.data?.stayTimeline) ? dashboardResponse.data.stayTimeline : []);
       setNeedsAttention(Array.isArray(dashboardResponse.data?.needsAttention) ? dashboardResponse.data.needsAttention : []);
@@ -199,7 +197,21 @@ const AccommodationManager = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <select
               value={form.bookingId}
-              onChange={(event) => setForm((current) => ({ ...current, bookingId: event.target.value }))}
+              onChange={(event) => {
+                const nextBookingId = event.target.value;
+                const booking = bookings.find((item) => item._id === nextBookingId);
+                const bookingDate = booking?.travelDate
+                  ? new Date(booking.travelDate).toISOString().slice(0, 10)
+                  : "";
+
+                setForm((current) => ({
+                  ...current,
+                  bookingId: nextBookingId,
+                  destination: booking?.packageTour || "",
+                  guestCount: booking?.pax || 1,
+                  checkInDate: bookingDate,
+                }));
+              }}
               className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
             >
               <option value="">No booking linked</option>

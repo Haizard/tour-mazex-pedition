@@ -7,7 +7,6 @@ import {
   createAirportPickup,
   deleteAirportPickup,
   fetchAirportPickupDashboard,
-  fetchAirportPickups,
   fetchBookings,
   fetchGuideDrivers,
   updateAirportPickup,
@@ -61,14 +60,13 @@ const AirportPickupManager = () => {
     setLoading(true);
     setError("");
     try {
-      const [pickupResponse, dashboardResponse, bookingsResponse, driverResponse] = await Promise.all([
-        fetchAirportPickups({ source: "postgres" }),
+      const [dashboardResponse, bookingsResponse, driverResponse] = await Promise.all([
         fetchAirportPickupDashboard({ source: "postgres" }),
         fetchBookings(),
         fetchGuideDrivers({ source: "postgres" }),
       ]);
 
-      setPickups(Array.isArray(pickupResponse.data) ? pickupResponse.data : []);
+      setPickups(Array.isArray(dashboardResponse.data?.pickups) ? dashboardResponse.data.pickups : []);
       setDispatchBoard(Array.isArray(dashboardResponse.data?.board) ? dashboardResponse.data.board : []);
       setArrivalTimeline(Array.isArray(dashboardResponse.data?.arrivalTimeline) ? dashboardResponse.data.arrivalTimeline : []);
       setNeedsAttention(Array.isArray(dashboardResponse.data?.needsAttention) ? dashboardResponse.data.needsAttention : []);
@@ -209,7 +207,20 @@ const AirportPickupManager = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <select
                 value={form.bookingId}
-                onChange={(event) => setForm((current) => ({ ...current, bookingId: event.target.value }))}
+                onChange={(event) => {
+                  const nextBookingId = event.target.value;
+                  const booking = bookings.find((item) => item._id === nextBookingId);
+                  const pickupDateTime = booking?.travelDate
+                    ? new Date(booking.travelDate).toISOString().slice(0, 16)
+                    : "";
+
+                  setForm((current) => ({
+                    ...current,
+                    bookingId: nextBookingId,
+                    guestCount: booking?.pax || 1,
+                    pickupDateTime,
+                  }));
+                }}
                 className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
               >
                 <option value="">No booking linked</option>

@@ -8,7 +8,6 @@ import {
   deleteGuideDriver,
   fetchBookings,
   fetchGuideDriverDashboard,
-  fetchGuideDrivers,
   updateGuideDriver,
 } from "../../services/api";
 
@@ -70,13 +69,12 @@ const GuideDriverManager = () => {
     setLoading(true);
     setError("");
     try {
-      const [teamResponse, dashboardResponse, bookingsResponse] = await Promise.all([
-        fetchGuideDrivers({ source: "postgres" }),
+      const [dashboardResponse, bookingsResponse] = await Promise.all([
         fetchGuideDriverDashboard({ source: "postgres" }),
         fetchBookings(),
       ]);
 
-      setTeam(Array.isArray(teamResponse.data) ? teamResponse.data : []);
+      setTeam(Array.isArray(dashboardResponse.data?.team) ? dashboardResponse.data.team : []);
       setDispatchBoard(
         Array.isArray(dashboardResponse.data?.dispatchBoard) ? dashboardResponse.data.dispatchBoard : []
       );
@@ -286,7 +284,21 @@ const GuideDriverManager = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <select
                 value={form.assignedBookingId}
-                onChange={(event) => setForm((current) => ({ ...current, assignedBookingId: event.target.value }))}
+                onChange={(event) => {
+                  const nextBookingId = event.target.value;
+                  const booking = bookings.find((item) => item._id === nextBookingId);
+                  const bookingDate = booking?.travelDate
+                    ? new Date(booking.travelDate).toISOString().slice(0, 10)
+                    : "";
+
+                  setForm((current) => ({
+                    ...current,
+                    assignedBookingId: nextBookingId,
+                    assignmentDate: bookingDate,
+                    assignmentStartDate: bookingDate,
+                    assignmentEndDate: bookingDate,
+                  }));
+                }}
                 className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">No booking assigned</option>

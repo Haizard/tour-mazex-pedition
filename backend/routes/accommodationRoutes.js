@@ -9,8 +9,14 @@ import {
   enrichAccommodationReservations,
 } from "../utils/accommodationCoordination.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncAccommodationReservationRecord } from "../utils/postgresOperationsRecords.js";
+import {
+  deleteMongoDocumentFromShadowStore,
+  syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+  deleteAccommodationReservationRecord,
+  syncAccommodationReservationRecord,
+} from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryAccommodationData } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
@@ -45,8 +51,8 @@ const enrichBookingContext = async (req, payload = {}) => {
     throw new Error("Linked booking was not found.");
   }
 
-  nextPayload.bookingGuestName = nextPayload.bookingGuestName || booking.name || "";
-  nextPayload.assignedTourTitle = nextPayload.assignedTourTitle || booking.packageTour || "";
+  nextPayload.bookingGuestName = booking.name || "";
+  nextPayload.assignedTourTitle = booking.packageTour || "";
   nextPayload.guestCount = nextPayload.guestCount || booking.pax || 1;
   nextPayload.destination = nextPayload.destination || booking.packageTour || "";
   nextPayload.checkInDate = nextPayload.checkInDate || booking.travelDate || null;
@@ -265,6 +271,12 @@ router.delete("/:id", async (req, res) => {
     if (!reservation) {
       return res.status(404).json({ message: "Accommodation reservation not found" });
     }
+
+    await deleteAccommodationReservationRecord(reservation._id, reservation.tenantId);
+    await deleteMongoDocumentFromShadowStore({
+      entityType: "accommodation-reservations",
+      sourceId: reservation._id,
+    });
 
     res.status(200).json({ message: "Accommodation reservation deleted" });
   } catch (error) {

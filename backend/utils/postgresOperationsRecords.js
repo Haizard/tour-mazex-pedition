@@ -15,6 +15,21 @@ const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL operations writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    await client.query(statement.text, statement.values);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildGuideDriverAssignmentRecord = (member = {}) => ({
   sourceId: String(member._id || ""),
   tenantId: String(member.tenantId || ""),
@@ -237,6 +252,30 @@ export const buildAirportPickupUpsert = (pickup = {}) => {
   };
 };
 
+export const buildGuideDriverAssignmentDelete = (sourceId = "", tenantId = "") => ({
+  text: `
+    delete from public.guide_driver_assignment_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildAccommodationReservationDelete = (sourceId = "", tenantId = "") => ({
+  text: `
+    delete from public.accommodation_reservation_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildAirportPickupDelete = (sourceId = "", tenantId = "") => ({
+  text: `
+    delete from public.airport_pickup_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const syncGuideDriverAssignmentRecord = (member, env) =>
   upsertRecord(buildGuideDriverAssignmentUpsert(member), env);
 
@@ -245,3 +284,12 @@ export const syncAccommodationReservationRecord = (reservation, env) =>
 
 export const syncAirportPickupRecord = (pickup, env) =>
   upsertRecord(buildAirportPickupUpsert(pickup), env);
+
+export const deleteGuideDriverAssignmentRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildGuideDriverAssignmentDelete(sourceId, tenantId), env);
+
+export const deleteAccommodationReservationRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildAccommodationReservationDelete(sourceId, tenantId), env);
+
+export const deleteAirportPickupRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildAirportPickupDelete(sourceId, tenantId), env);

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildPrimaryGuideDriverTeam,
   normalizePrimaryAccommodationRows,
   normalizePrimaryAirportPickupRows,
   normalizePrimaryGuideDriverRows,
@@ -164,4 +165,59 @@ test("normalizePrimaryAirportPickupRows rebuilds pickup rows from postgres rows"
   assert.equal(rows[0].airportCode, "JRO");
   assert.equal(rows[0].guestCount, 2);
   assert.equal(rows[0].vehicleLabel, "Land Cruiser");
+});
+
+test("buildPrimaryGuideDriverTeam preserves notification readiness on dashboard team rows", () => {
+  const team = buildPrimaryGuideDriverTeam([
+    {
+      _id: "staff-1",
+      availabilityStatus: "assigned",
+      assignedBookingId: "booking-1",
+      assignedTourTitle: "Northern Circuit",
+      staffType: "guide",
+      fullName: "Neema Joseph",
+    },
+    {
+      _id: "staff-2",
+      availabilityStatus: "available",
+      assignedBookingId: "",
+      staffType: "driver",
+      fullName: "Baraka",
+    },
+  ]);
+
+  assert.equal(team[0].notificationReady, true);
+  assert.equal(team[0].assignmentSummary?.summary.includes("Northern Circuit"), true);
+  assert.equal(team[1].notificationReady, false);
+});
+
+test("normalizePrimary rows tolerate invalid timestamps by returning nulls", () => {
+  const guideRows = normalizePrimaryGuideDriverRows([
+    {
+      source_id: "staff-1",
+      assignment_start_date: "not-a-date",
+      assignment_end_date: "still-bad",
+      assignment_date: "broken",
+    },
+  ]);
+  const accommodationRows = normalizePrimaryAccommodationRows([
+    {
+      source_id: "stay-1",
+      check_in_date: "bad-date",
+      check_out_date: "bad-date",
+    },
+  ]);
+  const airportRows = normalizePrimaryAirportPickupRows([
+    {
+      source_id: "pickup-1",
+      pickup_date_time: "bad-date",
+      source_payload: { lastDriverBriefSharedAt: "broken" },
+    },
+  ]);
+
+  assert.equal(guideRows[0].assignmentStartDate, null);
+  assert.equal(guideRows[0].assignmentEndDate, null);
+  assert.equal(accommodationRows[0].checkInDate, null);
+  assert.equal(accommodationRows[0].checkOutDate, null);
+  assert.equal(airportRows[0].pickupDateTime, null);
 });

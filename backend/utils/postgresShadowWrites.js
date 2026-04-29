@@ -49,6 +49,14 @@ export const buildShadowUpsertStatement = (snapshot = {}) => ({
   ],
 });
 
+export const buildShadowDeleteStatement = (entityType = "", sourceId = "") => ({
+  text: `
+    delete from public.shadow_entity_snapshots
+    where entity_type = $1 and source_id = $2
+  `,
+  values: [String(entityType || ""), String(sourceId || "")],
+});
+
 export const enqueueShadowWrite = async (snapshot = {}, env = globalThis.process?.env || {}) => {
   const redisClient = await getRedisClient(env);
 
@@ -85,6 +93,22 @@ const runShadowUpsert = async (snapshot = {}, env = globalThis.process?.env || {
   try {
     await client.connect();
     const statement = buildShadowUpsertStatement(snapshot);
+    await client.query(statement.text, statement.values);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+const runShadowDelete = async (entityType = "", sourceId = "", env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL shadow writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const statement = buildShadowDeleteStatement(entityType, sourceId);
     await client.query(statement.text, statement.values);
   } finally {
     await client.end().catch(() => {});
@@ -192,6 +216,20 @@ export const syncMongoDocumentToShadowStore = async ({
   }
 
   return result;
+};
+
+export const deleteMongoDocumentFromShadowStore = async ({
+  entityType,
+  sourceId,
+  env = globalThis.process?.env || {},
+  removeShadow = runShadowDelete,
+} = {}) => {
+  if (!entityType || !sourceId || !isPostgresConfigured(env)) {
+    return { ok: false, reason: "missing-identifiers-or-postgres-not-configured" };
+  }
+
+  await removeShadow(entityType, sourceId, env);
+  return { ok: true };
 };
 
 export const replayQueuedShadowWrites = async ({
