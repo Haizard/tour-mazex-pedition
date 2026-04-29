@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildTravelerInquiryUpsert } from "../utils/postgresTravelerInquiryRecords.js";
+import {
+  buildTravelerInquiryDelete,
+  buildTravelerInquiryUpsert,
+} from "../utils/postgresTravelerInquiryRecords.js";
 
 test("buildTravelerInquiryUpsert targets traveler_inquiry_records", () => {
   const statement = buildTravelerInquiryUpsert({
@@ -17,4 +20,15 @@ test("buildTravelerInquiryUpsert targets traveler_inquiry_records", () => {
   assert.equal(statement.values[0], "inquiry-1");
   assert.equal(statement.values[2], "Amina Said");
   assert.equal(statement.values[14], "qualified");
+});
+
+test("buildTravelerInquiryDelete targets traveler_inquiry_records", () => {
+  const statement = buildTravelerInquiryDelete({
+    sourceId: "inquiry-1",
+    tenantId: "tenant-1",
+  });
+
+  assert.equal(statement.text.includes("traveler_inquiry_records"), true);
+  assert.equal(statement.text.includes("delete from"), true);
+  assert.deepEqual(statement.values, ["inquiry-1", "tenant-1"]);
 });

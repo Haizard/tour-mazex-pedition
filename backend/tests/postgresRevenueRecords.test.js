@@ -2,8 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildBookingRevenueDelete,
   buildBookingRevenueUpsert,
+  buildPaymentRevenueDelete,
   buildPaymentRevenueUpsert,
+  buildQuoteRevenueDelete,
   buildQuoteRevenueUpsert,
 } from "../utils/postgresRevenueRecords.js";
 
@@ -44,4 +47,37 @@ test("buildPaymentRevenueUpsert targets payment_records", () => {
   assert.equal(statement.text.includes("payment_records"), true);
   assert.equal(statement.values[0], "payment-1");
   assert.equal(statement.values[7], "USD");
+});
+
+test("buildBookingRevenueDelete targets booking_records", () => {
+  const statement = buildBookingRevenueDelete({
+    sourceId: "booking-1",
+    tenantId: "tenant-1",
+  });
+
+  assert.equal(statement.text.includes("booking_records"), true);
+  assert.equal(statement.text.includes("delete from"), true);
+  assert.deepEqual(statement.values, ["booking-1", "tenant-1"]);
+});
+
+test("buildQuoteRevenueDelete targets quote_records", () => {
+  const statement = buildQuoteRevenueDelete({
+    sourceId: "quote-1",
+    tenantId: "tenant-1",
+  });
+
+  assert.equal(statement.text.includes("quote_records"), true);
+  assert.equal(statement.text.includes("delete from"), true);
+  assert.deepEqual(statement.values, ["quote-1", "tenant-1"]);
+});
+
+test("buildPaymentRevenueDelete targets payment_records", () => {
+  const statement = buildPaymentRevenueDelete({
+    sourceId: "payment-1",
+    tenantId: "tenant-1",
+  });
+
+  assert.equal(statement.text.includes("payment_records"), true);
+  assert.equal(statement.text.includes("delete from"), true);
+  assert.deepEqual(statement.values, ["payment-1", "tenant-1"]);
 });

@@ -15,6 +15,21 @@ const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL traveler writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    await client.query(statement.text, statement.values);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildTravelerInquiryRecord = (inquiry = {}) => ({
   sourceId: String(inquiry._id || ""),
   tenantId: String(inquiry.tenantId || ""),
@@ -111,5 +126,16 @@ export const buildTravelerInquiryUpsert = (inquiry = {}) => {
   };
 };
 
+export const buildTravelerInquiryDelete = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    delete from public.traveler_inquiry_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const syncTravelerInquiryRecord = (inquiry, env) =>
   upsertRecord(buildTravelerInquiryUpsert(inquiry), env);
+
+export const deleteTravelerInquiryRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildTravelerInquiryDelete({ sourceId, tenantId }), env);

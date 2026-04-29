@@ -15,6 +15,21 @@ const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL revenue writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    await client.query(statement.text, statement.values);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildBookingRevenueRecord = (booking = {}) => ({
   sourceId: String(booking._id || ""),
   tenantId: String(booking.tenantId || ""),
@@ -189,6 +204,30 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
   };
 };
 
+export const buildBookingRevenueDelete = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    delete from public.booking_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildQuoteRevenueDelete = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    delete from public.quote_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildPaymentRevenueDelete = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    delete from public.payment_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const syncBookingRevenueRecord = (booking, env) =>
   upsertRecord(buildBookingRevenueUpsert(booking), env);
 
@@ -197,3 +236,12 @@ export const syncQuoteRevenueRecord = (quote, env) =>
 
 export const syncPaymentRevenueRecord = (payment, env) =>
   upsertRecord(buildPaymentRevenueUpsert(payment), env);
+
+export const deleteBookingRevenueRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildBookingRevenueDelete({ sourceId, tenantId }), env);
+
+export const deleteQuoteRevenueRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildQuoteRevenueDelete({ sourceId, tenantId }), env);
+
+export const deletePaymentRevenueRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildPaymentRevenueDelete({ sourceId, tenantId }), env);

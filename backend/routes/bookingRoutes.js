@@ -13,8 +13,18 @@ import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
 import Tenant from "../models/Tenant.js";
 import { generateReviewSequence } from "../utils/followUpSequencing.js";
 import { analyzeFeedbackSentiment, generateMonthlyImprovementReport } from "../utils/sentimentAnalysis.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncBookingRevenueRecord } from "../utils/postgresRevenueRecords.js";
+import {
+    deleteMongoDocumentFromShadowStore,
+    syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+    deleteBookingRevenueRecord,
+    deletePaymentRevenueRecord,
+    deleteQuoteRevenueRecord,
+    syncBookingRevenueRecord,
+} from "../utils/postgresRevenueRecords.js";
+import PaymentTransaction from "../models/PaymentTransaction.js";
+import QuoteProposal from "../models/QuoteProposal.js";
 
 const router = express.Router();
 
@@ -416,7 +426,39 @@ router.patch(
 // Delete a booking (Admin)
 router.delete('/:id', requireTenantAdmin, async (req, res) => {
     try {
-        await Booking.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id }));
+        const booking = await Booking.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        await deleteBookingRevenueRecord(booking._id, booking.tenantId);
+        await deleteMongoDocumentFromShadowStore({
+            entityType: 'bookings',
+            sourceId: booking._id,
+        });
+
+        const [payments, quotes] = await Promise.all([
+            PaymentTransaction.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
+            QuoteProposal.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
+        ]);
+
+        for (const payment of payments) {
+            await deletePaymentRevenueRecord(payment._id, payment.tenantId);
+            await deleteMongoDocumentFromShadowStore({
+                entityType: 'payments',
+                sourceId: payment._id,
+            });
+        }
+
+        for (const quote of quotes) {
+            await deleteQuoteRevenueRecord(quote._id, quote.tenantId);
+            await deleteMongoDocumentFromShadowStore({
+                entityType: 'quotes',
+                sourceId: quote._id,
+            });
+        }
+
         res.status(200).json({ message: 'Booking deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -13,8 +13,12 @@ import {
 } from "../utils/paymentWebhookState.js";
 import { buildTenantFilter, resolveTenantBaseUrl, withTenantId } from "../utils/tenantContext.js";
 import QuoteProposal from "../models/QuoteProposal.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
 import {
+  deleteMongoDocumentFromShadowStore,
+  syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+  deletePaymentRevenueRecord,
   syncBookingRevenueRecord,
   syncPaymentRevenueRecord,
   syncQuoteRevenueRecord,
@@ -436,6 +440,12 @@ router.delete("/:id", async (req, res) => {
     if (!payment) {
       return res.status(404).json({ message: "Payment transaction not found" });
     }
+
+    await deletePaymentRevenueRecord(payment._id, payment.tenantId);
+    await deleteMongoDocumentFromShadowStore({
+      entityType: "payments",
+      sourceId: payment._id,
+    });
 
     res.status(200).json({ message: "Payment transaction deleted" });
   } catch (error) {

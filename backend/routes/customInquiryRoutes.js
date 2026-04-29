@@ -8,10 +8,19 @@ import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
 import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
 import { generateQuoteProposal } from '../utils/quoteProposal.js';
-import { syncMongoDocumentToShadowStore } from '../utils/postgresShadowWrites.js';
+import {
+    deleteMongoDocumentFromShadowStore,
+    syncMongoDocumentToShadowStore,
+} from '../utils/postgresShadowWrites.js';
 import { fetchPrimaryInquiries } from '../utils/postgresPrimaryReads.js';
-import { syncTravelerInquiryRecord } from '../utils/postgresTravelerInquiryRecords.js';
-import { syncQuoteRevenueRecord } from '../utils/postgresRevenueRecords.js';
+import {
+    deleteTravelerInquiryRecord,
+    syncTravelerInquiryRecord,
+} from '../utils/postgresTravelerInquiryRecords.js';
+import {
+    deleteQuoteRevenueRecord,
+    syncQuoteRevenueRecord,
+} from '../utils/postgresRevenueRecords.js';
 
 const router = express.Router();
 
@@ -381,7 +390,27 @@ router.post('/:id/quotes/:quoteId/send', requireTenantAdmin, async (req, res) =>
 // Delete (Admin)
 router.delete('/:id', requireTenantAdmin, async (req, res) => {
     try {
-        await CustomInquiry.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id }));
+        const inquiry = await CustomInquiry.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+        if (!inquiry) {
+            return res.status(404).json({ message: 'Inquiry not found' });
+        }
+
+        await deleteTravelerInquiryRecord(inquiry._id, inquiry.tenantId);
+        await deleteMongoDocumentFromShadowStore({
+            entityType: 'travelers',
+            sourceId: inquiry._id,
+        });
+
+        const quotes = await QuoteProposal.find(buildTenantFilter(req, { inquiryId: inquiry._id })).lean();
+        for (const quote of quotes) {
+            await deleteQuoteRevenueRecord(quote._id, quote.tenantId);
+            await deleteMongoDocumentFromShadowStore({
+                entityType: 'quotes',
+                sourceId: quote._id,
+            });
+        }
+
         res.status(200).json({ message: 'Inquiry deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });
