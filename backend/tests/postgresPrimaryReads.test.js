@@ -5,6 +5,7 @@ import {
   buildPrimaryGuideDriverTeam,
   normalizePrimaryAccommodationRows,
   normalizePrimaryAirportPickupRows,
+  normalizePrimaryBookingRows,
   normalizePrimaryCompetitorRows,
   normalizePrimaryGuideDriverRows,
   normalizePrimaryInquiryRows,
@@ -263,6 +264,55 @@ test("normalizePrimaryTravelDocumentationRows rebuilds travel guide rows from po
   assert.equal(rows[0].market, "USA");
   assert.equal(rows[0].topic, "Visa");
   assert.equal(rows[0].status, "active");
+});
+
+test("normalizePrimaryBookingRows rebuilds booking admin rows from postgres rows", () => {
+  const rows = normalizePrimaryBookingRows([
+    {
+      source_id: "booking-1",
+      tenant_id: "tenant-1",
+      quote_proposal_id: "quote-1",
+      traveler_name: "Amina Said",
+      email: "amina@example.com",
+      phone: "+2557000",
+      package_tour: "Migration Escape",
+      status: "Confirmed",
+      revenue_stage: "awaiting-payment",
+      payment_status: "pending",
+      total_price: "5400",
+      currency: "USD",
+      referral_code: "REF-20",
+      lead_source: "partner-referral",
+      campaign_label: "Peak season",
+      first_touch_at: "2026-04-20T12:00:00.000Z",
+      converted_at: null,
+      travel_date: "2026-07-11T00:00:00.000Z",
+      source_payload: {
+        address: "Arusha",
+        pax: 2,
+        adults: 2,
+        children: 0,
+        notes: "Window seats preferred",
+        date: "2026-04-18T09:00:00.000Z",
+        createdAt: "2026-04-18T09:00:00.000Z",
+        updatedAt: "2026-04-28T11:00:00.000Z",
+      },
+      updated_at: "2026-04-28T11:00:00.000Z",
+      created_at: "2026-04-18T09:00:00.000Z",
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "booking-1");
+  assert.equal(rows[0].name, "Amina Said");
+  assert.equal(rows[0].packageTour, "Migration Escape");
+  assert.equal(rows[0].status, "Confirmed");
+  assert.equal(rows[0].paymentStatus, "pending");
+  assert.equal(rows[0].revenueStage, "awaiting-payment");
+  assert.equal(rows[0].totalPrice, 5400);
+  assert.equal(rows[0].address, "Arusha");
+  assert.equal(rows[0].quoteProposalId, "quote-1");
+  assert.equal(rows[0].travelDate, "2026-07-11T00:00:00.000Z");
+  assert.equal(rows[0].createdAt, "2026-04-18T09:00:00.000Z");
 });
 
 test("buildPrimaryGuideDriverTeam preserves notification readiness on dashboard team rows", () => {

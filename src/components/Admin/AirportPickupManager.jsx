@@ -62,7 +62,7 @@ const AirportPickupManager = () => {
     try {
       const [dashboardResponse, bookingsResponse, driverResponse] = await Promise.all([
         fetchAirportPickupDashboard({ source: "postgres" }),
-        fetchBookings(),
+        fetchBookings({ source: "postgres" }),
         fetchGuideDrivers({ source: "postgres" }),
       ]);
 

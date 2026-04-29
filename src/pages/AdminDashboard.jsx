@@ -470,7 +470,7 @@ const AdminDashboard = () => {
   };
   const loadBookings = async () => {
     try {
-      const res = await fetchBookings();
+      const res = await fetchBookings({ source: "postgres" });
       setBookings(res.data);
     } catch (e) {
       console.error(e);

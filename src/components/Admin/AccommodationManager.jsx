@@ -56,7 +56,7 @@ const AccommodationManager = () => {
     try {
       const [dashboardResponse, bookingsResponse] = await Promise.all([
         fetchAccommodationDashboard({ source: "postgres" }),
-        fetchBookings(),
+        fetchBookings({ source: "postgres" }),
       ]);
 
       setReservations(Array.isArray(dashboardResponse.data?.reservations) ? dashboardResponse.data.reservations : []);

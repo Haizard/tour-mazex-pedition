@@ -103,6 +103,48 @@ export const normalizePrimaryInquiryRows = (rows = []) =>
     };
   });
 
+export const normalizePrimaryBookingRows = (rows = []) =>
+  rows.map((row = {}) => {
+    const payload = row.source_payload || {};
+    const createdAt = toIso(row.created_at || payload.createdAt || payload.date);
+    const updatedAt = toIso(row.updated_at || payload.updatedAt);
+
+    return {
+      ...payload,
+      _id: String(row.source_id || payload._id || ""),
+      tenantId: String(row.tenant_id || payload.tenantId || ""),
+      quoteProposalId: row.quote_proposal_id
+        ? String(row.quote_proposal_id)
+        : payload.quoteProposalId
+          ? String(payload.quoteProposalId)
+          : null,
+      name: String(row.traveler_name || payload.name || ""),
+      email: String(row.email || payload.email || ""),
+      phone: String(row.phone || payload.phone || ""),
+      address: String(row.address || payload.address || ""),
+      packageTour: String(row.package_tour || payload.packageTour || ""),
+      status: String(row.status || payload.status || "Pending"),
+      revenueStage: String(row.revenue_stage || payload.revenueStage || "new"),
+      paymentStatus: String(row.payment_status || payload.paymentStatus || "not-started"),
+      totalPrice: toNumber(row.total_price ?? payload.totalPrice),
+      currency: String(row.currency || payload.currency || "USD"),
+      referralCode: String(row.referral_code || payload.referralCode || ""),
+      leadSource: String(row.lead_source || payload.leadSource || "website"),
+      campaignLabel: String(row.campaign_label || payload.campaignLabel || ""),
+      firstTouchAt: toIso(row.first_touch_at || payload.firstTouchAt),
+      convertedAt: toIso(row.converted_at || payload.convertedAt),
+      travelDate: toIso(row.travel_date || payload.travelDate),
+      paymentUpdatedAt: toIso(payload.paymentUpdatedAt),
+      bookingDate: toIso(payload.bookingDate || payload.date || createdAt),
+      createdAt,
+      updatedAt,
+      pax: toNumber(payload.pax, 1),
+      adults: toNumber(payload.adults, 1),
+      children: toNumber(payload.children, 0),
+      notes: String(payload.notes || ""),
+    };
+  });
+
 export const normalizePrimaryGuideDriverRows = (rows = []) =>
   rows.map((row = {}) => ({
     _id: String(row.source_id || ""),
@@ -297,6 +339,47 @@ export const fetchPrimaryPayments = async (tenantId = "", env = globalThis.proce
       [tenantId]
     );
     return normalizePrimaryPaymentRows(result.rows);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+export const fetchPrimaryBookings = async (tenantId = "", env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+  if (!client) return [];
+  await client.connect();
+  try {
+    const result = await client.query(
+      `
+        select
+          source_id,
+          tenant_id,
+          quote_proposal_id,
+          traveler_name,
+          email,
+          phone,
+          package_tour,
+          status,
+          revenue_stage,
+          payment_status,
+          total_price,
+          currency,
+          referral_code,
+          lead_source,
+          campaign_label,
+          first_touch_at,
+          converted_at,
+          travel_date,
+          source_payload,
+          created_at,
+          updated_at
+        from public.booking_records
+        where tenant_id = $1
+        order by updated_at desc
+      `,
+      [tenantId]
+    );
+    return normalizePrimaryBookingRows(result.rows);
   } finally {
     await client.end().catch(() => {});
   }

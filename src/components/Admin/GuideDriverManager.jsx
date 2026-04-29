@@ -71,7 +71,7 @@ const GuideDriverManager = () => {
     try {
       const [dashboardResponse, bookingsResponse] = await Promise.all([
         fetchGuideDriverDashboard({ source: "postgres" }),
-        fetchBookings(),
+        fetchBookings({ source: "postgres" }),
       ]);
 
       setTeam(Array.isArray(dashboardResponse.data?.team) ? dashboardResponse.data.team : []);

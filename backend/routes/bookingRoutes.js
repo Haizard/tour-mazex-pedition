@@ -23,6 +23,7 @@ import {
     deleteQuoteRevenueRecord,
     syncBookingRevenueRecord,
 } from "../utils/postgresRevenueRecords.js";
+import { fetchPrimaryBookings } from "../utils/postgresPrimaryReads.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 
@@ -56,6 +57,11 @@ const syncBookingRevenueViews = async (booking = {}) => {
 // Get all bookings (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
+        if (String(req.query.source || "").toLowerCase() === "postgres") {
+            const bookings = await fetchPrimaryBookings(String(req.tenantId || ""));
+            return res.status(200).json(bookings);
+        }
+
         const bookings = await Booking.find(buildTenantFilter(req)).sort({ createdAt: -1 });
         res.status(200).json(bookings);
     } catch (error) {

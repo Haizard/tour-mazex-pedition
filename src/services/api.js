@@ -447,7 +447,7 @@ export const updateTravelDocumentationGuide = (id, data) => API.patch(`/travel-d
 export const deleteTravelDocumentationGuide = (id) => API.delete(`/travel-docs/${id}`);
 
 // Bookings
-export const fetchBookings = () => cachedGet("/bookings");
+export const fetchBookings = (params = {}) => cachedGet("/bookings", { params });
 export const createBooking = (newBooking) => API.post("/bookings", newBooking);
 export const updateBookingStatus = (id, status) =>
   API.patch(`/bookings/${id}`, { status });
