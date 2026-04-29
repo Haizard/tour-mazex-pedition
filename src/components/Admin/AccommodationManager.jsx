@@ -56,8 +56,8 @@ const AccommodationManager = () => {
     setError("");
     try {
       const [reservationResponse, dashboardResponse, bookingsResponse] = await Promise.all([
-        fetchAccommodationReservations(),
-        fetchAccommodationDashboard(),
+        fetchAccommodationReservations({ source: "postgres" }),
+        fetchAccommodationDashboard({ source: "postgres" }),
         fetchBookings(),
       ]);
 

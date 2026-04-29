@@ -13,6 +13,7 @@ import {
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
 import { syncAirportPickupRecord } from "../utils/postgresOperationsRecords.js";
+import { fetchPrimaryAirportPickupData } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
 
@@ -98,6 +99,11 @@ const validatePickupPayload = async (req, payload = {}, currentPickupId = null) 
 
 router.get("/", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      const payload = await fetchPrimaryAirportPickupData(req.tenantId);
+      return res.status(200).json(payload.pickups);
+    }
+
     const [pickups, drivers] = await Promise.all([
       AirportPickup.find(buildTenantFilter(req))
         .sort({ pickupDateTime: 1, createdAt: -1 })
@@ -113,6 +119,10 @@ router.get("/", async (req, res) => {
 
 router.get("/dashboard", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      return res.status(200).json(await fetchPrimaryAirportPickupData(req.tenantId));
+    }
+
     const [pickups, drivers, bookings] = await Promise.all([
       AirportPickup.find(buildTenantFilter(req))
         .sort({ pickupDateTime: 1, createdAt: -1 })

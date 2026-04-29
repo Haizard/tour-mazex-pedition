@@ -71,8 +71,8 @@ const GuideDriverManager = () => {
     setError("");
     try {
       const [teamResponse, dashboardResponse, bookingsResponse] = await Promise.all([
-        fetchGuideDrivers(),
-        fetchGuideDriverDashboard(),
+        fetchGuideDrivers({ source: "postgres" }),
+        fetchGuideDriverDashboard({ source: "postgres" }),
         fetchBookings(),
       ]);
 

@@ -11,6 +11,7 @@ import {
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
 import { syncGuideDriverAssignmentRecord } from "../utils/postgresOperationsRecords.js";
+import { fetchPrimaryGuideDriverData } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
 
@@ -91,6 +92,11 @@ const validateAssignmentPayload = async (req, payload = {}, currentMemberId = nu
 
 router.get("/", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      const payload = await fetchPrimaryGuideDriverData(req.tenantId);
+      return res.status(200).json(payload.team);
+    }
+
     const team = await GuideDriver.find(buildTenantFilter(req))
       .sort({ staffType: 1, fullName: 1 })
       .lean();
@@ -108,6 +114,10 @@ router.get("/", async (req, res) => {
 
 router.get("/dashboard", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      return res.status(200).json(await fetchPrimaryGuideDriverData(req.tenantId));
+    }
+
     const [team, bookings] = await Promise.all([
       GuideDriver.find(buildTenantFilter(req))
         .sort({ staffType: 1, fullName: 1 })

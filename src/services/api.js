@@ -373,20 +373,24 @@ export const createGallery = (newItem) => API.post("/gallery", newItem);
 export const deleteGallery = (id) => API.delete(`/gallery/${id}`);
 
 // Guide & Drivers
-export const fetchGuideDrivers = () => cachedGet("/guide-drivers");
-export const fetchGuideDriverDashboard = () => cachedGet("/guide-drivers/dashboard");
+export const fetchGuideDrivers = (params = {}) => cachedGet("/guide-drivers", { params });
+export const fetchGuideDriverDashboard = (params = {}) =>
+  cachedGet("/guide-drivers/dashboard", { params });
 export const createGuideDriver = (data) => API.post("/guide-drivers", data);
 export const updateGuideDriver = (id, data) => API.patch(`/guide-drivers/${id}`, data);
 export const deleteGuideDriver = (id) => API.delete(`/guide-drivers/${id}`);
-export const fetchAccommodationReservations = () => cachedGet("/accommodations");
-export const fetchAccommodationDashboard = () => cachedGet("/accommodations/dashboard");
+export const fetchAccommodationReservations = (params = {}) =>
+  cachedGet("/accommodations", { params });
+export const fetchAccommodationDashboard = (params = {}) =>
+  cachedGet("/accommodations/dashboard", { params });
 export const createAccommodationReservation = (data) => API.post("/accommodations", data);
 export const updateAccommodationReservation = (id, data) =>
   API.patch(`/accommodations/${id}`, data);
 export const deleteAccommodationReservation = (id) =>
   API.delete(`/accommodations/${id}`);
-export const fetchAirportPickups = () => cachedGet("/airport-pickups");
-export const fetchAirportPickupDashboard = () => cachedGet("/airport-pickups/dashboard");
+export const fetchAirportPickups = (params = {}) => cachedGet("/airport-pickups", { params });
+export const fetchAirportPickupDashboard = (params = {}) =>
+  cachedGet("/airport-pickups/dashboard", { params });
 export const createAirportPickup = (data) => API.post("/airport-pickups", data);
 export const updateAirportPickup = (id, data) =>
   API.patch(`/airport-pickups/${id}`, data);

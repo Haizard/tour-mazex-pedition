@@ -62,10 +62,10 @@ const AirportPickupManager = () => {
     setError("");
     try {
       const [pickupResponse, dashboardResponse, bookingsResponse, driverResponse] = await Promise.all([
-        fetchAirportPickups(),
-        fetchAirportPickupDashboard(),
+        fetchAirportPickups({ source: "postgres" }),
+        fetchAirportPickupDashboard({ source: "postgres" }),
         fetchBookings(),
-        fetchGuideDrivers(),
+        fetchGuideDrivers({ source: "postgres" }),
       ]);
 
       setPickups(Array.isArray(pickupResponse.data) ? pickupResponse.data : []);

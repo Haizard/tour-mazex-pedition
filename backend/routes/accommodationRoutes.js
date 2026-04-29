@@ -11,6 +11,7 @@ import {
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
 import { syncAccommodationReservationRecord } from "../utils/postgresOperationsRecords.js";
+import { fetchPrimaryAccommodationData } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
 
@@ -96,6 +97,11 @@ const validateReservationPayload = async (req, payload = {}, currentReservationI
 
 router.get("/", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      const payload = await fetchPrimaryAccommodationData(req.tenantId);
+      return res.status(200).json(payload.reservations);
+    }
+
     const reservations = await AccommodationReservation.find(buildTenantFilter(req))
       .sort({ createdAt: -1 })
       .lean();
@@ -108,6 +114,10 @@ router.get("/", async (req, res) => {
 
 router.get("/dashboard", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      return res.status(200).json(await fetchPrimaryAccommodationData(req.tenantId));
+    }
+
     const [reservations, bookings] = await Promise.all([
       AccommodationReservation.find(buildTenantFilter(req)).sort({ createdAt: -1 }).lean(),
       Booking.find(buildTenantFilter(req)).sort({ travelDate: 1, createdAt: -1 }).lean(),
