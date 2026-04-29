@@ -42,7 +42,7 @@ const PartnerPortalManager = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetchPartnerAccounts();
+      const response = await fetchPartnerAccounts({ source: "postgres" });
       setPartners(Array.isArray(response.data) ? response.data : []);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load partner portal right now.");

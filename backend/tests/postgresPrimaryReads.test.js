@@ -5,8 +5,10 @@ import {
   buildPrimaryGuideDriverTeam,
   normalizePrimaryAccommodationRows,
   normalizePrimaryAirportPickupRows,
+  normalizePrimaryCompetitorRows,
   normalizePrimaryGuideDriverRows,
   normalizePrimaryInquiryRows,
+  normalizePrimaryPartnerRows,
   normalizePrimaryPaymentRows,
 } from "../utils/postgresPrimaryReads.js";
 
@@ -165,6 +167,58 @@ test("normalizePrimaryAirportPickupRows rebuilds pickup rows from postgres rows"
   assert.equal(rows[0].airportCode, "JRO");
   assert.equal(rows[0].guestCount, 2);
   assert.equal(rows[0].vehicleLabel, "Land Cruiser");
+});
+
+test("normalizePrimaryPartnerRows rebuilds partner list rows from postgres rows", () => {
+  const rows = normalizePrimaryPartnerRows([
+    {
+      source_id: "partner-1",
+      tenant_id: "tenant-1",
+      partner_type: "agency",
+      company_name: "Safari Allies",
+      contact_name: "Amina",
+      email: "amina@safari-allies.example",
+      phone: "+2557002",
+      location: "Arusha",
+      service_focus: "Luxury",
+      contract_label: "Gold",
+      payout_terms: "Net 30",
+      notes: "Preferred partner",
+      status: "active",
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "partner-1");
+  assert.equal(rows[0].companyName, "Safari Allies");
+  assert.equal(rows[0].partnerType, "agency");
+  assert.equal(rows[0].status, "active");
+});
+
+test("normalizePrimaryCompetitorRows rebuilds competitor list rows from postgres rows", () => {
+  const rows = normalizePrimaryCompetitorRows([
+    {
+      source_id: "insight-1",
+      tenant_id: "tenant-1",
+      competitor_name: "Safari Rival",
+      market_region: "East Africa",
+      focus_route: "Serengeti",
+      observed_price_usd: "4200",
+      currency: "USD",
+      market_trend: "Rising demand",
+      offer_summary: "Migration package",
+      source_label: "Meta ad",
+      intelligence_date: "2026-04-29T00:00:00.000Z",
+      strength_signals: ["Speed", "Packaging"],
+      risk_signals: ["Discounting"],
+      status: "active",
+      notes: "Watch pricing",
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "insight-1");
+  assert.equal(rows[0].competitorName, "Safari Rival");
+  assert.equal(rows[0].observedPriceUsd, 4200);
+  assert.deepEqual(rows[0].strengthSignals, ["Speed", "Packaging"]);
 });
 
 test("buildPrimaryGuideDriverTeam preserves notification readiness on dashboard team rows", () => {

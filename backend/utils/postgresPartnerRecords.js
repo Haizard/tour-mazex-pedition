@@ -15,6 +15,21 @@ const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL partner writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    await client.query(statement.text, statement.values);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildPartnerAccountRecord = (partner = {}) => ({
   sourceId: String(partner._id || ""),
   tenantId: String(partner.tenantId || ""),
@@ -79,5 +94,16 @@ export const buildPartnerAccountUpsert = (partner = {}) => {
   };
 };
 
+export const buildPartnerAccountDelete = (sourceId = "", tenantId = "") => ({
+  text: `
+    delete from public.partner_account_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const syncPartnerAccountRecord = (partner, env) =>
   upsertRecord(buildPartnerAccountUpsert(partner), env);
+
+export const deletePartnerAccountRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildPartnerAccountDelete(sourceId, tenantId), env);

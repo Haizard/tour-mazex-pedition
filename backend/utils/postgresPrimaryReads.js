@@ -14,6 +14,8 @@ import {
   buildAirportPickupDashboard,
   enrichAirportPickups,
 } from "./airportPickupCoordination.js";
+import { summarizePartnerAccount } from "./partnerPortal.js";
+import { summarizeCompetitorInsight } from "./competitorIntelligence.js";
 
 const toNumber = (value, fallback = 0) =>
   value === null || value === undefined || value === "" ? fallback : Number(value);
@@ -167,6 +169,45 @@ export const normalizePrimaryAirportPickupRows = (rows = []) =>
     status: String(row.status || "pending"),
     notes: String(row.notes || ""),
     lastDriverBriefSharedAt: toIso(row.source_payload?.lastDriverBriefSharedAt),
+  }));
+
+export const normalizePrimaryPartnerRows = (rows = []) =>
+  rows.map((row = {}) => ({
+    _id: String(row.source_id || ""),
+    tenantId: String(row.tenant_id || ""),
+    partnerType: String(row.partner_type || "hotel"),
+    companyName: String(row.company_name || ""),
+    contactName: String(row.contact_name || ""),
+    email: String(row.email || ""),
+    phone: String(row.phone || ""),
+    location: String(row.location || ""),
+    serviceFocus: String(row.service_focus || ""),
+    contractLabel: String(row.contract_label || ""),
+    payoutTerms: String(row.payout_terms || ""),
+    notes: String(row.notes || ""),
+    status: String(row.status || "pending"),
+  }));
+
+export const normalizePrimaryCompetitorRows = (rows = []) =>
+  rows.map((row = {}) => ({
+    _id: String(row.source_id || ""),
+    tenantId: String(row.tenant_id || ""),
+    competitorName: String(row.competitor_name || ""),
+    marketRegion: String(row.market_region || ""),
+    focusRoute: String(row.focus_route || ""),
+    observedPriceUsd:
+      row.observed_price_usd === null || row.observed_price_usd === undefined
+        ? null
+        : Number(row.observed_price_usd || 0),
+    currency: String(row.currency || "USD"),
+    marketTrend: String(row.market_trend || ""),
+    offerSummary: String(row.offer_summary || ""),
+    sourceLabel: String(row.source_label || ""),
+    intelligenceDate: toIso(row.intelligence_date),
+    strengthSignals: Array.isArray(row.strength_signals) ? row.strength_signals : [],
+    riskSignals: Array.isArray(row.risk_signals) ? row.risk_signals : [],
+    status: String(row.status || "watchlist"),
+    notes: String(row.notes || ""),
   }));
 
 const normalizePrimaryBookingProjectionRows = (rows = []) =>
@@ -530,6 +571,100 @@ export const fetchPrimaryAirportPickupData = async (
         conflicts: pickups.filter((pickup) => pickup.conflictCount > 0).length,
       },
     };
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+export const fetchPrimaryPartnerAccounts = async (
+  tenantId = "",
+  env = globalThis.process?.env || {}
+) => {
+  const client = createPostgresClient(env);
+  if (!client) return [];
+  await client.connect();
+  try {
+    const result = await client.query(
+      `
+        select
+          source_id,
+          tenant_id,
+          partner_type,
+          company_name,
+          contact_name,
+          email,
+          phone,
+          location,
+          service_focus,
+          contract_label,
+          payout_terms,
+          notes,
+          status
+        from public.partner_account_records
+        where tenant_id = $1
+        order by partner_type asc, company_name asc
+      `,
+      [tenantId]
+    );
+
+    return normalizePrimaryPartnerRows(result.rows).map((partner) => ({
+      ...partner,
+      partnerSummary: summarizePartnerAccount(partner),
+    }));
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+export const fetchPrimaryCompetitorInsights = async (
+  tenantId = "",
+  env = globalThis.process?.env || {}
+) => {
+  const client = createPostgresClient(env);
+  if (!client) return [];
+  await client.connect();
+  try {
+    const result = await client.query(
+      `
+        select
+          source_id,
+          tenant_id,
+          competitor_name,
+          market_region,
+          focus_route,
+          observed_price_usd,
+          currency,
+          market_trend,
+          offer_summary,
+          source_label,
+          intelligence_date,
+          coalesce(
+            (
+              select array_agg(value order by value)
+              from jsonb_array_elements_text(strength_signals) value
+            ),
+            array[]::text[]
+          ) as strength_signals,
+          coalesce(
+            (
+              select array_agg(value order by value)
+              from jsonb_array_elements_text(risk_signals) value
+            ),
+            array[]::text[]
+          ) as risk_signals,
+          status,
+          notes
+        from public.competitor_insight_records
+        where tenant_id = $1
+        order by updated_at desc
+      `,
+      [tenantId]
+    );
+
+    return normalizePrimaryCompetitorRows(result.rows).map((insight) => ({
+      ...insight,
+      intelligenceSummary: summarizeCompetitorInsight(insight),
+    }));
   } finally {
     await client.end().catch(() => {});
   }

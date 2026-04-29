@@ -15,6 +15,21 @@ const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL competitor writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    await client.query(statement.text, statement.values);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildCompetitorInsightRecord = (insight = {}) => ({
   sourceId: String(insight._id || ""),
   tenantId: String(insight.tenantId || ""),
@@ -89,5 +104,16 @@ export const buildCompetitorInsightUpsert = (insight = {}) => {
   };
 };
 
+export const buildCompetitorInsightDelete = (sourceId = "", tenantId = "") => ({
+  text: `
+    delete from public.competitor_insight_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const syncCompetitorInsightRecord = (insight, env) =>
   upsertRecord(buildCompetitorInsightUpsert(insight), env);
+
+export const deleteCompetitorInsightRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildCompetitorInsightDelete(sourceId, tenantId), env);

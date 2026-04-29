@@ -5,8 +5,15 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { summarizeCompetitorInsight } from "../utils/competitorIntelligence.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncCompetitorInsightRecord } from "../utils/postgresCompetitorRecords.js";
+import {
+  deleteMongoDocumentFromShadowStore,
+  syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+  deleteCompetitorInsightRecord,
+  syncCompetitorInsightRecord,
+} from "../utils/postgresCompetitorRecords.js";
+import { fetchPrimaryCompetitorInsights } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
 
@@ -29,6 +36,10 @@ const syncCompetitorViews = async (insight = {}) => {
 
 router.get("/", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      return res.status(200).json(await fetchPrimaryCompetitorInsights(req.tenantId));
+    }
+
     const insights = await CompetitorInsight.find(buildTenantFilter(req))
       .sort({ updatedAt: -1 })
       .lean();
@@ -130,6 +141,12 @@ router.delete("/:id", async (req, res) => {
     if (!insight) {
       return res.status(404).json({ message: "Competitor insight not found" });
     }
+
+    await deleteCompetitorInsightRecord(insight._id, insight.tenantId);
+    await deleteMongoDocumentFromShadowStore({
+      entityType: "competitor-intelligence",
+      sourceId: insight._id,
+    });
 
     res.status(200).json({ message: "Competitor insight deleted" });
   } catch (error) {

@@ -395,7 +395,7 @@ export const createAirportPickup = (data) => API.post("/airport-pickups", data);
 export const updateAirportPickup = (id, data) =>
   API.patch(`/airport-pickups/${id}`, data);
 export const deleteAirportPickup = (id) => API.delete(`/airport-pickups/${id}`);
-export const fetchPartnerAccounts = () => cachedGet("/partners");
+export const fetchPartnerAccounts = (params = {}) => cachedGet("/partners", { params });
 export const createPartnerAccount = (data) => API.post("/partners", data);
 export const updatePartnerAccount = (id, data) => API.patch(`/partners/${id}`, data);
 export const deletePartnerAccount = (id) => API.delete(`/partners/${id}`);
@@ -430,7 +430,8 @@ export const fetchDistributionBootstrap = (params = {}) =>
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
 export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);
-export const fetchCompetitorInsights = () => cachedGet("/competitor-intelligence");
+export const fetchCompetitorInsights = (params = {}) =>
+  cachedGet("/competitor-intelligence", { params });
 export const createCompetitorInsight = (data) => API.post("/competitor-intelligence", data);
 export const updateCompetitorInsight = (id, data) => API.patch(`/competitor-intelligence/${id}`, data);
 export const deleteCompetitorInsight = (id) => API.delete(`/competitor-intelligence/${id}`);

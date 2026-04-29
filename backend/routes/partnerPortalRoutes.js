@@ -4,8 +4,15 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { summarizePartnerAccount } from "../utils/partnerPortal.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncPartnerAccountRecord } from "../utils/postgresPartnerRecords.js";
+import {
+  deleteMongoDocumentFromShadowStore,
+  syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+  deletePartnerAccountRecord,
+  syncPartnerAccountRecord,
+} from "../utils/postgresPartnerRecords.js";
+import { fetchPrimaryPartnerAccounts } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
 
@@ -28,6 +35,10 @@ const syncPartnerViews = async (partner = {}) => {
 
 router.get("/", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      return res.status(200).json(await fetchPrimaryPartnerAccounts(req.tenantId));
+    }
+
     const partners = await PartnerAccount.find(buildTenantFilter(req))
       .sort({ partnerType: 1, companyName: 1 })
       .lean();
@@ -124,6 +135,12 @@ router.delete("/:id", async (req, res) => {
     if (!partner) {
       return res.status(404).json({ message: "Partner account not found" });
     }
+
+    await deletePartnerAccountRecord(partner._id, partner.tenantId);
+    await deleteMongoDocumentFromShadowStore({
+      entityType: "partner-contracts-and-attribution",
+      sourceId: partner._id,
+    });
 
     res.status(200).json({ message: "Partner account deleted" });
   } catch (error) {

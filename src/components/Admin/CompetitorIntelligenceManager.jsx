@@ -44,7 +44,7 @@ const CompetitorIntelligenceManager = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetchCompetitorInsights();
+      const response = await fetchCompetitorInsights({ source: "postgres" });
       setInsights(Array.isArray(response.data) ? response.data : []);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load competitor intelligence right now.");
