@@ -1,12 +1,16 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
 import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
 import SocialAccount from "../models/SocialAccount.js";
 import { sendWhatsAppTextMessage } from "../utils/metaGraphApi.js";
+import { syncLeadFollowUpSequenceRecord } from "../utils/postgresEngagementRecords.js";
+import { processDueTouchpoints } from "../utils/followUpProcessor.js";
 
 dotenv.config();
 
-const processFollowUps = async () => {
+export const processFollowUps = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log("Processing automated follow-ups...");
@@ -34,31 +38,21 @@ const processFollowUps = async () => {
         continue;
       }
 
-      for (const tp of sequence.touchpoints) {
-        if (tp.status === "pending" && tp.scheduledAt <= now) {
-          try {
-            console.log(`Sending follow-up to ${sequence.inquiryId?.phone || "unknown"}...`);
-            
-            if (tp.channel === "whatsapp" && sequence.inquiryId?.phone) {
-              await sendWhatsAppTextMessage(socialAccount, {
-                phone: sequence.inquiryId.phone,
-                message: tp.content,
-              });
-            } else {
-              // Fallback or other channels (email etc)
-              console.log(`Channel ${tp.channel} not fully automated yet or missing phone.`);
-            }
+      console.log(`Processing follow-up sequence ${sequence._id} for ${sequence.inquiryId?.phone || "unknown"}...`);
 
-            tp.status = "sent";
-            tp.sentAt = new Date();
-          } catch (error) {
-            console.error(`Failed to send touchpoint for sequence ${sequence._id}:`, error.message);
-            tp.status = "failed";
-          }
-        }
+      const { changed } = await processDueTouchpoints({
+        sequence,
+        now,
+        sendWhatsAppMessage: ({ phone, message }) =>
+          sendWhatsAppTextMessage(socialAccount, { phone, message }),
+      });
+
+      if (!changed) {
+        continue;
       }
 
       await sequence.save();
+      await syncLeadFollowUpSequenceRecord(sequence.toObject(), process.env);
     }
 
     console.log("Follow-up processing complete.");
@@ -69,4 +63,9 @@ const processFollowUps = async () => {
   }
 };
 
-processFollowUps();
+const currentFilePath = fileURLToPath(import.meta.url);
+const isDirectRun = process.argv[1] && currentFilePath === process.argv[1];
+
+if (isDirectRun) {
+  processFollowUps();
+}
