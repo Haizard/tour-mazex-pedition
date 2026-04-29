@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaWhatsapp, FaEnvelope, FaUserTag, FaHistory, FaCheckCircle, FaTrash } from "react-icons/fa";
-import Badge from "../UI/Badge";
+import { FaWhatsapp, FaEnvelope, FaHistory, FaCheckCircle } from "react-icons/fa";
 import Button from "../UI/Button";
 import Card from "../UI/Card";
 import {
@@ -11,16 +10,15 @@ import {
 const RepeatCustomerManager = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
 
   const loadCampaigns = async () => {
     setLoading(true);
     try {
-      const response = await fetchRepeatCustomerCampaigns();
+      const response = await fetchRepeatCustomerCampaigns({ source: "postgres" });
       setCampaigns(response.data);
     } catch (err) {
-      setError("Failed to load repeat customer campaigns.");
+      console.error("Failed to load repeat customer campaigns:", err);
     } finally {
       setLoading(false);
     }
@@ -112,7 +110,7 @@ const RepeatCustomerManager = () => {
                             <p className="text-sm font-bold text-slate-800">{campaign.subject}</p>
                         </div>
                         <div className="bg-slate-50 rounded-2xl p-4 text-xs font-medium text-slate-600 leading-relaxed max-h-32 overflow-y-auto scrollbar-hide italic">
-                            "{campaign.message}"
+                            &quot;{campaign.message}&quot;
                         </div>
 
                         <div className="flex items-center justify-between pt-4 border-t border-slate-100">

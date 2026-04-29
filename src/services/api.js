@@ -452,13 +452,14 @@ export const createBooking = (newBooking) => API.post("/bookings", newBooking);
 export const updateBookingStatus = (id, status) =>
   API.patch(`/bookings/${id}`, { status });
 export const deleteBooking = (id) => API.delete(`/bookings/${id}`);
-export const fetchReviewRequests = () => cachedGet("/bookings/review-requests");
+export const fetchReviewRequests = (params = {}) =>
+  cachedGet("/bookings/review-requests", { params });
 export const generateBookingReviewRequest = (id) =>
   API.post(`/bookings/${id}/review-request`);
 export const updateReviewRequest = (id, data) =>
   API.patch(`/bookings/review-requests/${id}`, data);
-export const fetchRepeatCustomerCampaigns = () =>
-  cachedGet("/bookings/repeat-customer-campaigns");
+export const fetchRepeatCustomerCampaigns = (params = {}) =>
+  cachedGet("/bookings/repeat-customer-campaigns", { params });
 export const generateRepeatCustomerCampaign = (id) =>
   API.post(`/bookings/${id}/repeat-customer-campaign`);
 export const updateRepeatCustomerCampaign = (id, data) =>

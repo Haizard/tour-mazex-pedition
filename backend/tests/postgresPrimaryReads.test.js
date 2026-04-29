@@ -12,6 +12,8 @@ import {
   normalizePrimaryLanguageAssistantRows,
   normalizePrimaryPartnerRows,
   normalizePrimaryPaymentRows,
+  normalizePrimaryRepeatCustomerCampaignRows,
+  normalizePrimaryReviewRequestRows,
   normalizePrimaryTravelDocumentationRows,
 } from "../utils/postgresPrimaryReads.js";
 
@@ -264,6 +266,64 @@ test("normalizePrimaryTravelDocumentationRows rebuilds travel guide rows from po
   assert.equal(rows[0].market, "USA");
   assert.equal(rows[0].topic, "Visa");
   assert.equal(rows[0].status, "active");
+});
+
+test("normalizePrimaryReviewRequestRows rebuilds review automation rows from postgres rows", () => {
+  const rows = normalizePrimaryReviewRequestRows([
+    {
+      source_id: "review-1",
+      tenant_id: "tenant-1",
+      booking_id: "booking-1",
+      guest_name: "Amina Said",
+      guest_email: "amina@example.com",
+      booking_label: "Migration Escape",
+      subject: "Please review us",
+      message: "We would love your feedback",
+      status: "sent",
+      platforms: [{ channel: "google", label: "Google Reviews", reviewUrl: "https://google.example" }],
+      send_window_label: "3 days after trip",
+      next_step_checklist: ["Add links", "Send"],
+      sent_at: "2026-04-28T10:00:00.000Z",
+      completed_at: null,
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "review-1");
+  assert.equal(rows[0].bookingId, "booking-1");
+  assert.equal(rows[0].guestName, "Amina Said");
+  assert.equal(rows[0].platforms[0].channel, "google");
+  assert.equal(rows[0].sentAt, "2026-04-28T10:00:00.000Z");
+});
+
+test("normalizePrimaryRepeatCustomerCampaignRows rebuilds loyalty campaign rows from postgres rows", () => {
+  const rows = normalizePrimaryRepeatCustomerCampaignRows([
+    {
+      source_id: "campaign-1",
+      tenant_id: "tenant-1",
+      booking_id: "booking-1",
+      guest_name: "Amina Said",
+      guest_email: "amina@example.com",
+      booking_label: "Migration Escape",
+      campaign_type: "anniversary",
+      audience_tag: "vip",
+      segment: "VIP",
+      channel: "whatsapp",
+      offer_label: "VIP Loyalty Recognition",
+      subject: "Exclusive VIP Invitation",
+      message: "We would love to host you again",
+      status: "sent",
+      recommended_send_at_label: "post-trip",
+      next_step_checklist: ["Confirm channel"],
+      sent_at: "2026-04-29T10:00:00.000Z",
+      converted_at: null,
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "campaign-1");
+  assert.equal(rows[0].campaignType, "anniversary");
+  assert.equal(rows[0].segment, "VIP");
+  assert.equal(rows[0].channel, "whatsapp");
+  assert.equal(rows[0].nextStepChecklist[0], "Confirm channel");
 });
 
 test("normalizePrimaryBookingRows rebuilds booking admin rows from postgres rows", () => {

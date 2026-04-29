@@ -478,7 +478,7 @@ const AdminDashboard = () => {
   };
   const loadReviewRequests = async () => {
     try {
-      const res = await fetchReviewRequests();
+      const res = await fetchReviewRequests({ source: "postgres" });
       setReviewRequests(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       if (e.response?.status === 403) {
@@ -491,7 +491,7 @@ const AdminDashboard = () => {
   };
   const loadRepeatCustomerCampaigns = async () => {
     try {
-      const res = await fetchRepeatCustomerCampaigns();
+      const res = await fetchRepeatCustomerCampaigns({ source: "postgres" });
       setRepeatCustomerCampaigns(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       if (e.response?.status === 403) {

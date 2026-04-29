@@ -23,7 +23,17 @@ import {
     deleteQuoteRevenueRecord,
     syncBookingRevenueRecord,
 } from "../utils/postgresRevenueRecords.js";
-import { fetchPrimaryBookings } from "../utils/postgresPrimaryReads.js";
+import {
+    deleteRepeatCustomerCampaignRecord,
+    deleteReviewRequestRecord,
+    syncRepeatCustomerCampaignRecord,
+    syncReviewRequestRecord,
+} from "../utils/postgresBookingLifecycleRecords.js";
+import {
+    fetchPrimaryBookings,
+    fetchPrimaryRepeatCustomerCampaigns,
+    fetchPrimaryReviewRequests,
+} from "../utils/postgresPrimaryReads.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 
@@ -54,6 +64,34 @@ const syncBookingRevenueViews = async (booking = {}) => {
     }
 };
 
+const syncReviewRequestViews = async (reviewRequest = {}) => {
+    await syncMongoDocumentToShadowStore({
+        entityType: "review-requests",
+        document: reviewRequest,
+        model: ReviewRequest,
+    });
+
+    try {
+        await syncReviewRequestRecord(reviewRequest);
+    } catch (error) {
+        console.error("Review request record sync failed:", error.message);
+    }
+};
+
+const syncRepeatCustomerCampaignViews = async (campaign = {}) => {
+    await syncMongoDocumentToShadowStore({
+        entityType: "repeat-customer-campaigns",
+        document: campaign,
+        model: RepeatCustomerCampaign,
+    });
+
+    try {
+        await syncRepeatCustomerCampaignRecord(campaign);
+    } catch (error) {
+        console.error("Repeat customer campaign record sync failed:", error.message);
+    }
+};
+
 // Get all bookings (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
@@ -75,6 +113,11 @@ router.get(
     requireSubscriptionFeature("review-automation"),
     async (req, res) => {
         try {
+            if (String(req.query.source || "").toLowerCase() === "postgres") {
+                const reviewRequests = await fetchPrimaryReviewRequests(String(req.tenantId || ""));
+                return res.status(200).json(reviewRequests);
+            }
+
             const reviewRequests = await ReviewRequest.find(buildTenantFilter(req))
                 .sort({ createdAt: -1 })
                 .lean();
@@ -91,6 +134,11 @@ router.get(
     requireSubscriptionFeature("repeat-customer-automation"),
     async (req, res) => {
         try {
+            if (String(req.query.source || "").toLowerCase() === "postgres") {
+                const campaigns = await fetchPrimaryRepeatCustomerCampaigns(String(req.tenantId || ""));
+                return res.status(200).json(campaigns);
+            }
+
             const campaigns = await RepeatCustomerCampaign.find(buildTenantFilter(req))
                 .sort({ createdAt: -1 })
                 .lean();
@@ -271,6 +319,7 @@ router.post(
                 })
             );
             await reviewRequest.save();
+            await syncReviewRequestViews(reviewRequest.toObject());
 
             res.status(201).json(reviewRequest);
         } catch (error) {
@@ -325,6 +374,7 @@ router.post(
             );
 
             await campaign.save();
+            await syncRepeatCustomerCampaignViews(campaign.toObject());
 
             res.status(201).json(campaign);
         } catch (error) {
@@ -376,6 +426,7 @@ router.patch(
                 return res.status(404).json({ message: "Review request not found" });
             }
 
+            await syncReviewRequestViews(reviewRequest.toObject());
             res.status(200).json(reviewRequest);
         } catch (error) {
             res.status(500).json({ message: error.message });
@@ -422,6 +473,7 @@ router.patch(
                 return res.status(404).json({ message: "Repeat customer campaign not found" });
             }
 
+            await syncRepeatCustomerCampaignViews(campaign.toObject());
             res.status(200).json(campaign);
         } catch (error) {
             res.status(500).json({ message: error.message });
@@ -444,9 +496,11 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
             sourceId: booking._id,
         });
 
-        const [payments, quotes] = await Promise.all([
+        const [payments, quotes, reviewRequests, repeatCampaigns] = await Promise.all([
             PaymentTransaction.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
             QuoteProposal.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
+            ReviewRequest.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
+            RepeatCustomerCampaign.find(buildTenantFilter(req, { bookingId: booking._id })).lean(),
         ]);
 
         for (const payment of payments) {
@@ -464,6 +518,25 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
                 sourceId: quote._id,
             });
         }
+
+        for (const reviewRequest of reviewRequests) {
+            await deleteReviewRequestRecord(reviewRequest._id, reviewRequest.tenantId);
+            await deleteMongoDocumentFromShadowStore({
+                entityType: 'review-requests',
+                sourceId: reviewRequest._id,
+            });
+        }
+
+        for (const campaign of repeatCampaigns) {
+            await deleteRepeatCustomerCampaignRecord(campaign._id, campaign.tenantId);
+            await deleteMongoDocumentFromShadowStore({
+                entityType: 'repeat-customer-campaigns',
+                sourceId: campaign._id,
+            });
+        }
+
+        await ReviewRequest.deleteMany(buildTenantFilter(req, { bookingId: booking._id }));
+        await RepeatCustomerCampaign.deleteMany(buildTenantFilter(req, { bookingId: booking._id }));
 
         res.status(200).json({ message: 'Booking deleted successfully' });
     } catch (error) {
