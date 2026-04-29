@@ -15,6 +15,21 @@ const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL assistant writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    await client.query(statement.text, statement.values);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildLanguageAssistantProfileRecord = (profile = {}) => ({
   sourceId: String(profile._id || ""),
   tenantId: String(profile.tenantId || ""),
@@ -118,8 +133,30 @@ export const buildTravelDocumentationGuideUpsert = (guide = {}) => {
   };
 };
 
+export const buildLanguageAssistantProfileDelete = (sourceId = "", tenantId = "") => ({
+  text: `
+    delete from public.language_assistant_profile_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildTravelDocumentationGuideDelete = (sourceId = "", tenantId = "") => ({
+  text: `
+    delete from public.travel_documentation_guide_records
+    where source_id = $1 and tenant_id = $2
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const syncLanguageAssistantProfileRecord = (profile, env) =>
   upsertRecord(buildLanguageAssistantProfileUpsert(profile), env);
 
 export const syncTravelDocumentationGuideRecord = (guide, env) =>
   upsertRecord(buildTravelDocumentationGuideUpsert(guide), env);
+
+export const deleteLanguageAssistantProfileRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildLanguageAssistantProfileDelete(sourceId, tenantId), env);
+
+export const deleteTravelDocumentationGuideRecord = (sourceId, tenantId, env) =>
+  deleteRecord(buildTravelDocumentationGuideDelete(sourceId, tenantId), env);

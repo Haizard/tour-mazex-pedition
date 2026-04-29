@@ -58,8 +58,8 @@ const TravelerAssistanceManager = () => {
     setError("");
     try {
       const [languageResponse, guideResponse] = await Promise.all([
-        fetchLanguageAssistantProfiles(),
-        fetchTravelDocumentationGuides(),
+        fetchLanguageAssistantProfiles({ source: "postgres" }),
+        fetchTravelDocumentationGuides({ source: "postgres" }),
       ]);
 
       setLanguageProfiles(Array.isArray(languageResponse.data) ? languageResponse.data : []);

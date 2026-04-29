@@ -8,8 +8,10 @@ import {
   normalizePrimaryCompetitorRows,
   normalizePrimaryGuideDriverRows,
   normalizePrimaryInquiryRows,
+  normalizePrimaryLanguageAssistantRows,
   normalizePrimaryPartnerRows,
   normalizePrimaryPaymentRows,
+  normalizePrimaryTravelDocumentationRows,
 } from "../utils/postgresPrimaryReads.js";
 
 test("normalizePrimaryPaymentRows rebuilds payment admin records from postgres rows", () => {
@@ -219,6 +221,48 @@ test("normalizePrimaryCompetitorRows rebuilds competitor list rows from postgres
   assert.equal(rows[0].competitorName, "Safari Rival");
   assert.equal(rows[0].observedPriceUsd, 4200);
   assert.deepEqual(rows[0].strengthSignals, ["Speed", "Packaging"]);
+});
+
+test("normalizePrimaryLanguageAssistantRows rebuilds language pack rows from postgres rows", () => {
+  const rows = normalizePrimaryLanguageAssistantRows([
+    {
+      source_id: "lang-1",
+      tenant_id: "tenant-1",
+      language: "French",
+      locale_code: "fr-FR",
+      tone: "Warm",
+      use_cases: ["Sales", "Support"],
+      glossary: ["Safari", "Transfer"],
+      status: "active",
+      notes: "Priority pack",
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "lang-1");
+  assert.equal(rows[0].language, "French");
+  assert.deepEqual(rows[0].useCases, ["Sales", "Support"]);
+  assert.equal(rows[0].status, "active");
+});
+
+test("normalizePrimaryTravelDocumentationRows rebuilds travel guide rows from postgres rows", () => {
+  const rows = normalizePrimaryTravelDocumentationRows([
+    {
+      source_id: "doc-1",
+      tenant_id: "tenant-1",
+      market: "USA",
+      topic: "Visa",
+      requirement_summary: "Apply before travel",
+      source_label: "Embassy",
+      last_reviewed_at: "2026-04-29T00:00:00.000Z",
+      status: "active",
+      notes: "Updated this week",
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "doc-1");
+  assert.equal(rows[0].market, "USA");
+  assert.equal(rows[0].topic, "Visa");
+  assert.equal(rows[0].status, "active");
 });
 
 test("buildPrimaryGuideDriverTeam preserves notification readiness on dashboard team rows", () => {

@@ -4,8 +4,15 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { summarizeTravelDocumentationGuide } from "../utils/travelDocumentationAssistant.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncTravelDocumentationGuideRecord } from "../utils/postgresAssistantRecords.js";
+import {
+  deleteMongoDocumentFromShadowStore,
+  syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+  deleteTravelDocumentationGuideRecord,
+  syncTravelDocumentationGuideRecord,
+} from "../utils/postgresAssistantRecords.js";
+import { fetchPrimaryTravelDocumentationGuides } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
 
@@ -28,6 +35,10 @@ const syncTravelDocumentationViews = async (guide = {}) => {
 
 router.get("/", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      return res.status(200).json(await fetchPrimaryTravelDocumentationGuides(req.tenantId));
+    }
+
     const guides = await TravelDocumentationGuide.find(buildTenantFilter(req))
       .sort({ market: 1, topic: 1 })
       .lean();
@@ -118,6 +129,12 @@ router.delete("/:id", async (req, res) => {
     if (!guide) {
       return res.status(404).json({ message: "Travel documentation guide not found" });
     }
+
+    await deleteTravelDocumentationGuideRecord(guide._id, guide.tenantId);
+    await deleteMongoDocumentFromShadowStore({
+      entityType: "travel-documentation-guides",
+      sourceId: guide._id,
+    });
 
     res.status(200).json({ message: "Travel documentation guide deleted" });
   } catch (error) {

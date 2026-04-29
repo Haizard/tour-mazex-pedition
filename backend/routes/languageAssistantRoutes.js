@@ -4,8 +4,15 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { summarizeLanguageAssistantProfile } from "../utils/languageAssistant.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
-import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncLanguageAssistantProfileRecord } from "../utils/postgresAssistantRecords.js";
+import {
+  deleteMongoDocumentFromShadowStore,
+  syncMongoDocumentToShadowStore,
+} from "../utils/postgresShadowWrites.js";
+import {
+  deleteLanguageAssistantProfileRecord,
+  syncLanguageAssistantProfileRecord,
+} from "../utils/postgresAssistantRecords.js";
+import { fetchPrimaryLanguageAssistantProfiles } from "../utils/postgresPrimaryReads.js";
 
 const router = express.Router();
 
@@ -28,6 +35,10 @@ const syncLanguageAssistantViews = async (profile = {}) => {
 
 router.get("/", async (req, res) => {
   try {
+    if (req.query.source === "postgres") {
+      return res.status(200).json(await fetchPrimaryLanguageAssistantProfiles(req.tenantId));
+    }
+
     const profiles = await LanguageAssistantProfile.find(buildTenantFilter(req))
       .sort({ language: 1 })
       .lean();
@@ -116,6 +127,12 @@ router.delete("/:id", async (req, res) => {
     if (!profile) {
       return res.status(404).json({ message: "Language assistant profile not found" });
     }
+
+    await deleteLanguageAssistantProfileRecord(profile._id, profile.tenantId);
+    await deleteMongoDocumentFromShadowStore({
+      entityType: "language-assistant-profiles",
+      sourceId: profile._id,
+    });
 
     res.status(200).json({ message: "Language assistant profile deleted" });
   } catch (error) {

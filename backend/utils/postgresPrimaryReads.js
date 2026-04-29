@@ -16,6 +16,8 @@ import {
 } from "./airportPickupCoordination.js";
 import { summarizePartnerAccount } from "./partnerPortal.js";
 import { summarizeCompetitorInsight } from "./competitorIntelligence.js";
+import { summarizeLanguageAssistantProfile } from "./languageAssistant.js";
+import { summarizeTravelDocumentationGuide } from "./travelDocumentationAssistant.js";
 
 const toNumber = (value, fallback = 0) =>
   value === null || value === undefined || value === "" ? fallback : Number(value);
@@ -207,6 +209,32 @@ export const normalizePrimaryCompetitorRows = (rows = []) =>
     strengthSignals: Array.isArray(row.strength_signals) ? row.strength_signals : [],
     riskSignals: Array.isArray(row.risk_signals) ? row.risk_signals : [],
     status: String(row.status || "watchlist"),
+    notes: String(row.notes || ""),
+  }));
+
+export const normalizePrimaryLanguageAssistantRows = (rows = []) =>
+  rows.map((row = {}) => ({
+    _id: String(row.source_id || ""),
+    tenantId: String(row.tenant_id || ""),
+    language: String(row.language || ""),
+    localeCode: String(row.locale_code || ""),
+    tone: String(row.tone || ""),
+    useCases: Array.isArray(row.use_cases) ? row.use_cases : [],
+    glossary: Array.isArray(row.glossary) ? row.glossary : [],
+    status: String(row.status || "draft"),
+    notes: String(row.notes || ""),
+  }));
+
+export const normalizePrimaryTravelDocumentationRows = (rows = []) =>
+  rows.map((row = {}) => ({
+    _id: String(row.source_id || ""),
+    tenantId: String(row.tenant_id || ""),
+    market: String(row.market || ""),
+    topic: String(row.topic || ""),
+    requirementSummary: String(row.requirement_summary || ""),
+    sourceLabel: String(row.source_label || ""),
+    lastReviewedAt: toIso(row.last_reviewed_at),
+    status: String(row.status || "draft"),
     notes: String(row.notes || ""),
   }));
 
@@ -664,6 +692,90 @@ export const fetchPrimaryCompetitorInsights = async (
     return normalizePrimaryCompetitorRows(result.rows).map((insight) => ({
       ...insight,
       intelligenceSummary: summarizeCompetitorInsight(insight),
+    }));
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+export const fetchPrimaryLanguageAssistantProfiles = async (
+  tenantId = "",
+  env = globalThis.process?.env || {}
+) => {
+  const client = createPostgresClient(env);
+  if (!client) return [];
+  await client.connect();
+  try {
+    const result = await client.query(
+      `
+        select
+          source_id,
+          tenant_id,
+          language,
+          locale_code,
+          tone,
+          coalesce(
+            (
+              select array_agg(value order by value)
+              from jsonb_array_elements_text(use_cases) value
+            ),
+            array[]::text[]
+          ) as use_cases,
+          coalesce(
+            (
+              select array_agg(value order by value)
+              from jsonb_array_elements_text(glossary) value
+            ),
+            array[]::text[]
+          ) as glossary,
+          status,
+          notes
+        from public.language_assistant_profile_records
+        where tenant_id = $1
+        order by language asc
+      `,
+      [tenantId]
+    );
+
+    return normalizePrimaryLanguageAssistantRows(result.rows).map((profile) => ({
+      ...profile,
+      profileSummary: summarizeLanguageAssistantProfile(profile),
+    }));
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+export const fetchPrimaryTravelDocumentationGuides = async (
+  tenantId = "",
+  env = globalThis.process?.env || {}
+) => {
+  const client = createPostgresClient(env);
+  if (!client) return [];
+  await client.connect();
+  try {
+    const result = await client.query(
+      `
+        select
+          source_id,
+          tenant_id,
+          market,
+          topic,
+          requirement_summary,
+          source_label,
+          last_reviewed_at,
+          status,
+          notes
+        from public.travel_documentation_guide_records
+        where tenant_id = $1
+        order by market asc, topic asc
+      `,
+      [tenantId]
+    );
+
+    return normalizePrimaryTravelDocumentationRows(result.rows).map((guide) => ({
+      ...guide,
+      guideSummary: summarizeTravelDocumentationGuide(guide),
     }));
   } finally {
     await client.end().catch(() => {});

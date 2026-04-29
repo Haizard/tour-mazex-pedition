@@ -435,11 +435,13 @@ export const fetchCompetitorInsights = (params = {}) =>
 export const createCompetitorInsight = (data) => API.post("/competitor-intelligence", data);
 export const updateCompetitorInsight = (id, data) => API.patch(`/competitor-intelligence/${id}`, data);
 export const deleteCompetitorInsight = (id) => API.delete(`/competitor-intelligence/${id}`);
-export const fetchLanguageAssistantProfiles = () => cachedGet("/language-assistants");
+export const fetchLanguageAssistantProfiles = (params = {}) =>
+  cachedGet("/language-assistants", { params });
 export const createLanguageAssistantProfile = (data) => API.post("/language-assistants", data);
 export const updateLanguageAssistantProfile = (id, data) => API.patch(`/language-assistants/${id}`, data);
 export const deleteLanguageAssistantProfile = (id) => API.delete(`/language-assistants/${id}`);
-export const fetchTravelDocumentationGuides = () => cachedGet("/travel-docs");
+export const fetchTravelDocumentationGuides = (params = {}) =>
+  cachedGet("/travel-docs", { params });
 export const createTravelDocumentationGuide = (data) => API.post("/travel-docs", data);
 export const updateTravelDocumentationGuide = (id, data) => API.patch(`/travel-docs/${id}`, data);
 export const deleteTravelDocumentationGuide = (id) => API.delete(`/travel-docs/${id}`);
