@@ -6,6 +6,7 @@ import {
   fetchAssistantRecordReadModel,
   fetchBusinessTruthRegistry,
   fetchCompetitorRecordReadModel,
+  fetchEngagementRecordReadModel,
   fetchInfrastructureHealth,
   fetchMediaRecordReadModel,
   fetchOperationsRecordReadModel,
@@ -25,6 +26,7 @@ const InfrastructureReadinessManager = () => {
   const [health, setHealth] = useState(null);
   const [assistantReadModel, setAssistantReadModel] = useState(null);
   const [competitorReadModel, setCompetitorReadModel] = useState(null);
+  const [engagementReadModel, setEngagementReadModel] = useState(null);
   const [operationsReadModel, setOperationsReadModel] = useState(null);
   const [partnerReadModel, setPartnerReadModel] = useState(null);
   const [mediaReadModel, setMediaReadModel] = useState(null);
@@ -44,6 +46,7 @@ const InfrastructureReadinessManager = () => {
           healthResponse,
           assistantResponse,
           competitorResponse,
+          engagementResponse,
           mediaResponse,
           operationsResponse,
           partnerResponse,
@@ -54,6 +57,7 @@ const InfrastructureReadinessManager = () => {
           fetchInfrastructureHealth(),
           fetchAssistantRecordReadModel(),
           fetchCompetitorRecordReadModel(),
+          fetchEngagementRecordReadModel(),
           fetchMediaRecordReadModel(),
           fetchOperationsRecordReadModel(),
           fetchPartnerRecordReadModel(),
@@ -65,6 +69,7 @@ const InfrastructureReadinessManager = () => {
         setHealth(healthResponse.data);
         setAssistantReadModel(assistantResponse.data);
         setCompetitorReadModel(competitorResponse.data);
+        setEngagementReadModel(engagementResponse.data);
         setMediaReadModel(mediaResponse.data);
         setOperationsReadModel(operationsResponse.data);
         setPartnerReadModel(partnerResponse.data);
@@ -86,6 +91,8 @@ const InfrastructureReadinessManager = () => {
   const assistantSummary = assistantReadModel?.summary || [];
   const recentAssistantRecords = assistantReadModel?.recentRecords || [];
   const competitorSummary = competitorReadModel?.summary || [];
+  const engagementSummary = engagementReadModel?.summary || [];
+  const recentEngagementRecords = engagementReadModel?.recentRecords || [];
   const recentCompetitorRecords = competitorReadModel?.recentRecords || [];
   const mediaSummary = mediaReadModel?.summary || [];
   const recentMediaRecords = mediaReadModel?.recentRecords || [];
@@ -192,6 +199,88 @@ const InfrastructureReadinessManager = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
+              PostgreSQL Engagement Read Model
+            </h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Reputation feedback and automated lead follow-up records now queried directly from
+              dedicated PostgreSQL engagement tables.
+            </p>
+          </div>
+          <Badge variant={engagementReadModel?.configured ? "accent" : "secondary"}>
+            {engagementReadModel?.configured ? "Live From PostgreSQL" : "Not Connected"}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {loading && <p className="text-sm font-medium text-slate-500">Loading engagement records...</p>}
+          {!loading &&
+            engagementSummary.map((item) => (
+              <div key={item.domain} className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+                  {item.domain}
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                  {item.totalRecords}
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-500">
+                  Active {item.activeRecords}
+                </p>
+              </div>
+            ))}
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+              Recent Engagement Records
+            </h4>
+            {engagementReadModel?.generatedAt && (
+              <p className="text-xs font-bold text-slate-400">
+                Snapshot {new Date(engagementReadModel.generatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {loading && <p className="text-sm font-medium text-slate-500">Loading recent engagement...</p>}
+          {!loading && recentEngagementRecords.length === 0 && (
+            <p className="text-sm font-medium text-slate-500">
+              No PostgreSQL engagement records have been synced for this tenant yet.
+            </p>
+          )}
+          {!loading &&
+            recentEngagementRecords.map((record) => (
+              <div
+                key={`${record.domain}-${record.sourceId}`}
+                className="rounded-[24px] border border-slate-200 bg-white px-5 py-4"
+              >
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{record.domain}</Badge>
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        {record.label || record.sourceId}
+                      </p>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      {record.supportingLabel || "No secondary label"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="accent">{record.stage}</Badge>
+                    <p className="text-xs font-bold text-slate-400">
+                      {record.updatedAt ? new Date(record.updatedAt).toLocaleString() : "Unknown sync"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Card>
 
       <Card className="border-none p-8 shadow-xl">
         <div className="mb-6 flex items-center justify-between gap-3">

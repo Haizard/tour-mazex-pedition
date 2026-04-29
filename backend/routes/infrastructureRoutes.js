@@ -8,6 +8,7 @@ import {
 } from "../utils/businessTruthRegistry.js";
 import { fetchAssistantReadModel } from "../utils/postgresAssistantReadModel.js";
 import { fetchCompetitorReadModel } from "../utils/postgresCompetitorReadModel.js";
+import { fetchEngagementReadModel } from "../utils/postgresEngagementReadModel.js";
 import { fetchMediaReadModel } from "../utils/postgresMediaReadModel.js";
 import { fetchOperationsReadModel } from "../utils/postgresOperationsReadModel.js";
 import { fetchPartnerReadModel } from "../utils/postgresPartnerReadModel.js";
@@ -110,6 +111,18 @@ router.get("/competitor-records", async (req, res) => {
 router.get("/assistant-records", async (req, res) => {
   try {
     const report = await fetchAssistantReadModel({
+      tenantId: String(req.tenantId || ""),
+      limit: Number(req.query.limit || 12),
+    });
+    res.status(200).json(report);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/engagement-records", async (req, res) => {
+  try {
+    const report = await fetchEngagementReadModel({
       tenantId: String(req.tenantId || ""),
       limit: Number(req.query.limit || 12),
     });
