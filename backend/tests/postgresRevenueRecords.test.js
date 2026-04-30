@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildBookingRevenueDelete,
   buildBookingRevenueUpsert,
+  buildPaymentProviderReferenceLookup,
   buildPaymentPublicTokenLookup,
   buildPaymentRevenueDelete,
   buildPaymentRevenueUpsert,
@@ -108,6 +109,18 @@ test("buildPaymentPublicTokenLookup targets the public token in payment_records"
   assert.equal(statement.text.includes("payment_records"), true);
   assert.equal(statement.text.includes("where pr.public_token = $1"), true);
   assert.deepEqual(statement.values, ["payment-token-1"]);
+});
+
+test("buildPaymentProviderReferenceLookup targets provider references in payment_records", () => {
+  const statement = buildPaymentProviderReferenceLookup({
+    provider: "stripe",
+    providerReference: "pi_123",
+  });
+
+  assert.equal(statement.text.includes("payment_records"), true);
+  assert.equal(statement.text.includes("where pr.provider = $1"), true);
+  assert.equal(statement.text.includes("and pr.provider_reference = $2"), true);
+  assert.deepEqual(statement.values, ["stripe", "pi_123"]);
 });
 
 test("buildPublicQuoteRevenueView reconstructs the public quote payload from postgres", () => {

@@ -21,6 +21,7 @@ import {
 import {
   buildPublicPaymentRevenueView,
   deletePaymentRevenueRecord,
+  findPaymentRevenueRecordByProviderReference,
   findPaymentRevenueRecordByPublicToken,
   syncBookingRevenueRecord,
   syncPaymentRevenueRecord,
@@ -246,13 +247,19 @@ router.post("/webhooks/:provider", async (req, res) => {
       return res.status(400).json({ message: "publicToken or providerReference is required." });
     }
 
-    const payment = await PaymentTransaction.findOne({
-      provider,
-      $or: [
-        publicToken ? { publicToken } : null,
-        providerReference ? { providerReference } : null,
-      ].filter(Boolean),
-    });
+    const paymentLookup = publicToken
+      ? await findPaymentRevenueRecordByPublicToken(publicToken, process.env)
+      : await findPaymentRevenueRecordByProviderReference(provider, providerReference, process.env);
+
+    const payment = paymentLookup?.source_id
+      ? await PaymentTransaction.findById(paymentLookup.source_id)
+      : await PaymentTransaction.findOne({
+          provider,
+          $or: [
+            publicToken ? { publicToken } : null,
+            providerReference ? { providerReference } : null,
+          ].filter(Boolean),
+        });
 
     if (!payment) {
       return res.status(404).json({ message: "Payment transaction not found." });

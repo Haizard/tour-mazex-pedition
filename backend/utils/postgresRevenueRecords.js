@@ -299,6 +299,42 @@ export const buildPaymentPublicTokenLookup = ({ publicToken = "" } = {}) => ({
   values: [String(publicToken || "")],
 });
 
+export const buildPaymentProviderReferenceLookup = ({
+  provider = "",
+  providerReference = "",
+} = {}) => ({
+  text: `
+    select
+      pr.source_id,
+      pr.tenant_id,
+      pr.booking_id,
+      pr.status,
+      pr.provider,
+      pr.public_token,
+      pr.provider_reference,
+      pr.customer_name,
+      pr.currency,
+      pr.amount,
+      pr.fee_percent,
+      pr.fee_amount,
+      pr.failure_reason,
+      pr.paid_at,
+      pr.refunded_at,
+      pr.cancelled_at,
+      pr.updated_at,
+      pr.source_payload,
+      br.traveler_name as booking_name,
+      br.package_tour as booking_package_tour
+    from public.payment_records pr
+    left join public.booking_records br
+      on br.source_id = pr.booking_id and br.tenant_id = pr.tenant_id
+    where pr.provider = $1
+      and pr.provider_reference = $2
+    limit 1
+  `,
+  values: [String(provider || ""), String(providerReference || "")],
+});
+
 export const buildPublicQuoteRevenueView = (row = {}) => {
   const payload = row.source_payload || {};
 
@@ -399,3 +435,6 @@ export const findQuoteRevenueRecordByPublicToken = (publicToken, env) =>
 
 export const findPaymentRevenueRecordByPublicToken = (publicToken, env) =>
   querySingleRow(buildPaymentPublicTokenLookup({ publicToken }), env);
+
+export const findPaymentRevenueRecordByProviderReference = (provider, providerReference, env) =>
+  querySingleRow(buildPaymentProviderReferenceLookup({ provider, providerReference }), env);
