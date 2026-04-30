@@ -23,6 +23,7 @@ import {
     syncTravelerInquiryRecord,
 } from '../utils/postgresTravelerInquiryRecords.js';
 import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
+import { safePrimaryLookup } from "../utils/safePrimaryLookup.js";
 import {
     buildPublicQuoteRevenueView,
     deleteQuoteRevenueRecord,
@@ -227,7 +228,14 @@ router.post('/whatsapp-lead', async (req, res) => {
 // Public Quote Access (No Auth Required)
 router.get('/public-quote/:token', async (req, res) => {
     try {
-        const quoteLookup = await findQuoteRevenueRecordByPublicToken(req.params.token, process.env);
+        const quoteLookup = await safePrimaryLookup(
+            () => findQuoteRevenueRecordByPublicToken(req.params.token, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary public quote lookup failed:", error.message);
+                },
+            }
+        );
         if (quoteLookup) {
             return res.status(200).json(buildPublicQuoteRevenueView(quoteLookup));
         }
@@ -267,7 +275,14 @@ router.post('/public-quote/:token/respond', async (req, res) => {
             update.rejectionReason = reason || '';
         }
 
-        const quoteLookup = await findQuoteRevenueRecordByPublicToken(req.params.token, process.env);
+        const quoteLookup = await safePrimaryLookup(
+            () => findQuoteRevenueRecordByPublicToken(req.params.token, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary public quote response lookup failed:", error.message);
+                },
+            }
+        );
         const quote = await QuoteProposal.findOneAndUpdate(
             quoteLookup?.source_id ? { _id: quoteLookup.source_id } : { publicToken: req.params.token },
             { $set: update },
@@ -288,7 +303,14 @@ router.post('/public-quote/:token/respond', async (req, res) => {
 
         await syncQuoteRevenueViews(quote);
 
-        const refreshedQuote = await findQuoteRevenueRecordByPublicToken(req.params.token, process.env);
+        const refreshedQuote = await safePrimaryLookup(
+            () => findQuoteRevenueRecordByPublicToken(req.params.token, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary public quote refresh lookup failed:", error.message);
+                },
+            }
+        );
 
         res.status(200).json({
             message: `Quote successfully ${action === 'accept' ? 'accepted' : 'feedback received'}.`,

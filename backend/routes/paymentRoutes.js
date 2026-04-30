@@ -29,6 +29,7 @@ import {
 } from "../utils/postgresRevenueRecords.js";
 import { fetchPrimaryPayments } from "../utils/postgresPrimaryReads.js";
 import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
+import { safePrimaryLookup } from "../utils/safePrimaryLookup.js";
 
 const router = express.Router();
 
@@ -161,7 +162,14 @@ const syncRevenueShadowWrites = async (req, payment = {}) => {
 
 router.get("/checkout/:token", async (req, res) => {
   try {
-    const paymentLookup = await findPaymentRevenueRecordByPublicToken(req.params.token, process.env);
+    const paymentLookup = await safePrimaryLookup(
+      () => findPaymentRevenueRecordByPublicToken(req.params.token, process.env),
+      {
+        onError: (error) => {
+          console.error("Primary payment checkout lookup failed:", error.message);
+        },
+      }
+    );
     if (paymentLookup) {
       return res.status(200).json(buildPublicPaymentRevenueView(paymentLookup));
     }
@@ -194,7 +202,14 @@ router.post("/checkout/:token/respond", async (req, res) => {
       return res.status(400).json({ message: "Unsupported payment response status." });
     }
 
-    const paymentLookup = await findPaymentRevenueRecordByPublicToken(req.params.token, process.env);
+    const paymentLookup = await safePrimaryLookup(
+      () => findPaymentRevenueRecordByPublicToken(req.params.token, process.env),
+      {
+        onError: (error) => {
+          console.error("Primary payment response lookup failed:", error.message);
+        },
+      }
+    );
     const payment = paymentLookup?.source_id
       ? await PaymentTransaction.findById(paymentLookup.source_id)
       : await PaymentTransaction.findOne({ publicToken: req.params.token });
@@ -216,7 +231,14 @@ router.post("/checkout/:token/respond", async (req, res) => {
     await syncLinkedRevenueRecords(req, payment.toObject());
     await syncRevenueShadowWrites(req, payment.toObject());
 
-    const refreshedPayment = await findPaymentRevenueRecordByPublicToken(req.params.token, process.env);
+    const refreshedPayment = await safePrimaryLookup(
+      () => findPaymentRevenueRecordByPublicToken(req.params.token, process.env),
+      {
+        onError: (error) => {
+          console.error("Primary payment refresh lookup failed:", error.message);
+        },
+      }
+    );
 
     res.status(200).json({
       ...(refreshedPayment
@@ -252,9 +274,17 @@ router.post("/webhooks/:provider", async (req, res) => {
       return res.status(400).json({ message: "publicToken or providerReference is required." });
     }
 
-    const paymentLookup = publicToken
-      ? await findPaymentRevenueRecordByPublicToken(publicToken, process.env)
-      : await findPaymentRevenueRecordByProviderReference(provider, providerReference, process.env);
+    const paymentLookup = await safePrimaryLookup(
+      () =>
+        publicToken
+          ? findPaymentRevenueRecordByPublicToken(publicToken, process.env)
+          : findPaymentRevenueRecordByProviderReference(provider, providerReference, process.env),
+      {
+        onError: (error) => {
+          console.error("Primary payment webhook lookup failed:", error.message);
+        },
+      }
+    );
 
     const payment = paymentLookup?.source_id
       ? await PaymentTransaction.findById(paymentLookup.source_id)

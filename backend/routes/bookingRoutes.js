@@ -49,6 +49,7 @@ import {
     syncTravelerFeedbackRecord,
 } from "../utils/postgresEngagementRecords.js";
 import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
+import { safePrimaryLookup } from "../utils/safePrimaryLookup.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 
@@ -613,9 +614,23 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
 // Public Feedback Routes
 router.get("/public-feedback/:token", async (req, res) => {
     try {
-        const feedback = await findTravelerFeedbackByPublicToken(req.params.token, process.env);
+        const feedback = await safePrimaryLookup(
+            () => findTravelerFeedbackByPublicToken(req.params.token, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary public feedback lookup failed:", error.message);
+                },
+            }
+        );
         if (!feedback) {
-            return res.status(404).json({ message: "Feedback link invalid" });
+            const legacyFeedback = await TravelerFeedback.findOne({ publicToken: req.params.token }).populate("bookingId", "name").lean();
+            if (!legacyFeedback) {
+                return res.status(404).json({ message: "Feedback link invalid" });
+            }
+            if (legacyFeedback.status === "submitted") {
+                return res.status(400).json({ message: "Feedback already submitted" });
+            }
+            return res.status(200).json(legacyFeedback);
         }
         if (feedback.status === "submitted") {
             return res.status(400).json({ message: "Feedback already submitted" });
@@ -629,7 +644,14 @@ router.get("/public-feedback/:token", async (req, res) => {
 router.post("/public-feedback/:token", async (req, res) => {
     try {
         const { rating, privateNote, publicReview } = req.body;
-        const feedbackLookup = await findTravelerFeedbackByPublicToken(req.params.token, process.env);
+        const feedbackLookup = await safePrimaryLookup(
+            () => findTravelerFeedbackByPublicToken(req.params.token, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary public feedback response lookup failed:", error.message);
+                },
+            }
+        );
         const feedback = feedbackLookup?.source_id
             ? await TravelerFeedback.findById(feedbackLookup.source_id)
             : await TravelerFeedback.findOne({ publicToken: req.params.token });
@@ -666,7 +688,14 @@ router.post("/public-feedback/:token", async (req, res) => {
         await feedback.save();
         await syncTravelerFeedbackViews(feedback.toObject());
 
-        const refreshedFeedback = await findTravelerFeedbackByPublicToken(req.params.token, process.env);
+        const refreshedFeedback = await safePrimaryLookup(
+            () => findTravelerFeedbackByPublicToken(req.params.token, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary public feedback refresh lookup failed:", error.message);
+                },
+            }
+        );
         res.status(200).json(
             refreshedFeedback ? buildPublicTravelerFeedbackView(refreshedFeedback) : feedback.toObject()
         );
