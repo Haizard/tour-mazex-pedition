@@ -1,4 +1,5 @@
 import express from 'express';
+import process from "node:process";
 import Booking from '../models/Booking.js';
 import RepeatCustomerCampaign from "../models/RepeatCustomerCampaign.js";
 import ReviewRequest from "../models/ReviewRequest.js";
@@ -38,6 +39,7 @@ import {
 import {
     deleteLeadFollowUpSequenceRecord,
     deleteTravelerFeedbackRecord,
+    findTravelerFeedbackByPublicToken,
     syncLeadFollowUpSequenceRecord,
     syncTravelerFeedbackRecord,
 } from "../utils/postgresEngagementRecords.js";
@@ -604,14 +606,29 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
 // Public Feedback Routes
 router.get("/public-feedback/:token", async (req, res) => {
     try {
-        const feedback = await TravelerFeedback.findOne({ publicToken: req.params.token }).lean();
+        const feedback = await findTravelerFeedbackByPublicToken(req.params.token, process.env);
         if (!feedback) {
             return res.status(404).json({ message: "Feedback link invalid" });
         }
         if (feedback.status === "submitted") {
             return res.status(400).json({ message: "Feedback already submitted" });
         }
-        res.status(200).json(feedback);
+        res.status(200).json({
+            _id: String(feedback.source_id || ""),
+            bookingId: feedback.booking_id
+                ? {
+                    _id: String(feedback.booking_id),
+                    name: String(feedback.booking_name || ""),
+                }
+                : null,
+            rating: feedback.rating === null || feedback.rating === undefined ? null : Number(feedback.rating || 0),
+            privateNote: String(feedback.private_note || ""),
+            publicReview: String(feedback.public_review || ""),
+            publicToken: String(feedback.public_token || ""),
+            referralCode: String(feedback.referral_code || ""),
+            status: String(feedback.status || "pending"),
+            submittedAt: feedback.submitted_at ? new Date(feedback.submitted_at).toISOString() : null,
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -620,7 +637,10 @@ router.get("/public-feedback/:token", async (req, res) => {
 router.post("/public-feedback/:token", async (req, res) => {
     try {
         const { rating, privateNote, publicReview } = req.body;
-        const feedback = await TravelerFeedback.findOne({ publicToken: req.params.token });
+        const feedbackLookup = await findTravelerFeedbackByPublicToken(req.params.token, process.env);
+        const feedback = feedbackLookup?.source_id
+            ? await TravelerFeedback.findById(feedbackLookup.source_id)
+            : await TravelerFeedback.findOne({ publicToken: req.params.token });
         
         if (!feedback) {
             return res.status(404).json({ message: "Feedback link invalid" });

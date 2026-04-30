@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildTravelerFeedbackPublicTokenLookup,
   buildLeadFollowUpSequenceDelete,
   buildLeadFollowUpSequenceRecord,
   buildLeadFollowUpSequenceUpsert,
@@ -50,10 +51,30 @@ test("buildTravelerFeedbackUpsert produces stable SQL and values", () => {
   assert.equal(statement.values[13], JSON.stringify([]));
 });
 
+test("buildTravelerFeedbackUpsert keeps non-null text defaults for optional AI fields", () => {
+  const statement = buildTravelerFeedbackUpsert({
+    _id: "feedback-2",
+    tenantId: "tenant-1",
+    bookingId: "booking-1",
+    publicToken: "public-token-2",
+  });
+
+  assert.equal(statement.values[10], "");
+  assert.equal(statement.values[12], "");
+  assert.equal(statement.values[14], "");
+});
+
 test("buildTravelerFeedbackDelete targets one source and tenant pair", () => {
   const statement = buildTravelerFeedbackDelete({ sourceId: "feedback-1", tenantId: "tenant-1" });
   assert.match(statement.text, /delete from public\.traveler_feedback_records/i);
   assert.deepEqual(statement.values, ["feedback-1", "tenant-1"]);
+});
+
+test("buildTravelerFeedbackPublicTokenLookup targets the public token", () => {
+  const statement = buildTravelerFeedbackPublicTokenLookup({ publicToken: "public-token" });
+  assert.match(statement.text, /from public\.traveler_feedback_records/i);
+  assert.match(statement.text, /where fr\.public_token = \$1/i);
+  assert.deepEqual(statement.values, ["public-token"]);
 });
 
 test("buildLeadFollowUpSequenceRecord normalizes follow-up sequence for postgres", () => {

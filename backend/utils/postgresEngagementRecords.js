@@ -28,6 +28,21 @@ const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const querySingleRow = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+  if (!client) {
+    throw new Error("PostgreSQL engagement writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const result = await client.query(statement.text, statement.values);
+    return result.rows[0] || null;
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildTravelerFeedbackRecord = (feedback = {}) => ({
   sourceId: String(feedback._id || ""),
   tenantId: String(feedback.tenantId || ""),
@@ -109,11 +124,11 @@ export const buildTravelerFeedbackUpsert = (feedback = {}) => {
       record.referralCode,
       record.status,
       record.submittedAt,
-      record.aiSentiment || null,
+      record.aiSentiment || "",
       record.aiScore,
-      record.aiSummary,
+      record.aiSummary || "",
       JSON.stringify(record.aiKeyTopics),
-      record.aiImprovementSuggestion,
+      record.aiImprovementSuggestion || "",
       JSON.stringify(record.sourcePayload || {}),
     ],
   };
@@ -159,6 +174,34 @@ export const buildTravelerFeedbackDelete = ({ sourceId = "", tenantId = "" } = {
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildTravelerFeedbackPublicTokenLookup = ({ publicToken = "" } = {}) => ({
+  text: `
+    select
+      fr.source_id,
+      fr.tenant_id,
+      fr.booking_id,
+      fr.rating,
+      fr.private_note,
+      fr.public_review,
+      fr.public_token,
+      fr.referral_code,
+      fr.status,
+      fr.submitted_at,
+      fr.ai_sentiment,
+      fr.ai_score,
+      fr.ai_summary,
+      fr.ai_key_topics,
+      fr.ai_improvement_suggestion,
+      br.traveler_name as booking_name
+    from public.traveler_feedback_records fr
+    left join public.booking_records br
+      on br.source_id = fr.booking_id and br.tenant_id = fr.tenant_id
+    where fr.public_token = $1
+    limit 1
+  `,
+  values: [String(publicToken || "")],
+});
+
 export const buildLeadFollowUpSequenceDelete = ({ sourceId = "", tenantId = "" } = {}) => ({
   text: `
     delete from public.lead_follow_up_sequence_records
@@ -178,3 +221,6 @@ export const deleteTravelerFeedbackRecord = (sourceId, tenantId, env) =>
 
 export const deleteLeadFollowUpSequenceRecord = (sourceId, tenantId, env) =>
   deleteRecord(buildLeadFollowUpSequenceDelete({ sourceId, tenantId }), env);
+
+export const findTravelerFeedbackByPublicToken = async (publicToken, env) =>
+  querySingleRow(buildTravelerFeedbackPublicTokenLookup({ publicToken }), env);
