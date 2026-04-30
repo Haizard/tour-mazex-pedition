@@ -30,6 +30,31 @@ const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const querySingleRow = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL assistant writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const result = await client.query(statement.text, statement.values);
+    return result.rows[0] || null;
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+const toIso = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
+
 export const buildLanguageAssistantProfileRecord = (profile = {}) => ({
   sourceId: String(profile._id || ""),
   tenantId: String(profile.tenantId || ""),
@@ -149,6 +174,50 @@ export const buildTravelDocumentationGuideDelete = (sourceId = "", tenantId = ""
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildLanguageAssistantProfileLookup = (sourceId = "", tenantId = "") => ({
+  text: `
+    select *
+    from public.language_assistant_profile_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildTravelDocumentationGuideLookup = (sourceId = "", tenantId = "") => ({
+  text: `
+    select *
+    from public.travel_documentation_guide_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildLanguageAssistantProfileView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  language: String(row.language || ""),
+  localeCode: String(row.locale_code || ""),
+  tone: String(row.tone || ""),
+  useCases: Array.isArray(row.use_cases) ? row.use_cases : [],
+  glossary: Array.isArray(row.glossary) ? row.glossary : [],
+  status: String(row.status || "draft"),
+  notes: String(row.notes || ""),
+});
+
+export const buildTravelDocumentationGuideView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  market: String(row.market || ""),
+  topic: String(row.topic || ""),
+  requirementSummary: String(row.requirement_summary || ""),
+  sourceLabel: String(row.source_label || ""),
+  lastReviewedAt: toIso(row.last_reviewed_at),
+  status: String(row.status || "draft"),
+  notes: String(row.notes || ""),
+});
+
 export const syncLanguageAssistantProfileRecord = (profile, env) =>
   upsertRecord(buildLanguageAssistantProfileUpsert(profile), env);
 
@@ -160,3 +229,9 @@ export const deleteLanguageAssistantProfileRecord = (sourceId, tenantId, env) =>
 
 export const deleteTravelDocumentationGuideRecord = (sourceId, tenantId, env) =>
   deleteRecord(buildTravelDocumentationGuideDelete(sourceId, tenantId), env);
+
+export const findLanguageAssistantProfileRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildLanguageAssistantProfileLookup(sourceId, tenantId), env);
+
+export const findTravelDocumentationGuideRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildTravelDocumentationGuideLookup(sourceId, tenantId), env);

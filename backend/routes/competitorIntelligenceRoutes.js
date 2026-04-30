@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 
 import CompetitorInsight from "../models/CompetitorInsight.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
@@ -10,7 +11,9 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildCompetitorInsightView,
   deleteCompetitorInsightRecord,
+  findCompetitorInsightRecord,
   syncCompetitorInsightRecord,
 } from "../utils/postgresCompetitorRecords.js";
 import { fetchPrimaryCompetitorInsights } from "../utils/postgresPrimaryReads.js";
@@ -79,9 +82,11 @@ router.post("/", async (req, res) => {
 
     const result = insight.toObject();
     await syncCompetitorViews(result);
+    const insightView = await findCompetitorInsightRecord(insight._id, req.tenantId, process.env);
+    const responseInsight = insightView ? buildCompetitorInsightView(insightView) : result;
     res.status(201).json({
-      ...result,
-      intelligenceSummary: summarizeCompetitorInsight(result),
+      ...responseInsight,
+      intelligenceSummary: summarizeCompetitorInsight(responseInsight),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -123,9 +128,12 @@ router.patch("/:id", async (req, res) => {
     }
     await syncCompetitorViews(insight);
 
+    const insightView = await findCompetitorInsightRecord(insight._id, req.tenantId, process.env);
+    const responseInsight = insightView ? buildCompetitorInsightView(insightView) : insight;
+
     res.status(200).json({
-      ...insight,
-      intelligenceSummary: summarizeCompetitorInsight(insight),
+      ...responseInsight,
+      intelligenceSummary: summarizeCompetitorInsight(responseInsight),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

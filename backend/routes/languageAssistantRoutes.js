@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 import LanguageAssistantProfile from "../models/LanguageAssistantProfile.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
@@ -9,7 +10,9 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildLanguageAssistantProfileView,
   deleteLanguageAssistantProfileRecord,
+  findLanguageAssistantProfileRecord,
   syncLanguageAssistantProfileRecord,
 } from "../utils/postgresAssistantRecords.js";
 import { fetchPrimaryLanguageAssistantProfiles } from "../utils/postgresPrimaryReads.js";
@@ -71,9 +74,12 @@ router.post("/", async (req, res) => {
     await profile.save();
     await syncLanguageAssistantViews(profile.toObject());
 
+    const profileView = await findLanguageAssistantProfileRecord(profile._id, req.tenantId, process.env);
+    const responseProfile = profileView ? buildLanguageAssistantProfileView(profileView) : profile.toObject();
+
     res.status(201).json({
-      ...profile.toObject(),
-      profileSummary: summarizeLanguageAssistantProfile(profile.toObject()),
+      ...responseProfile,
+      profileSummary: summarizeLanguageAssistantProfile(responseProfile),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -109,9 +115,12 @@ router.patch("/:id", async (req, res) => {
     }
     await syncLanguageAssistantViews(profile);
 
+    const profileView = await findLanguageAssistantProfileRecord(profile._id, req.tenantId, process.env);
+    const responseProfile = profileView ? buildLanguageAssistantProfileView(profileView) : profile;
+
     res.status(200).json({
-      ...profile,
-      profileSummary: summarizeLanguageAssistantProfile(profile),
+      ...responseProfile,
+      profileSummary: summarizeLanguageAssistantProfile(responseProfile),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

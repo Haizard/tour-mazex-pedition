@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 import TravelDocumentationGuide from "../models/TravelDocumentationGuide.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
@@ -9,7 +10,9 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildTravelDocumentationGuideView,
   deleteTravelDocumentationGuideRecord,
+  findTravelDocumentationGuideRecord,
   syncTravelDocumentationGuideRecord,
 } from "../utils/postgresAssistantRecords.js";
 import { fetchPrimaryTravelDocumentationGuides } from "../utils/postgresPrimaryReads.js";
@@ -71,9 +74,12 @@ router.post("/", async (req, res) => {
     await guide.save();
     await syncTravelDocumentationViews(guide.toObject());
 
+    const guideView = await findTravelDocumentationGuideRecord(guide._id, req.tenantId, process.env);
+    const responseGuide = guideView ? buildTravelDocumentationGuideView(guideView) : guide.toObject();
+
     res.status(201).json({
-      ...guide.toObject(),
-      guideSummary: summarizeTravelDocumentationGuide(guide.toObject()),
+      ...responseGuide,
+      guideSummary: summarizeTravelDocumentationGuide(responseGuide),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -111,9 +117,12 @@ router.patch("/:id", async (req, res) => {
     }
     await syncTravelDocumentationViews(guide);
 
+    const guideView = await findTravelDocumentationGuideRecord(guide._id, req.tenantId, process.env);
+    const responseGuide = guideView ? buildTravelDocumentationGuideView(guideView) : guide;
+
     res.status(200).json({
-      ...guide,
-      guideSummary: summarizeTravelDocumentationGuide(guide),
+      ...responseGuide,
+      guideSummary: summarizeTravelDocumentationGuide(responseGuide),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
