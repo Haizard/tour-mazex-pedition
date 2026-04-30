@@ -15,6 +15,22 @@ const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const querySingleRow = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL media writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const result = await client.query(statement.text, statement.values);
+    return result.rows[0] || null;
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildMediaAssetRecord = (media = {}) => ({
   sourceId: String(media._id || ""),
   tenantId: String(media.tenantId || ""),
@@ -73,5 +89,32 @@ export const buildMediaAssetUpsert = (media = {}) => {
   };
 };
 
+export const buildMediaAssetLookup = (sourceId = "", tenantId = "") => ({
+  text: `
+    select *
+    from public.media_asset_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildMediaAssetView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  filename: String(row.filename || ""),
+  contentType: String(row.content_type || "application/octet-stream"),
+  size: Number(row.size || 0),
+  storageProvider: String(row.storage_provider || "mongo-inline"),
+  storageKey: String(row.storage_key || ""),
+  storageBucket: String(row.storage_bucket || ""),
+  storageEndpoint: String(row.storage_endpoint || ""),
+  publicUrl: String(row.public_url || ""),
+  uploadedBy: row.uploaded_by ? String(row.uploaded_by) : "",
+});
+
 export const syncMediaAssetRecord = (media, env) =>
   upsertRecord(buildMediaAssetUpsert(media), env);
+
+export const findMediaAssetRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildMediaAssetLookup(sourceId, tenantId), env);

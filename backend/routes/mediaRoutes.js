@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import process from "node:process";
 import express from "express";
 import Media from "../models/Media.js";
 import {
@@ -8,7 +9,11 @@ import {
   persistMediaAsset,
 } from "../utils/objectStorage.js";
 import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
-import { syncMediaAssetRecord } from "../utils/postgresMediaRecords.js";
+import {
+  buildMediaAssetView,
+  findMediaAssetRecord,
+  syncMediaAssetRecord,
+} from "../utils/postgresMediaRecords.js";
 
 const router = express.Router();
 
@@ -68,9 +73,12 @@ router.post("/upload", async (req, res) => {
     await media.save();
     await syncMediaViews(media.toObject());
 
+    const mediaView = await findMediaAssetRecord(media._id, tenantId, process.env);
+    const responseMedia = mediaView ? buildMediaAssetView(mediaView) : buildMediaResponsePayload(media);
+
     res.status(201).json({
       message: "Media uploaded successfully",
-      ...buildMediaResponsePayload(media),
+      ...responseMedia,
     });
   } catch (error) {
     console.error("Upload error:", error);
