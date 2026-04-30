@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildLeadFollowUpSequenceLookup,
+  buildLeadFollowUpSequenceView,
   buildTravelerFeedbackPublicTokenLookup,
   buildLeadFollowUpSequenceDelete,
   buildLeadFollowUpSequenceRecord,
@@ -141,4 +143,33 @@ test("buildLeadFollowUpSequenceDelete targets one source and tenant pair", () =>
   const statement = buildLeadFollowUpSequenceDelete({ sourceId: "sequence-1", tenantId: "tenant-1" });
   assert.match(statement.text, /delete from public\.lead_follow_up_sequence_records/i);
   assert.deepEqual(statement.values, ["sequence-1", "tenant-1"]);
+});
+
+test("buildLeadFollowUpSequenceLookup targets one follow-up sequence", () => {
+  const statement = buildLeadFollowUpSequenceLookup({ sourceId: "sequence-1", tenantId: "tenant-1" });
+  assert.match(statement.text, /from public\.lead_follow_up_sequence_records/i);
+  assert.match(statement.text, /where source_id = \$1 and tenant_id = \$2/i);
+  assert.deepEqual(statement.values, ["sequence-1", "tenant-1"]);
+});
+
+test("buildLeadFollowUpSequenceView reconstructs the admin follow-up payload", () => {
+  const sequence = buildLeadFollowUpSequenceView({
+    source_id: "sequence-1",
+    tenant_id: "tenant-1",
+    inquiry_id: "inquiry-1",
+    booking_id: null,
+    status: "active",
+    touchpoints: [
+      {
+        channel: "whatsapp",
+        status: "pending",
+        scheduledAt: "2026-05-01T10:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(sequence._id, "sequence-1");
+  assert.equal(sequence.inquiryId, "inquiry-1");
+  assert.equal(sequence.status, "active");
+  assert.equal(sequence.touchpoints[0].scheduledAt, "2026-05-01T10:00:00.000Z");
 });

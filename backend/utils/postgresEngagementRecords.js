@@ -241,6 +241,31 @@ export const buildLeadFollowUpSequenceDelete = ({ sourceId = "", tenantId = "" }
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildLeadFollowUpSequenceLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select *
+    from public.lead_follow_up_sequence_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildLeadFollowUpSequenceView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  inquiryId: row.inquiry_id ? String(row.inquiry_id) : null,
+  bookingId: row.booking_id ? String(row.booking_id) : null,
+  status: String(row.status || "active"),
+  touchpoints: Array.isArray(row.touchpoints)
+    ? row.touchpoints.map((touchpoint = {}) => ({
+        ...touchpoint,
+        scheduledAt: toIso(touchpoint.scheduledAt || touchpoint.scheduled_at),
+        sentAt: toIso(touchpoint.sentAt || touchpoint.sent_at),
+      }))
+    : [],
+});
+
 export const syncTravelerFeedbackRecord = (feedback, env) =>
   upsertRecord(buildTravelerFeedbackUpsert(feedback), env);
 
@@ -255,3 +280,6 @@ export const deleteLeadFollowUpSequenceRecord = (sourceId, tenantId, env) =>
 
 export const findTravelerFeedbackByPublicToken = async (publicToken, env) =>
   querySingleRow(buildTravelerFeedbackPublicTokenLookup({ publicToken }), env);
+
+export const findLeadFollowUpSequenceRecord = async (sourceId, tenantId, env) =>
+  querySingleRow(buildLeadFollowUpSequenceLookup({ sourceId, tenantId }), env);

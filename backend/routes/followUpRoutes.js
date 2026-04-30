@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
 import CustomInquiry from "../models/CustomInquiry.js";
 import Tenant from "../models/Tenant.js";
@@ -6,7 +7,11 @@ import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { generateFollowUpSequence } from "../utils/followUpSequencing.js";
 import { fetchPrimaryLeadFollowUpSequence } from "../utils/postgresPrimaryReads.js";
-import { syncLeadFollowUpSequenceRecord } from "../utils/postgresEngagementRecords.js";
+import {
+  buildLeadFollowUpSequenceView,
+  findLeadFollowUpSequenceRecord,
+  syncLeadFollowUpSequenceRecord,
+} from "../utils/postgresEngagementRecords.js";
 
 const router = express.Router();
 
@@ -47,8 +52,8 @@ router.post("/start/:inquiryId", async (req, res) => {
 
     await sequence.save();
     await syncLeadFollowUpSequenceRecord(sequence.toObject());
-
-    res.status(201).json(sequence);
+    const sequenceView = await findLeadFollowUpSequenceRecord(sequence._id, req.tenantId, process.env);
+    res.status(201).json(sequenceView ? buildLeadFollowUpSequenceView(sequenceView) : sequence);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -92,7 +97,8 @@ router.patch("/:id/status", async (req, res) => {
     }
 
     await syncLeadFollowUpSequenceRecord(sequence);
-    res.status(200).json(sequence);
+    const sequenceView = await findLeadFollowUpSequenceRecord(sequence._id, req.tenantId, process.env);
+    res.status(200).json(sequenceView ? buildLeadFollowUpSequenceView(sequenceView) : sequence);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
