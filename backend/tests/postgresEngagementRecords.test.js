@@ -6,6 +6,7 @@ import {
   buildLeadFollowUpSequenceDelete,
   buildLeadFollowUpSequenceRecord,
   buildLeadFollowUpSequenceUpsert,
+  buildPublicTravelerFeedbackView,
   buildTravelerFeedbackDelete,
   buildTravelerFeedbackRecord,
   buildTravelerFeedbackUpsert,
@@ -75,6 +76,27 @@ test("buildTravelerFeedbackPublicTokenLookup targets the public token", () => {
   assert.match(statement.text, /from public\.traveler_feedback_records/i);
   assert.match(statement.text, /where fr\.public_token = \$1/i);
   assert.deepEqual(statement.values, ["public-token"]);
+});
+
+test("buildPublicTravelerFeedbackView reconstructs the public feedback payload from postgres", () => {
+  const feedback = buildPublicTravelerFeedbackView({
+    source_id: "feedback-1",
+    booking_id: "booking-1",
+    booking_name: "Amina Musa",
+    rating: 5,
+    private_note: "Wonderful guide",
+    public_review: "Amazing trip",
+    public_token: "feedback-token-1",
+    referral_code: "SR-123",
+    status: "submitted",
+    submitted_at: "2026-04-30T10:00:00.000Z",
+  });
+
+  assert.equal(feedback._id, "feedback-1");
+  assert.equal(feedback.bookingId.name, "Amina Musa");
+  assert.equal(feedback.rating, 5);
+  assert.equal(feedback.publicToken, "feedback-token-1");
+  assert.equal(feedback.submittedAt, "2026-04-30T10:00:00.000Z");
 });
 
 test("buildLeadFollowUpSequenceRecord normalizes follow-up sequence for postgres", () => {

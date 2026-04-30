@@ -31,11 +31,9 @@ const QuotePublicView = () => {
     setResponding(true);
     setError("");
     try {
-      await respondToPublicQuote(token, { action, notes });
+      const response = await respondToPublicQuote(token, { action, notes });
       setResponseSuccess(action === "accept" ? "Thank you! We have received your acceptance. Our team will contact you shortly to finalize the booking." : "Thank you for your feedback. We will review it and get back to you with an updated proposal.");
-      // Refresh quote data to show updated status
-      const response = await fetchPublicQuote(token);
-      setQuote(response.data);
+      setQuote(response.data?.quote || null);
     } catch (err) {
       setError("Failed to submit your response. Please try again.");
     } finally {

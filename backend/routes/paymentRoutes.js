@@ -215,8 +215,12 @@ router.post("/checkout/:token/respond", async (req, res) => {
     await syncLinkedRevenueRecords(req, payment.toObject());
     await syncRevenueShadowWrites(req, payment.toObject());
 
+    const refreshedPayment = await findPaymentRevenueRecordByPublicToken(req.params.token, process.env);
+
     res.status(200).json({
-      ...toPaymentResponse(payment.toObject()),
+      ...(refreshedPayment
+        ? buildPublicPaymentRevenueView(refreshedPayment)
+        : toPaymentResponse(payment.toObject())),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

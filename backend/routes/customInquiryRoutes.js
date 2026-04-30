@@ -287,9 +287,11 @@ router.post('/public-quote/:token/respond', async (req, res) => {
 
         await syncQuoteRevenueViews(quote);
 
+        const refreshedQuote = await findQuoteRevenueRecordByPublicToken(req.params.token, process.env);
+
         res.status(200).json({
             message: `Quote successfully ${action === 'accept' ? 'accepted' : 'feedback received'}.`,
-            quote
+            quote: refreshedQuote ? buildPublicQuoteRevenueView(refreshedQuote) : quote
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -43,6 +43,15 @@ const querySingleRow = async (statement, env = globalThis.process?.env || {}) =>
   }
 };
 
+const toIso = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
+
 export const buildTravelerFeedbackRecord = (feedback = {}) => ({
   sourceId: String(feedback._id || ""),
   tenantId: String(feedback.tenantId || ""),
@@ -200,6 +209,28 @@ export const buildTravelerFeedbackPublicTokenLookup = ({ publicToken = "" } = {}
     limit 1
   `,
   values: [String(publicToken || "")],
+});
+
+export const buildPublicTravelerFeedbackView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  bookingId: row.booking_id
+    ? {
+        _id: String(row.booking_id),
+        name: String(row.booking_name || ""),
+      }
+    : null,
+  rating: row.rating === null || row.rating === undefined ? null : Number(row.rating || 0),
+  privateNote: String(row.private_note || ""),
+  publicReview: String(row.public_review || ""),
+  publicToken: String(row.public_token || ""),
+  referralCode: String(row.referral_code || ""),
+  status: String(row.status || "pending"),
+  submittedAt: toIso(row.submitted_at),
+  aiSentiment: String(row.ai_sentiment || ""),
+  aiScore: row.ai_score === null || row.ai_score === undefined ? null : Number(row.ai_score || 0),
+  aiSummary: String(row.ai_summary || ""),
+  aiKeyTopics: Array.isArray(row.ai_key_topics) ? row.ai_key_topics : [],
+  aiImprovementSuggestion: String(row.ai_improvement_suggestion || ""),
 });
 
 export const buildLeadFollowUpSequenceDelete = ({ sourceId = "", tenantId = "" } = {}) => ({

@@ -37,6 +37,7 @@ import {
     fetchPrimaryTravelerFeedback,
 } from "../utils/postgresPrimaryReads.js";
 import {
+    buildPublicTravelerFeedbackView,
     deleteLeadFollowUpSequenceRecord,
     deleteTravelerFeedbackRecord,
     findTravelerFeedbackByPublicToken,
@@ -613,22 +614,7 @@ router.get("/public-feedback/:token", async (req, res) => {
         if (feedback.status === "submitted") {
             return res.status(400).json({ message: "Feedback already submitted" });
         }
-        res.status(200).json({
-            _id: String(feedback.source_id || ""),
-            bookingId: feedback.booking_id
-                ? {
-                    _id: String(feedback.booking_id),
-                    name: String(feedback.booking_name || ""),
-                }
-                : null,
-            rating: feedback.rating === null || feedback.rating === undefined ? null : Number(feedback.rating || 0),
-            privateNote: String(feedback.private_note || ""),
-            publicReview: String(feedback.public_review || ""),
-            publicToken: String(feedback.public_token || ""),
-            referralCode: String(feedback.referral_code || ""),
-            status: String(feedback.status || "pending"),
-            submittedAt: feedback.submitted_at ? new Date(feedback.submitted_at).toISOString() : null,
-        });
+        res.status(200).json(buildPublicTravelerFeedbackView(feedback));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -673,7 +659,11 @@ router.post("/public-feedback/:token", async (req, res) => {
 
         await feedback.save();
         await syncTravelerFeedbackViews(feedback.toObject());
-        res.status(200).json(feedback);
+
+        const refreshedFeedback = await findTravelerFeedbackByPublicToken(req.params.token, process.env);
+        res.status(200).json(
+            refreshedFeedback ? buildPublicTravelerFeedbackView(refreshedFeedback) : feedback.toObject()
+        );
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
