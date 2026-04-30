@@ -499,7 +499,8 @@ export const deleteCampaign = (id) =>
   API.delete(`/marketing/campaigns/${id}`);
 
 // Custom Inquiries
-export const fetchInquiries = (params = {}) => cachedGet("/custom-inquiries", { params });
+export const fetchInquiries = (params = { source: "postgres" }) =>
+  cachedGet("/custom-inquiries", { params });
 export const createInquiry = (data) => API.post("/custom-inquiries", data);
 export const createWhatsAppLead = (data) =>
   API.post("/custom-inquiries/whatsapp-lead", data);
