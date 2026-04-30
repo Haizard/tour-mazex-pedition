@@ -25,8 +25,12 @@ import {
     syncBookingRevenueRecord,
 } from "../utils/postgresRevenueRecords.js";
 import {
+    buildRepeatCustomerCampaignView,
+    buildReviewRequestView,
     deleteRepeatCustomerCampaignRecord,
     deleteReviewRequestRecord,
+    findRepeatCustomerCampaignRecord,
+    findReviewRequestRecord,
     syncRepeatCustomerCampaignRecord,
     syncReviewRequestRecord,
 } from "../utils/postgresBookingLifecycleRecords.js";
@@ -344,7 +348,8 @@ router.post(
             );
 
             if (existing) {
-                return res.status(200).json(existing);
+                const existingView = await findReviewRequestRecord(existing._id, req.tenantId, process.env);
+                return res.status(200).json(existingView ? buildReviewRequestView(existingView) : existing);
             }
 
             const draft = buildReviewRequestDraft({
@@ -360,8 +365,8 @@ router.post(
             );
             await reviewRequest.save();
             await syncReviewRequestViews(reviewRequest.toObject());
-
-            res.status(201).json(reviewRequest);
+            const reviewRequestView = await findReviewRequestRecord(reviewRequest._id, req.tenantId, process.env);
+            res.status(201).json(reviewRequestView ? buildReviewRequestView(reviewRequestView) : reviewRequest);
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
@@ -391,7 +396,8 @@ router.post(
             );
 
             if (existing) {
-                return res.status(200).json(existing);
+                const existingView = await findRepeatCustomerCampaignRecord(existing._id, req.tenantId, process.env);
+                return res.status(200).json(existingView ? buildRepeatCustomerCampaignView(existingView) : existing);
             }
 
             const bookingHistory = await Booking.find(
@@ -415,8 +421,8 @@ router.post(
 
             await campaign.save();
             await syncRepeatCustomerCampaignViews(campaign.toObject());
-
-            res.status(201).json(campaign);
+            const campaignView = await findRepeatCustomerCampaignRecord(campaign._id, req.tenantId, process.env);
+            res.status(201).json(campaignView ? buildRepeatCustomerCampaignView(campaignView) : campaign);
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
@@ -467,7 +473,8 @@ router.patch(
             }
 
             await syncReviewRequestViews(reviewRequest.toObject());
-            res.status(200).json(reviewRequest);
+            const reviewRequestView = await findReviewRequestRecord(reviewRequest._id, req.tenantId, process.env);
+            res.status(200).json(reviewRequestView ? buildReviewRequestView(reviewRequestView) : reviewRequest);
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
@@ -514,7 +521,8 @@ router.patch(
             }
 
             await syncRepeatCustomerCampaignViews(campaign.toObject());
-            res.status(200).json(campaign);
+            const campaignView = await findRepeatCustomerCampaignRecord(campaign._id, req.tenantId, process.env);
+            res.status(200).json(campaignView ? buildRepeatCustomerCampaignView(campaignView) : campaign);
         } catch (error) {
             res.status(500).json({ message: error.message });
         }

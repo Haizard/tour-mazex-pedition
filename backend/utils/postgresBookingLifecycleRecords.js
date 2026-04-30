@@ -30,6 +30,31 @@ const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const querySingleRow = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL booking lifecycle writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const result = await client.query(statement.text, statement.values);
+    return result.rows[0] || null;
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+const toIso = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
+
 export const buildReviewRequestRecord = (reviewRequest = {}) => ({
   sourceId: String(reviewRequest._id || ""),
   tenantId: String(reviewRequest.tenantId || ""),
@@ -197,6 +222,64 @@ export const buildRepeatCustomerCampaignDelete = ({ sourceId = "", tenantId = ""
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildReviewRequestLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select *
+    from public.review_request_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildRepeatCustomerCampaignLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select *
+    from public.repeat_customer_campaign_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildReviewRequestView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  bookingId: String(row.booking_id || ""),
+  guestName: String(row.guest_name || ""),
+  guestEmail: String(row.guest_email || ""),
+  bookingLabel: String(row.booking_label || ""),
+  subject: String(row.subject || ""),
+  message: String(row.message || ""),
+  status: String(row.status || "draft"),
+  platforms: Array.isArray(row.platforms) ? row.platforms : [],
+  sendWindowLabel: String(row.send_window_label || ""),
+  nextStepChecklist: Array.isArray(row.next_step_checklist) ? row.next_step_checklist : [],
+  sentAt: toIso(row.sent_at),
+  completedAt: toIso(row.completed_at),
+});
+
+export const buildRepeatCustomerCampaignView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  bookingId: String(row.booking_id || ""),
+  guestName: String(row.guest_name || ""),
+  guestEmail: String(row.guest_email || ""),
+  bookingLabel: String(row.booking_label || ""),
+  campaignType: String(row.campaign_type || "referral"),
+  audienceTag: String(row.audience_tag || ""),
+  segment: String(row.segment || "First-Timer"),
+  channel: String(row.channel || "email"),
+  offerLabel: String(row.offer_label || ""),
+  subject: String(row.subject || ""),
+  message: String(row.message || ""),
+  status: String(row.status || "draft"),
+  recommendedSendAtLabel: String(row.recommended_send_at_label || ""),
+  nextStepChecklist: Array.isArray(row.next_step_checklist) ? row.next_step_checklist : [],
+  sentAt: toIso(row.sent_at),
+  convertedAt: toIso(row.converted_at),
+});
+
 export const syncReviewRequestRecord = (reviewRequest, env) =>
   upsertRecord(buildReviewRequestUpsert(reviewRequest), env);
 
@@ -208,3 +291,9 @@ export const deleteReviewRequestRecord = (sourceId, tenantId, env) =>
 
 export const deleteRepeatCustomerCampaignRecord = (sourceId, tenantId, env) =>
   deleteRecord(buildRepeatCustomerCampaignDelete({ sourceId, tenantId }), env);
+
+export const findReviewRequestRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildReviewRequestLookup({ sourceId, tenantId }), env);
+
+export const findRepeatCustomerCampaignRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildRepeatCustomerCampaignLookup({ sourceId, tenantId }), env);

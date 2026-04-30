@@ -2,9 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildRepeatCustomerCampaignView,
   buildRepeatCustomerCampaignDelete,
+  buildRepeatCustomerCampaignLookup,
   buildRepeatCustomerCampaignRecord,
   buildRepeatCustomerCampaignUpsert,
+  buildReviewRequestLookup,
+  buildReviewRequestView,
   buildReviewRequestDelete,
   buildReviewRequestRecord,
   buildReviewRequestUpsert,
@@ -64,6 +68,37 @@ test("buildReviewRequestDelete targets one source and tenant pair", () => {
   assert.deepEqual(statement.values, ["review-1", "tenant-1"]);
 });
 
+test("buildReviewRequestLookup targets one lifecycle record", () => {
+  const statement = buildReviewRequestLookup({ sourceId: "review-1", tenantId: "tenant-1" });
+  assert.match(statement.text, /from public\.review_request_records/i);
+  assert.match(statement.text, /where source_id = \$1 and tenant_id = \$2/i);
+  assert.deepEqual(statement.values, ["review-1", "tenant-1"]);
+});
+
+test("buildReviewRequestView reconstructs the admin review request payload", () => {
+  const view = buildReviewRequestView({
+    source_id: "review-1",
+    tenant_id: "tenant-1",
+    booking_id: "booking-1",
+    guest_name: "Amina Said",
+    guest_email: "amina@example.com",
+    booking_label: "Migration Escape",
+    subject: "Review us",
+    message: "Please review",
+    status: "sent",
+    platforms: [{ channel: "google" }],
+    send_window_label: "3 days after trip",
+    next_step_checklist: ["Send"],
+    sent_at: "2026-04-28T10:00:00.000Z",
+  });
+
+  assert.equal(view._id, "review-1");
+  assert.equal(view.bookingId, "booking-1");
+  assert.equal(view.guestName, "Amina Said");
+  assert.equal(view.platforms[0].channel, "google");
+  assert.equal(view.sentAt, "2026-04-28T10:00:00.000Z");
+});
+
 test("buildRepeatCustomerCampaignRecord normalizes loyalty automation data for postgres", () => {
   const record = buildRepeatCustomerCampaignRecord({
     _id: "campaign-1",
@@ -120,4 +155,39 @@ test("buildRepeatCustomerCampaignDelete targets one source and tenant pair", () 
   });
   assert.match(statement.text, /delete from public\.repeat_customer_campaign_records/i);
   assert.deepEqual(statement.values, ["campaign-1", "tenant-1"]);
+});
+
+test("buildRepeatCustomerCampaignLookup targets one lifecycle record", () => {
+  const statement = buildRepeatCustomerCampaignLookup({ sourceId: "campaign-1", tenantId: "tenant-1" });
+  assert.match(statement.text, /from public\.repeat_customer_campaign_records/i);
+  assert.match(statement.text, /where source_id = \$1 and tenant_id = \$2/i);
+  assert.deepEqual(statement.values, ["campaign-1", "tenant-1"]);
+});
+
+test("buildRepeatCustomerCampaignView reconstructs the admin campaign payload", () => {
+  const view = buildRepeatCustomerCampaignView({
+    source_id: "campaign-1",
+    tenant_id: "tenant-1",
+    booking_id: "booking-1",
+    guest_name: "Amina Said",
+    guest_email: "amina@example.com",
+    booking_label: "Migration Escape",
+    campaign_type: "referral",
+    audience_tag: "vip",
+    segment: "VIP",
+    channel: "whatsapp",
+    offer_label: "VIP Loyalty Recognition",
+    subject: "Share the magic",
+    message: "Tell a friend",
+    status: "sent",
+    recommended_send_at_label: "post-trip",
+    next_step_checklist: ["Confirm channel"],
+    sent_at: "2026-04-29T10:00:00.000Z",
+  });
+
+  assert.equal(view._id, "campaign-1");
+  assert.equal(view.bookingId, "booking-1");
+  assert.equal(view.segment, "VIP");
+  assert.equal(view.channel, "whatsapp");
+  assert.equal(view.sentAt, "2026-04-29T10:00:00.000Z");
 });
