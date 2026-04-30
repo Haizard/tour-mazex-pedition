@@ -46,6 +46,15 @@ const querySingleRow = async (statement, env = globalThis.process?.env || {}) =>
   }
 };
 
+const toIso = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
+
 export const buildBookingRevenueRecord = (booking = {}) => ({
   sourceId: String(booking._id || ""),
   tenantId: String(booking.tenantId || ""),
@@ -260,13 +269,112 @@ export const buildQuotePublicTokenLookup = ({ publicToken = "" } = {}) => ({
 
 export const buildPaymentPublicTokenLookup = ({ publicToken = "" } = {}) => ({
   text: `
-    select source_id, tenant_id, booking_id, status, provider, public_token
+    select
+      pr.source_id,
+      pr.tenant_id,
+      pr.booking_id,
+      pr.status,
+      pr.provider,
+      pr.public_token,
+      pr.provider_reference,
+      pr.customer_name,
+      pr.currency,
+      pr.amount,
+      pr.fee_percent,
+      pr.fee_amount,
+      pr.failure_reason,
+      pr.paid_at,
+      pr.refunded_at,
+      pr.cancelled_at,
+      pr.updated_at,
+      pr.source_payload,
+      br.traveler_name as booking_name,
+      br.package_tour as booking_package_tour
     from public.payment_records
-    where public_token = $1
+    left join public.booking_records br
+      on br.source_id = pr.booking_id and br.tenant_id = pr.tenant_id
+    where pr.public_token = $1
     limit 1
   `,
   values: [String(publicToken || "")],
 });
+
+export const buildPublicQuoteRevenueView = (row = {}) => {
+  const payload = row.source_payload || {};
+
+  return {
+    ...payload,
+    _id: String(row.source_id || payload._id || ""),
+    tenantId: String(row.tenant_id || payload.tenantId || ""),
+    inquiryId: row.inquiry_id ? String(row.inquiry_id) : payload.inquiryId || null,
+    bookingId: row.booking_id ? String(row.booking_id) : payload.bookingId || null,
+    title: String(row.title || payload.title || ""),
+    travelerName: String(row.traveler_name || payload.travelerName || ""),
+    status: String(row.status || payload.status || "draft"),
+    conversionStage: String(row.conversion_stage || payload.conversionStage || "draft"),
+    paymentStatus: String(row.payment_status || payload.paymentStatus || "not-started"),
+    currency: String(row.currency || payload.currency || "USD"),
+    totalPrice: Number(row.total_price ?? payload.totalPrice ?? 0),
+    publicToken: String(row.public_token || payload.publicToken || ""),
+    validUntil: toIso(row.valid_until || payload.validUntil),
+    sentAt: toIso(row.sent_at || payload.sentAt),
+    acceptedAt: toIso(row.accepted_at || payload.acceptedAt),
+    travelerCount: Number(payload.travelerCount || 0),
+    tripLengthDays: Number(payload.tripLengthDays || 0),
+    itineraryOutline: Array.isArray(payload.itineraryOutline) ? payload.itineraryOutline : [],
+    nextSteps: Array.isArray(payload.nextSteps) ? payload.nextSteps : [],
+    lineItems: Array.isArray(payload.lineItems) ? payload.lineItems : [],
+  };
+};
+
+export const buildPublicPaymentRevenueView = (row = {}) => {
+  const payload = row.source_payload || {};
+  const paidAt = toIso(row.paid_at || payload.paidAt);
+  const refundedAt = toIso(row.refunded_at || payload.refundedAt);
+  const cancelledAt = toIso(row.cancelled_at || payload.cancelledAt);
+  const failedAt = toIso(payload.failedAt);
+  const updatedAt = toIso(row.updated_at || payload.updatedAt);
+  const status = String(row.status || payload.status || "pending");
+  const provider = String(row.provider || payload.provider || "stripe");
+  const currency = String(row.currency || payload.currency || "USD");
+  const amount = Number(row.amount ?? payload.amount ?? 0);
+
+  return {
+    ...payload,
+    _id: String(row.source_id || payload._id || ""),
+    tenantId: String(row.tenant_id || payload.tenantId || ""),
+    bookingId: row.booking_id
+      ? {
+          _id: String(row.booking_id),
+          name: String(row.booking_name || payload.bookingId?.name || ""),
+          packageTour: String(row.booking_package_tour || payload.bookingId?.packageTour || ""),
+        }
+      : payload.bookingId || null,
+    provider,
+    publicToken: String(row.public_token || payload.publicToken || ""),
+    providerReference: String(row.provider_reference || payload.providerReference || ""),
+    customerName: String(row.customer_name || payload.customerName || ""),
+    status,
+    currency,
+    amount,
+    feePercent: Number(row.fee_percent ?? payload.feePercent ?? 0),
+    feeAmount: Number(row.fee_amount ?? payload.feeAmount ?? 0),
+    failureReason: String(row.failure_reason || payload.failureReason || ""),
+    checkoutUrl: String(payload.checkoutUrl || ""),
+    notes: String(payload.notes || ""),
+    lifecycle: {
+      status,
+      paidAt,
+      failedAt,
+      cancelledAt,
+      refundedAt,
+      paymentUpdatedAt: refundedAt || paidAt || failedAt || cancelledAt || updatedAt,
+    },
+    paymentSummary: {
+      summary: `${provider.toUpperCase()} ${currency} ${amount.toLocaleString()} ${status}`,
+    },
+  };
+};
 
 export const syncBookingRevenueRecord = (booking, env) =>
   upsertRecord(buildBookingRevenueUpsert(booking), env);

@@ -7,6 +7,8 @@ import {
   buildPaymentPublicTokenLookup,
   buildPaymentRevenueDelete,
   buildPaymentRevenueUpsert,
+  buildPublicPaymentRevenueView,
+  buildPublicQuoteRevenueView,
   buildQuotePublicTokenLookup,
   buildQuoteRevenueDelete,
   buildQuoteRevenueUpsert,
@@ -104,6 +106,75 @@ test("buildPaymentPublicTokenLookup targets the public token in payment_records"
   });
 
   assert.equal(statement.text.includes("payment_records"), true);
-  assert.equal(statement.text.includes("where public_token = $1"), true);
+  assert.equal(statement.text.includes("where pr.public_token = $1"), true);
   assert.deepEqual(statement.values, ["payment-token-1"]);
+});
+
+test("buildPublicQuoteRevenueView reconstructs the public quote payload from postgres", () => {
+  const quote = buildPublicQuoteRevenueView({
+    source_id: "quote-1",
+    tenant_id: "tenant-1",
+    inquiry_id: "inquiry-1",
+    booking_id: "booking-1",
+    title: "Northern Circuit Escape",
+    traveler_name: "Amina",
+    status: "accepted",
+    conversion_stage: "accepted",
+    payment_status: "pending",
+    currency: "USD",
+    total_price: 4200,
+    public_token: "quote-token-1",
+    valid_until: "2026-05-15T00:00:00.000Z",
+    sent_at: "2026-04-28T08:00:00.000Z",
+    accepted_at: "2026-04-29T09:00:00.000Z",
+    source_payload: {
+      summary: "A private safari through the north.",
+      travelerCount: 2,
+      tripLengthDays: 6,
+      itineraryOutline: ["Day 1", "Day 2"],
+      nextSteps: ["Approve the quote"],
+      lineItems: [{ label: "Safari", amount: 4200 }],
+    },
+  });
+
+  assert.equal(quote._id, "quote-1");
+  assert.equal(quote.title, "Northern Circuit Escape");
+  assert.equal(quote.publicToken, "quote-token-1");
+  assert.equal(quote.totalPrice, 4200);
+  assert.equal(quote.travelerCount, 2);
+  assert.deepEqual(quote.itineraryOutline, ["Day 1", "Day 2"]);
+  assert.equal(quote.validUntil, "2026-05-15T00:00:00.000Z");
+});
+
+test("buildPublicPaymentRevenueView reconstructs the public payment payload from postgres", () => {
+  const payment = buildPublicPaymentRevenueView({
+    source_id: "payment-1",
+    booking_id: "booking-1",
+    provider: "stripe",
+    public_token: "payment-token-1",
+    provider_reference: "pi_123",
+    customer_name: "Amina",
+    status: "pending",
+    currency: "USD",
+    amount: 650,
+    fee_percent: 5,
+    fee_amount: 32.5,
+    failure_reason: "",
+    updated_at: "2026-04-30T10:00:00.000Z",
+    booking_name: "Amina",
+    booking_package_tour: "Serengeti Explorer",
+    source_payload: {
+      checkoutUrl: "https://example.com/pay",
+      notes: "Deposit due today",
+    },
+  });
+
+  assert.equal(payment._id, "payment-1");
+  assert.equal(payment.publicToken, "payment-token-1");
+  assert.equal(payment.provider, "stripe");
+  assert.equal(payment.amount, 650);
+  assert.equal(payment.bookingId.packageTour, "Serengeti Explorer");
+  assert.equal(payment.notes, "Deposit due today");
+  assert.equal(payment.lifecycle.status, "pending");
+  assert.equal(payment.paymentSummary.summary, "STRIPE USD 650 pending");
 });

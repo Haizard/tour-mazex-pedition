@@ -23,6 +23,7 @@ import {
     syncTravelerInquiryRecord,
 } from '../utils/postgresTravelerInquiryRecords.js';
 import {
+    buildPublicQuoteRevenueView,
     deleteQuoteRevenueRecord,
     findQuoteRevenueRecordByPublicToken,
     syncQuoteRevenueRecord,
@@ -226,8 +227,12 @@ router.post('/whatsapp-lead', async (req, res) => {
 router.get('/public-quote/:token', async (req, res) => {
     try {
         const quoteLookup = await findQuoteRevenueRecordByPublicToken(req.params.token, process.env);
+        if (quoteLookup) {
+            return res.status(200).json(buildPublicQuoteRevenueView(quoteLookup));
+        }
+
         const quote = await QuoteProposal.findOne(
-            quoteLookup?.source_id ? { _id: quoteLookup.source_id } : { publicToken: req.params.token }
+            { publicToken: req.params.token }
         )
             .populate('inquiryId', 'firstName lastName email destinations tripLengthDays adults status')
             .lean();

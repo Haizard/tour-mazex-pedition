@@ -19,6 +19,7 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildPublicPaymentRevenueView,
   deletePaymentRevenueRecord,
   findPaymentRevenueRecordByPublicToken,
   syncBookingRevenueRecord,
@@ -159,8 +160,12 @@ const syncRevenueShadowWrites = async (req, payment = {}) => {
 router.get("/checkout/:token", async (req, res) => {
   try {
     const paymentLookup = await findPaymentRevenueRecordByPublicToken(req.params.token, process.env);
+    if (paymentLookup) {
+      return res.status(200).json(buildPublicPaymentRevenueView(paymentLookup));
+    }
+
     const payment = await PaymentTransaction.findOne(
-      paymentLookup?.source_id ? { _id: paymentLookup.source_id } : { publicToken: req.params.token }
+      { publicToken: req.params.token }
     )
       .populate("bookingId", "name packageTour travelDate")
       .lean();
