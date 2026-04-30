@@ -18,6 +18,7 @@ import {
   syncGuideDriverAssignmentRecord,
 } from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryGuideDriverData } from "../utils/postgresPrimaryReads.js";
+import { preferPrimaryCollection, preferPrimaryDashboard } from "../utils/postgresReadFallback.js";
 
 const router = express.Router();
 
@@ -98,21 +99,21 @@ const validateAssignmentPayload = async (req, payload = {}, currentMemberId = nu
 
 router.get("/", async (req, res) => {
   try {
-    if (req.query.source === "postgres") {
-      const payload = await fetchPrimaryGuideDriverData(req.tenantId);
-      return res.status(200).json(payload.team);
-    }
-
     const team = await GuideDriver.find(buildTenantFilter(req))
       .sort({ staffType: 1, fullName: 1 })
       .lean();
 
-    res.status(200).json(
-      team.map((member) => ({
-        ...member,
-        assignmentSummary: summarizeGuideDriverAssignment(member),
-      }))
-    );
+    const legacyTeam = team.map((member) => ({
+      ...member,
+      assignmentSummary: summarizeGuideDriverAssignment(member),
+    }));
+
+    if (req.query.source === "postgres") {
+      const payload = await fetchPrimaryGuideDriverData(req.tenantId);
+      return res.status(200).json(preferPrimaryCollection(payload.team, legacyTeam));
+    }
+
+    res.status(200).json(legacyTeam);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -120,10 +121,6 @@ router.get("/", async (req, res) => {
 
 router.get("/dashboard", async (req, res) => {
   try {
-    if (req.query.source === "postgres") {
-      return res.status(200).json(await fetchPrimaryGuideDriverData(req.tenantId));
-    }
-
     const [team, bookings] = await Promise.all([
       GuideDriver.find(buildTenantFilter(req))
         .sort({ staffType: 1, fullName: 1 })
@@ -139,7 +136,7 @@ router.get("/dashboard", async (req, res) => {
       notificationReady: Boolean(member.availabilityStatus === "assigned" && member.assignedBookingId),
     }));
 
-    res.status(200).json({
+    const legacyDashboard = {
       team: roster,
       dispatchBoard: buildGuideDriverDispatchBoard(bookings, roster),
       calendarView: buildGuideDriverCalendarView(roster),
@@ -152,7 +149,14 @@ router.get("/dashboard", async (req, res) => {
         assigned: roster.filter((member) => member.availabilityStatus === "assigned").length,
         offDuty: roster.filter((member) => member.availabilityStatus === "off-duty").length,
       },
-    });
+    };
+
+    if (req.query.source === "postgres") {
+      const primaryDashboard = await fetchPrimaryGuideDriverData(req.tenantId);
+      return res.status(200).json(preferPrimaryDashboard(primaryDashboard, legacyDashboard, "team"));
+    }
+
+    res.status(200).json(legacyDashboard);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

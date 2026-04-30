@@ -48,6 +48,7 @@ import {
     syncLeadFollowUpSequenceRecord,
     syncTravelerFeedbackRecord,
 } from "../utils/postgresEngagementRecords.js";
+import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 
@@ -137,12 +138,11 @@ const syncLeadFollowUpSequenceViews = async (sequence = {}) => {
 // Get all bookings (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
-        if (String(req.query.source || "").toLowerCase() === "postgres") {
-            const bookings = await fetchPrimaryBookings(String(req.tenantId || ""));
-            return res.status(200).json(bookings);
-        }
-
         const bookings = await Booking.find(buildTenantFilter(req)).sort({ createdAt: -1 });
+        if (String(req.query.source || "").toLowerCase() === "postgres") {
+            const primaryBookings = await fetchPrimaryBookings(String(req.tenantId || ""));
+            return res.status(200).json(preferPrimaryCollection(primaryBookings, bookings));
+        }
         res.status(200).json(bookings);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -155,14 +155,13 @@ router.get(
     requireSubscriptionFeature("review-automation"),
     async (req, res) => {
         try {
-            if (String(req.query.source || "").toLowerCase() === "postgres") {
-                const reviewRequests = await fetchPrimaryReviewRequests(String(req.tenantId || ""));
-                return res.status(200).json(reviewRequests);
-            }
-
             const reviewRequests = await ReviewRequest.find(buildTenantFilter(req))
                 .sort({ createdAt: -1 })
                 .lean();
+            if (String(req.query.source || "").toLowerCase() === "postgres") {
+                const primaryReviewRequests = await fetchPrimaryReviewRequests(String(req.tenantId || ""));
+                return res.status(200).json(preferPrimaryCollection(primaryReviewRequests, reviewRequests));
+            }
             res.status(200).json(reviewRequests);
         } catch (error) {
             res.status(500).json({ message: error.message });
@@ -176,14 +175,13 @@ router.get(
     requireSubscriptionFeature("repeat-customer-automation"),
     async (req, res) => {
         try {
-            if (String(req.query.source || "").toLowerCase() === "postgres") {
-                const campaigns = await fetchPrimaryRepeatCustomerCampaigns(String(req.tenantId || ""));
-                return res.status(200).json(campaigns);
-            }
-
             const campaigns = await RepeatCustomerCampaign.find(buildTenantFilter(req))
                 .sort({ createdAt: -1 })
                 .lean();
+            if (String(req.query.source || "").toLowerCase() === "postgres") {
+                const primaryCampaigns = await fetchPrimaryRepeatCustomerCampaigns(String(req.tenantId || ""));
+                return res.status(200).json(preferPrimaryCollection(primaryCampaigns, campaigns));
+            }
             res.status(200).json(campaigns);
         } catch (error) {
             res.status(500).json({ message: error.message });

@@ -28,6 +28,7 @@ import {
   syncQuoteRevenueRecord,
 } from "../utils/postgresRevenueRecords.js";
 import { fetchPrimaryPayments } from "../utils/postgresPrimaryReads.js";
+import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
 
 const router = express.Router();
 
@@ -309,21 +310,21 @@ router.use(requireSubscriptionFeature("payment-automation"));
 
 router.get("/", async (req, res) => {
   try {
-    if (String(req.query.source || "").toLowerCase() === "postgres") {
-      const payments = await fetchPrimaryPayments(String(req.tenantId || ""));
-      return res.status(200).json(payments);
-    }
-
     const payments = await PaymentTransaction.find(buildTenantFilter(req))
       .populate("bookingId", "name packageTour status revenueStage paymentStatus totalPrice")
       .sort({ createdAt: -1 })
       .lean();
 
-    res.status(200).json(
-      payments.map((payment) => ({
-        ...toPaymentResponse(payment),
-      }))
-    );
+    const legacyPayments = payments.map((payment) => ({
+      ...toPaymentResponse(payment),
+    }));
+
+    if (String(req.query.source || "").toLowerCase() === "postgres") {
+      const primaryPayments = await fetchPrimaryPayments(String(req.tenantId || ""));
+      return res.status(200).json(preferPrimaryCollection(primaryPayments, legacyPayments));
+    }
+
+    res.status(200).json(legacyPayments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

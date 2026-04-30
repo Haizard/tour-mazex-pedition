@@ -22,6 +22,7 @@ import {
     deleteTravelerInquiryRecord,
     syncTravelerInquiryRecord,
 } from '../utils/postgresTravelerInquiryRecords.js';
+import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
 import {
     buildPublicQuoteRevenueView,
     deleteQuoteRevenueRecord,
@@ -81,11 +82,6 @@ const syncTravelerInquiryViews = async (inquiry = {}) => {
 // Get all inquiries (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
-        if (String(req.query.source || '').toLowerCase() === 'postgres') {
-            const inquiries = await fetchPrimaryInquiries(String(req.tenantId || ''));
-            return res.status(200).json(inquiries);
-        }
-
         const inquiries = await CustomInquiry.find(buildTenantFilter(req)).sort({ createdAt: -1 });
         const updates = [];
 
@@ -125,6 +121,11 @@ router.get('/', requireTenantAdmin, async (req, res) => {
             }
             return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
         });
+
+        if (String(req.query.source || '').toLowerCase() === 'postgres') {
+            const primaryInquiries = await fetchPrimaryInquiries(String(req.tenantId || ''));
+            return res.status(200).json(preferPrimaryCollection(primaryInquiries, enrichedInquiries));
+        }
 
         res.status(200).json(enrichedInquiries);
     } catch (error) {

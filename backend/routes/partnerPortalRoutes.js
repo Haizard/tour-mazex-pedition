@@ -13,6 +13,7 @@ import {
   syncPartnerAccountRecord,
 } from "../utils/postgresPartnerRecords.js";
 import { fetchPrimaryPartnerAccounts } from "../utils/postgresPrimaryReads.js";
+import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
 
 const router = express.Router();
 
@@ -35,20 +36,21 @@ const syncPartnerViews = async (partner = {}) => {
 
 router.get("/", async (req, res) => {
   try {
-    if (req.query.source === "postgres") {
-      return res.status(200).json(await fetchPrimaryPartnerAccounts(req.tenantId));
-    }
-
     const partners = await PartnerAccount.find(buildTenantFilter(req))
       .sort({ partnerType: 1, companyName: 1 })
       .lean();
 
-    res.status(200).json(
-      partners.map((partner) => ({
-        ...partner,
-        partnerSummary: summarizePartnerAccount(partner),
-      }))
-    );
+    const legacyPartners = partners.map((partner) => ({
+      ...partner,
+      partnerSummary: summarizePartnerAccount(partner),
+    }));
+
+    if (req.query.source === "postgres") {
+      const primaryPartners = await fetchPrimaryPartnerAccounts(req.tenantId);
+      return res.status(200).json(preferPrimaryCollection(primaryPartners, legacyPartners));
+    }
+
+    res.status(200).json(legacyPartners);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

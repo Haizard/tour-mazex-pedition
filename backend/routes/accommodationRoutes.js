@@ -18,6 +18,7 @@ import {
   syncAccommodationReservationRecord,
 } from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryAccommodationData } from "../utils/postgresPrimaryReads.js";
+import { preferPrimaryCollection, preferPrimaryDashboard } from "../utils/postgresReadFallback.js";
 
 const router = express.Router();
 
@@ -103,16 +104,18 @@ const validateReservationPayload = async (req, payload = {}, currentReservationI
 
 router.get("/", async (req, res) => {
   try {
-    if (req.query.source === "postgres") {
-      const payload = await fetchPrimaryAccommodationData(req.tenantId);
-      return res.status(200).json(payload.reservations);
-    }
-
     const reservations = await AccommodationReservation.find(buildTenantFilter(req))
       .sort({ createdAt: -1 })
       .lean();
 
-    res.status(200).json(enrichAccommodationReservations(reservations));
+    const legacyReservations = enrichAccommodationReservations(reservations);
+
+    if (req.query.source === "postgres") {
+      const payload = await fetchPrimaryAccommodationData(req.tenantId);
+      return res.status(200).json(preferPrimaryCollection(payload.reservations, legacyReservations));
+    }
+
+    res.status(200).json(legacyReservations);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -120,17 +123,13 @@ router.get("/", async (req, res) => {
 
 router.get("/dashboard", async (req, res) => {
   try {
-    if (req.query.source === "postgres") {
-      return res.status(200).json(await fetchPrimaryAccommodationData(req.tenantId));
-    }
-
     const [reservations, bookings] = await Promise.all([
       AccommodationReservation.find(buildTenantFilter(req)).sort({ createdAt: -1 }).lean(),
       Booking.find(buildTenantFilter(req)).sort({ travelDate: 1, createdAt: -1 }).lean(),
     ]);
     const enrichedReservations = enrichAccommodationReservations(reservations);
 
-    res.status(200).json({
+    const legacyDashboard = {
       reservations: enrichedReservations,
       board: buildAccommodationDashboard(bookings, enrichedReservations),
       stayTimeline: buildAccommodationStayTimeline(enrichedReservations),
@@ -146,7 +145,14 @@ router.get("/dashboard", async (req, res) => {
         pending: enrichedReservations.filter((reservation) => reservation.status === "pending").length,
         conflicts: enrichedReservations.filter((reservation) => reservation.conflictCount > 0).length,
       },
-    });
+    };
+
+    if (req.query.source === "postgres") {
+      const primaryDashboard = await fetchPrimaryAccommodationData(req.tenantId);
+      return res.status(200).json(preferPrimaryDashboard(primaryDashboard, legacyDashboard, "reservations"));
+    }
+
+    res.status(200).json(legacyDashboard);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

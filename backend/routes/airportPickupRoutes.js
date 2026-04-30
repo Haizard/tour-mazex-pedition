@@ -20,6 +20,7 @@ import {
   syncAirportPickupRecord,
 } from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryAirportPickupData } from "../utils/postgresPrimaryReads.js";
+import { preferPrimaryCollection, preferPrimaryDashboard } from "../utils/postgresReadFallback.js";
 
 const router = express.Router();
 
@@ -105,11 +106,6 @@ const validatePickupPayload = async (req, payload = {}, currentPickupId = null) 
 
 router.get("/", async (req, res) => {
   try {
-    if (req.query.source === "postgres") {
-      const payload = await fetchPrimaryAirportPickupData(req.tenantId);
-      return res.status(200).json(payload.pickups);
-    }
-
     const [pickups, drivers] = await Promise.all([
       AirportPickup.find(buildTenantFilter(req))
         .sort({ pickupDateTime: 1, createdAt: -1 })
@@ -117,7 +113,14 @@ router.get("/", async (req, res) => {
       GuideDriver.find(buildTenantFilter(req, { staffType: "driver" })).lean(),
     ]);
 
-    res.status(200).json(enrichAirportPickups(pickups, drivers));
+    const legacyPickups = enrichAirportPickups(pickups, drivers);
+
+    if (req.query.source === "postgres") {
+      const payload = await fetchPrimaryAirportPickupData(req.tenantId);
+      return res.status(200).json(preferPrimaryCollection(payload.pickups, legacyPickups));
+    }
+
+    res.status(200).json(legacyPickups);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -125,10 +128,6 @@ router.get("/", async (req, res) => {
 
 router.get("/dashboard", async (req, res) => {
   try {
-    if (req.query.source === "postgres") {
-      return res.status(200).json(await fetchPrimaryAirportPickupData(req.tenantId));
-    }
-
     const [pickups, drivers, bookings] = await Promise.all([
       AirportPickup.find(buildTenantFilter(req))
         .sort({ pickupDateTime: 1, createdAt: -1 })
@@ -140,7 +139,7 @@ router.get("/dashboard", async (req, res) => {
     ]);
     const enrichedPickups = enrichAirportPickups(pickups, drivers);
 
-    res.status(200).json({
+    const legacyDashboard = {
       pickups: enrichedPickups,
       board: buildAirportPickupDashboard(bookings, enrichedPickups),
       arrivalTimeline: buildAirportArrivalTimeline(enrichedPickups),
@@ -156,7 +155,14 @@ router.get("/dashboard", async (req, res) => {
         pending: enrichedPickups.filter((pickup) => pickup.status === "pending").length,
         conflicts: enrichedPickups.filter((pickup) => pickup.conflictCount > 0).length,
       },
-    });
+    };
+
+    if (req.query.source === "postgres") {
+      const primaryDashboard = await fetchPrimaryAirportPickupData(req.tenantId);
+      return res.status(200).json(preferPrimaryDashboard(primaryDashboard, legacyDashboard, "pickups"));
+    }
+
+    res.status(200).json(legacyDashboard);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
