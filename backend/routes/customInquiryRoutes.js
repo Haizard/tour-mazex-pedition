@@ -1,4 +1,5 @@
 import express from 'express';
+import process from "node:process";
 import CustomInquiry from '../models/CustomInquiry.js';
 import QuoteProposal from '../models/QuoteProposal.js';
 import SiteSettings from '../models/SiteSettings.js';
@@ -23,6 +24,7 @@ import {
 } from '../utils/postgresTravelerInquiryRecords.js';
 import {
     deleteQuoteRevenueRecord,
+    findQuoteRevenueRecordByPublicToken,
     syncQuoteRevenueRecord,
 } from '../utils/postgresRevenueRecords.js';
 
@@ -223,7 +225,10 @@ router.post('/whatsapp-lead', async (req, res) => {
 // Public Quote Access (No Auth Required)
 router.get('/public-quote/:token', async (req, res) => {
     try {
-        const quote = await QuoteProposal.findOne({ publicToken: req.params.token })
+        const quoteLookup = await findQuoteRevenueRecordByPublicToken(req.params.token, process.env);
+        const quote = await QuoteProposal.findOne(
+            quoteLookup?.source_id ? { _id: quoteLookup.source_id } : { publicToken: req.params.token }
+        )
             .populate('inquiryId', 'firstName lastName email destinations tripLengthDays adults status')
             .lean();
 
@@ -256,8 +261,9 @@ router.post('/public-quote/:token/respond', async (req, res) => {
             update.rejectionReason = reason || '';
         }
 
+        const quoteLookup = await findQuoteRevenueRecordByPublicToken(req.params.token, process.env);
         const quote = await QuoteProposal.findOneAndUpdate(
-            { publicToken: req.params.token },
+            quoteLookup?.source_id ? { _id: quoteLookup.source_id } : { publicToken: req.params.token },
             { $set: update },
             { new: true }
         ).lean();

@@ -6,6 +6,7 @@ import {
   buildBookingRevenueUpsert,
   buildPaymentRevenueDelete,
   buildPaymentRevenueUpsert,
+  buildQuotePublicTokenLookup,
   buildQuoteRevenueDelete,
   buildQuoteRevenueUpsert,
 } from "../utils/postgresRevenueRecords.js";
@@ -29,11 +30,13 @@ test("buildQuoteRevenueUpsert targets quote_records", () => {
     tenantId: "tenant-1",
     inquiryId: "inquiry-1",
     title: "Northern Circuit",
+    publicToken: "quote-public-token",
   });
 
   assert.equal(statement.text.includes("quote_records"), true);
   assert.equal(statement.values[0], "quote-1");
   assert.equal(statement.values[4], "Northern Circuit");
+  assert.equal(statement.values[11], "quote-public-token");
 });
 
 test("buildPaymentRevenueUpsert targets payment_records", () => {
@@ -69,6 +72,16 @@ test("buildQuoteRevenueDelete targets quote_records", () => {
   assert.equal(statement.text.includes("quote_records"), true);
   assert.equal(statement.text.includes("delete from"), true);
   assert.deepEqual(statement.values, ["quote-1", "tenant-1"]);
+});
+
+test("buildQuotePublicTokenLookup targets the public token in quote_records", () => {
+  const statement = buildQuotePublicTokenLookup({
+    publicToken: "quote-token-1",
+  });
+
+  assert.equal(statement.text.includes("quote_records"), true);
+  assert.equal(statement.text.includes("where public_token = $1"), true);
+  assert.deepEqual(statement.values, ["quote-token-1"]);
 });
 
 test("buildPaymentRevenueDelete targets payment_records", () => {

@@ -30,6 +30,22 @@ const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const querySingleRow = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL revenue writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const result = await client.query(statement.text, statement.values);
+    return result.rows[0] || null;
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildBookingRevenueRecord = (booking = {}) => ({
   sourceId: String(booking._id || ""),
   tenantId: String(booking.tenantId || ""),
@@ -64,6 +80,7 @@ export const buildQuoteRevenueRecord = (quote = {}) => ({
   paymentStatus: quote.paymentStatus || "not-started",
   currency: quote.currency || "USD",
   totalPrice: Number(quote.totalPrice || 0),
+  publicToken: quote.publicToken || "",
   validUntil: quote.validUntil ? new Date(quote.validUntil).toISOString() : null,
   sentAt: quote.sentAt ? new Date(quote.sentAt).toISOString() : null,
   acceptedAt: quote.acceptedAt ? new Date(quote.acceptedAt).toISOString() : null,
@@ -137,9 +154,9 @@ export const buildQuoteRevenueUpsert = (quote = {}) => {
     text: `
       insert into public.quote_records (
         source_id, tenant_id, inquiry_id, booking_id, title, traveler_name, status,
-        conversion_stage, payment_status, currency, total_price, valid_until, sent_at, accepted_at, source_payload
+        conversion_stage, payment_status, currency, total_price, public_token, valid_until, sent_at, accepted_at, source_payload
       ) values (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb
       )
       on conflict (source_id)
       do update set
@@ -153,6 +170,7 @@ export const buildQuoteRevenueUpsert = (quote = {}) => {
         payment_status = excluded.payment_status,
         currency = excluded.currency,
         total_price = excluded.total_price,
+        public_token = excluded.public_token,
         valid_until = excluded.valid_until,
         sent_at = excluded.sent_at,
         accepted_at = excluded.accepted_at,
@@ -162,7 +180,7 @@ export const buildQuoteRevenueUpsert = (quote = {}) => {
     values: [
       record.sourceId, record.tenantId, record.inquiryId || null, record.bookingId || null, record.title,
       record.travelerName, record.status, record.conversionStage, record.paymentStatus, record.currency,
-      record.totalPrice, record.validUntil, record.sentAt, record.acceptedAt, JSON.stringify(record.sourcePayload || {}),
+      record.totalPrice, record.publicToken, record.validUntil, record.sentAt, record.acceptedAt, JSON.stringify(record.sourcePayload || {}),
     ],
   };
 };
@@ -228,6 +246,16 @@ export const buildPaymentRevenueDelete = ({ sourceId = "", tenantId = "" } = {})
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildQuotePublicTokenLookup = ({ publicToken = "" } = {}) => ({
+  text: `
+    select source_id, tenant_id, inquiry_id, booking_id, status, conversion_stage, public_token
+    from public.quote_records
+    where public_token = $1
+    limit 1
+  `,
+  values: [String(publicToken || "")],
+});
+
 export const syncBookingRevenueRecord = (booking, env) =>
   upsertRecord(buildBookingRevenueUpsert(booking), env);
 
@@ -245,3 +273,6 @@ export const deleteQuoteRevenueRecord = (sourceId, tenantId, env) =>
 
 export const deletePaymentRevenueRecord = (sourceId, tenantId, env) =>
   deleteRecord(buildPaymentRevenueDelete({ sourceId, tenantId }), env);
+
+export const findQuoteRevenueRecordByPublicToken = (publicToken, env) =>
+  querySingleRow(buildQuotePublicTokenLookup({ publicToken }), env);
