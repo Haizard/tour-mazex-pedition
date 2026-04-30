@@ -30,6 +30,22 @@ const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const querySingleRow = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL partner writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const result = await client.query(statement.text, statement.values);
+    return result.rows[0] || null;
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
 export const buildPartnerAccountRecord = (partner = {}) => ({
   sourceId: String(partner._id || ""),
   tenantId: String(partner.tenantId || ""),
@@ -102,8 +118,37 @@ export const buildPartnerAccountDelete = (sourceId = "", tenantId = "") => ({
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildPartnerAccountLookup = (sourceId = "", tenantId = "") => ({
+  text: `
+    select *
+    from public.partner_account_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildPartnerAccountView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  partnerType: String(row.partner_type || "hotel"),
+  companyName: String(row.company_name || ""),
+  contactName: String(row.contact_name || ""),
+  email: String(row.email || ""),
+  phone: String(row.phone || ""),
+  location: String(row.location || ""),
+  serviceFocus: String(row.service_focus || ""),
+  contractLabel: String(row.contract_label || ""),
+  payoutTerms: String(row.payout_terms || ""),
+  notes: String(row.notes || ""),
+  status: String(row.status || "pending"),
+});
+
 export const syncPartnerAccountRecord = (partner, env) =>
   upsertRecord(buildPartnerAccountUpsert(partner), env);
 
 export const deletePartnerAccountRecord = (sourceId, tenantId, env) =>
   deleteRecord(buildPartnerAccountDelete(sourceId, tenantId), env);
+
+export const findPartnerAccountRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildPartnerAccountLookup(sourceId, tenantId), env);

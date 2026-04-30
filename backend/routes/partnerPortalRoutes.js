@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 import PartnerAccount from "../models/PartnerAccount.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
@@ -9,7 +10,9 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildPartnerAccountView,
   deletePartnerAccountRecord,
+  findPartnerAccountRecord,
   syncPartnerAccountRecord,
 } from "../utils/postgresPartnerRecords.js";
 import { fetchPrimaryPartnerAccounts } from "../utils/postgresPrimaryReads.js";
@@ -77,9 +80,11 @@ router.post("/", async (req, res) => {
     await partner.save();
     await syncPartnerViews(partner.toObject());
 
+    const partnerView = await findPartnerAccountRecord(partner._id, req.tenantId, process.env);
+
     res.status(201).json({
-      ...partner.toObject(),
-      partnerSummary: summarizePartnerAccount(partner.toObject()),
+      ...(partnerView ? buildPartnerAccountView(partnerView) : partner.toObject()),
+      partnerSummary: summarizePartnerAccount(partnerView ? buildPartnerAccountView(partnerView) : partner.toObject()),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -119,9 +124,12 @@ router.patch("/:id", async (req, res) => {
     }
     await syncPartnerViews(partner);
 
+    const partnerView = await findPartnerAccountRecord(partner._id, req.tenantId, process.env);
+    const responsePartner = partnerView ? buildPartnerAccountView(partnerView) : partner;
+
     res.status(200).json({
-      ...partner,
-      partnerSummary: summarizePartnerAccount(partner),
+      ...responsePartner,
+      partnerSummary: summarizePartnerAccount(responsePartner),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

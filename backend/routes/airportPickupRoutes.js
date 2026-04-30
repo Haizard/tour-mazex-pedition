@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 import AirportPickup from "../models/AirportPickup.js";
 import Booking from "../models/Booking.js";
 import GuideDriver from "../models/GuideDriver.js";
@@ -16,7 +17,9 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildAirportPickupView,
   deleteAirportPickupRecord,
+  findAirportPickupRecord,
   syncAirportPickupRecord,
 } from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryAirportPickupData } from "../utils/postgresPrimaryReads.js";
@@ -200,7 +203,10 @@ router.post("/", async (req, res) => {
       ? await Promise.all([GuideDriver.findOne(buildTenantFilter(req, { _id: normalizedPayload.driverId })).lean()])
       : [null];
 
-    res.status(201).json(enrichAirportPickups([pickup.toObject()], driver ? [driver] : [])[0]);
+    const pickupView = await findAirportPickupRecord(pickup._id, req.tenantId, process.env);
+    const responsePickup = pickupView ? buildAirportPickupView(pickupView) : pickup.toObject();
+
+    res.status(201).json(enrichAirportPickups([responsePickup], driver ? [driver] : [])[0]);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -282,7 +288,10 @@ router.patch("/:id", async (req, res) => {
       ? await GuideDriver.findOne(buildTenantFilter(req, { _id: pickup.driverId })).lean()
       : null;
 
-    res.status(200).json(enrichAirportPickups([pickup], driver ? [driver] : [])[0]);
+    const pickupView = await findAirportPickupRecord(pickup._id, req.tenantId, process.env);
+    const responsePickup = pickupView ? buildAirportPickupView(pickupView) : pickup;
+
+    res.status(200).json(enrichAirportPickups([responsePickup], driver ? [driver] : [])[0]);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

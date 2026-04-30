@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 import Booking from "../models/Booking.js";
 import GuideDriver from "../models/GuideDriver.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
@@ -14,7 +15,9 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildGuideDriverAssignmentView,
   deleteGuideDriverAssignmentRecord,
+  findGuideDriverAssignmentRecord,
   syncGuideDriverAssignmentRecord,
 } from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryGuideDriverData } from "../utils/postgresPrimaryReads.js";
@@ -192,9 +195,12 @@ router.post("/", async (req, res) => {
     await member.save();
     await syncGuideDriverViews(member.toObject());
 
+    const memberView = await findGuideDriverAssignmentRecord(member._id, req.tenantId, process.env);
+    const responseMember = memberView ? buildGuideDriverAssignmentView(memberView) : member.toObject();
+
     res.status(201).json({
-      ...member.toObject(),
-      assignmentSummary: summarizeGuideDriverAssignment(member.toObject()),
+      ...responseMember,
+      assignmentSummary: summarizeGuideDriverAssignment(responseMember),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -279,9 +285,12 @@ router.patch("/:id", async (req, res) => {
     ).lean();
     await syncGuideDriverViews(member);
 
+    const memberView = await findGuideDriverAssignmentRecord(member._id, req.tenantId, process.env);
+    const responseMember = memberView ? buildGuideDriverAssignmentView(memberView) : member;
+
     res.status(200).json({
-      ...member,
-      assignmentSummary: summarizeGuideDriverAssignment(member),
+      ...responseMember,
+      assignmentSummary: summarizeGuideDriverAssignment(responseMember),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

@@ -30,6 +30,31 @@ const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
   }
 };
 
+const querySingleRow = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL operations writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const result = await client.query(statement.text, statement.values);
+    return result.rows[0] || null;
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+const toIso = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
+
 export const buildGuideDriverAssignmentRecord = (member = {}) => ({
   sourceId: String(member._id || ""),
   tenantId: String(member.tenantId || ""),
@@ -276,6 +301,93 @@ export const buildAirportPickupDelete = (sourceId = "", tenantId = "") => ({
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildGuideDriverAssignmentLookup = (sourceId = "", tenantId = "") => ({
+  text: `
+    select *
+    from public.guide_driver_assignment_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildAccommodationReservationLookup = (sourceId = "", tenantId = "") => ({
+  text: `
+    select *
+    from public.accommodation_reservation_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildAirportPickupLookup = (sourceId = "", tenantId = "") => ({
+  text: `
+    select *
+    from public.airport_pickup_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildGuideDriverAssignmentView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  assignedBookingId: row.assigned_booking_id ? String(row.assigned_booking_id) : "",
+  staffType: String(row.staff_type || "guide"),
+  fullName: String(row.full_name || ""),
+  phone: String(row.phone || ""),
+  email: String(row.email || ""),
+  homeBase: String(row.home_base || ""),
+  availabilityStatus: String(row.availability_status || "available"),
+  languages: Array.isArray(row.languages) ? row.languages : [],
+  specialties: Array.isArray(row.specialties) ? row.specialties : [],
+  assignedTourTitle: String(row.assigned_tour_title || ""),
+  assignmentDate: toIso(row.assignment_date),
+  assignmentStartDate: toIso(row.assignment_start_date),
+  assignmentEndDate: toIso(row.assignment_end_date),
+  assignmentNotes: String(row.assignment_notes || ""),
+  licenseCategory: String(row.license_category || ""),
+});
+
+export const buildAccommodationReservationView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  bookingId: row.booking_id ? String(row.booking_id) : "",
+  bookingGuestName: String(row.booking_guest_name || ""),
+  hotelName: String(row.hotel_name || ""),
+  supplierName: String(row.supplier_name || ""),
+  supplierContact: String(row.supplier_contact || ""),
+  destination: String(row.destination || ""),
+  reservationCode: String(row.reservation_code || ""),
+  roomPlan: String(row.room_plan || ""),
+  checkInDate: toIso(row.check_in_date),
+  checkOutDate: toIso(row.check_out_date),
+  guestCount: Number(row.guest_count || 1),
+  status: String(row.status || "pending"),
+  notes: String(row.notes || ""),
+  assignedTourTitle: String(row.assigned_tour_title || ""),
+});
+
+export const buildAirportPickupView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  bookingId: row.booking_id ? String(row.booking_id) : "",
+  driverId: row.driver_id ? String(row.driver_id) : "",
+  guestName: String(row.guest_name || ""),
+  airportCode: String(row.airport_code || ""),
+  flightNumber: String(row.flight_number || ""),
+  pickupDateTime: toIso(row.pickup_date_time),
+  destinationLabel: String(row.destination_label || ""),
+  assignedTourTitle: String(row.assigned_tour_title || ""),
+  driverName: String(row.driver_name || ""),
+  vehicleLabel: String(row.vehicle_label || ""),
+  guestCount: Number(row.guest_count || 1),
+  status: String(row.status || "pending"),
+  notes: String(row.notes || ""),
+});
+
 export const syncGuideDriverAssignmentRecord = (member, env) =>
   upsertRecord(buildGuideDriverAssignmentUpsert(member), env);
 
@@ -293,3 +405,12 @@ export const deleteAccommodationReservationRecord = (sourceId, tenantId, env) =>
 
 export const deleteAirportPickupRecord = (sourceId, tenantId, env) =>
   deleteRecord(buildAirportPickupDelete(sourceId, tenantId), env);
+
+export const findGuideDriverAssignmentRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildGuideDriverAssignmentLookup(sourceId, tenantId), env);
+
+export const findAccommodationReservationRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildAccommodationReservationLookup(sourceId, tenantId), env);
+
+export const findAirportPickupRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildAirportPickupLookup(sourceId, tenantId), env);

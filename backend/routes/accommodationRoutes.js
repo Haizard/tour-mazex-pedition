@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 import AccommodationReservation from "../models/AccommodationReservation.js";
 import Booking from "../models/Booking.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
@@ -14,7 +15,9 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildAccommodationReservationView,
   deleteAccommodationReservationRecord,
+  findAccommodationReservationRecord,
   syncAccommodationReservationRecord,
 } from "../utils/postgresOperationsRecords.js";
 import { fetchPrimaryAccommodationData } from "../utils/postgresPrimaryReads.js";
@@ -187,7 +190,10 @@ router.post("/", async (req, res) => {
     await reservation.save();
     await syncAccommodationViews(reservation.toObject());
 
-    res.status(201).json(enrichAccommodationReservations([reservation.toObject()])[0]);
+    const reservationView = await findAccommodationReservationRecord(reservation._id, req.tenantId, process.env);
+    const responseReservation = reservationView ? buildAccommodationReservationView(reservationView) : reservation.toObject();
+
+    res.status(201).json(enrichAccommodationReservations([responseReservation])[0]);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -262,7 +268,10 @@ router.patch("/:id", async (req, res) => {
     ).lean();
     await syncAccommodationViews(reservation);
 
-    res.status(200).json(enrichAccommodationReservations([reservation])[0]);
+    const reservationView = await findAccommodationReservationRecord(reservation._id, req.tenantId, process.env);
+    const responseReservation = reservationView ? buildAccommodationReservationView(reservationView) : reservation;
+
+    res.status(200).json(enrichAccommodationReservations([responseReservation])[0]);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
