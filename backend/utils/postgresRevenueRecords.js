@@ -1,4 +1,8 @@
 import { createPostgresClient } from "./postgresClient.js";
+import {
+  normalizePrimaryBookingRows,
+  normalizePrimaryPaymentRows,
+} from "./postgresPrimaryReads.js";
 
 const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   const client = createPostgresClient(env);
@@ -267,6 +271,37 @@ export const buildQuotePublicTokenLookup = ({ publicToken = "" } = {}) => ({
   values: [String(publicToken || "")],
 });
 
+export const buildBookingRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select
+      source_id,
+      tenant_id,
+      quote_proposal_id,
+      traveler_name,
+      email,
+      phone,
+      package_tour,
+      status,
+      revenue_stage,
+      payment_status,
+      total_price,
+      currency,
+      referral_code,
+      lead_source,
+      campaign_label,
+      first_touch_at,
+      converted_at,
+      travel_date,
+      source_payload,
+      created_at,
+      updated_at
+    from public.booking_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const buildPaymentPublicTokenLookup = ({ publicToken = "" } = {}) => ({
   text: `
     select
@@ -297,6 +332,37 @@ export const buildPaymentPublicTokenLookup = ({ publicToken = "" } = {}) => ({
     limit 1
   `,
   values: [String(publicToken || "")],
+});
+
+export const buildPaymentRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select
+      pr.source_id,
+      pr.booking_id,
+      pr.provider,
+      pr.provider_reference,
+      pr.customer_name,
+      pr.status,
+      pr.currency,
+      pr.amount,
+      pr.fee_percent,
+      pr.fee_amount,
+      pr.failure_reason,
+      pr.paid_at,
+      pr.refunded_at,
+      pr.cancelled_at,
+      pr.source_payload,
+      pr.updated_at,
+      br.traveler_name as booking_name,
+      br.revenue_stage as booking_revenue_stage,
+      br.payment_status as booking_payment_status
+    from public.payment_records pr
+    left join public.booking_records br
+      on br.source_id = pr.booking_id and br.tenant_id = pr.tenant_id
+    where pr.source_id = $1 and pr.tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
 });
 
 export const buildPaymentProviderReferenceLookup = ({
@@ -412,6 +478,12 @@ export const buildPublicPaymentRevenueView = (row = {}) => {
   };
 };
 
+export const buildBookingRevenueView = (row = {}) =>
+  normalizePrimaryBookingRows([row])[0] || null;
+
+export const buildPaymentRevenueView = (row = {}) =>
+  normalizePrimaryPaymentRows([row])[0] || null;
+
 export const syncBookingRevenueRecord = (booking, env) =>
   upsertRecord(buildBookingRevenueUpsert(booking), env);
 
@@ -433,8 +505,14 @@ export const deletePaymentRevenueRecord = (sourceId, tenantId, env) =>
 export const findQuoteRevenueRecordByPublicToken = (publicToken, env) =>
   querySingleRow(buildQuotePublicTokenLookup({ publicToken }), env);
 
+export const findBookingRevenueRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildBookingRevenueLookup({ sourceId, tenantId }), env);
+
 export const findPaymentRevenueRecordByPublicToken = (publicToken, env) =>
   querySingleRow(buildPaymentPublicTokenLookup({ publicToken }), env);
+
+export const findPaymentRevenueRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildPaymentRevenueLookup({ sourceId, tenantId }), env);
 
 export const findPaymentRevenueRecordByProviderReference = (provider, providerReference, env) =>
   querySingleRow(buildPaymentProviderReferenceLookup({ provider, providerReference }), env);

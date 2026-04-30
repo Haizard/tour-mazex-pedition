@@ -19,8 +19,10 @@ import {
   syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+  buildPaymentRevenueView,
   buildPublicPaymentRevenueView,
   deletePaymentRevenueRecord,
+  findPaymentRevenueRecord,
   findPaymentRevenueRecordByProviderReference,
   findPaymentRevenueRecordByPublicToken,
   syncBookingRevenueRecord,
@@ -395,9 +397,19 @@ router.post("/", async (req, res) => {
     await payment.save();
     await syncLinkedRevenueRecords(req, payment.toObject());
     await syncRevenueShadowWrites(req, payment.toObject());
+    const primaryPayment = await safePrimaryLookup(
+      () => findPaymentRevenueRecord(payment._id, req.tenantId, process.env),
+      {
+        onError: (error) => {
+          console.error("Primary payment create refresh failed:", error.message);
+        },
+      }
+    );
 
     res.status(201).json({
-      ...toPaymentResponse(payment.toObject()),
+      ...(primaryPayment
+        ? buildPaymentRevenueView(primaryPayment)
+        : toPaymentResponse(payment.toObject())),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -477,9 +489,19 @@ router.patch("/:id", async (req, res) => {
     ).lean();
     await syncLinkedRevenueRecords(req, payment);
     await syncRevenueShadowWrites(req, payment);
+    const primaryPayment = await safePrimaryLookup(
+      () => findPaymentRevenueRecord(payment._id, req.tenantId, process.env),
+      {
+        onError: (error) => {
+          console.error("Primary payment update refresh failed:", error.message);
+        },
+      }
+    );
 
     res.status(200).json({
-      ...toPaymentResponse(payment),
+      ...(primaryPayment
+        ? buildPaymentRevenueView(primaryPayment)
+        : toPaymentResponse(payment)),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

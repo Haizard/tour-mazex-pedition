@@ -19,9 +19,11 @@ import {
     syncMongoDocumentToShadowStore,
 } from "../utils/postgresShadowWrites.js";
 import {
+    buildBookingRevenueView,
     deleteBookingRevenueRecord,
     deletePaymentRevenueRecord,
     deleteQuoteRevenueRecord,
+    findBookingRevenueRecord,
     syncBookingRevenueRecord,
 } from "../utils/postgresRevenueRecords.js";
 import {
@@ -228,7 +230,15 @@ router.post('/', async (req, res) => {
         }));
         await newBooking.save();
         await syncBookingRevenueViews(newBooking.toObject());
-        res.status(201).json(newBooking);
+        const primaryBooking = await safePrimaryLookup(
+            () => findBookingRevenueRecord(newBooking._id, req.tenantId, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary booking create refresh failed:", error.message);
+                },
+            }
+        );
+        res.status(201).json(primaryBooking ? buildBookingRevenueView(primaryBooking) : newBooking);
     } catch (error) {
         res.status(409).json({ message: error.message });
     }
@@ -318,7 +328,16 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
             }
         }
 
-        res.status(200).json(updatedBooking);
+        const primaryBooking = await safePrimaryLookup(
+            () => findBookingRevenueRecord(updatedBooking._id, req.tenantId, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary booking update refresh failed:", error.message);
+                },
+            }
+        );
+
+        res.status(200).json(primaryBooking ? buildBookingRevenueView(primaryBooking) : updatedBooking);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

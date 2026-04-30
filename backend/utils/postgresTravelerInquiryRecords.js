@@ -1,4 +1,5 @@
 import { createPostgresClient } from "./postgresClient.js";
+import { normalizePrimaryInquiryRows } from "./postgresPrimaryReads.js";
 
 const upsertRecord = async (statement, env = globalThis.process?.env || {}) => {
   const client = createPostgresClient(env);
@@ -25,6 +26,22 @@ const deleteRecord = async (statement, env = globalThis.process?.env || {}) => {
   try {
     await client.connect();
     await client.query(statement.text, statement.values);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+const querySingleRow = async (statement, env = globalThis.process?.env || {}) => {
+  const client = createPostgresClient(env);
+
+  if (!client) {
+    throw new Error("PostgreSQL traveler writer is not configured.");
+  }
+
+  try {
+    await client.connect();
+    const result = await client.query(statement.text, statement.values);
+    return result.rows[0] || null;
   } finally {
     await client.end().catch(() => {});
   }
@@ -134,8 +151,48 @@ export const buildTravelerInquiryDelete = ({ sourceId = "", tenantId = "" } = {}
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildTravelerInquiryLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select
+      source_id,
+      tenant_id,
+      traveler_name,
+      first_name,
+      last_name,
+      email,
+      phone,
+      coalesce(
+        (
+          select array_agg(value order by value)
+          from jsonb_array_elements_text(destinations) value
+        ),
+        array[]::text[]
+      ) as destinations,
+      travel_when,
+      budget,
+      lead_stage,
+      status,
+      source_channel,
+      campaign_label,
+      referral_code,
+      lead_score,
+      lead_temperature,
+      source_payload
+    from public.traveler_inquiry_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildTravelerInquiryView = (row = {}) =>
+  normalizePrimaryInquiryRows([row])[0] || null;
+
 export const syncTravelerInquiryRecord = (inquiry, env) =>
   upsertRecord(buildTravelerInquiryUpsert(inquiry), env);
 
 export const deleteTravelerInquiryRecord = (sourceId, tenantId, env) =>
   deleteRecord(buildTravelerInquiryDelete({ sourceId, tenantId }), env);
+
+export const findTravelerInquiryRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildTravelerInquiryLookup({ sourceId, tenantId }), env);

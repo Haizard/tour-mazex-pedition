@@ -19,7 +19,9 @@ import {
     deleteLeadFollowUpSequenceRecord,
 } from "../utils/postgresEngagementRecords.js";
 import {
+    buildTravelerInquiryView,
     deleteTravelerInquiryRecord,
+    findTravelerInquiryRecord,
     syncTravelerInquiryRecord,
 } from '../utils/postgresTravelerInquiryRecords.js';
 import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
@@ -159,8 +161,16 @@ router.post('/', async (req, res) => {
         }));
         await newInquiry.save();
         await syncTravelerInquiryViews(newInquiry.toObject());
+        const primaryInquiry = await safePrimaryLookup(
+            () => findTravelerInquiryRecord(newInquiry._id, req.tenantId, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary inquiry create refresh failed:", error.message);
+                },
+            }
+        );
         res.status(201).json({
-            inquiry: newInquiry,
+            inquiry: primaryInquiry ? buildTravelerInquiryView(primaryInquiry) : newInquiry,
             automation,
         });
     } catch (error) {
@@ -215,9 +225,17 @@ router.post('/whatsapp-lead', async (req, res) => {
 
         await newInquiry.save();
         await syncTravelerInquiryViews(newInquiry.toObject());
+        const primaryInquiry = await safePrimaryLookup(
+            () => findTravelerInquiryRecord(newInquiry._id, req.tenantId, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary WhatsApp inquiry refresh failed:", error.message);
+                },
+            }
+        );
 
         res.status(201).json({
-            inquiry: newInquiry,
+            inquiry: primaryInquiry ? buildTravelerInquiryView(primaryInquiry) : newInquiry,
             automation,
         });
     } catch (error) {
@@ -346,7 +364,17 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
         if (updated) {
             await syncTravelerInquiryViews(updated.toObject());
         }
-        res.status(200).json(updated);
+        const primaryInquiry = updated
+            ? await safePrimaryLookup(
+                () => findTravelerInquiryRecord(updated._id, req.tenantId, process.env),
+                {
+                    onError: (error) => {
+                        console.error("Primary inquiry update refresh failed:", error.message);
+                    },
+                }
+            )
+            : null;
+        res.status(200).json(primaryInquiry ? buildTravelerInquiryView(primaryInquiry) : updated);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
