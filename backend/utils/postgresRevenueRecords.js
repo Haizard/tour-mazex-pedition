@@ -271,6 +271,32 @@ export const buildQuotePublicTokenLookup = ({ publicToken = "" } = {}) => ({
   values: [String(publicToken || "")],
 });
 
+export const buildQuoteRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select
+      source_id,
+      tenant_id,
+      inquiry_id,
+      booking_id,
+      title,
+      traveler_name,
+      status,
+      conversion_stage,
+      payment_status,
+      currency,
+      total_price,
+      public_token,
+      valid_until,
+      sent_at,
+      accepted_at,
+      source_payload
+    from public.quote_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const buildBookingRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
   text: `
     select
@@ -478,6 +504,9 @@ export const buildPublicPaymentRevenueView = (row = {}) => {
   };
 };
 
+export const buildQuoteRevenueView = (row = {}) =>
+  buildPublicQuoteRevenueView(row);
+
 export const buildBookingRevenueView = (row = {}) =>
   normalizePrimaryBookingRows([row])[0] || null;
 
@@ -504,6 +533,9 @@ export const deletePaymentRevenueRecord = (sourceId, tenantId, env) =>
 
 export const findQuoteRevenueRecordByPublicToken = (publicToken, env) =>
   querySingleRow(buildQuotePublicTokenLookup({ publicToken }), env);
+
+export const findQuoteRevenueRecord = (sourceId, tenantId, env) =>
+  querySingleRow(buildQuoteRevenueLookup({ sourceId, tenantId }), env);
 
 export const findBookingRevenueRecord = (sourceId, tenantId, env) =>
   querySingleRow(buildBookingRevenueLookup({ sourceId, tenantId }), env);

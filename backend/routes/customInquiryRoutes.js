@@ -27,8 +27,10 @@ import {
 import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
 import { safePrimaryLookup } from "../utils/safePrimaryLookup.js";
 import {
+    buildQuoteRevenueView,
     buildPublicQuoteRevenueView,
     deleteQuoteRevenueRecord,
+    findQuoteRevenueRecord,
     findQuoteRevenueRecordByPublicToken,
     syncQuoteRevenueRecord,
 } from '../utils/postgresRevenueRecords.js';
@@ -427,8 +429,16 @@ router.post('/:id/generate-quote', requireTenantAdmin, async (req, res) => {
         );
 
         await syncQuoteRevenueViews(quote.toObject());
+        const primaryQuote = await safePrimaryLookup(
+            () => findQuoteRevenueRecord(quote._id, req.tenantId, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary quote create refresh failed:", error.message);
+                },
+            }
+        );
 
-        res.status(201).json(quote);
+        res.status(201).json(primaryQuote ? buildQuoteRevenueView(primaryQuote) : quote);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -448,8 +458,19 @@ router.post('/:id/quotes/:quoteId/send', requireTenantAdmin, async (req, res) =>
         }
 
         await syncQuoteRevenueViews(quote);
+        const primaryQuote = await safePrimaryLookup(
+            () => findQuoteRevenueRecord(quote._id, req.tenantId, process.env),
+            {
+                onError: (error) => {
+                    console.error("Primary quote send refresh failed:", error.message);
+                },
+            }
+        );
 
-        res.status(200).json({ message: 'Quote marked as sent to traveler.', quote });
+        res.status(200).json({
+            message: 'Quote marked as sent to traveler.',
+            quote: primaryQuote ? buildQuoteRevenueView(primaryQuote) : quote
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

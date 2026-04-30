@@ -14,6 +14,8 @@ import {
   buildPaymentRevenueUpsert,
   buildPublicPaymentRevenueView,
   buildPublicQuoteRevenueView,
+  buildQuoteRevenueLookup,
+  buildQuoteRevenueView,
   buildQuotePublicTokenLookup,
   buildQuoteRevenueDelete,
   buildQuoteRevenueUpsert,
@@ -92,6 +94,17 @@ test("buildQuotePublicTokenLookup targets the public token in quote_records", ()
   assert.equal(statement.text.includes("quote_records"), true);
   assert.equal(statement.text.includes("where public_token = $1"), true);
   assert.deepEqual(statement.values, ["quote-token-1"]);
+});
+
+test("buildQuoteRevenueLookup targets quote_records by source and tenant", () => {
+  const statement = buildQuoteRevenueLookup({
+    sourceId: "quote-1",
+    tenantId: "tenant-1",
+  });
+
+  assert.equal(statement.text.includes("from public.quote_records"), true);
+  assert.equal(statement.text.includes("where source_id = $1 and tenant_id = $2"), true);
+  assert.deepEqual(statement.values, ["quote-1", "tenant-1"]);
 });
 
 test("buildBookingRevenueLookup targets booking_records by source and tenant", () => {
@@ -183,6 +196,34 @@ test("buildPublicQuoteRevenueView reconstructs the public quote payload from pos
   assert.equal(quote.travelerCount, 2);
   assert.deepEqual(quote.itineraryOutline, ["Day 1", "Day 2"]);
   assert.equal(quote.validUntil, "2026-05-15T00:00:00.000Z");
+});
+
+test("buildQuoteRevenueView reconstructs the admin quote payload from postgres", () => {
+  const quote = buildQuoteRevenueView({
+    source_id: "quote-1",
+    tenant_id: "tenant-1",
+    inquiry_id: "inquiry-1",
+    booking_id: "booking-1",
+    title: "Northern Circuit Escape",
+    traveler_name: "Amina",
+    status: "sent",
+    conversion_stage: "sent",
+    payment_status: "pending",
+    currency: "USD",
+    total_price: 4200,
+    public_token: "quote-token-1",
+    valid_until: "2026-05-15T00:00:00.000Z",
+    sent_at: "2026-04-28T08:00:00.000Z",
+    source_payload: {
+      summary: "A private safari through the north.",
+      travelerCount: 2,
+    },
+  });
+
+  assert.equal(quote._id, "quote-1");
+  assert.equal(quote.status, "sent");
+  assert.equal(quote.paymentStatus, "pending");
+  assert.equal(quote.summary, "A private safari through the north.");
 });
 
 test("buildPublicPaymentRevenueView reconstructs the public payment payload from postgres", () => {
