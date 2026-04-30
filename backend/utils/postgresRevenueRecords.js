@@ -92,6 +92,7 @@ export const buildPaymentRevenueRecord = (payment = {}) => ({
   tenantId: String(payment.tenantId || ""),
   bookingId: payment.bookingId ? String(payment.bookingId) : "",
   provider: payment.provider || "stripe",
+  publicToken: payment.publicToken || "",
   providerReference: payment.providerReference || "",
   customerName: payment.customerName || "",
   status: payment.status || "pending",
@@ -190,16 +191,17 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
   return {
     text: `
       insert into public.payment_records (
-        source_id, tenant_id, booking_id, provider, provider_reference, customer_name, status,
+        source_id, tenant_id, booking_id, provider, public_token, provider_reference, customer_name, status,
         currency, amount, fee_percent, fee_amount, failure_reason, paid_at, refunded_at, cancelled_at, source_payload
       ) values (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb
       )
       on conflict (source_id)
       do update set
         tenant_id = excluded.tenant_id,
         booking_id = excluded.booking_id,
         provider = excluded.provider,
+        public_token = excluded.public_token,
         provider_reference = excluded.provider_reference,
         customer_name = excluded.customer_name,
         status = excluded.status,
@@ -215,7 +217,7 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
         updated_at = now()
     `,
     values: [
-      record.sourceId, record.tenantId, record.bookingId || null, record.provider, record.providerReference,
+      record.sourceId, record.tenantId, record.bookingId || null, record.provider, record.publicToken, record.providerReference,
       record.customerName, record.status, record.currency, record.amount, record.feePercent, record.feeAmount,
       record.failureReason, record.paidAt, record.refundedAt, record.cancelledAt, JSON.stringify(record.sourcePayload || {}),
     ],
@@ -256,6 +258,16 @@ export const buildQuotePublicTokenLookup = ({ publicToken = "" } = {}) => ({
   values: [String(publicToken || "")],
 });
 
+export const buildPaymentPublicTokenLookup = ({ publicToken = "" } = {}) => ({
+  text: `
+    select source_id, tenant_id, booking_id, status, provider, public_token
+    from public.payment_records
+    where public_token = $1
+    limit 1
+  `,
+  values: [String(publicToken || "")],
+});
+
 export const syncBookingRevenueRecord = (booking, env) =>
   upsertRecord(buildBookingRevenueUpsert(booking), env);
 
@@ -276,3 +288,6 @@ export const deletePaymentRevenueRecord = (sourceId, tenantId, env) =>
 
 export const findQuoteRevenueRecordByPublicToken = (publicToken, env) =>
   querySingleRow(buildQuotePublicTokenLookup({ publicToken }), env);
+
+export const findPaymentRevenueRecordByPublicToken = (publicToken, env) =>
+  querySingleRow(buildPaymentPublicTokenLookup({ publicToken }), env);

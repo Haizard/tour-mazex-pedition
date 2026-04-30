@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildBookingRevenueDelete,
   buildBookingRevenueUpsert,
+  buildPaymentPublicTokenLookup,
   buildPaymentRevenueDelete,
   buildPaymentRevenueUpsert,
   buildQuotePublicTokenLookup,
@@ -45,11 +46,13 @@ test("buildPaymentRevenueUpsert targets payment_records", () => {
     tenantId: "tenant-1",
     provider: "stripe",
     amount: 500,
+    publicToken: "payment-public-token",
   });
 
   assert.equal(statement.text.includes("payment_records"), true);
   assert.equal(statement.values[0], "payment-1");
-  assert.equal(statement.values[7], "USD");
+  assert.equal(statement.values[4], "payment-public-token");
+  assert.equal(statement.values[8], "USD");
 });
 
 test("buildBookingRevenueDelete targets booking_records", () => {
@@ -93,4 +96,14 @@ test("buildPaymentRevenueDelete targets payment_records", () => {
   assert.equal(statement.text.includes("payment_records"), true);
   assert.equal(statement.text.includes("delete from"), true);
   assert.deepEqual(statement.values, ["payment-1", "tenant-1"]);
+});
+
+test("buildPaymentPublicTokenLookup targets the public token in payment_records", () => {
+  const statement = buildPaymentPublicTokenLookup({
+    publicToken: "payment-token-1",
+  });
+
+  assert.equal(statement.text.includes("payment_records"), true);
+  assert.equal(statement.text.includes("where public_token = $1"), true);
+  assert.deepEqual(statement.values, ["payment-token-1"]);
 });

@@ -1,4 +1,5 @@
 import express from "express";
+import process from "node:process";
 import Booking from "../models/Booking.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
@@ -19,6 +20,7 @@ import {
 } from "../utils/postgresShadowWrites.js";
 import {
   deletePaymentRevenueRecord,
+  findPaymentRevenueRecordByPublicToken,
   syncBookingRevenueRecord,
   syncPaymentRevenueRecord,
   syncQuoteRevenueRecord,
@@ -156,7 +158,10 @@ const syncRevenueShadowWrites = async (req, payment = {}) => {
 
 router.get("/checkout/:token", async (req, res) => {
   try {
-    const payment = await PaymentTransaction.findOne({ publicToken: req.params.token })
+    const paymentLookup = await findPaymentRevenueRecordByPublicToken(req.params.token, process.env);
+    const payment = await PaymentTransaction.findOne(
+      paymentLookup?.source_id ? { _id: paymentLookup.source_id } : { publicToken: req.params.token }
+    )
       .populate("bookingId", "name packageTour travelDate")
       .lean();
 
@@ -182,7 +187,10 @@ router.post("/checkout/:token/respond", async (req, res) => {
       return res.status(400).json({ message: "Unsupported payment response status." });
     }
 
-    const payment = await PaymentTransaction.findOne({ publicToken: req.params.token });
+    const paymentLookup = await findPaymentRevenueRecordByPublicToken(req.params.token, process.env);
+    const payment = paymentLookup?.source_id
+      ? await PaymentTransaction.findById(paymentLookup.source_id)
+      : await PaymentTransaction.findOne({ publicToken: req.params.token });
 
     if (!payment) {
       return res.status(404).json({ message: "Payment link not found." });
