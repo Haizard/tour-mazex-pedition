@@ -13,7 +13,7 @@ import {
     deleteMongoDocumentFromShadowStore,
     syncMongoDocumentToShadowStore,
 } from '../utils/postgresShadowWrites.js';
-import { fetchPrimaryInquiries } from '../utils/postgresPrimaryReads.js';
+import { fetchPrimaryInquiries, fetchPrimaryInquiryQuotes } from '../utils/postgresPrimaryReads.js';
 import LeadFollowUpSequence from "../models/LeadFollowUpSequence.js";
 import {
     deleteLeadFollowUpSequenceRecord,
@@ -389,6 +389,15 @@ router.get('/:id/quotes', requireTenantAdmin, async (req, res) => {
         )
             .sort({ createdAt: -1 })
             .lean();
+
+        if (String(req.query.source || '').toLowerCase() === 'postgres') {
+            const primaryQuotes = await fetchPrimaryInquiryQuotes(
+                req.params.id,
+                String(req.tenantId || ''),
+                process.env
+            );
+            return res.status(200).json(preferPrimaryCollection(primaryQuotes, quotes));
+        }
 
         res.status(200).json(quotes);
     } catch (error) {

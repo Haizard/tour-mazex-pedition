@@ -9,6 +9,7 @@ import {
   normalizePrimaryCompetitorRows,
   normalizePrimaryGuideDriverRows,
   normalizePrimaryInquiryRows,
+  normalizePrimaryQuoteRows,
   normalizePrimaryLanguageAssistantRows,
   normalizePrimaryPartnerRows,
   normalizePrimaryPaymentRows,
@@ -87,6 +88,42 @@ test("normalizePrimaryInquiryRows rebuilds lead inbox records from postgres rows
   assert.equal(rows[0].contactPreference, "whatsapp");
   assert.equal(rows[0].followUpMessage, "We have a great itinerary ready.");
   assert.deepEqual(rows[0].destinations, ["Serengeti", "Ngorongoro"]);
+});
+
+test("normalizePrimaryQuoteRows rebuilds quote workflow records from postgres rows", () => {
+  const rows = normalizePrimaryQuoteRows([
+    {
+      source_id: "quote-1",
+      tenant_id: "tenant-1",
+      inquiry_id: "inquiry-1",
+      booking_id: "booking-1",
+      title: "Northern Circuit Escape",
+      traveler_name: "Amina Said",
+      status: "sent",
+      conversion_stage: "sent",
+      payment_status: "pending",
+      currency: "USD",
+      total_price: "4200",
+      public_token: "quote-token-1",
+      valid_until: "2026-05-15T00:00:00.000Z",
+      sent_at: "2026-04-28T08:00:00.000Z",
+      accepted_at: null,
+      source_payload: {
+        summary: "Private safari itinerary",
+        travelerCount: 2,
+        tripLengthDays: 6,
+        itineraryOutline: ["Day 1", "Day 2"],
+        nextSteps: ["Approve quote"],
+        lineItems: [{ label: "Safari", amount: 4200 }],
+      },
+    },
+  ]);
+
+  assert.equal(rows[0]._id, "quote-1");
+  assert.equal(rows[0].title, "Northern Circuit Escape");
+  assert.equal(rows[0].publicToken, "quote-token-1");
+  assert.equal(rows[0].travelerCount, 2);
+  assert.deepEqual(rows[0].itineraryOutline, ["Day 1", "Day 2"]);
 });
 
 test("normalizePrimaryGuideDriverRows rebuilds operations team rows from postgres rows", () => {

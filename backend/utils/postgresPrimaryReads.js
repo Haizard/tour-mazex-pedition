@@ -103,6 +103,34 @@ export const normalizePrimaryInquiryRows = (rows = []) =>
     };
   });
 
+export const normalizePrimaryQuoteRows = (rows = []) =>
+  rows.map((row = {}) => {
+    const payload = row.source_payload || {};
+    return {
+      ...payload,
+      _id: String(row.source_id || payload._id || ""),
+      tenantId: String(row.tenant_id || payload.tenantId || ""),
+      inquiryId: row.inquiry_id ? String(row.inquiry_id) : payload.inquiryId || null,
+      bookingId: row.booking_id ? String(row.booking_id) : payload.bookingId || null,
+      title: String(row.title || payload.title || ""),
+      travelerName: String(row.traveler_name || payload.travelerName || ""),
+      status: String(row.status || payload.status || "draft"),
+      conversionStage: String(row.conversion_stage || payload.conversionStage || "draft"),
+      paymentStatus: String(row.payment_status || payload.paymentStatus || "not-started"),
+      currency: String(row.currency || payload.currency || "USD"),
+      totalPrice: Number(row.total_price ?? payload.totalPrice ?? 0),
+      publicToken: String(row.public_token || payload.publicToken || ""),
+      validUntil: toIso(row.valid_until || payload.validUntil),
+      sentAt: toIso(row.sent_at || payload.sentAt),
+      acceptedAt: toIso(row.accepted_at || payload.acceptedAt),
+      travelerCount: Number(payload.travelerCount || 0),
+      tripLengthDays: Number(payload.tripLengthDays || 0),
+      itineraryOutline: Array.isArray(payload.itineraryOutline) ? payload.itineraryOutline : [],
+      nextSteps: Array.isArray(payload.nextSteps) ? payload.nextSteps : [],
+      lineItems: Array.isArray(payload.lineItems) ? payload.lineItems : [],
+    };
+  });
+
 export const normalizePrimaryBookingRows = (rows = []) =>
   rows.map((row = {}) => {
     const payload = row.source_payload || {};
@@ -506,6 +534,46 @@ export const fetchPrimaryInquiries = async (tenantId = "", env = globalThis.proc
       [tenantId]
     );
     return normalizePrimaryInquiryRows(result.rows);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+export const fetchPrimaryInquiryQuotes = async (
+  inquiryId = "",
+  tenantId = "",
+  env = globalThis.process?.env || {}
+) => {
+  const client = createPostgresClient(env);
+  if (!client) return [];
+  await client.connect();
+  try {
+    const result = await client.query(
+      `
+        select
+          source_id,
+          tenant_id,
+          inquiry_id,
+          booking_id,
+          title,
+          traveler_name,
+          status,
+          conversion_stage,
+          payment_status,
+          currency,
+          total_price,
+          public_token,
+          valid_until,
+          sent_at,
+          accepted_at,
+          source_payload
+        from public.quote_records
+        where tenant_id = $1 and inquiry_id = $2
+        order by updated_at desc
+      `,
+      [tenantId, inquiryId]
+    );
+    return normalizePrimaryQuoteRows(result.rows);
   } finally {
     await client.end().catch(() => {});
   }
