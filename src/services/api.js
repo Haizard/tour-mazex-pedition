@@ -507,8 +507,8 @@ export const updateInquiryStatus = (id, status) =>
   API.patch(`/custom-inquiries/${id}`, { status });
 export const updateInquiryLeadStage = (id, leadStage) =>
   API.patch(`/custom-inquiries/${id}`, { leadStage });
-export const fetchInquiryQuotes = (id) =>
-  API.get(`/custom-inquiries/${id}/quotes`);
+export const fetchInquiryQuotes = (id, params = { source: "postgres" }) =>
+  API.get(`/custom-inquiries/${id}/quotes`, { params });
 export const generateInquiryQuote = (id) =>
   API.post(`/custom-inquiries/${id}/generate-quote`);
 export const sendInquiryQuote = (inquiryId, quoteId) =>
