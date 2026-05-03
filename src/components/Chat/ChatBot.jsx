@@ -1,15 +1,50 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { IoSend, IoClose, IoChatbubbleEllipses } from "react-icons/io5";
+import { Link } from "react-router-dom";
 import { sendChatMessage } from "../../services/api";
+
+const CHAT_SESSION_STORAGE_KEY = "tourmazeChatSessionId";
+
+const ensureChatSessionId = () => {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const existing = window.localStorage.getItem(CHAT_SESSION_STORAGE_KEY);
+  if (existing) {
+    return existing;
+  }
+
+  const generated = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  window.localStorage.setItem(CHAT_SESSION_STORAGE_KEY, generated);
+  return generated;
+};
+
+const getVisitorProfile = () => {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  return {
+    preferredLocale: window.navigator?.language || "",
+    browserLanguage: window.navigator?.language || "",
+    timezone:
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    currentPage: window.location?.pathname || "",
+  };
+};
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [sessionId, setSessionId] = useState("");
   const [chatHistory, setChatHistory] = useState([
     {
       role: "model",
       content:
         "Hi! I'm your MAZ Expeditions assistant. Ready to plan your dream safari?",
+      salesAssistant: null,
+      assistantSignals: null,
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,9 +56,17 @@ const ChatBot = () => {
     }
   }, [chatHistory]);
 
+  useEffect(() => {
+    setSessionId(ensureChatSessionId());
+  }, []);
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
+    const nextSessionId = sessionId || ensureChatSessionId();
+    if (!sessionId && nextSessionId) {
+      setSessionId(nextSessionId);
+    }
 
     const userMsg = { role: "user", content: message };
     setChatHistory((prev) => [...prev, userMsg]);
@@ -34,16 +77,31 @@ const ChatBot = () => {
       const response = await sendChatMessage({
         message: message,
         history: chatHistory,
+        sessionId: nextSessionId,
+        visitorProfile: getVisitorProfile(),
       });
       setChatHistory((prev) => [
         ...prev,
-        { role: "model", content: response.data.message },
+        {
+          role: "model",
+          content: response.data.message,
+          salesAssistant: response.data.salesAssistant || null,
+          assistantSignals: response.data.assistantSignals || null,
+        },
       ]);
     } catch (error) {
       const errorMsg =
         error.response?.data?.error ||
         "Oops! I'm having a technical moment. Please try again or message us on WhatsApp!";
-      setChatHistory((prev) => [...prev, { role: "model", content: errorMsg }]);
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          role: "model",
+          content: errorMsg,
+          salesAssistant: null,
+          assistantSignals: null,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +151,55 @@ const ChatBot = () => {
                     }`}
                 >
                   {msg.content}
+                  {msg.role === "model" && msg.salesAssistant && (
+                    <div className="mt-3 space-y-3 rounded-2xl bg-white/70 p-3 text-gray-800">
+                      <p className="text-[11px] font-black uppercase tracking-widest text-primary">
+                        Best Next Step
+                      </p>
+                      <p className="text-xs font-bold leading-5">
+                        {msg.salesAssistant.summary}
+                      </p>
+                      {msg.salesAssistant.recommendedNextStep && (
+                        <p className="text-[10px] font-black uppercase tracking-widest text-secondary">
+                          Recommended: {msg.salesAssistant.recommendedNextStep.replace(/-/g, " ")}
+                        </p>
+                      )}
+                      <p className="text-xs leading-5 text-gray-600">
+                        {msg.salesAssistant.qualificationQuestion}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {msg.salesAssistant.quickActions?.map((action) => (
+                          <Link
+                            key={`${action.href}-${action.label}`}
+                            to={action.href}
+                            onClick={() => setIsOpen(false)}
+                            className="rounded-full bg-primary px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                          >
+                            {action.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {msg.role === "model" && msg.assistantSignals && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {msg.assistantSignals.matchedLanguage?.language && (
+                        <span className="rounded-full bg-secondary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-secondary">
+                          {msg.assistantSignals.matchedLanguage.language}
+                        </span>
+                      )}
+                      {msg.assistantSignals.travelDocumentation?.length > 0 && (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-800">
+                          Travel Docs Active
+                        </span>
+                      )}
+                      {msg.assistantSignals.preferredLocale && (
+                        <span className="rounded-full bg-gray-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-gray-700">
+                          {msg.assistantSignals.preferredLocale}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

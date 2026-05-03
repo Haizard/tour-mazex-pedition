@@ -9,6 +9,10 @@ import AfricanDestinations from "../../components/Home/AfricanDestinations";
 import Testimonial from "../../components/Testimonial/Testimonial";
 import TripCtaSection from "../cta/TripCtaSection";
 import LogoSlider from "../../components/Home/LogoSlider";
+import ReviewWall from "../../components/Public/ReviewWall";
+
+const BlogDetail = React.lazy(() => import("../../components/Blogs/BlogDetail"));
+const PackageDetail = React.lazy(() => import("../../components/Blogs/PackageDetail"));
 
 const sectionComponents = {
   hero: CinematicHeroSection,
@@ -17,10 +21,13 @@ const sectionComponents = {
   featuredPackages: PopularTours,
   groupTours: GroupTours,
   blogPreview: BlogsComp,
+  blogDetail: BlogDetail,
   destinations: AfricanDestinations,
   testimonials: Testimonial,
+  tourDetail: PackageDetail,
   cta: TripCtaSection,
   logoCloud: LogoSlider,
+  reviewWall: ReviewWall,
 };
 
 const sharedStyleSchema = [
@@ -138,6 +145,8 @@ const metadata = {
       { group: "contentConfig", path: "primaryCtaHref", type: "text", placeholder: "Primary CTA link" },
       { group: "contentConfig", path: "secondaryCtaLabel", type: "text", placeholder: "Secondary CTA label" },
       { group: "contentConfig", path: "secondaryCtaHref", type: "text", placeholder: "Secondary CTA link" },
+      { group: "contentConfig", path: "videoUrl", type: "media", placeholder: "Background video URL (e.g., /api/media/ID)" },
+      { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Static background image (fallback)" },
     ],
     styleSchema: sharedStyleSchema,
     variantSchemas: {
@@ -152,12 +161,16 @@ const metadata = {
           { group: "contentConfig", path: "secondaryCtaHref", type: "text", placeholder: "Secondary CTA link" },
           {
             group: "contentConfig",
-            path: "imageSlides",
-            type: "stringList",
-            placeholder: "One image URL or path per line",
-            rows: 5,
-            colSpan: 2,
+            path: "slides",
+            type: "objectList",
+            itemLabel: "Slide",
+            limit: 5,
+            fields: [
+              { path: "image", type: "media", placeholder: "Slide image" },
+              { path: "caption", type: "text", placeholder: "Optional caption" },
+            ],
           },
+          { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Fallback background image" },
         ],
       },
       "split-panel": {
@@ -172,14 +185,9 @@ const metadata = {
           { group: "contentConfig", path: "panelEyebrow", type: "text", placeholder: "Panel eyebrow" },
           { group: "contentConfig", path: "panelTitle", type: "text", placeholder: "Panel title" },
           { group: "contentConfig", path: "panelBody", type: "textarea", placeholder: "Panel body", rows: 4, colSpan: 2 },
-          {
-            group: "contentConfig",
-            path: "panelHighlights",
-            type: "stringList",
-            placeholder: "One panel highlight per line",
-            rows: 4,
-            colSpan: 2,
-          },
+          { group: "contentConfig", path: "panelHighlights", type: "stringList", placeholder: "One panel highlight per line", rows: 4, colSpan: 2 },
+          { group: "contentConfig", path: "videoUrl", type: "media", placeholder: "Background video URL" },
+          { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Fallback background image" },
         ],
       },
     },
@@ -233,6 +241,7 @@ const metadata = {
         fields: [
           { path: "scriptLabel", type: "text", placeholder: "Script label" },
           { path: "title", type: "text", placeholder: "Title" },
+          { path: "image", type: "media", placeholder: "Card image" },
           { path: "description", type: "textarea", placeholder: "Description", rows: 3, colSpan: 2 },
         ],
       },
@@ -255,6 +264,7 @@ const metadata = {
             fields: [
               { path: "scriptLabel", type: "text", placeholder: "Script label" },
               { path: "title", type: "text", placeholder: "Title" },
+              { path: "image", type: "media", placeholder: "Card image" },
               { path: "description", type: "textarea", placeholder: "Description", rows: 3, colSpan: 2 },
             ],
           },
@@ -409,6 +419,7 @@ const metadata = {
       { group: "contentConfig", path: "description", type: "textarea", placeholder: "Section description", rows: 3, colSpan: 2 },
       { group: "contentConfig", path: "quote", type: "textarea", placeholder: "Highlight quote", rows: 3 },
       { group: "contentConfig", path: "quoteAuthor", type: "text", placeholder: "Quote author" },
+      { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Section background image" },
     ],
     styleSchema: sharedStyleSchema,
     variantSchemas: {
@@ -432,7 +443,7 @@ const metadata = {
       { value: "editorial-quotes", label: "Editorial Quotes" },
     ],
     editorSchema: [
-      { group: "contentConfig", path: "backgroundImage", type: "text", placeholder: "Background image URL", colSpan: 2 },
+      { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Background image URL", colSpan: 2 },
       { group: "contentConfig", path: "ratingLabel", type: "text", placeholder: "Rating label" },
       { group: "contentConfig", path: "reviewCountLabel", type: "text", placeholder: "Review count label" },
       { group: "contentConfig", path: "providerLabel", type: "text", placeholder: "Provider label", colSpan: 2 },
@@ -445,6 +456,7 @@ const metadata = {
         fields: [
           { path: "name", type: "text", placeholder: "Name" },
           { path: "date", type: "text", placeholder: "Date" },
+          { path: "img", type: "media", placeholder: "Reviewer avatar" },
           { path: "text", type: "textarea", placeholder: "Text", rows: 3, colSpan: 2 },
         ],
       },
@@ -465,6 +477,7 @@ const metadata = {
             fields: [
               { path: "name", type: "text", placeholder: "Name" },
               { path: "date", type: "text", placeholder: "Date" },
+              { path: "img", type: "media", placeholder: "Reviewer avatar" },
               { path: "text", type: "textarea", placeholder: "Quote text", rows: 4, colSpan: 2 },
             ],
           },
@@ -490,7 +503,7 @@ const metadata = {
       { group: "contentConfig", path: "primaryHref", type: "text", placeholder: "Primary button link" },
       { group: "contentConfig", path: "secondaryLabel", type: "text", placeholder: "Secondary button label" },
       { group: "contentConfig", path: "secondaryHref", type: "text", placeholder: "Secondary button link" },
-      { group: "contentConfig", path: "backgroundImage", type: "text", placeholder: "Background image URL", colSpan: 2 },
+      { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Background image URL", colSpan: 2 },
     ],
     styleSchema: sharedStyleSchema,
     variantSchemas: {
@@ -504,7 +517,7 @@ const metadata = {
           { group: "contentConfig", path: "secondaryLabel", type: "text", placeholder: "Secondary button label" },
           { group: "contentConfig", path: "secondaryHref", type: "text", placeholder: "Secondary button link" },
           { group: "contentConfig", path: "accentLabel", type: "text", placeholder: "Accent label", colSpan: 2 },
-          { group: "contentConfig", path: "backgroundImage", type: "text", placeholder: "Background image URL", colSpan: 2 },
+          { group: "contentConfig", path: "backgroundImage", type: "media", placeholder: "Background image URL", colSpan: 2 },
         ],
       },
     },
@@ -525,10 +538,13 @@ const metadata = {
       {
         group: "contentConfig",
         path: "logos",
-        type: "stringList",
-        placeholder: "One logo URL or path per line",
-        rows: 4,
-        colSpan: 2,
+        type: "objectList",
+        itemLabel: "Partner Logo",
+        limit: 12,
+        fields: [
+          { path: "image", type: "media", placeholder: "Logo image" },
+          { path: "alt", type: "text", placeholder: "Partner name" },
+        ],
       },
     ],
     styleSchema: sharedStyleSchema,
@@ -548,6 +564,63 @@ const metadata = {
         ],
       },
     },
+  },
+  tourDetail: {
+    key: "tourDetail",
+    label: "Tour Detail",
+    category: "dynamic-pages",
+    supportedVariants: ["default"],
+    allowMultiple: false,
+    presets: [{ value: "default", label: "Tour Detail Template" }],
+    editorSchema: [
+      {
+        group: "contentConfig",
+        path: "notes",
+        type: "textarea",
+        placeholder: "This section uses the live tour detail template for the current tour URL.",
+        rows: 3,
+        colSpan: 2,
+      },
+    ],
+    styleSchema: sharedStyleSchema,
+  },
+  blogDetail: {
+    key: "blogDetail",
+    label: "Blog Detail",
+    category: "dynamic-pages",
+    supportedVariants: ["default"],
+    allowMultiple: false,
+    presets: [{ value: "default", label: "Blog Detail Template" }],
+    editorSchema: [
+      {
+        group: "contentConfig",
+        path: "notes",
+        type: "textarea",
+        placeholder: "This section uses the live blog detail template for the current blog URL.",
+        rows: 3,
+        colSpan: 2,
+      },
+    ],
+    styleSchema: sharedStyleSchema,
+  },
+  reviewWall: {
+    key: "reviewWall",
+    label: "Review Wall",
+    category: "social-proof",
+    supportedVariants: ["default"],
+    allowMultiple: false,
+    presets: [{ value: "default", label: "Autonomous Review Wall" }],
+    editorSchema: [
+      {
+        group: "contentConfig",
+        path: "notes",
+        type: "textarea",
+        placeholder: "This section automatically pulls 4-5 star verified reviews from your travelers.",
+        rows: 3,
+        colSpan: 2,
+      },
+    ],
+    styleSchema: sharedStyleSchema,
   },
 };
 
@@ -569,7 +642,9 @@ const buildSectionProps = (section) => {
       panelTitle: contentConfig.panelTitle,
       panelBody: contentConfig.panelBody,
       panelHighlights: contentConfig.panelHighlights,
-      imageSlides: contentConfig.imageSlides,
+      imageSlides: contentConfig.imageSlides || contentConfig.slides?.map(s => s.image),
+      videoUrl: contentConfig.videoUrl,
+      backgroundImage: contentConfig.backgroundImage,
     };
   }
 
@@ -656,6 +731,7 @@ const buildSectionProps = (section) => {
       description: contentConfig.description,
       quote: contentConfig.quote,
       quoteAuthor: contentConfig.quoteAuthor,
+      backgroundImage: contentConfig.backgroundImage,
     };
   }
 
@@ -676,7 +752,7 @@ const buildSectionProps = (section) => {
   if (section.type === "logoCloud") {
     return {
       variant: section.variant,
-      logos: contentConfig.logos,
+      logos: contentConfig.logos?.map(l => typeof l === 'string' ? l : l.image) || [],
       backgroundColor: contentConfig.backgroundColor,
       title: contentConfig.title,
     };
@@ -707,5 +783,9 @@ export const renderRegisteredSection = (section) => {
     return null;
   }
 
-  return <Component {...sectionRegistry.getProps(section)} />;
+  return (
+    <React.Suspense fallback={null}>
+      <Component {...sectionRegistry.getProps(section)} />
+    </React.Suspense>
+  );
 };

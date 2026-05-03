@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
 import { FaSearch } from "react-icons/fa";
 
 import { motion } from "framer-motion";
 import {
+  fetchInquiryQuotes,
   fetchTours,
   createTour,
   updateTour,
@@ -15,6 +16,12 @@ import {
   fetchBookings,
   updateBookingStatus,
   deleteBooking,
+  fetchReviewRequests,
+  generateBookingReviewRequest,
+  updateReviewRequest,
+  fetchRepeatCustomerCampaigns,
+  generateRepeatCustomerCampaign,
+  updateRepeatCustomerCampaign,
   fetchBlogs,
   createBlog,
   updateBlog,
@@ -26,7 +33,9 @@ import {
   generateFullTourPackage,
   fetchInquiries,
 
+  generateInquiryQuote,
   updateInquiryStatus,
+  updateInquiryLeadStage,
   deleteInquiry,
   fetchContactMessages,
   updateContactMessageStatus,
@@ -48,17 +57,36 @@ import {
   updateVisionary,
   deleteVisionary,
 } from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import AdminSidebar from "../components/Admin/AdminSidebar";
-import NavigationManager from "../components/Admin/NavigationManager";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
 import EmailInboxManager from "../components/Admin/EmailInboxManager";
+import UnifiedInboxManager from "../components/Admin/UnifiedInboxManager";
+import LeadInboxManager from "../components/Admin/LeadInboxManager";
+import CampaignManager from "../components/Admin/CampaignManager";
+import ContentRepurposingManager from "../components/Admin/ContentRepurposingManager";
+import SocialPostsManager from "../components/Admin/SocialPostsManager";
+import SocialAccountsManager from "../components/Admin/SocialAccountsManager";
+import GuideDriverManager from "../components/Admin/GuideDriverManager";
+import AccommodationManager from "../components/Admin/AccommodationManager";
+import AirportPickupManager from "../components/Admin/AirportPickupManager";
+import PartnerPortalManager from "../components/Admin/PartnerPortalManager";
+import PaymentAutomationManager from "../components/Admin/PaymentAutomationManager";
+import InfrastructureReadinessManager from "../components/Admin/InfrastructureReadinessManager";
+import DistributionManager from "../components/Admin/DistributionManager";
+import DynamicPricingManager from "../components/Admin/DynamicPricingManager";
+import TravelerAssistanceManager from "../components/Admin/TravelerAssistanceManager";
+import CompetitorIntelligenceManager from "../components/Admin/CompetitorIntelligenceManager";
 import SiteSettings from "../components/Admin/SiteSettings";
+import SubscriptionManager from "../components/Admin/SubscriptionManager";
+import ReputationGuardianManager from "../components/Admin/ReputationGuardianManager";
+import RepeatCustomerManager from "../components/Admin/RepeatCustomerManager";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import { useTenant } from "../context/TenantContext";
 
 
 const slugifyValue = (value = "") =>
@@ -77,8 +105,14 @@ const AdminDashboard = () => {
     fallbackName;
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const tabFromSearch = searchParams.get("tab") || "";
+  const recordTypeFromSearch = searchParams.get("recordType") || "";
+  const recordIdFromSearch = searchParams.get("recordId") || "";
   const { logout } = useAdminAuth();
-  const [activeTab, setActiveTab] = useState("packages");
+  const { tenant } = useTenant();
+  const [activeTab, setActiveTab] = useState(() => tabFromSearch || "packages");
   const [tours, setTours] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -89,10 +123,69 @@ const AdminDashboard = () => {
   const [faqs, setFaqs] = useState([]);
   const [taxonomies, setTaxonomies] = useState([]);
   const [visionaries, setVisionaries] = useState([]);
+  const featureAccess = tenant?.access || {};
+  const gatedTabAccess = {
+    "social-accounts": featureAccess.socialAccounts,
+    "social-posts": featureAccess.socialPosts,
+    distribution: featureAccess.socialPosts || featureAccess.partnerPortal,
+    "lead-inbox": featureAccess.leadInbox,
+    "email-inbox": featureAccess.unifiedInbox,
+    "email-foundation": featureAccess.unifiedInbox,
+    repurposing: featureAccess.repurposing,
+    campaigns: featureAccess.campaigns,
+    accommodations: featureAccess.accommodationCoordination,
+    "airport-pickups": featureAccess.airportPickupCoordination,
+    partners: featureAccess.partnerPortal,
+    payments: featureAccess.paymentAutomation,
+    "dynamic-pricing": featureAccess.dynamicPricingEngine,
+    "competitor-intelligence": featureAccess.competitorIntelligence,
+    "language-assistant": featureAccess.multilingualAiAssistant,
+    "travel-docs": featureAccess.travelDocumentationAssistant,
+  };
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
+
+  const replaceAdminSearchParams = useCallback((mutateParams) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(window.location.search);
+    mutateParams(nextParams);
+
+    const nextQuery = nextParams.toString();
+    const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash || ""}`;
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, []);
+
+  useEffect(() => {
+    if (tabFromSearch && tabFromSearch !== activeTab) {
+      setActiveTab(tabFromSearch);
+    }
+  }, [activeTab, tabFromSearch]);
+
+  useEffect(() => {
+    if (tabFromSearch !== activeTab) {
+      replaceAdminSearchParams((nextParams) => {
+        nextParams.set("tab", activeTab);
+      });
+    }
+  }, [activeTab, replaceAdminSearchParams, tabFromSearch]);
+
+  const clearFocusedRecord = useCallback(() => {
+    replaceAdminSearchParams((nextParams) => {
+      nextParams.delete("recordId");
+      nextParams.delete("recordType");
+    });
+  }, [replaceAdminSearchParams]);
+
+  useEffect(() => {
+    if (Object.prototype.hasOwnProperty.call(gatedTabAccess, activeTab) && gatedTabAccess[activeTab] === false) {
+      setActiveTab("subscription");
+    }
+  }, [activeTab, gatedTabAccess]);
 
   // Form States
   const [tourFormData, setTourFormData] = useState({
@@ -179,8 +272,41 @@ const AdminDashboard = () => {
   });
 
   const [selectedInquiry, setSelectedInquiry] = useState(null);
+  const [selectedInquiryQuote, setSelectedInquiryQuote] = useState(null);
+  const [generatingInquiryQuote, setGeneratingInquiryQuote] = useState(false);
   const [selectedContactMessage, setSelectedContactMessage] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [reviewRequests, setReviewRequests] = useState([]);
+  const [selectedBookingReviewRequest, setSelectedBookingReviewRequest] = useState(null);
+  const [generatingReviewRequest, setGeneratingReviewRequest] = useState(false);
+  const [savingReviewRequest, setSavingReviewRequest] = useState(false);
+  const [reviewRequestError, setReviewRequestError] = useState("");
+  const [repeatCustomerCampaigns, setRepeatCustomerCampaigns] = useState([]);
+  const [selectedBookingRepeatCampaign, setSelectedBookingRepeatCampaign] = useState(null);
+  const [generatingRepeatCampaign, setGeneratingRepeatCampaign] = useState(false);
+  const [savingRepeatCampaign, setSavingRepeatCampaign] = useState(false);
+  const [repeatCampaignError, setRepeatCampaignError] = useState("");
+  const getReviewRequestForBooking = (bookingId) =>
+    reviewRequests.find((item) => item.bookingId === bookingId) || null;
+  const getRepeatCampaignForBooking = (bookingId) =>
+    repeatCustomerCampaigns.find((item) => item.bookingId === bookingId) || null;
+
+  useEffect(() => {
+    if (!selectedBooking?._id) {
+      return;
+    }
+
+    setSelectedBookingReviewRequest(getReviewRequestForBooking(selectedBooking._id));
+    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(selectedBooking._id));
+  }, [reviewRequests, selectedBooking]);
+
+  useEffect(() => {
+    if (!selectedBooking?._id) {
+      return;
+    }
+
+    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(selectedBooking._id));
+  }, [repeatCustomerCampaigns, selectedBooking]);
 
   const [editingTourId, setEditingTourId] = useState(null);
   const [editingBlogId, setEditingBlogId] = useState(null);
@@ -313,6 +439,8 @@ const AdminDashboard = () => {
     loadTours();
     loadGallery();
     loadBookings();
+    loadReviewRequests();
+    loadRepeatCustomerCampaigns();
     loadBlogs();
     loadInquiries();
     loadContactMessages();
@@ -342,9 +470,35 @@ const AdminDashboard = () => {
   };
   const loadBookings = async () => {
     try {
-      const res = await fetchBookings();
+      const res = await fetchBookings({ source: "postgres" });
       setBookings(res.data);
     } catch (e) {
+      console.error(e);
+    }
+  };
+  const loadReviewRequests = async () => {
+    try {
+      const res = await fetchReviewRequests({ source: "postgres" });
+      setReviewRequests(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      if (e.response?.status === 403) {
+        setReviewRequests([]);
+        return;
+      }
+
+      console.error(e);
+    }
+  };
+  const loadRepeatCustomerCampaigns = async () => {
+    try {
+      const res = await fetchRepeatCustomerCampaigns({ source: "postgres" });
+      setRepeatCustomerCampaigns(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      if (e.response?.status === 403) {
+        setRepeatCustomerCampaigns([]);
+        return;
+      }
+
       console.error(e);
     }
   };
@@ -372,6 +526,39 @@ const AdminDashboard = () => {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    if (
+      (activeTab === "inquiries" || activeTab === "plan-my-trip") &&
+      recordTypeFromSearch === "inquiry" &&
+      recordIdFromSearch
+    ) {
+      const inquiry = inquiries.find((item) => String(item._id) === recordIdFromSearch);
+      if (inquiry) {
+        setSelectedInquiry(inquiry);
+        fetchInquiryQuotes(inquiry._id)
+          .then((response) => {
+            setSelectedInquiryQuote(response.data?.[0] || null);
+          })
+          .catch(() => {
+            setSelectedInquiryQuote(null);
+          });
+      }
+    }
+  }, [activeTab, inquiries, recordIdFromSearch, recordTypeFromSearch]);
+
+  useEffect(() => {
+    if (
+      activeTab === "contact-messages" &&
+      recordTypeFromSearch === "contact" &&
+      recordIdFromSearch
+    ) {
+      const message = contactMessages.find((item) => String(item._id) === recordIdFromSearch);
+      if (message) {
+        setSelectedContactMessage(message);
+      }
+    }
+  }, [activeTab, contactMessages, recordIdFromSearch, recordTypeFromSearch]);
   const loadMenuItems = async () => {
     try {
       const res = await fetchMenuItems();
@@ -402,6 +589,104 @@ const AdminDashboard = () => {
       setVisionaries(res.data);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleOpenBooking = (booking) => {
+    setSelectedBooking(booking);
+    setReviewRequestError("");
+    setSelectedBookingReviewRequest(getReviewRequestForBooking(booking._id));
+    setRepeatCampaignError("");
+    setSelectedBookingRepeatCampaign(getRepeatCampaignForBooking(booking._id));
+  };
+
+  const handleGenerateReviewRequest = async (bookingId) => {
+    setGeneratingReviewRequest(true);
+    setReviewRequestError("");
+    try {
+      const response = await generateBookingReviewRequest(bookingId);
+      const nextRequest = response.data;
+      setReviewRequests((current) => {
+        const existingIndex = current.findIndex((item) => item._id === nextRequest._id);
+        if (existingIndex >= 0) {
+          const clone = [...current];
+          clone[existingIndex] = nextRequest;
+          return clone;
+        }
+
+        return [nextRequest, ...current];
+      });
+      setSelectedBookingReviewRequest(nextRequest);
+    } catch (error) {
+      setReviewRequestError(
+        error.response?.data?.message || "Unable to generate the review request right now."
+      );
+    } finally {
+      setGeneratingReviewRequest(false);
+    }
+  };
+
+  const handleReviewRequestStatusChange = async (requestId, status) => {
+    setSavingReviewRequest(true);
+    setReviewRequestError("");
+    try {
+      const response = await updateReviewRequest(requestId, { status });
+      const nextRequest = response.data;
+      setReviewRequests((current) =>
+        current.map((item) => (item._id === nextRequest._id ? nextRequest : item))
+      );
+      setSelectedBookingReviewRequest(nextRequest);
+    } catch (error) {
+      setReviewRequestError(
+        error.response?.data?.message || "Unable to update review request status."
+      );
+    } finally {
+      setSavingReviewRequest(false);
+    }
+  };
+
+  const handleGenerateRepeatCampaign = async (bookingId) => {
+    setGeneratingRepeatCampaign(true);
+    setRepeatCampaignError("");
+    try {
+      const response = await generateRepeatCustomerCampaign(bookingId);
+      const nextCampaign = response.data;
+      setRepeatCustomerCampaigns((current) => {
+        const existingIndex = current.findIndex((item) => item._id === nextCampaign._id);
+        if (existingIndex >= 0) {
+          const clone = [...current];
+          clone[existingIndex] = nextCampaign;
+          return clone;
+        }
+
+        return [nextCampaign, ...current];
+      });
+      setSelectedBookingRepeatCampaign(nextCampaign);
+    } catch (error) {
+      setRepeatCampaignError(
+        error.response?.data?.message || "Unable to generate the repeat customer campaign right now."
+      );
+    } finally {
+      setGeneratingRepeatCampaign(false);
+    }
+  };
+
+  const handleRepeatCampaignStatusChange = async (campaignId, status) => {
+    setSavingRepeatCampaign(true);
+    setRepeatCampaignError("");
+    try {
+      const response = await updateRepeatCustomerCampaign(campaignId, { status });
+      const nextCampaign = response.data;
+      setRepeatCustomerCampaigns((current) =>
+        current.map((item) => (item._id === nextCampaign._id ? nextCampaign : item))
+      );
+      setSelectedBookingRepeatCampaign(nextCampaign);
+    } catch (error) {
+      setRepeatCampaignError(
+        error.response?.data?.message || "Unable to update repeat campaign status."
+      );
+    } finally {
+      setSavingRepeatCampaign(false);
     }
   };
 
@@ -827,8 +1112,15 @@ const AdminDashboard = () => {
     }
   }, [taxonomies]);
 
+  const formatTabTitle = (value = "") =>
+    value
+      .split("-")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="flex min-h-screen bg-[#fafafa] text-zinc-950">
       {/* Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
@@ -836,40 +1128,72 @@ const AdminDashboard = () => {
           setActiveTab(id);
           setIsSidebarOpen(false);
         }}
+        onLockedFeature={() => {
+          setActiveTab("subscription");
+          setIsSidebarOpen(false);
+        }}
+        featureAccess={featureAccess}
         handleLogout={handleLogout}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
       />
 
       {/* Main Content Area */}
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-64 opacity-50 pointer-events-none md:opacity-100 md:pointer-events-auto" : "ml-0 md:ml-64"} min-h-screen w-full`}>
-        {/* Top bar (for spacing/branding) */}
-        <div className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 flex items-center justify-between px-4 md:px-12">
+      <div className={`min-h-screen w-full flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-72 opacity-50 pointer-events-none md:opacity-100 md:pointer-events-auto" : "ml-0 md:ml-72"}`}>
+        <div className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur-xl md:px-8">
           <div className="flex items-center gap-4">
              <button 
                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-               className="p-2 md:hidden text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+               className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition-colors hover:bg-zinc-50 md:hidden"
              >
                {isSidebarOpen ? <HiX size={24} /> : <HiMenu size={24} />}
              </button>
-             <h2 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tighter italic">
-               Control <span className="text-primary italic text-sm md:text-xl">Center</span>
-             </h2>
+             <div>
+               <p className="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-500">
+                 Tenant Admin
+               </p>
+               <h2 className="text-sm font-black text-zinc-950 md:text-base">
+                 {tenant?.name || "Workspace"}
+               </h2>
+             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="primary" className="hidden sm:block">Online</Badge>
+          <div className="flex items-center gap-3">
+            <span className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-emerald-700 sm:inline-flex">
+              Online
+            </span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="hidden rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 md:inline-flex"
+            >
+              Sign out
+            </button>
           </div>
         </div>
 
-        <div className="p-2 md:p-12 w-full max-w-full overflow-x-hidden">
-          {/* Header information removed in favor of sidebar context */}
-          <div className="mb-6 md:mb-12 px-2 md:px-0">
-            <h1 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter mb-2">
-              {activeTab} Management
-            </h1>
-            <p className="text-slate-500 font-medium text-xs md:text-base">
-              Manage your {activeTab} inventory and resources from here.
-            </p>
+        <div className="w-full max-w-full overflow-x-hidden p-3 md:p-8">
+          <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm md:mb-8 md:p-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-zinc-500">
+                  Dashboard
+                </p>
+                <h1 className="mt-2 text-2xl font-black tracking-tight text-zinc-950 md:text-4xl">
+                  {formatTabTitle(activeTab)}
+                </h1>
+                <p className="mt-2 text-sm font-medium text-zinc-500 md:text-base">
+                  Manage this workspace with a focused, Vercel-style control surface.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-widest">
+                <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-600">
+                  {tenant?.subscription?.plan || "starter"} plan
+                </span>
+                <span className="rounded-full border border-zinc-200 bg-zinc-950 px-3 py-2 text-white">
+                  {tenant?.subscription?.status || "inactive"}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Packages Section */}
@@ -2182,7 +2506,10 @@ const AdminDashboard = () => {
                 <Badge variant="accent">{bookings.length} New Bookings</Badge>
               </div>
               <div className="space-y-4">
-                {bookings.map((b) => (
+                {bookings.map((b) => {
+                  const bookingReviewRequest = getReviewRequestForBooking(b._id);
+
+                  return (
                   <div
                     key={b._id}
                     className="flex flex-col md:flex-row items-stretch md:items-center justify-between p-6 md:p-6 bg-white border border-slate-100 rounded-[2.5rem] group shadow-sm hover:shadow-2xl transition-all duration-500"
@@ -2201,6 +2528,16 @@ const AdminDashboard = () => {
                           <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${b.status?.toLowerCase() === 'confirmed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-orange-50 text-orange-600 border border-orange-100'}`}>
                             {b.status}
                           </div>
+                          {bookingReviewRequest && (
+                            <div className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-sky-50 text-sky-700 border border-sky-100">
+                              Review {bookingReviewRequest.status}
+                            </div>
+                          )}
+                          {getRepeatCampaignForBooking(b._id) && (
+                            <div className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-violet-50 text-violet-700 border border-violet-100">
+                              Loyalty {getRepeatCampaignForBooking(b._id).status}
+                            </div>
+                          )}
                         </div>
                         <p className="text-slate-400 font-bold text-xs mb-4 truncate">{b.email}</p>
                         
@@ -2227,30 +2564,51 @@ const AdminDashboard = () => {
                            </div>
                          </div>
                         <button 
-                          onClick={() => setSelectedBooking(b)}
+                          onClick={() => handleOpenBooking(b)}
                           className="mt-2 text-[9px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
                         >
                           View Booking Details
                         </button>
+                        {b.status?.toLowerCase() === "confirmed" ? (
+                          <button 
+                            onClick={() => {
+                              updateBookingStatus(b._id, "Completed").then(loadBookings);
+                            }} 
+                            className="mt-1 text-[9px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
+                          >
+                            Mark Trip as Completed
+                          </button>
+                        ) : b.status?.toLowerCase() === "completed" ? (
+                          <div className="mt-1 flex items-center gap-2">
+                            <div className="px-2 py-0.5 rounded-md bg-primary text-white text-[8px] font-black uppercase tracking-widest">
+                              Completed
+                            </div>
+                            <button 
+                              onClick={() => updateBookingStatus(b._id, "Confirmed").then(loadBookings)} 
+                              className="text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600"
+                            >
+                              Revert
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => updateBookingStatus(b._id, "Confirmed").then(loadBookings)} 
+                            className="mt-1 text-[9px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-700 font-black"
+                          >
+                            Confirm Booking
+                          </button>
+                        )}
                         <button 
-                          onClick={() => {
-                            const newStatus = b.status?.toLowerCase() === "confirmed" ? "Pending" : "Confirmed";
-                            updateBookingStatus(b._id, newStatus).then(loadBookings);
-                          }} 
-                          className={`mt-1 text-[9px] font-black uppercase tracking-widest transition-colors ${b.status?.toLowerCase() === "confirmed" ? "text-slate-400 hover:text-orange-500 underline underline-offset-4" : "text-emerald-500 hover:text-emerald-700 font-black"}`}
+                          onClick={() => deleteBooking(b._id).then(loadBookings)} 
+                          className="mt-1 text-[8px] font-black text-slate-200 hover:text-red-500 uppercase tracking-widest transition-colors text-right w-full"
                         >
-                          {b.status?.toLowerCase() === "confirmed" ? "Set to Pending" : "Confirm Booking"}
+                          Archive Record
                         </button>
-                         <button 
-                           onClick={() => deleteBooking(b._id).then(loadBookings)} 
-                           className="mt-1 text-[8px] font-black text-slate-200 hover:text-red-500 uppercase tracking-widest transition-colors"
-                         >
-                           Archive Record
-                         </button>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2263,7 +2621,13 @@ const AdminDashboard = () => {
                 className="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
               >
                 <button
-                  onClick={() => setSelectedBooking(null)}
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setSelectedBookingReviewRequest(null);
+                    setSelectedBookingRepeatCampaign(null);
+                    setReviewRequestError("");
+                    setRepeatCampaignError("");
+                  }}
                   className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 flex"
                 >
                   <span className="text-xl md:text-2xl">&times;</span>
@@ -2360,6 +2724,271 @@ const AdminDashboard = () => {
                       {selectedBooking.notes || "No extra notes were included with this booking."}
                     </p>
                   </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50 p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          Review Automation
+                        </p>
+                        <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-slate-900">
+                          Turn completed trips into public reviews
+                        </h3>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                          Generate a reusable review request for Google, Tripadvisor, and Booking.com
+                          once the safari is confirmed and complete.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {tenant?.access?.reviewAutomation ? (
+                          <button
+                            type="button"
+                            disabled={
+                              generatingReviewRequest ||
+                              selectedBooking.status !== "Confirmed" ||
+                              Boolean(selectedBookingReviewRequest)
+                            }
+                            onClick={() => handleGenerateReviewRequest(selectedBooking._id)}
+                            className="rounded-full bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {generatingReviewRequest
+                              ? "Generating..."
+                              : selectedBookingReviewRequest
+                                ? "Review Request Ready"
+                                : "Generate Review Request"}
+                          </button>
+                        ) : (
+                          <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">
+                            Growth plan required
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {reviewRequestError && (
+                      <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                        {reviewRequestError}
+                      </div>
+                    )}
+
+                    {selectedBookingReviewRequest ? (
+                      <div className="mt-6 space-y-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Badge variant="secondary">Status: {selectedBookingReviewRequest.status}</Badge>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                            Send window: {selectedBookingReviewRequest.sendWindowLabel}
+                          </span>
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Email Subject
+                          </p>
+                          <p className="mt-2 text-sm font-bold text-slate-900">
+                            {selectedBookingReviewRequest.subject}
+                          </p>
+                          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Message Draft
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                            {selectedBookingReviewRequest.message}
+                          </p>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Review Channels
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              {(selectedBookingReviewRequest.platforms || []).map((platform) => (
+                                <div
+                                  key={`${selectedBookingReviewRequest._id}-${platform.channel}`}
+                                  className="rounded-2xl bg-slate-50 px-4 py-3"
+                                >
+                                  <p className="text-sm font-black text-slate-900">{platform.label}</p>
+                                  <p className="mt-1 text-xs font-medium text-slate-500">
+                                    {platform.reviewUrl || "Add the public review URL before sending live."}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Next Steps
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              {(selectedBookingReviewRequest.nextStepChecklist || []).map((step, index) => (
+                                <div key={`${selectedBookingReviewRequest._id}-step-${index}`} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                                  {step}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            disabled={savingReviewRequest}
+                            onClick={() => handleReviewRequestStatusChange(selectedBookingReviewRequest._id, "scheduled")}
+                            className="rounded-full border border-slate-200 bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-700 disabled:opacity-50"
+                          >
+                            Mark Scheduled
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingReviewRequest}
+                            onClick={() => handleReviewRequestStatusChange(selectedBookingReviewRequest._id, "sent")}
+                            className="rounded-full border border-sky-200 bg-sky-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-sky-700 disabled:opacity-50"
+                          >
+                            Mark Sent
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingReviewRequest}
+                            onClick={() => handleReviewRequestStatusChange(selectedBookingReviewRequest._id, "completed")}
+                            className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700 disabled:opacity-50"
+                          >
+                            Mark Review Received
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-6 text-sm font-medium text-slate-500">
+                        No review request has been generated for this booking yet.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-100 bg-violet-50/60 p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-violet-500">
+                          Repeat Customer Automation
+                        </p>
+                        <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-slate-900">
+                          Re-engage happy guests with referral and return offers
+                        </h3>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                          Generate a loyalty-ready follow-up for repeat bookings, anniversary
+                          reactivation, or guest referral outreach once the trip is confirmed.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {tenant?.access?.repeatCustomerAutomation ? (
+                          <button
+                            type="button"
+                            disabled={
+                              generatingRepeatCampaign ||
+                              selectedBooking.status !== "Confirmed" ||
+                              Boolean(selectedBookingRepeatCampaign)
+                            }
+                            onClick={() => handleGenerateRepeatCampaign(selectedBooking._id)}
+                            className="rounded-full bg-violet-700 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {generatingRepeatCampaign
+                              ? "Generating..."
+                              : selectedBookingRepeatCampaign
+                                ? "Retention Draft Ready"
+                                : "Generate Retention Draft"}
+                          </button>
+                        ) : (
+                          <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">
+                            Pro plan required
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {repeatCampaignError && (
+                      <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                        {repeatCampaignError}
+                      </div>
+                    )}
+
+                    {selectedBookingRepeatCampaign ? (
+                      <div className="mt-6 space-y-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Badge variant="secondary">
+                            {selectedBookingRepeatCampaign.campaignType}
+                          </Badge>
+                          <span className="rounded-full bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700">
+                            {selectedBookingRepeatCampaign.offerLabel}
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                            Send timing: {selectedBookingRepeatCampaign.recommendedSendAtLabel}
+                          </span>
+                        </div>
+
+                        <div className="rounded-2xl border border-violet-100 bg-white p-5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Campaign Subject
+                          </p>
+                          <p className="mt-2 text-sm font-bold text-slate-900">
+                            {selectedBookingRepeatCampaign.subject}
+                          </p>
+                          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Guest Message
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                            {selectedBookingRepeatCampaign.message}
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-violet-100 bg-white p-5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Next Steps
+                          </p>
+                          <div className="mt-3 space-y-2">
+                            {(selectedBookingRepeatCampaign.nextStepChecklist || []).map((step, index) => (
+                              <div
+                                key={`${selectedBookingRepeatCampaign._id}-retention-step-${index}`}
+                                className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+                              >
+                                {step}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            disabled={savingRepeatCampaign}
+                            onClick={() => handleRepeatCampaignStatusChange(selectedBookingRepeatCampaign._id, "scheduled")}
+                            className="rounded-full border border-violet-200 bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-violet-700 disabled:opacity-50"
+                          >
+                            Mark Scheduled
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingRepeatCampaign}
+                            onClick={() => handleRepeatCampaignStatusChange(selectedBookingRepeatCampaign._id, "sent")}
+                            className="rounded-full border border-violet-200 bg-violet-100 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-violet-800 disabled:opacity-50"
+                          >
+                            Mark Sent
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingRepeatCampaign}
+                            onClick={() => handleRepeatCampaignStatusChange(selectedBookingRepeatCampaign._id, "converted")}
+                            className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700 disabled:opacity-50"
+                          >
+                            Mark Converted
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-5 rounded-2xl border border-dashed border-violet-200 bg-white px-5 py-6 text-sm font-medium text-slate-500">
+                        No repeat-customer campaign has been generated for this booking yet.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -2392,6 +3021,15 @@ const AdminDashboard = () => {
                           <div className="px-2.5 py-1 bg-slate-900 text-white rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg">
                             Request
                           </div>
+                          <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm ${
+                            i.leadTemperature === "hot"
+                              ? "bg-red-50 text-red-600 border border-red-100"
+                              : i.leadTemperature === "warm"
+                                ? "bg-amber-50 text-amber-600 border border-amber-100"
+                                : "bg-slate-100 text-slate-500 border border-slate-200"
+                          }`}>
+                            {i.leadTemperature || "cold"} lead
+                          </div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -2411,6 +3049,19 @@ const AdminDashboard = () => {
                         {i.email}
                       </p>
 
+                      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Lead Score</p>
+                          <p className="mt-1 text-2xl font-black text-slate-900">{i.leadScore ?? 0}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Stage</p>
+                          <p className="mt-1 text-xs font-black uppercase tracking-widest text-slate-600">
+                            {i.leadStage || "new"}
+                          </p>
+                        </div>
+                      </div>
+
                       <div className="bg-slate-50/80 backdrop-blur-sm p-4 rounded-2xl mb-4 border border-slate-100 group-hover:bg-white transition-colors duration-500">
                         <p className="text-slate-600 text-xs italic line-clamp-3 leading-relaxed">
                           "{i.message}"
@@ -2428,7 +3079,17 @@ const AdminDashboard = () => {
                       <Button
                         variant="primary"
                         className="py-2.5 px-5 text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all"
-                        onClick={() => setSelectedInquiry(i)}
+                        onClick={() => {
+                          setSelectedInquiry(i);
+                          setSelectedInquiryQuote(null);
+                          fetchInquiryQuotes(i._id)
+                            .then((response) => {
+                              setSelectedInquiryQuote(response.data?.[0] || null);
+                            })
+                            .catch(() => {
+                              setSelectedInquiryQuote(null);
+                            });
+                        }}
                       >
                         Details
                       </Button>
@@ -2446,7 +3107,11 @@ const AdminDashboard = () => {
                     className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
                   >
                     <button
-                      onClick={() => setSelectedInquiry(null)}
+                        onClick={() => {
+                          clearFocusedRecord();
+                          setSelectedInquiry(null);
+                          setSelectedInquiryQuote(null);
+                        }}
                       className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 flex"
                     >
                       <span className="text-xl md:text-2xl">&times;</span>
@@ -2518,8 +3183,39 @@ const AdminDashboard = () => {
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Status</p>
                             <Badge variant="secondary" className="mt-1">{selectedInquiry.status}</Badge>
                           </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Lead Score</p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-black text-slate-900">{selectedInquiry.leadScore ?? 0}</span>
+                              <Badge
+                                variant="secondary"
+                                className={`mt-1 border-none ${
+                                  selectedInquiry.leadTemperature === "hot"
+                                    ? "bg-red-50 text-red-600"
+                                    : selectedInquiry.leadTemperature === "warm"
+                                      ? "bg-amber-50 text-amber-600"
+                                      : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                {selectedInquiry.leadTemperature || "cold"}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
                       </div>
+
+                      {selectedInquiry.leadScoreReasons && selectedInquiry.leadScoreReasons.length > 0 && (
+                        <div className="mb-8 p-6 bg-white rounded-2xl border border-slate-100">
+                          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Lead Scoring Signals</p>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedInquiry.leadScoreReasons.map((reason, idx) => (
+                              <Badge key={idx} variant="secondary" className="bg-slate-100 text-slate-700 border-none font-bold">
+                                {reason}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {selectedInquiry.sleepingArrangement && (
                         <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
@@ -2563,6 +3259,129 @@ const AdminDashboard = () => {
                         </p>
                       </div>
 
+                      <div className="mb-4 flex flex-wrap gap-3">
+                        <Button
+                          variant="secondary"
+                          className="rounded-2xl"
+                          disabled={generatingInquiryQuote}
+                          onClick={() => {
+                            setGeneratingInquiryQuote(true);
+                            generateInquiryQuote(selectedInquiry._id)
+                              .then((response) => {
+                                setSelectedInquiryQuote(response.data || null);
+                              })
+                              .finally(() => {
+                                setGeneratingInquiryQuote(false);
+                              });
+                          }}
+                        >
+                          {generatingInquiryQuote ? "Generating Quote..." : "Generate Quote"}
+                        </Button>
+                      </div>
+
+                      {selectedInquiryQuote && (
+                        <div className="mb-8 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6">
+                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Quote Draft</p>
+                              <h3 className="mt-2 text-2xl font-black text-slate-900">{selectedInquiryQuote.title}</h3>
+                              <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{selectedInquiryQuote.summary}</p>
+                            </div>
+                            <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estimated Total</p>
+                              <p className="mt-2 text-3xl font-black text-emerald-600">
+                                {selectedInquiryQuote.currency || "USD"} {Number(selectedInquiryQuote.totalPrice || 0).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Line Items</p>
+                              <div className="mt-3 space-y-3">
+                                {(selectedInquiryQuote.lineItems || []).map((item, idx) => (
+                                  <div key={`${item.label}-${idx}`} className="rounded-2xl bg-white p-4 shadow-sm">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div>
+                                        <p className="font-black text-slate-900">{item.label}</p>
+                                        {item.notes && (
+                                          <p className="mt-1 text-xs font-medium text-slate-500">{item.notes}</p>
+                                        )}
+                                      </div>
+                                      <p className="text-sm font-black text-slate-900">
+                                        {selectedInquiryQuote.currency || "USD"} {Number(item.amount || 0).toLocaleString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-6">
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Itinerary Outline</p>
+                                <div className="mt-3 space-y-2">
+                                  {(selectedInquiryQuote.itineraryOutline || []).map((item, idx) => (
+                                    <div key={`${item}-${idx}`} className="rounded-2xl bg-white p-4 text-sm font-medium text-slate-600 shadow-sm">
+                                      {item}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Next Steps</p>
+                                <div className="mt-3 space-y-2">
+                                  {(selectedInquiryQuote.nextSteps || []).map((item, idx) => (
+                                    <div key={`${item}-${idx}`} className="rounded-2xl bg-white p-4 text-sm font-medium text-slate-600 shadow-sm">
+                                      {item}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mb-4 flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          className="rounded-2xl border-slate-200 text-slate-600"
+                          onClick={() =>
+                            updateInquiryLeadStage(selectedInquiry._id, "qualified").then(() => {
+                              loadInquiries();
+                              setSelectedInquiry((prev) => prev ? { ...prev, leadStage: "qualified" } : prev);
+                            })
+                          }
+                        >
+                          Mark Qualified
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="rounded-2xl border-slate-200 text-slate-600"
+                          onClick={() =>
+                            updateInquiryLeadStage(selectedInquiry._id, "follow-up").then(() => {
+                              loadInquiries();
+                              setSelectedInquiry((prev) => prev ? { ...prev, leadStage: "follow-up" } : prev);
+                            })
+                          }
+                        >
+                          Set Follow-Up
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="rounded-2xl border-slate-200 text-slate-600"
+                          onClick={() =>
+                            updateInquiryStatus(selectedInquiry._id, "Contacted").then(() => {
+                              loadInquiries();
+                              setSelectedInquiry((prev) => prev ? { ...prev, status: "Contacted" } : prev);
+                            })
+                          }
+                        >
+                          Mark Contacted
+                        </Button>
+                      </div>
+
                       <div className="flex flex-col md:flex-row gap-4">
                         <Button
                           variant="primary"
@@ -2574,10 +3393,13 @@ const AdminDashboard = () => {
                         <Button
                           variant="outline"
                           className="flex-1 rounded-2xl border-slate-200 text-slate-600"
-                          onClick={() => setSelectedInquiry(null)}
-                        >
-                          Close Preview
-                        </Button>
+                          onClick={() => {
+                            clearFocusedRecord();
+                            setSelectedInquiry(null);
+                          }}
+                          >
+                            Close Preview
+                          </Button>
                       </div>
                     </div>
                   </motion.div>
@@ -2643,7 +3465,10 @@ const AdminDashboard = () => {
                     className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
                   >
                     <button
-                      onClick={() => setSelectedContactMessage(null)}
+                      onClick={() => {
+                        clearFocusedRecord();
+                        setSelectedContactMessage(null);
+                      }}
                       className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100/80 backdrop-blur flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all z-50 shadow-sm"
                     >
                       <span className="text-xl md:text-2xl">&times;</span>
@@ -2696,6 +3521,7 @@ const AdminDashboard = () => {
                           variant="outline"
                           className="rounded-2xl border-red-200 text-red-500"
                           onClick={() => deleteContactMessage(selectedContactMessage._id).then(() => {
+                            clearFocusedRecord();
                             setSelectedContactMessage(null);
                             loadContactMessages();
                           })}
@@ -2865,10 +3691,48 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* Navigation Section */}
-          {activeTab === "navigation" && <NavigationManager />}
+          {/* Navbar and footer structure are controlled by the super admin design studio. */}
+          {activeTab === "navigation" && (
+            <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+              <p className="text-xl font-black text-zinc-950">Navigation is managed by the platform admin.</p>
+              <p className="mt-2 text-sm font-medium text-zinc-500">
+                Tenant admins can manage content, images, tours, blogs, contacts, and social links. Navbar structure and footer layout stay controlled from the super admin panel.
+              </p>
+            </div>
+          )}
 
-          {activeTab === "email-inbox" && <EmailInboxManager />}
+          {activeTab === "email-inbox" && <UnifiedInboxManager />}
+          {activeTab === "email-foundation" && <EmailInboxManager />}
+
+          {activeTab === "lead-inbox" && <LeadInboxManager />}
+
+          {activeTab === "social-posts" && <SocialPostsManager />}
+
+          {activeTab === "social-accounts" && <SocialAccountsManager />}
+
+          {activeTab === "repurposing" && <ContentRepurposingManager />}
+
+          {activeTab === "campaigns" && <CampaignManager />}
+
+          {activeTab === "guide-drivers" && <GuideDriverManager />}
+
+          {activeTab === "accommodations" && <AccommodationManager />}
+
+          {activeTab === "airport-pickups" && <AirportPickupManager />}
+
+          {activeTab === "partners" && <PartnerPortalManager />}
+          {activeTab === "distribution" && <DistributionManager />}
+
+          {activeTab === "payments" && <PaymentAutomationManager />}
+          {activeTab === "data-platform" && <InfrastructureReadinessManager />}
+
+          {activeTab === "dynamic-pricing" && <DynamicPricingManager />}
+
+          {activeTab === "competitor-intelligence" && <CompetitorIntelligenceManager />}
+
+          {(activeTab === "language-assistant" || activeTab === "travel-docs") && <TravelerAssistanceManager />}
+
+          {activeTab === "subscription" && <SubscriptionManager />}
 
           {activeTab === "navigation-legacy" && (
             <div className="animate-fade-in">
@@ -3444,8 +4308,12 @@ const AdminDashboard = () => {
           )}
           */}
 
-          {activeTab === "page-builder" && <PageBuilderManager />}
+          {(activeTab === "page-builder" || activeTab === "page-content") && (
+            <PageBuilderManager mode="content" tenantName={tenant?.name || ""} />
+          )}
 
+          {activeTab === "reputation" && <ReputationGuardianManager />}
+          {activeTab === "repeat-customers" && <RepeatCustomerManager />}
           {activeTab === "settings" && <SiteSettings />}
 
         </div>

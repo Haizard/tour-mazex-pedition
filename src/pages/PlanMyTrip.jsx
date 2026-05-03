@@ -1,4 +1,4 @@
-import React from "react";
+import { useLocation } from "react-router-dom";
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
@@ -6,6 +6,15 @@ import LogoSlider from "../components/Home/LogoSlider";
 import HeroImage from "../assets/tembo.jpg";
 
 const PlanMyTrip = () => {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const sourceChannel = searchParams.get("source") || "plan-my-trip";
+  const campaignLabel = searchParams.get("campaign") || "";
+  const defaultReferralCode = searchParams.get("referral") || "";
+  const defaultDestinations = searchParams.get("destination")
+    ? [searchParams.get("destination")]
+    : [];
+
   return (
     <div className="min-h-screen bg-gray-50 pt-24">
       <section className="relative overflow-hidden">
@@ -49,7 +58,12 @@ const PlanMyTrip = () => {
           </div>
 
           <div className="mx-auto max-w-5xl">
-          <PlanMyTripWizard />
+            <PlanMyTripWizard
+              sourceChannel={sourceChannel}
+              campaignLabel={campaignLabel}
+              defaultReferralCode={defaultReferralCode}
+              defaultDestinations={defaultDestinations}
+            />
           </div>
         </div>
       </section>

@@ -1,49 +1,19 @@
-import { defineConfig } from 'vite';
+import { defineConfig, splitVendorChunkPlugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), splitVendorChunkPlugin()],
   ssr: {
+    // Required so react-icons ESM bundles are inlined during SSR build,
+    // otherwise Node resolves the directory import which is not supported.
     noExternal: ["react-icons"],
   },
   build: {
-    outDir: 'dist', // Ensure the output directory is set to 'dist'
+    outDir: 'dist',
     ssrManifest: true,
     rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) {
-            return undefined;
-          }
-
-          if (id.includes('react-dom') || id.includes('react-router') || id.includes('react-helmet-async')) {
-            return 'react-core';
-          }
-
-          if (id.includes('framer-motion')) {
-            return 'motion';
-          }
-
-          if (id.includes('react-icons') || id.includes('@fortawesome')) {
-            return 'icons';
-          }
-
-          if (id.includes('react-slick') || id.includes('slick-carousel')) {
-            return 'carousel';
-          }
-
-          if (id.includes('react-markdown') || id.includes('remark-gfm')) {
-            return 'markdown';
-          }
-
-          if (id.includes('axios') || id.includes('@google/genai')) {
-            return 'data-services';
-          }
-
-          return 'vendor';
-        },
-      },
+      output: {},
     },
   },
 });

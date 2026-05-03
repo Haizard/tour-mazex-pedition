@@ -1,15 +1,18 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import MainVideo from "../../assets/video/main.mp4";
+import { getMediaUrl } from "../../services/api";
+const MainVideo = "/videos/main.mp4";
 
 const Hero = ({
   eyebrow = "Karibu Maz",
   headlineScript = "Expeditions",
+  description = "",
   primaryCtaLabel = "START PLANNING NOW",
   primaryCtaHref = "/plan-my-trip",
   secondaryCtaLabel = "Explore All Packages",
   secondaryCtaHref = "/packages",
+  videoUrl = "",
 }) => {
   const navigate = useNavigate();
 
@@ -21,21 +24,23 @@ const Hero = ({
   return (
     <div className="relative h-screen min-h-[700px] flex items-center justify-center overflow-hidden">
       {/* Background Overlay */}
-      <div className="absolute inset-0 bg-black/40 z-10" />
+      <div className="absolute inset-0 bg-black/20 z-10" />
 
       {/* Cinematic Background Video */}
       <div className="absolute inset-0">
         <video
+          key={videoUrl || MainVideo}
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-fill"
+          className="w-full h-full object-cover"
+          suppressHydrationWarning
         >
-          <source src={MainVideo} type="video/mp4" />
+          <source src={getMediaUrl(videoUrl) || MainVideo} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-slate-900" />
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-slate-900/70" />
       </div>
 
       <div className="container relative z-20 text-center text-white px-4 pt-20">
@@ -58,6 +63,11 @@ const Hero = ({
             <div className="font-signature text-safari-gold text-6xl sm:text-8xl lg:text-9xl px-4 pb-4 -mt-4 drop-shadow-2xl transform">
               {headlineScript}
             </div>
+            {description && (
+              <p className="text-white/80 font-medium text-lg max-w-2xl mx-auto mt-4 leading-relaxed">
+                {description}
+              </p>
+            )}
           </motion.div>
 
           {/* New CTA Button Replacement for Search Engine */}

@@ -89,7 +89,7 @@ const PageRenderer = ({ sections = [] }) => {
 
   return (
     <>
-      {normalizedSections.map((section) => {
+      {normalizedSections.map((section, index) => {
         const rendered = renderRegisteredSection(section);
         if (!rendered) {
           return null;
@@ -100,10 +100,11 @@ const PageRenderer = ({ sections = [] }) => {
 
         return (
           <div
-            key={section._id || `${section.type}-${section.order || 0}`}
+            key={`${section.type}-${section.order || index}`}
             style={wrapperStyle}
+            suppressHydrationWarning
           >
-            <div style={innerStyle}>{rendered}</div>
+            <div style={innerStyle} suppressHydrationWarning>{rendered}</div>
           </div>
         );
       })}

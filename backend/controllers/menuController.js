@@ -1,6 +1,7 @@
 import MenuItem from "../models/MenuItem.js";
 import { defaultMenuItems } from "../data/defaultMenuItems.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
 
 const sortMenu = (items) =>
   items
@@ -16,6 +17,10 @@ export const getMenuItems = async (req, res) => {
   try {
     const items = await MenuItem.find(buildTenantFilter(req)).lean();
     if (!items.length) {
+      if (req.tenant?.slug !== LEGACY_TENANT_SLUG) {
+        return res.status(200).json([]);
+      }
+
       return res.status(200).json(sortMenu(defaultMenuItems));
     }
     res.status(200).json(sortMenu(items));

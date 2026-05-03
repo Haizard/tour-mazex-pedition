@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
 const customInquirySchema = new mongoose.Schema({
     tenantId: {
@@ -30,7 +31,48 @@ const customInquirySchema = new mongoose.Schema({
     budget: { type: String },
     services: [{ type: String }],
     message: { type: String, required: true },
-    status: { type: String, enum: ['Pending', 'Contacted', 'Booked', 'Cancelled'], default: 'Pending' }
+    sourceChannel: {
+        type: String,
+        enum: ['website', 'plan-my-trip', 'whatsapp-button', 'chatbot', 'hosted-social', 'embed-widget', 'partner-referral', 'api'],
+        default: 'website'
+    },
+    campaignLabel: { type: String, trim: true, default: '' },
+    firstTouchAt: { type: Date, default: Date.now },
+    leadStage: {
+        type: String,
+        enum: ['new', 'qualified', 'follow-up', 'booked', 'closed'],
+        default: 'new'
+    },
+    convertedAt: { type: Date, default: null },
+    leadScore: { type: Number, min: 0, max: 100, default: 0 },
+    leadTemperature: {
+        type: String,
+        enum: ['hot', 'warm', 'cold'],
+        default: 'cold'
+    },
+    leadScoreReasons: [{ type: String }],
+    automationSummary: { type: String, default: '' },
+    followUpMessage: { type: String, default: '' },
+    whatsappAutomation: {
+        outboundMessageCount: { type: Number, default: 0, min: 0 },
+        lastMessageAt: { type: Date, default: null },
+        lastMessagePreview: { type: String, default: '' },
+        lastExternalMessageId: { type: String, default: '' },
+        lastDeliveryStatus: {
+            type: String,
+            enum: ['not-sent', 'sent', 'failed'],
+            default: 'not-sent'
+        }
+    },
+    status: { type: String, enum: ['Pending', 'Contacted', 'Booked', 'Cancelled'], default: 'Pending' },
+    referralCode: { type: String, trim: true },
+    businessTruth: {
+        type: new mongoose.Schema(
+            createBusinessTruthMetadataSchemaDefinition({ entityKey: "travelers" }),
+            { _id: false }
+        ),
+        default: () => ({}),
+    },
 }, { timestamps: true });
 
 const CustomInquiry = mongoose.model('CustomInquiry', customInquirySchema);

@@ -43,6 +43,7 @@ export const legacyHomePage = {
           "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
           "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1600&q=80",
         ],
+        videoUrl: "/videos/main.mp4",
       },
       styleConfig: {},
     },
@@ -181,38 +182,13 @@ export const legacyHomePage = {
       styleConfig: {},
     },
     {
-      type: "testimonials",
+      type: "reviewWall",
       variant: "default",
       order: 8,
       enabled: true,
       dataConfig: {},
       contentConfig: {
-        backgroundImage:
-          "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
-        ratingLabel: "EXCELLENT",
-        reviewCountLabel: "Based on 30 reviews",
-        providerLabel: "Tripadvisor",
-        sectionEyebrow: "Guest Reviews",
-        sectionTitle: "What travelers remember long after the journey ends.",
-        sectionDescription:
-          "Switch to the editorial quotes variant when you want testimonials to feel quieter, more premium, and more publication-like.",
-        testimonials: [
-          {
-            name: "Roderick P",
-            date: "2025-01-21",
-            text: "My family and I had an amazing combination of a safari and a Kilimanjaro trek with MAZ Expeditions. Our safari guide, Laurent, was fantastic...",
-          },
-          {
-            name: "Jane R",
-            date: "2025-01-10",
-            text: "The safari was absolutely stunning! Every detail was managed perfectly, and the wildlife was breathtaking. I will never forget the Serengeti.",
-          },
-          {
-            name: "William J",
-            date: "2025-01-12",
-            text: "Our Kilimanjaro trek via the Lemosho Route was beyond incredible! From the moment we arrived, the team made us feel safe and well-prepared...",
-          },
-        ],
+        notes: "Automatically pulls verified 4-5 star reviews from the Reputation Guardian system."
       },
       styleConfig: {},
     },

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
@@ -12,8 +13,14 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, loading } = useAdminAuth();
+  const {
+    login: loginPlatformAdmin,
+    loading: platformLoading,
+  } = usePlatformAdminAuth();
 
-  const redirectPath = location.state?.from?.pathname || "/admin";
+  const demoMatch = location.pathname.match(/^\/demo\/[^/]+/);
+  const defaultRedirectPath = demoMatch ? `${demoMatch[0]}/admin` : "/admin";
+  const redirectPath = location.state?.from?.pathname || defaultRedirectPath;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -31,10 +38,23 @@ const AdminLogin = () => {
     setSubmitting(true);
 
     try {
+      if (credentials.username.trim().toLowerCase() === "platform-admin") {
+        await loginPlatformAdmin(credentials);
+        navigate("/platform", { replace: true });
+        return;
+      }
+
       await login(credentials);
       navigate(redirectPath, { replace: true });
     } catch (loginError) {
-      setError(loginError.response?.data?.message || "Invalid credentials. Access denied.");
+      const isPlatformAttempt =
+        credentials.username.trim().toLowerCase() === "platform-admin";
+      setError(
+        loginError.response?.data?.message ||
+          (isPlatformAttempt
+            ? "Invalid platform credentials. Try /platform/login."
+            : "Invalid credentials. Access denied.")
+      );
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +91,8 @@ const AdminLogin = () => {
               Sign In
             </h2>
             <p className="text-gray-500 text-sm mt-2 font-medium">
-              Enter your tenant admin credentials to proceed.
+              Enter tenant credentials here. Super admin credentials are routed
+              to the platform console automatically.
             </p>
           </div>
 
@@ -88,11 +109,11 @@ const AdminLogin = () => {
               </label>
               <input
                 type="text"
-                name="username"
-                value={credentials.username}
-                onChange={handleChange}
-                className="bg-white/5 border border-white/10 text-white p-4 rounded-2xl outline-none focus:border-primary/60 focus:bg-white/10 transition font-medium placeholder:text-gray-600"
-                placeholder="admin"
+              name="username"
+              value={credentials.username}
+              onChange={handleChange}
+              className="bg-white/5 border border-white/10 text-white p-4 rounded-2xl outline-none focus:border-primary/60 focus:bg-white/10 transition font-medium placeholder:text-gray-600"
+                placeholder="admin or platform-admin"
                 required
               />
             </div>
@@ -112,12 +133,20 @@ const AdminLogin = () => {
             </div>
             <button
               type="submit"
-              disabled={submitting || loading}
+              disabled={submitting || loading || platformLoading}
               className="w-full bg-gradient-to-r from-primary to-[#00aeaf] text-white font-black py-4 rounded-2xl uppercase tracking-widest hover:opacity-90 transition shadow-2xl shadow-primary/20 disabled:opacity-50 mt-4"
             >
-              {submitting || loading ? "Authenticating..." : "Access Dashboard ->"}
+              {submitting || loading || platformLoading ? "Authenticating..." : "Access Dashboard ->"}
             </button>
           </form>
+
+          <button
+            type="button"
+            onClick={() => navigate("/platform/login")}
+            className="w-full border border-white/10 text-gray-300 font-black py-4 rounded-2xl uppercase tracking-widest hover:bg-white/5 transition"
+          >
+            Open Super Admin Login
+          </button>
 
           <button
             onClick={() => navigate("/")}

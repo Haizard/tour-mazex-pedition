@@ -5,11 +5,18 @@ import Button from "../UI/Button";
 import Badge from "../UI/Badge";
 import {
   createMenuItem,
+  createPlatformTenantMenuItem,
   deleteMenuItem,
+  deletePlatformTenantMenuItem,
   fetchMenuItems,
+  fetchPlatformTenantMenuItems,
+  fetchPlatformTenantSiteConfig,
   fetchTenantSiteConfig,
+  resetPlatformTenantMenuItemsToDefaults,
   resetMenuItemsToDefaults,
   updateMenuItem,
+  updatePlatformTenantMenuItem,
+  updatePlatformTenantSiteConfig,
   updateTenantSiteConfig,
 } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
@@ -25,24 +32,41 @@ const initialMenuForm = {
   childrenText: "",
 };
 
-const NavigationManager = () => {
+const defaultSiteConfigFormData = {
+  navigationConfig: {
+    ctaLabel: "PLAN MY TRIP",
+    ctaHref: "/plan-my-trip",
+    aboutLabel: "About Us",
+    aboutHref: "/about",
+    logoPlacement: "left",
+  },
+  footerConfig: {
+    brandName: "",
+    brandDescription: "",
+    primaryCtaLabel: "",
+    primaryCtaHref: "",
+    secondaryCtaLabel: "",
+    secondaryCtaHref: "",
+    copyrightLabel: "",
+    mobileCopyrightLabel: "",
+  },
+};
+
+const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } = {}) => {
   const { refreshTenant } = useTenant();
+  const isPlatformMode = mode === "platform" && tenantId;
   const [menuItems, setMenuItems] = React.useState([]);
   const [menuFormData, setMenuFormData] = React.useState(initialMenuForm);
   const [editingMenuId, setEditingMenuId] = React.useState(null);
-  const [siteConfigFormData, setSiteConfigFormData] = React.useState({
-    navigationConfig: {
-      ctaLabel: "PLAN MY TRIP",
-      ctaHref: "/plan-my-trip",
-      aboutLabel: "About Us",
-      aboutHref: "/about",
-    },
-  });
+  const [siteConfigFormData, setSiteConfigFormData] = React.useState(defaultSiteConfigFormData);
   const [loading, setLoading] = React.useState(false);
+  const [activeChromeTool, setActiveChromeTool] = React.useState("chrome");
 
   const loadMenuItems = async () => {
     try {
-      const res = await fetchMenuItems();
+      const res = isPlatformMode
+        ? await fetchPlatformTenantMenuItems(tenantId)
+        : await fetchMenuItems();
       setMenuItems(res.data || []);
     } catch (error) {
       console.error(error);
@@ -51,13 +75,26 @@ const NavigationManager = () => {
 
   const loadSiteConfig = async () => {
     try {
-      const res = await fetchTenantSiteConfig();
+      const res = isPlatformMode
+        ? await fetchPlatformTenantSiteConfig(tenantId)
+        : await fetchTenantSiteConfig();
       setSiteConfigFormData({
         navigationConfig: {
-          ctaLabel: res.data?.navigationConfig?.ctaLabel || "PLAN MY TRIP",
-          ctaHref: res.data?.navigationConfig?.ctaHref || "/plan-my-trip",
-          aboutLabel: res.data?.navigationConfig?.aboutLabel || "About Us",
-          aboutHref: res.data?.navigationConfig?.aboutHref || "/about",
+          ctaLabel: res.data?.navigationConfig?.ctaLabel || "",
+          ctaHref: res.data?.navigationConfig?.ctaHref || "",
+          aboutLabel: res.data?.navigationConfig?.aboutLabel || "",
+          aboutHref: res.data?.navigationConfig?.aboutHref || "",
+          logoPlacement: res.data?.navigationConfig?.logoPlacement || "left",
+        },
+        footerConfig: {
+          brandName: res.data?.footerConfig?.brandName || "",
+          brandDescription: res.data?.footerConfig?.brandDescription || "",
+          primaryCtaLabel: res.data?.footerConfig?.primaryCtaLabel || "",
+          primaryCtaHref: res.data?.footerConfig?.primaryCtaHref || "",
+          secondaryCtaLabel: res.data?.footerConfig?.secondaryCtaLabel || "",
+          secondaryCtaHref: res.data?.footerConfig?.secondaryCtaHref || "",
+          copyrightLabel: res.data?.footerConfig?.copyrightLabel || "",
+          mobileCopyrightLabel: res.data?.footerConfig?.mobileCopyrightLabel || "",
         },
       });
     } catch (error) {
@@ -68,7 +105,7 @@ const NavigationManager = () => {
   React.useEffect(() => {
     loadMenuItems();
     loadSiteConfig();
-  }, []);
+  }, [isPlatformMode, tenantId]);
 
   const handleMenuInputChange = (e) =>
     setMenuFormData((current) => ({ ...current, [e.target.name]: e.target.value }));
@@ -104,9 +141,17 @@ const NavigationManager = () => {
       };
 
       if (editingMenuId) {
-        await updateMenuItem(editingMenuId, payload);
+        if (isPlatformMode) {
+          await updatePlatformTenantMenuItem(tenantId, editingMenuId, payload);
+        } else {
+          await updateMenuItem(editingMenuId, payload);
+        }
       } else {
-        await createMenuItem(payload);
+        if (isPlatformMode) {
+          await createPlatformTenantMenuItem(tenantId, payload);
+        } else {
+          await createMenuItem(payload);
+        }
       }
 
       resetMenuForm();
@@ -123,10 +168,14 @@ const NavigationManager = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await updateTenantSiteConfig(siteConfigFormData);
-      await refreshTenant?.();
+      if (isPlatformMode) {
+        await updatePlatformTenantSiteConfig(tenantId, siteConfigFormData);
+      } else {
+        await updateTenantSiteConfig(siteConfigFormData);
+        await refreshTenant?.();
+      }
       await loadSiteConfig();
-      alert("Navigation config updated.");
+      alert("Navigation and footer config updated.");
     } catch (error) {
       console.error(error);
       alert("Failed to update navigation config.");
@@ -138,17 +187,53 @@ const NavigationManager = () => {
   return (
     <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-10">
-        <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
-          Navigation
-        </h2>
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+            {isPlatformMode ? "Super Admin Website Chrome" : "Navigation"}
+          </p>
+          <h2 className="mt-2 text-3xl font-black text-gray-900 uppercase tracking-tighter">
+            {isPlatformMode ? `${tenantName || "Tenant"} Navbar & Footer` : "Navigation"}
+          </h2>
+        </div>
         <div className="flex items-center gap-3">
           <Badge variant="secondary">{menuItems.length} Menu Items</Badge>
-          <Button variant="outline" onClick={() => resetMenuItemsToDefaults().then(loadMenuItems)}>
+          <Button
+            variant="outline"
+            onClick={() =>
+              (isPlatformMode
+                ? resetPlatformTenantMenuItemsToDefaults(tenantId)
+                : resetMenuItemsToDefaults()
+              ).then(loadMenuItems)
+            }
+          >
             Restore Defaults
           </Button>
         </div>
       </div>
 
+      <div className="mb-8 grid grid-cols-1 gap-3 rounded-[28px] border border-slate-200 bg-slate-100/70 p-2 md:grid-cols-3">
+        {[
+          ["chrome", "Chrome Settings", "CTA, logo placement, footer brand"],
+          ["menu", "Menu Builder", "Links, dropdowns, megamenus"],
+          ["preview", "Structure Preview", "Audit the current navigation"],
+        ].map(([id, label, description]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveChromeTool(id)}
+            className={`rounded-2xl px-5 py-4 text-left transition ${
+              activeChromeTool === id
+                ? "bg-white text-slate-950 shadow-sm"
+                : "text-slate-500 hover:bg-white/70"
+            }`}
+          >
+            <span className="block text-sm font-black">{label}</span>
+            <span className="mt-1 block text-xs font-semibold">{description}</span>
+          </button>
+        ))}
+      </div>
+
+      {activeChromeTool === "chrome" && (
       <Card className="p-8 mb-8 border-none shadow-xl bg-white">
         <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
           <FaCog className="text-primary" />
@@ -217,16 +302,84 @@ const NavigationManager = () => {
               placeholder="About Link"
               className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold"
             />
+            <select
+              value={siteConfigFormData.navigationConfig.logoPlacement}
+              onChange={(e) =>
+                setSiteConfigFormData((current) => ({
+                  ...current,
+                  navigationConfig: {
+                    ...current.navigationConfig,
+                    logoPlacement: e.target.value,
+                  },
+                }))
+              }
+              className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold"
+            >
+              <option value="left">Logo Left</option>
+              <option value="center">Logo Center</option>
+            </select>
+          </div>
+
+          <div className="mt-8 border-t border-slate-100 pt-8">
+            <h4 className="mb-5 text-sm font-black uppercase tracking-[0.2em] text-slate-400">
+              Footer Structure
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                ["brandName", "Footer Brand Name"],
+                ["primaryCtaLabel", "Primary CTA Label"],
+                ["primaryCtaHref", "Primary CTA Link"],
+                ["secondaryCtaLabel", "Secondary CTA Label"],
+                ["secondaryCtaHref", "Secondary CTA Link"],
+                ["copyrightLabel", "Copyright Label"],
+                ["mobileCopyrightLabel", "Mobile Copyright Label"],
+              ].map(([key, placeholder]) => (
+                <input
+                  key={key}
+                  type="text"
+                  value={siteConfigFormData.footerConfig[key] || ""}
+                  onChange={(e) =>
+                    setSiteConfigFormData((current) => ({
+                      ...current,
+                      footerConfig: {
+                        ...current.footerConfig,
+                        [key]: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder={placeholder}
+                  className="w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-bold"
+                />
+              ))}
+              <textarea
+                rows={4}
+                value={siteConfigFormData.footerConfig.brandDescription || ""}
+                onChange={(e) =>
+                  setSiteConfigFormData((current) => ({
+                    ...current,
+                    footerConfig: {
+                      ...current.footerConfig,
+                      brandDescription: e.target.value,
+                    },
+                  }))
+                }
+                placeholder="Footer brand description"
+                className="md:col-span-2 w-full bg-slate-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-primary font-medium"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end">
             <Button type="submit" disabled={loading} className="px-10">
-              Save Navigation Config
+              Save Navbar & Footer
             </Button>
           </div>
         </form>
       </Card>
+      )}
 
+      {activeChromeTool === "menu" && (
+      <>
       <Card className="p-8 mb-8 border-none shadow-xl">
         <h3 className="text-xl font-bold mb-8 italic flex items-center gap-3">
           <FaBars className="text-primary" />
@@ -308,7 +461,12 @@ const NavigationManager = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => deleteMenuItem(item._id).then(loadMenuItems)}
+                    onClick={() =>
+                      (isPlatformMode
+                        ? deletePlatformTenantMenuItem(tenantId, item._id)
+                        : deleteMenuItem(item._id)
+                      ).then(loadMenuItems)
+                    }
                     className="text-[10px] text-red-500 font-black uppercase hover:underline"
                   >
                     Delete
@@ -344,6 +502,53 @@ const NavigationManager = () => {
           </Card>
         ))}
       </div>
+      </>
+      )}
+
+      {activeChromeTool === "preview" && (
+        <Card className="p-8 border-none shadow-xl bg-white">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Current Structure</p>
+          <h3 className="mt-2 text-2xl font-black text-slate-950">Navbar and footer audit</h3>
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <p className="text-sm font-black text-slate-950">Navbar CTA</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                {siteConfigFormData.navigationConfig.ctaLabel || "No CTA"} → {siteConfigFormData.navigationConfig.ctaHref || "No link"}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <p className="text-sm font-black text-slate-950">Logo Placement</p>
+              <p className="mt-2 text-sm font-semibold capitalize text-slate-500">
+                {siteConfigFormData.navigationConfig.logoPlacement || "left"}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <p className="text-sm font-black text-slate-950">Footer Brand</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                {siteConfigFormData.footerConfig.brandName || "No brand configured"}
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 space-y-3">
+            {menuItems.map((item) => (
+              <div key={item._id || `${item.label}-${item.link}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-black text-slate-950">{item.label}</p>
+                    <p className="text-xs font-semibold text-slate-500">{item.link}</p>
+                  </div>
+                  <Badge variant="secondary">{item.itemType}</Badge>
+                </div>
+              </div>
+            ))}
+            {!menuItems.length && (
+              <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm font-bold text-slate-500">
+                No menu items yet. Add links from the Menu Builder tab.
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

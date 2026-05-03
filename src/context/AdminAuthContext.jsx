@@ -28,9 +28,11 @@ const persistToken = (token) => {
 };
 
 export const AdminAuthProvider = ({ children }) => {
-  const [token, setToken] = useState(readStoredToken);
+  // Always start with empty state so SSR and client initial renders match.
+  // The stored token is read in a useEffect (client-only) to avoid hydration mismatches.
+  const [token, setToken] = useState("");
   const [admin, setAdmin] = useState(null);
-  const [loading, setLoading] = useState(Boolean(readStoredToken()));
+  const [loading, setLoading] = useState(false);
 
   const clearSession = () => {
     persistToken("");
@@ -62,13 +64,19 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
+  // On mount (client-only), rehydrate auth state from localStorage.
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
+    const storedToken = readStoredToken();
+    if (storedToken) {
+      setToken(storedToken);
+      setLoading(true);
+      refreshSession();
     }
+  }, []);
 
-    refreshSession();
+  // Keep token in sync when it changes (e.g. after login).
+  useEffect(() => {
+    persistToken(token);
   }, [token]);
 
   const login = async (credentials) => {

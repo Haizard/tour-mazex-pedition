@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
@@ -20,7 +20,6 @@ import {
   IoStarOutline,
   IoTimeOutline,
 } from "react-icons/io5";
-import OrderPopup from "../OrderPopup/OrderPopup";
 import { createBooking, fetchTour, fetchTourBySlug, fetchTours } from "../../services/api";
 import Testimonial from "../Testimonial/Testimonial";
 import TripCTA from "../Home/TripCTA";
@@ -37,6 +36,7 @@ import {
 import { buildPackageRelatedTours } from "../../utils/contentMatchers";
 import { useRouteData } from "../../utils/routeData.jsx";
 
+const OrderPopup = React.lazy(() => import("../OrderPopup/OrderPopup"));
 
 const slugifyTitle = (value = "") =>
   value
@@ -1145,12 +1145,16 @@ const PackageDetail = () => {
 
       <LogoSlider />
 
-      <OrderPopup
-        isVisible={isOrderPopupVisible}
-        setOrderPopupVisible={setOrderPopupVisible}
-        packageTour={title}
-        packagePrice={price}
-      />
+      <Suspense fallback={null}>
+        {isOrderPopupVisible && (
+          <OrderPopup
+            isVisible={isOrderPopupVisible}
+            setOrderPopupVisible={setOrderPopupVisible}
+            packageTour={title}
+            packagePrice={price}
+          />
+        )}
+      </Suspense>
     </div>
   );
 };

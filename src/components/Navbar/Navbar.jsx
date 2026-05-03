@@ -115,31 +115,45 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
 
 const Navbar = ({ handleOrderPopup }) => {
   const navigate = useNavigate();
-  const { siteConfig } = useTenant();
+  const { siteConfig, tenant, loading } = useTenant();
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
-  const initialTours = Array.isArray(sharedData.tours) ? sharedData.tours : [];
-  const initialSettings = sharedData.siteSettings || null;
+  const shouldUseDefaultMenu = !loading && (!tenant || tenant.slug === "maz-expeditions");
+  const isLegacyTenant = shouldUseDefaultMenu;
+  const initialTours = React.useMemo(() => 
+    Array.isArray(sharedData.tours) ? sharedData.tours : [], 
+  [sharedData.tours]);
+
+  const initialSettings = React.useMemo(() => 
+    sharedData.siteSettings || null,
+  [sharedData.siteSettings]);
+
   const initialMenuItems = React.useMemo(() => {
     const menuData =
       Array.isArray(sharedData.menuItems) && sharedData.menuItems.length > 0
         ? sharedData.menuItems
-        : FRONTEND_MENU_DEFAULTS;
+        : shouldUseDefaultMenu
+          ? FRONTEND_MENU_DEFAULTS
+          : [];
 
     return buildMenuWithLiveTours(menuData, initialTours);
-  }, [initialTours, sharedData.menuItems]);
+  }, [initialTours, sharedData.menuItems, shouldUseDefaultMenu]);
+
   const [showMenu, setShowMenu] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuItems, setMenuItems] = useState(initialMenuItems);
   const [settings, setSettings] = useState(initialSettings);
 
+  // Sync state with initial data when it changes (efficiently)
   useEffect(() => {
     setMenuItems(initialMenuItems);
   }, [initialMenuItems]);
 
   useEffect(() => {
-    setSettings(initialSettings);
+    if (initialSettings) {
+      setSettings(initialSettings);
+    }
   }, [initialSettings]);
 
   useEffect(() => {
@@ -168,24 +182,30 @@ const Navbar = ({ handleOrderPopup }) => {
         const menuData =
           Array.isArray(menuRes.data) && menuRes.data.length > 0
             ? menuRes.data
-            : FRONTEND_MENU_DEFAULTS;
+            : shouldUseDefaultMenu
+              ? FRONTEND_MENU_DEFAULTS
+              : [];
         const toursData = Array.isArray(toursRes.data) ? toursRes.data : initialTours;
 
-        if (menuData.length > 0) {
-          setMenuItems(buildMenuWithLiveTours(menuData, toursData));
-        }
+        setMenuItems(buildMenuWithLiveTours(menuData, toursData));
       } catch (error) {
         console.error("Error loading menu items:", error);
       }
     };
 
-    loadMenuItems();
-  }, [initialTours]);
+    // Only load if we don't have enough initial data or on mount
+    if (menuItems.length === 0 || initialTours.length === 0) {
+       loadMenuItems();
+    }
+  }, [shouldUseDefaultMenu]); // Refresh when tenant context resolves for demo tenants.
 
   const navigationConfig = siteConfig?.navigationConfig || {};
+  const footerConfig = siteConfig?.footerConfig || {};
+  const logoPlacement = navigationConfig.logoPlacement || "left";
 
   const handlePrimaryCta = () => {
-    const href = navigationConfig.ctaHref || "/plan-my-trip";
+    const href = navigationConfig.ctaHref || (isLegacyTenant ? "/plan-my-trip" : "");
+    if (!href) return;
     if (href === "popup") {
       handleOrderPopup();
       return;
@@ -215,28 +235,36 @@ const Navbar = ({ handleOrderPopup }) => {
           </div>
 
           <div className="flex-1 flex justify-center">
-            <button
-              onClick={handlePrimaryCta}
-              className="bg-safari-green text-white px-8 py-1.5 rounded-lg text-sm font-medium tracking-wider hover:bg-opacity-90 transition-all shadow-md transform hover:scale-105 active:scale-95"
-            >
-              {navigationConfig.ctaLabel || "PLAN MY TRIP"}
-            </button>
+            {(navigationConfig.ctaLabel || isLegacyTenant) && (
+              <button
+                onClick={handlePrimaryCta}
+                className="bg-safari-green text-white px-8 py-1.5 rounded-lg text-sm font-medium tracking-wider hover:bg-opacity-90 transition-all shadow-md transform hover:scale-105 active:scale-95"
+              >
+                {navigationConfig.ctaLabel || "PLAN MY TRIP"}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-6 text-[13px] font-medium uppercase tracking-tighter">
-            <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 text-white">
-              <option>English UK</option>
-              <option>Germany DE</option>
-            </select>
-            <Link to={navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
-              {navigationConfig.aboutLabel || "About Us"}
-            </Link>
-            <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 max-w-[150px] text-white" defaultValue="Practical Info">
-              <option disabled>Practical Info</option>
-              <option>Privacy Policy</option>
-              <option>Terms & Conditions</option>
-              <option>Safari FAQs</option>
-            </select>
+            {isLegacyTenant && (
+              <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 text-white">
+                <option>English UK</option>
+                <option>Germany DE</option>
+              </select>
+            )}
+            {(navigationConfig.aboutLabel || isLegacyTenant) && (
+              <Link to={navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
+                {navigationConfig.aboutLabel || "About Us"}
+              </Link>
+            )}
+            {isLegacyTenant && (
+              <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 max-w-[150px] text-white" defaultValue="Practical Info">
+                <option disabled>Practical Info</option>
+                <option>Privacy Policy</option>
+                <option>Terms & Conditions</option>
+                <option>Safari FAQs</option>
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -248,21 +276,27 @@ const Navbar = ({ handleOrderPopup }) => {
             : "bg-[#6f5336] border-white/10"
         }`}
       >
-        <div className="container mx-auto flex justify-between items-center px-4">
+        <div className={`container relative mx-auto flex items-center px-4 ${
+          logoPlacement === "center" ? "justify-center gap-8" : "justify-between"
+        }`}>
           <Link to="/" className="flex items-center" onClick={() => window.scrollTo(0, 0)}>
-            <img
-              src={settings?.logoUrl || Logo}
-              alt="Logo"
-              className={`h-12 sm:h-14 md:h-20 rounded-full shadow-2xl transition-all duration-300 ${
-                isScrolled ? "border-2 border-[#6f5336]/20" : "border-2 border-white/20"
-              }`}
-            />
+            {(settings?.logoUrl || isLegacyTenant) ? (
+              <img
+                src={settings?.logoUrl || Logo}
+                alt="Logo"
+                className="h-12 sm:h-14 md:h-20 w-auto object-contain mix-blend-multiply brightness-110 transition-all duration-300"
+              />
+            ) : (
+              <span className={`font-black uppercase tracking-widest ${isScrolled ? "text-[#2f2418]" : "text-white"}`}>
+                {tenant?.name || "Tenant"}
+              </span>
+            )}
           </Link>
 
-          <div className="hidden lg:block">
+          <div className={`hidden lg:block ${logoPlacement === "center" ? "absolute left-1/2 top-full mt-3 -translate-x-1/2 rounded-2xl bg-white/95 px-6 py-3 shadow-2xl" : ""}`}>
             <ul
               className={`flex items-center gap-6 xl:gap-8 ${
-                isScrolled ? "text-[#2f2418]" : "text-white"
+                logoPlacement === "center" ? "text-[#2f2418]" : isScrolled ? "text-[#2f2418]" : "text-white"
               }`}
             >
               {menuItems.map((item, index) => (
@@ -372,6 +406,8 @@ const Navbar = ({ handleOrderPopup }) => {
         menuItems={menuItems}
         settings={settings}
         navigationConfig={navigationConfig}
+        footerConfig={footerConfig}
+        brandName={tenant?.name || ""}
       />
     </nav>
   );

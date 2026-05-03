@@ -8,25 +8,25 @@ export const tenantMiddleware = async (req, res, next) => {
     let tenant = null;
 
     if (lookup.slug) {
-      tenant = await Tenant.findOne({ slug: lookup.slug, status: "active" });
+      tenant = await Tenant.findOne({ slug: lookup.slug, status: "active" }).lean();
     }
 
     if (!tenant && lookup.subdomain) {
       tenant = await Tenant.findOne({
         subdomain: lookup.subdomain,
         status: "active",
-      });
+      }).lean();
     }
 
     if (!tenant && lookup.customDomain) {
       tenant = await Tenant.findOne({
         customDomains: lookup.customDomain,
         status: "active",
-      });
+      }).lean();
     }
 
     if (!tenant && lookup.slug !== LEGACY_TENANT_SLUG) {
-      tenant = await Tenant.findOne({ slug: LEGACY_TENANT_SLUG, status: "active" });
+      tenant = await Tenant.findOne({ slug: LEGACY_TENANT_SLUG, status: "active" }).lean();
     }
 
     if (!tenant) {

@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+/* eslint-disable react/prop-types */
+import { useMemo, useState } from "react";
 import { createInquiry } from "../../services/api";
 import {
   FaArrowLeft,
@@ -25,7 +26,19 @@ const initialFormData = {
   accommodationPreferences: [],
   message: "",
   contactPreference: "whatsapp",
+  referralCode: "",
 };
+
+const createInitialFormData = ({
+  defaultReferralCode = "",
+  defaultMessage = "",
+  defaultDestinations = [],
+} = {}) => ({
+  ...initialFormData,
+  referralCode: defaultReferralCode || "",
+  message: defaultMessage || "",
+  destinations: Array.isArray(defaultDestinations) ? defaultDestinations.filter(Boolean) : [],
+});
 
 const destinationOptions = [
   "Tanzania Safari",
@@ -142,13 +155,21 @@ const PlanMyTripWizard = ({
   onCancel,
   onSuccess,
   className = "",
+  sourceChannel = "plan-my-trip",
+  campaignLabel = "",
+  defaultReferralCode = "",
+  defaultMessage = "",
+  defaultDestinations = [],
 }) => {
   const [showForm, setShowForm] = useState(!showIntro);
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState(
+    createInitialFormData({ defaultReferralCode, defaultMessage, defaultDestinations })
+  );
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [successAutomation, setSuccessAutomation] = useState(null);
 
   const wrapperClass = compact
     ? "w-full"
@@ -240,9 +261,15 @@ const PlanMyTripWizard = ({
     setError("");
 
     try {
-      await createInquiry(payload);
+      const response = await createInquiry({
+        ...payload,
+        sourceChannel,
+        campaignLabel,
+        referralCode: formData.referralCode || defaultReferralCode || "",
+      });
+      setSuccessAutomation(response.data?.automation || null);
       setSuccess(true);
-      setFormData(initialFormData);
+      setFormData(createInitialFormData({ defaultReferralCode, defaultMessage, defaultDestinations }));
       setCurrentStep(0);
 
       if (onSuccess) {
@@ -332,6 +359,7 @@ const PlanMyTripWizard = ({
                   type="button"
                   onClick={() => {
                     setSuccess(false);
+                    setSuccessAutomation(null);
                     if (showIntro) {
                       setShowForm(false);
                     }
@@ -348,6 +376,16 @@ const PlanMyTripWizard = ({
                   >
                     Close
                   </button>
+                )}
+                {successAutomation?.whatsappUrl && (
+                  <a
+                    href={successAutomation.whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-green-200 bg-green-50 px-6 py-3.5 md:py-4 text-xs md:text-sm font-black uppercase tracking-[0.2em] text-green-700"
+                  >
+                    Continue On WhatsApp
+                  </a>
                 )}
               </div>
             </div>
@@ -493,6 +531,22 @@ const PlanMyTripWizard = ({
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="ml-1 text-[9px] md:text-[10px] font-black uppercase text-gray-400">
+                      Referral Code (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.referralCode}
+                      onChange={(e) => setField("referralCode", e.target.value.toUpperCase())}
+                      placeholder="e.g. PARTNER42"
+                      className="w-full rounded-xl md:rounded-2xl border bg-gray-50 p-3.5 md:p-4 text-sm font-bold uppercase outline-none focus:border-primary"
+                    />
+                    <p className="ml-1 text-[8px] font-bold uppercase tracking-tight text-slate-400">
+                      Use this when a partner, affiliate, or hosted campaign gave you a referral code.
+                    </p>
                   </div>
                 </div>
               )}

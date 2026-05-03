@@ -5,6 +5,7 @@ export const LEGACY_TENANT_DOMAINS = [
   "mazexpeditions.com",
   "www.mazexpeditions.com",
   "tourism-website-inky.vercel.app",
+  "mazexpeditions.vercel.app",
 ];
 
 export const DEFAULT_TENANT_THEME = {
@@ -46,4 +47,28 @@ export const DEFAULT_TENANT_SITE_CONFIG = {
     copyrightLabel: "Copyright ©2025 MAZ Expeditions | All rights reserved",
   },
   enabledFeatures: ["legacy-ui", "ai-content", "dynamic-menu"],
+};
+
+export const EMPTY_TENANT_SITE_CONFIG = {
+  homepageConfig: {
+    pageType: "custom-home",
+    sections: [],
+  },
+  navigationConfig: {
+    ctaLabel: "",
+    ctaHref: "",
+    aboutLabel: "",
+    aboutHref: "",
+  },
+  footerConfig: {
+    brandName: "",
+    brandDescription: "",
+    primaryCtaLabel: "",
+    primaryCtaHref: "",
+    secondaryCtaLabel: "",
+    secondaryCtaHref: "",
+    copyrightLabel: "",
+    mobileCopyrightLabel: "",
+  },
+  enabledFeatures: ["ai-content", "dynamic-menu"],
 };

@@ -244,6 +244,71 @@ router.post("/threads/:threadId/link", requireTenantAdmin, async (req, res) => {
   }
 });
 
+router.patch("/threads/:threadId", requireTenantAdmin, async (req, res) => {
+  try {
+    const thread = await EmailThread.findOne({
+      _id: req.params.threadId,
+      tenantId: req.tenantId,
+    });
+
+    if (!thread) {
+      return res.status(404).json({ message: "Thread not found." });
+    }
+
+    const allowedStatuses = new Set(["open", "pending", "closed", "archived"]);
+    const allowedDraftStatuses = new Set(["none", "drafted", "approved", "sent"]);
+
+    if (req.body.status && allowedStatuses.has(req.body.status)) {
+      thread.status = req.body.status;
+    }
+
+    if (req.body.aiDraftStatus && allowedDraftStatuses.has(req.body.aiDraftStatus)) {
+      thread.aiDraftStatus = req.body.aiDraftStatus;
+    }
+
+    if (typeof req.body.previewText === "string") {
+      thread.previewText = req.body.previewText;
+    }
+
+    if (req.body.replyInitiated) {
+      thread.status = req.body.status && allowedStatuses.has(req.body.status) ? req.body.status : "pending";
+      thread.aiDraftStatus =
+        req.body.aiDraftStatus && allowedDraftStatuses.has(req.body.aiDraftStatus)
+          ? req.body.aiDraftStatus
+          : "sent";
+      thread.lastMessageAt = new Date();
+      thread.metadata = {
+        ...(thread.metadata || {}),
+        replyTracking: {
+          initiatedAt: new Date(),
+          channel: req.body.replyChannel || "email",
+          initiatedFrom: req.body.replySource || "unified-inbox",
+        },
+      };
+
+      if (thread.inquiryId) {
+        await CustomInquiry.updateOne(
+          { _id: thread.inquiryId, tenantId: req.tenantId },
+          { $set: { status: "Contacted" } }
+        );
+      }
+
+      if (thread.contactMessageId) {
+        await ContactMessage.updateOne(
+          { _id: thread.contactMessageId, tenantId: req.tenantId },
+          { $set: { status: "Replied" } }
+        );
+      }
+    }
+
+    await thread.save();
+
+    res.status(200).json({ thread });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 router.post("/connections/:connectionId/sync", requireTenantAdmin, async (req, res) => {
   try {
     const connection = await EmailProviderConnection.findOne({

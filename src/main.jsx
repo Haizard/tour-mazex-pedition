@@ -12,11 +12,9 @@ const routeData = getClientRouteData();
 const container = document.getElementById("root");
 
 const app = (
-  <React.StrictMode>
-    <AppProviders routeData={routeData}>
-      <App />
-    </AppProviders>
-  </React.StrictMode>
+  <AppProviders routeData={routeData}>
+    <App />
+  </AppProviders>
 );
 
 if (container.hasChildNodes()) {

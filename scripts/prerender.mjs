@@ -7,7 +7,9 @@ import Blog from "../backend/models/Blog.js";
 import MenuItem from "../backend/models/MenuItem.js";
 import SiteSettings from "../backend/models/SiteSettings.js";
 import Taxonomy from "../backend/models/Taxonomy.js";
+import Tenant from "../backend/models/Tenant.js";
 import TourPackage from "../backend/models/TourPackage.js";
+import { LEGACY_TENANT_SLUG } from "../backend/utils/tenantDefaults.js";
 import { DESTINATION_META } from "../src/data/destinationMeta.js";
 import {
   buildBlogSidebarData,
@@ -26,8 +28,14 @@ const distDir = path.join(rootDir, "dist");
 
 dotenv.config({ path: path.join(rootDir, ".env") });
 
+const shouldUseBuildTimeCms =
+  String(process.env.PRERENDER_WITH_CMS || "").toLowerCase() === "true";
+
 const baseRoutes = [
-  "/",
+  // "/" is intentionally excluded — the home page uses fully dynamic content
+  // fetched from MongoDB at runtime (page config, video, sections). Prerendering it
+  // bakes in stale defaults and causes unavoidable React hydration conflicts.
+  // It is served as a pure SPA shell and rendered entirely on the client.
   "/about",
   "/contact",
   "/blogs",
@@ -105,14 +113,40 @@ async function ensureDbConnection() {
 }
 
 async function fetchCmsContent() {
+  if (!shouldUseBuildTimeCms) {
+    return {
+      blogs: [],
+      tours: [],
+      menuItems: [],
+      siteSettings: null,
+      taxonomies: [],
+    };
+  }
+
   try {
     await ensureDbConnection();
+    const legacyTenant = await Tenant.findOne({ slug: LEGACY_TENANT_SLUG })
+      .select("_id")
+      .lean();
+
+    // Build-time prerender must never mix content across tenants.
+    if (!legacyTenant?._id) {
+      return {
+        blogs: [],
+        tours: [],
+        menuItems: [],
+        siteSettings: null,
+        taxonomies: [],
+      };
+    }
+
+    const tenantFilter = { tenantId: legacyTenant._id };
     const [blogs, tours, menuItems, siteSettings, taxonomies] = await Promise.all([
-      Blog.find({}).sort({ createdAt: -1 }).lean(),
-      TourPackage.find({}).sort({ createdAt: -1 }).lean(),
-      MenuItem.find({}).sort({ sortOrder: 1, createdAt: 1 }).lean(),
-      SiteSettings.findOne({}).lean(),
-      Taxonomy.find({}).sort({ name: 1 }).lean(),
+      Blog.find(tenantFilter).sort({ createdAt: -1 }).lean(),
+      TourPackage.find(tenantFilter).sort({ createdAt: -1 }).lean(),
+      MenuItem.find(tenantFilter).sort({ sortOrder: 1, createdAt: 1 }).lean(),
+      SiteSettings.findOne(tenantFilter).lean(),
+      Taxonomy.find(tenantFilter).sort({ name: 1 }).lean(),
     ]);
 
     return { blogs, tours, menuItems, siteSettings, taxonomies };

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { createGetRequestCache } from "./apiCache.js";
 
 const isBrowser = typeof window !== "undefined";
 const API_URL = isBrowser && window.location.hostname === "localhost"
@@ -13,6 +14,16 @@ const LEGACY_HOSTNAMES = new Set([
 ]);
 
 const API = axios.create({ baseURL: API_URL });
+const getRequestCache = createGetRequestCache({ ttlMs: 8000 });
+
+const getDemoTenantSlug = () => {
+  if (!isBrowser) {
+    return "";
+  }
+
+  const match = window.location.pathname.match(/^\/demo\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]).trim().toLowerCase() : "";
+};
 
 const getTenantHeaders = () => {
   if (!isBrowser) {
@@ -20,7 +31,12 @@ const getTenantHeaders = () => {
   }
 
   const hostname = window.location.hostname.toLowerCase();
+  const demoTenantSlug = getDemoTenantSlug();
   const storedTenantSlug = window.localStorage.getItem("activeTenantSlug");
+
+  if (demoTenantSlug) {
+    return { "x-tenant-slug": demoTenantSlug };
+  }
 
   if (storedTenantSlug && LOCAL_HOSTNAMES.has(hostname)) {
     return { "x-tenant-slug": storedTenantSlug };
@@ -71,14 +87,119 @@ const getPlatformAdminHeaders = () => {
   };
 };
 
+const getAuthHeadersForUrl = (url = "") => {
+  const adminHeaders = getAdminHeaders();
+  const platformHeaders = getPlatformAdminHeaders();
+
+  if (url.includes("/platform-") || url.includes("/tenant/")) {
+    return platformHeaders.Authorization ? platformHeaders : adminHeaders;
+  }
+
+  return adminHeaders.Authorization ? adminHeaders : platformHeaders;
+};
+
+const stableStringify = (value) => {
+  if (!value || typeof value !== "object") {
+    return JSON.stringify(value ?? null);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+
+  return `{${Object.keys(value)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+    .join(",")}}`;
+};
+
+const buildGetCacheKey = (url, config = {}) => {
+  const headers = Object.assign(
+    {},
+    getTenantHeaders(),
+    getAuthHeadersForUrl(url),
+    config.headers || {}
+  );
+
+  return stableStringify({
+    url,
+    params: config.params || null,
+    headers,
+  });
+};
+
+export const clearApiGetCache = () => {
+  getRequestCache.clear();
+};
+
+const cachedGet = (url, config = {}, options = {}) =>
+  getRequestCache.get(
+    buildGetCacheKey(url, config),
+    () => API.get(url, config),
+    options
+  );
+
 API.interceptors.request.use((config) => {
-  config.headers = {
-    ...(config.headers || {}),
-    ...getTenantHeaders(),
-    ...getAdminHeaders(),
-  };
+  const tenantHeaders = getTenantHeaders();
+  const authHeader = getAuthHeadersForUrl(config.url);
+
+  config.headers = Object.assign(
+    {},
+    config.headers || {},
+    tenantHeaders,
+    authHeader
+  );
+
   return config;
 });
+
+// Response Interceptor for global error handling
+API.interceptors.response.use(
+  (response) => {
+    if (response.config?.method && response.config.method !== "get") {
+      clearApiGetCache();
+    }
+
+    return response;
+  },
+  (error) => {
+    const requestUrl = error.config?.url || "";
+    const isLoginRequest =
+      requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/platform-auth/login");
+
+    // A login request returning 401 is just wrong credentials. Other 401s mean
+    // a stored session expired and should redirect to the matching admin login.
+    if (error.response && error.response.status === 401 && !isLoginRequest && isBrowser) {
+      const isAuthPath =
+        window.location.pathname.includes("/admin") ||
+        window.location.pathname.includes("/platform") ||
+        window.location.pathname.includes("/super-admin") ||
+        window.location.pathname.includes("/login");
+
+      if (isAuthPath) {
+        console.warn("Session expired. Clearing local auth state and redirecting...");
+        window.localStorage.removeItem("adminAuthToken");
+        window.localStorage.removeItem("platformAdminAuthToken");
+
+        if (!window.location.pathname.endsWith("/login")) {
+          const isPlatformPath =
+            window.location.pathname.includes("/platform") ||
+            window.location.pathname.includes("/super-admin");
+          window.location.href = isPlatformPath
+            ? "/platform/login?expired=true"
+            : "/admin/login?expired=true";
+        }
+      }
+    } else if (isLoginRequest && error.response?.status === 401) {
+      console.error("Login failed: Invalid credentials.", error.response.data?.message || "");
+    } else if (error.response) {
+      console.error(`API Error (${error.response.status}):`, error.response.data?.message || error.message);
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 export const loginAdmin = (data) => API.post("/auth/login", data);
 export const fetchAdminSession = () => API.get("/auth/me");
@@ -91,20 +212,72 @@ export const fetchPlatformAdminSession = () =>
     headers: getPlatformAdminHeaders(),
   });
 export const fetchPlatformSummary = () =>
-  API.get("/platform-admin/summary", {
+  cachedGet("/platform-admin/summary", {
     headers: getPlatformAdminHeaders(),
   });
 export const fetchPlatformTenants = () =>
-  API.get("/platform-admin/tenants", {
+  cachedGet("/platform-admin/tenants", {
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformTenant = (data) =>
+  API.post("/platform-admin/tenants", data, {
     headers: getPlatformAdminHeaders(),
   });
 export const fetchPlatformTenantSupport = (tenantId, options = {}) =>
-  API.get(`/platform-admin/tenants/${tenantId}/support`, {
+  cachedGet(`/platform-admin/tenants/${tenantId}/support`, {
     params: options.mode ? { mode: options.mode } : undefined,
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantMarketing = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/marketing`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantPageConfig = (tenantId, pageType = "home") =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantPageConfigs = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/page-configs`, {
     headers: getPlatformAdminHeaders(),
   });
 export const updatePlatformTenant = (tenantId, data) =>
   API.put(`/platform-admin/tenants/${tenantId}`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformTenantPageConfig = (tenantId, pageType = "home", data) =>
+  API.put(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantSiteConfig = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/site-config`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformTenantSiteConfig = (tenantId, data) =>
+  API.put(`/platform-admin/tenants/${tenantId}/site-config`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantMenuItems = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/menu-items`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformTenantMenuItem = (tenantId, data) =>
+  API.post(`/platform-admin/tenants/${tenantId}/menu-items`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformTenantMenuItem = (tenantId, menuItemId, data) =>
+  API.put(`/platform-admin/tenants/${tenantId}/menu-items/${menuItemId}`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const deletePlatformTenantMenuItem = (tenantId, menuItemId) =>
+  API.delete(`/platform-admin/tenants/${tenantId}/menu-items/${menuItemId}`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const resetPlatformTenantMenuItemsToDefaults = (tenantId) =>
+  API.post(`/platform-admin/tenants/${tenantId}/menu-items/reset-defaults`, {}, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformTenantAdmin = (tenantId, data) =>
+  API.patch(`/platform-admin/tenants/${tenantId}/admin`, data, {
     headers: getPlatformAdminHeaders(),
   });
 export const markPlatformTenantDomainVerified = (tenantId, domain) =>
@@ -115,6 +288,10 @@ export const markPlatformTenantDomainVerified = (tenantId, domain) =>
       headers: getPlatformAdminHeaders(),
     }
   );
+export const renewPlatformTenantDomainService = (tenantId, data) =>
+  API.post(`/platform-admin/tenants/${tenantId}/renew-domain-service`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchEmailConnections = () => API.get("/email/connections");
 export const fetchEmailProviders = () => API.get("/email/providers");
 export const createEmailConnection = (data) => API.post("/email/connections", data);
@@ -126,20 +303,31 @@ export const runEmailConnectionSync = (connectionId) =>
 export const fetchEmailThreads = () => API.get("/email/threads");
 export const linkEmailThread = (threadId, data) =>
   API.post(`/email/threads/${threadId}/link`, data);
+export const updateEmailThread = (threadId, data) =>
+  API.patch(`/email/threads/${threadId}`, data);
 export const createEmailThread = (data) => API.post("/email/threads", data);
-export const fetchTenantBootstrap = () => API.get("/tenant/bootstrap");
-export const fetchTenantSiteConfig = () => API.get("/tenant/site-config");
+export const fetchUnifiedInboxItems = () => API.get("/unified-inbox");
+export const fetchTenantBootstrap = () => cachedGet("/tenant/bootstrap");
+export const fetchTenantSiteConfig = () => cachedGet("/tenant/site-config");
 export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", data);
+export const updateTenantDomainRequest = (data) => API.put("/tenant/domain-request", data);
 export const fetchPageConfig = (pageType = "home") =>
-  API.get(`/page-config/${encodeURIComponent(pageType)}`);
+  cachedGet(`/page-config/${encodeURIComponent(pageType)}`);
+export const fetchPageConfigs = () => cachedGet("/page-config/list/all");
+export const resolvePageConfigBySlug = (slug) =>
+  cachedGet("/page-config/resolve/by-slug", {
+    params: { slug },
+  });
 export const updatePageConfig = (pageType = "home", data) =>
   API.put(`/page-config/${encodeURIComponent(pageType)}`, data);
+export const fetchTenantTheme = () => cachedGet("/tenant/bootstrap"); // Bootstrap contains theme
+export const updateTenantTheme = (data) => API.put("/tenant/theme", data);
 
 // Tour Packages
-export const fetchTours = (params = "") => API.get(`/tours${params}`);
-export const fetchTour = (id) => API.get(`/tours/${id}`);
+export const fetchTours = (params = "") => cachedGet(`/tours${params}`);
+export const fetchTour = (id) => cachedGet(`/tours/${id}`);
 export const fetchTourBySlug = (slug) =>
-  API.get(`/tours/slug/${encodeURIComponent(slug)}`);
+  cachedGet(`/tours/slug/${encodeURIComponent(slug)}`);
 export const createTour = (newTour) => API.post("/tours", newTour);
 export const updateTour = (id, updatedTour) =>
   API.put(`/tours/${id}`, updatedTour);
@@ -151,23 +339,145 @@ export const generateTourSeo = (data) =>
 export const generateFullTourPackage = (data) =>
   API.post("/tours/generate-full", data);
 
+// Social Posts
+export const fetchSocialPosts = (params = {}) =>
+  cachedGet("/social-posts", { params });
+export const fetchSocialAutomationDashboard = () =>
+  cachedGet("/social-posts/dashboard");
+export const generateSocialPost = (data) =>
+  API.post("/social-posts/generate", data);
+export const runScheduledSocialAutomation = () =>
+  API.post("/social-posts/run-scheduled");
+export const createSocialPost = (data) =>
+  API.post("/social-posts", data);
+export const updateSocialPost = (id, data) =>
+  API.patch(`/social-posts/${id}`, data);
+export const deleteSocialPost = (id) =>
+  API.delete(`/social-posts/${id}`);
+export const publishSocialPostLive = (id) =>
+  API.post(`/social-accounts/social-posts/${id}/publish`);
+export const fetchSocialAccounts = () => cachedGet("/social-accounts");
+export const createSocialAccount = (data) => API.post("/social-accounts", data);
+export const updateSocialAccount = (id, data) =>
+  API.patch(`/social-accounts/${id}`, data);
+export const deleteSocialAccount = (id) =>
+  API.delete(`/social-accounts/${id}`);
+export const verifySocialAccount = (id) =>
+  API.post(`/social-accounts/${id}/verify`);
+export const sendInquiryWhatsAppViaApi = (id, data = {}) =>
+  API.post(`/social-accounts/inquiries/${id}/send-whatsapp`, data);
+
 // Gallery
-export const fetchGallery = () => API.get("/gallery");
+export const fetchGallery = () => cachedGet("/gallery");
 export const createGallery = (newItem) => API.post("/gallery", newItem);
 export const deleteGallery = (id) => API.delete(`/gallery/${id}`);
 
+// Guide & Drivers
+export const fetchGuideDrivers = (params = {}) => cachedGet("/guide-drivers", { params });
+export const fetchGuideDriverDashboard = (params = {}) =>
+  cachedGet("/guide-drivers/dashboard", { params });
+export const createGuideDriver = (data) => API.post("/guide-drivers", data);
+export const updateGuideDriver = (id, data) => API.patch(`/guide-drivers/${id}`, data);
+export const deleteGuideDriver = (id) => API.delete(`/guide-drivers/${id}`);
+export const fetchAccommodationReservations = (params = {}) =>
+  cachedGet("/accommodations", { params });
+export const fetchAccommodationDashboard = (params = {}) =>
+  cachedGet("/accommodations/dashboard", { params });
+export const createAccommodationReservation = (data) => API.post("/accommodations", data);
+export const updateAccommodationReservation = (id, data) =>
+  API.patch(`/accommodations/${id}`, data);
+export const deleteAccommodationReservation = (id) =>
+  API.delete(`/accommodations/${id}`);
+export const fetchAirportPickups = (params = {}) => cachedGet("/airport-pickups", { params });
+export const fetchAirportPickupDashboard = (params = {}) =>
+  cachedGet("/airport-pickups/dashboard", { params });
+export const createAirportPickup = (data) => API.post("/airport-pickups", data);
+export const updateAirportPickup = (id, data) =>
+  API.patch(`/airport-pickups/${id}`, data);
+export const deleteAirportPickup = (id) => API.delete(`/airport-pickups/${id}`);
+export const fetchPartnerAccounts = (params = {}) => cachedGet("/partners", { params });
+export const createPartnerAccount = (data) => API.post("/partners", data);
+export const updatePartnerAccount = (id, data) => API.patch(`/partners/${id}`, data);
+export const deletePartnerAccount = (id) => API.delete(`/partners/${id}`);
+export const fetchPaymentTransactions = (params = {}) => cachedGet("/payments", { params });
+export const createPaymentTransaction = (data) => API.post("/payments", data);
+export const updatePaymentTransaction = (id, data) => API.patch(`/payments/${id}`, data);
+export const deletePaymentTransaction = (id) => API.delete(`/payments/${id}`);
+export const fetchPublicPaymentCheckout = (token) => API.get(`/payments/checkout/${token}`);
+export const respondToPublicPaymentCheckout = (token, data) =>
+  API.post(`/payments/checkout/${token}/respond`, data);
+export const fetchDynamicPricingRules = () => cachedGet("/dynamic-pricing");
+export const fetchDynamicPricingDashboard = () => cachedGet("/dynamic-pricing/dashboard");
+export const fetchBusinessTruthRegistry = () => API.get("/infrastructure/business-truth");
+export const fetchInfrastructureHealth = () => API.get("/infrastructure/health");
+export const fetchRevenueRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/revenue-records", { params });
+export const fetchTravelerRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/traveler-records", { params });
+export const fetchOperationsRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/operations-records", { params });
+export const fetchPartnerRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/partner-records", { params });
+export const fetchMediaRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/media-records", { params });
+export const fetchCompetitorRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/competitor-records", { params });
+export const fetchAssistantRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/assistant-records", { params });
+export const fetchEngagementRecordReadModel = (params = {}) =>
+  API.get("/infrastructure/engagement-records", { params });
+export const fetchDistributionSummary = () => API.get("/distribution/summary");
+export const fetchDistributionBootstrap = (params = {}) =>
+  API.get("/distribution/bootstrap", { params });
+export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
+export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
+export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);
+export const fetchCompetitorInsights = (params = {}) =>
+  cachedGet("/competitor-intelligence", { params });
+export const createCompetitorInsight = (data) => API.post("/competitor-intelligence", data);
+export const updateCompetitorInsight = (id, data) => API.patch(`/competitor-intelligence/${id}`, data);
+export const deleteCompetitorInsight = (id) => API.delete(`/competitor-intelligence/${id}`);
+export const fetchLanguageAssistantProfiles = (params = {}) =>
+  cachedGet("/language-assistants", { params });
+export const createLanguageAssistantProfile = (data) => API.post("/language-assistants", data);
+export const updateLanguageAssistantProfile = (id, data) => API.patch(`/language-assistants/${id}`, data);
+export const deleteLanguageAssistantProfile = (id) => API.delete(`/language-assistants/${id}`);
+export const fetchTravelDocumentationGuides = (params = {}) =>
+  cachedGet("/travel-docs", { params });
+export const createTravelDocumentationGuide = (data) => API.post("/travel-docs", data);
+export const updateTravelDocumentationGuide = (id, data) => API.patch(`/travel-docs/${id}`, data);
+export const deleteTravelDocumentationGuide = (id) => API.delete(`/travel-docs/${id}`);
+
 // Bookings
-export const fetchBookings = () => API.get("/bookings");
+export const fetchBookings = (params = {}) => cachedGet("/bookings", { params });
 export const createBooking = (newBooking) => API.post("/bookings", newBooking);
 export const updateBookingStatus = (id, status) =>
   API.patch(`/bookings/${id}`, { status });
 export const deleteBooking = (id) => API.delete(`/bookings/${id}`);
+export const fetchReviewRequests = (params = {}) =>
+  cachedGet("/bookings/review-requests", { params });
+export const generateBookingReviewRequest = (id) =>
+  API.post(`/bookings/${id}/review-request`);
+export const updateReviewRequest = (id, data) =>
+  API.patch(`/bookings/review-requests/${id}`, data);
+export const fetchRepeatCustomerCampaigns = (params = {}) =>
+  cachedGet("/bookings/repeat-customer-campaigns", { params });
+export const generateRepeatCustomerCampaign = (id) =>
+  API.post(`/bookings/${id}/repeat-customer-campaign`);
+export const updateRepeatCustomerCampaign = (id, data) =>
+  API.patch(`/bookings/repeat-customer-campaigns/${id}`, data);
+export const fetchPublicFeedback = (token) =>
+  API.get(`/bookings/public-feedback/${token}`);
+export const submitPublicFeedback = (token, data) =>
+  API.post(`/bookings/public-feedback/${token}`, data);
+export const fetchPublicTestimonials = () =>
+  API.get("/bookings/public-testimonials");
 
 // Blogs
-export const fetchBlogs = () => API.get("/blogs");
-export const fetchBlog = (id) => API.get(`/blogs/${id}`);
+export const fetchBlogs = () => cachedGet("/blogs");
+export const fetchBlog = (id) => cachedGet(`/blogs/${id}`);
 export const fetchBlogBySlug = (slug) =>
-  API.get(`/blogs/slug/${encodeURIComponent(slug)}`);
+  cachedGet(`/blogs/slug/${encodeURIComponent(slug)}`);
 export const createBlog = (data) => API.post("/blogs", data);
 export const updateBlog = (id, data) => API.put(`/blogs/${id}`, data);
 export const deleteBlog = (id) => API.delete(`/blogs/${id}`);
@@ -176,28 +486,62 @@ export const regenerateBlogContent = (data) =>
   API.post("/blogs/regenerate-content", data);
 export const generateBlogSeo = (data) =>
   API.post("/blogs/generate-seo", data);
+export const repurposeBlogContent = (data) =>
+  API.post("/marketing/repurpose-blog", data);
+export const fetchCampaigns = () => cachedGet("/marketing/campaigns");
+export const generateCampaignDraft = (data) =>
+  API.post("/marketing/campaigns/generate", data);
+export const createCampaign = (data) =>
+  API.post("/marketing/campaigns", data);
+export const updateCampaign = (id, data) =>
+  API.patch(`/marketing/campaigns/${id}`, data);
+export const deleteCampaign = (id) =>
+  API.delete(`/marketing/campaigns/${id}`);
 
 // Custom Inquiries
-export const fetchInquiries = () => API.get("/custom-inquiries");
+export const fetchInquiries = (params = { source: "postgres" }) =>
+  cachedGet("/custom-inquiries", { params });
 export const createInquiry = (data) => API.post("/custom-inquiries", data);
+export const createWhatsAppLead = (data) =>
+  API.post("/custom-inquiries/whatsapp-lead", data);
 export const updateInquiryStatus = (id, status) =>
   API.patch(`/custom-inquiries/${id}`, { status });
+export const updateInquiryLeadStage = (id, leadStage) =>
+  API.patch(`/custom-inquiries/${id}`, { leadStage });
+export const fetchInquiryQuotes = (id, params = { source: "postgres" }) =>
+  API.get(`/custom-inquiries/${id}/quotes`, { params });
+export const generateInquiryQuote = (id) =>
+  API.post(`/custom-inquiries/${id}/generate-quote`);
+export const sendInquiryQuote = (inquiryId, quoteId) =>
+  API.post(`/custom-inquiries/${inquiryId}/quotes/${quoteId}/send`);
+export const fetchPublicQuote = (token) =>
+  API.get(`/custom-inquiries/public-quote/${token}`);
+export const respondToPublicQuote = (token, data) =>
+  API.post(`/custom-inquiries/public-quote/${token}/respond`, data);
 export const deleteInquiry = (id) => API.delete(`/custom-inquiries/${id}`);
+export const startFollowUpSequence = (inquiryId) =>
+  API.post(`/follow-ups/start/${inquiryId}`);
+export const fetchInquiryFollowUp = (inquiryId, params = {}) =>
+  API.get(`/follow-ups/inquiry/${inquiryId}`, { params });
+export const updateFollowUpStatus = (id, status) =>
+  API.patch(`/follow-ups/${id}/status`, { status });
+export const fetchWhatsAppTemplates = () =>
+  API.get("/social-accounts/whatsapp/templates");
 
 // FAQs
-export const fetchFaqs = () => API.get("/faqs");
+export const fetchFaqs = () => cachedGet("/faqs");
 export const createFaq = (data) => API.post("/faqs", data);
 export const deleteFaq = (id) => API.delete(`/faqs/${id}`);
 
 // Contact Messages
-export const fetchContactMessages = () => API.get("/contact-messages");
+export const fetchContactMessages = () => cachedGet("/contact-messages");
 export const createContactMessage = (data) => API.post("/contact-messages", data);
 export const updateContactMessageStatus = (id, status) =>
   API.patch(`/contact-messages/${id}`, { status });
 export const deleteContactMessage = (id) => API.delete(`/contact-messages/${id}`);
 
 // Menu Items
-export const fetchMenuItems = () => API.get("/menu-items");
+export const fetchMenuItems = () => cachedGet("/menu-items");
 export const createMenuItem = (data) => API.post("/menu-items", data);
 export const updateMenuItem = (id, data) => API.put(`/menu-items/${id}`, data);
 export const deleteMenuItem = (id) => API.delete(`/menu-items/${id}`);
@@ -205,26 +549,64 @@ export const resetMenuItemsToDefaults = () => API.post("/menu-items/reset-defaul
 
 // Taxonomies (Dynamic Filters)
 export const fetchTaxonomies = (type = "") =>
-  API.get(`/taxonomies${type ? `?type=${type}` : ""}`);
+  cachedGet(`/taxonomies${type ? `?type=${type}` : ""}`);
 export const createTaxonomy = (data) => API.post("/taxonomies", data);
 export const resetTaxonomiesToDefaults = () => API.post("/taxonomies/reset-defaults");
 export const deleteTaxonomy = (id) => API.delete(`/taxonomies/${id}`);
 
 // Visionaries (Team Members)
-export const fetchVisionaries = () => API.get("/visionaries");
+export const fetchVisionaries = () => cachedGet("/visionaries");
 export const createVisionary = (data) => API.post("/visionaries", data);
 export const updateVisionary = (id, data) => API.put(`/visionaries/${id}`, data);
 export const deleteVisionary = (id) => API.delete(`/visionaries/${id}`);
 
 // Home Content
-export const fetchHomeContent = () => API.get("/home-content");
+export const fetchHomeContent = () => cachedGet("/home-content");
 export const updateHomeContent = (data) => API.post("/home-content", data);
 
 // Site Settings (Social Links, etc.)
-export const fetchSiteSettings = () => API.get("/site-settings");
+export const fetchSiteSettings = () => cachedGet("/site-settings");
 export const updateSiteSettings = (data) => API.put("/site-settings", data);
 
 // Chat
 export const sendChatMessage = (data) => API.post("/chat", data);
+export const updateChatConversationStatus = (id, status) =>
+  API.patch(`/chat/conversations/${id}`, { status });
+
+// Media
+export const uploadMedia = (file, tenantId) => {
+  return fileToBase64(file).then((base64Data) => {
+    return API.post("/media/upload", {
+      filename: file.name,
+      contentType: file.type,
+      data: base64Data.split(",")[1],
+      tenantId,
+    });
+  });
+};
+
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+/**
+ * Resolve a media path (e.g. "/api/media/ID") to a full URL.
+ * On localhost the frontend runs on a different port to the backend,
+ * so we need the absolute backend origin. In production everything is
+ * served from the same origin, so the relative path works fine.
+ */
+export const getMediaUrl = (url) => {
+  if (!url) return url;
+  if (!url.startsWith("/api/media/")) return url; // already absolute or a public asset
+  if (typeof window !== "undefined" && LOCAL_HOSTNAMES.has(window.location.hostname)) {
+    return `http://127.0.0.1:5000${url}`;
+  }
+  return url; // relative path works fine in production
+};
 
 export default API;
