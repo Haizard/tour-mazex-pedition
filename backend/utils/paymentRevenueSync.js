@@ -13,6 +13,7 @@ import {
 import { persistInvoicePdf } from "./invoicePdfStorage.js";
 import { persistItineraryPdf } from "./itineraryPdfStorage.js";
 import { updatePostgresFirstBooking } from "./postgresFirstBookingService.js";
+import { updateManyPostgresFirstQuotes } from "./postgresFirstQuoteService.js";
 
 export const buildBookingPaymentState = (payment = {}) => {
   if (payment.status === "paid") {
@@ -94,9 +95,10 @@ export const syncLinkedPaymentRevenueRecords = async (tenantId = "", payment = {
     quotePatch.conversionStage = "converted";
   }
 
-  await QuoteProposal.updateMany(
+  await updateManyPostgresFirstQuotes(
     buildTenantQuery(tenantId, { bookingId: payment.bookingId }),
-    { $set: quotePatch }
+    quotePatch,
+    globalThis.process?.env || {}
   );
 };
 

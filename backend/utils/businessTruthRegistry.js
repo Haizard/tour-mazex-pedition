@@ -28,15 +28,15 @@ const businessTruthEntities = [
   {
     key: "quotes",
     label: "Quotes",
-    currentOwner: "mongodb",
+    currentOwner: "postgresql",
     targetOwner: "postgresql",
-    migrationMode: "shadow-prep",
+    migrationMode: "cutover",
     cutoverWave: 2,
     cutoverOrder: 3,
     serviceBoundary: "revenue-core",
     stores: ["mongodb", "postgresql"],
     notes:
-      "Proposal lifecycle and conversion states should follow bookings and payments once revenue truth is stable.",
+      "Proposal lifecycle and conversion states are now PostgreSQL-owned.",
   },
   {
     key: "travelers",

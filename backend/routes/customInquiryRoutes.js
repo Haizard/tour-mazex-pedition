@@ -35,6 +35,10 @@ import {
     syncQuoteRevenueRecord,
 } from '../utils/postgresRevenueRecords.js';
 import { persistQuotePdf } from '../utils/quotePdfStorage.js';
+import {
+    createPostgresFirstQuote,
+    updatePostgresFirstQuote,
+} from '../utils/postgresFirstQuoteService.js';
 
 const router = express.Router();
 
@@ -304,11 +308,20 @@ router.post('/public-quote/:token/respond', async (req, res) => {
                 },
             }
         );
-        const quote = await QuoteProposal.findOneAndUpdate(
-            quoteLookup?.source_id ? { _id: quoteLookup.source_id } : { publicToken: req.params.token },
-            { $set: update },
-            { new: true }
-        ).lean();
+        const currentQuote = quoteLookup?.source_id
+            ? await QuoteProposal.findById(quoteLookup.source_id).lean()
+            : await QuoteProposal.findOne({ publicToken: req.params.token }).lean();
+
+        if (!currentQuote) {
+            return res.status(404).json({ message: 'Quote not found.' });
+        }
+
+        const quote = await updatePostgresFirstQuote(
+            currentQuote._id,
+            currentQuote.tenantId,
+            update,
+            process.env
+        );
 
         if (!quote) {
             return res.status(404).json({ message: 'Quote not found.' });
@@ -431,11 +444,12 @@ router.post('/:id/generate-quote', requireTenantAdmin, async (req, res) => {
             generatedBy: req.admin?.username || req.admin?._id?.toString() || '',
         });
 
-        const quote = await QuoteProposal.create(
+        const quote = await createPostgresFirstQuote(
             withTenantId(req, {
                 inquiryId: inquiry._id,
                 ...proposal,
-            })
+            }),
+            process.env
         );
 
         await syncQuoteRevenueViews(quote.toObject());
@@ -457,11 +471,12 @@ router.post('/:id/generate-quote', requireTenantAdmin, async (req, res) => {
 // Mark Quote as Sent (Admin)
 router.post('/:id/quotes/:quoteId/send', requireTenantAdmin, async (req, res) => {
     try {
-        const quote = await QuoteProposal.findOneAndUpdate(
-            buildTenantFilter(req, { _id: req.params.quoteId, inquiryId: req.params.id }),
-            { $set: { status: 'sent', conversionStage: 'sent', sentAt: new Date() } },
-            { new: true }
-        ).lean();
+        const quote = await updatePostgresFirstQuote(
+            req.params.quoteId,
+            req.tenantId,
+            { status: 'sent', conversionStage: 'sent', sentAt: new Date() },
+            process.env
+        );
 
         if (!quote) {
             return res.status(404).json({ message: 'Quote not found.' });
@@ -495,7 +510,12 @@ router.post('/:id/quotes/:quoteId/generate-pdf', requireTenantAdmin, async (req,
             env: process.env,
         });
 
-        await syncQuoteRevenueViews(quote.toObject());
+        await updatePostgresFirstQuote(
+            quote._id,
+            quote.tenantId,
+            {},
+            process.env
+        );
 
         res.status(200).json({
             message: 'PDF generated and stored successfully.',
