@@ -81,6 +81,10 @@ Completed after the initial version of this file:
 - scheduled social post processing loop added in `backend/utils/socialPostProcessor.js`
 - scheduled social publishing now queues due posts through Redis when Redis is available, with inline fallback if Redis is unavailable
 - standalone scheduled social post drain script added in `backend/scripts/processSocialPosts.js`
+- Redis-backed email sync dispatch queue, dedupe, and processing lock added in `backend/utils/emailSyncQueue.js`
+- email sync processing loop added in `backend/utils/emailSyncProcessor.js`
+- email sync trigger route now queues scaffold jobs through Redis when Redis is available, with inline fallback if Redis is unavailable
+- standalone email sync drain script added in `backend/scripts/processEmailSyncJobs.js`
 
 Verification that passed for this slice:
 
@@ -107,6 +111,10 @@ node --test backend/tests/socialPostQueue.test.js backend/tests/socialAutomation
 node -e "import('./backend/controllers/socialPostController.js').then(() => console.log('social-post-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/scripts/processSocialPosts.js').then(() => console.log('process-social-posts-import-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/utils/socialPostQueue.js backend/utils/socialPostProcessor.js backend/controllers/socialPostController.js backend/server.js backend/scripts/processSocialPosts.js backend/tests/socialPostQueue.test.js backend/tests/socialAutomation.test.js
+node --test backend/tests/emailSyncQueue.test.js
+node -e "import('./backend/routes/emailRoutes.js').then(() => console.log('email-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
+node -e "import('./backend/scripts/processEmailSyncJobs.js').then(() => console.log('process-email-sync-import-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/utils/emailSyncQueue.js backend/utils/emailSyncProcessor.js backend/routes/emailRoutes.js backend/server.js backend/scripts/processEmailSyncJobs.js backend/tests/emailSyncQueue.test.js
 ```
 
 ## Main Truth About Current Project Status
@@ -191,6 +199,7 @@ Confirmed implemented areas:
 - Redis-backed follow-up dispatch queue and short processing lock exist
 - Redis-backed payment webhook queue and processing lock exist
 - Redis-backed scheduled social post dispatch queue and processing lock exist
+- Redis-backed email sync dispatch queue and processing lock exist
 - pgvector-backed assistant retrieval foundation exists for language/documentation knowledge
 - pgvector-backed assistant retrieval also covers tours and blogs for chatbot content ranking
 
@@ -198,7 +207,7 @@ Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, not only media uploads
 - deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice
-- broader event/job orchestration beyond current shadow replay, follow-up queue, payment webhook queue, and scheduled social post queue support
+- broader event/job orchestration beyond current shadow replay, follow-up queue, payment webhook queue, scheduled social post queue, and email sync queue support
 
 ### Phase 5. Open distribution channels
 

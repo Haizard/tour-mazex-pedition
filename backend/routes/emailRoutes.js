@@ -11,6 +11,12 @@ import {
   buildSyncJobSnapshot,
   getEmailProviderCatalog,
 } from "../utils/emailProviderService.js";
+import { getRedisClient } from "../utils/redisClient.js";
+import {
+  buildEmailSyncDispatchJob,
+  enqueueEmailSyncDispatchJob,
+  markEmailSyncDispatchQueued,
+} from "../utils/emailSyncQueue.js";
 
 const router = express.Router();
 
@@ -325,8 +331,60 @@ router.post("/connections/:connectionId/sync", requireTenantAdmin, async (req, r
       tenantId: req.tenantId,
       connectionId: connection._id,
       provider: connection.provider,
-      ...snapshot,
+      direction: snapshot.direction,
+      status: "queued",
+      startedAt: null,
+      completedAt: null,
+      resultSummary: "Queued email sync scaffold job.",
+      recordsDiscovered: 0,
+      recordsProcessed: 0,
+      errorMessage: "",
+      metadata: {
+        ...(snapshot.metadata || {}),
+        queued: true,
+      },
     });
+
+    const redisClient = await getRedisClient().catch(() => null);
+    if (redisClient) {
+      const dispatchJob = buildEmailSyncDispatchJob({
+        jobId: job._id,
+        tenantId: req.tenantId,
+        connectionId: connection._id,
+      });
+
+      const queued = await markEmailSyncDispatchQueued({
+        redisClient,
+        job: dispatchJob,
+      });
+
+      if (queued) {
+        await enqueueEmailSyncDispatchJob({
+          redisClient,
+          job: dispatchJob,
+        });
+      } else {
+        job.status = "running";
+        job.resultSummary = "Queued email sync job is already in progress.";
+        await job.save();
+      }
+
+      connection.metadata = {
+        ...(connection.metadata || {}),
+        lastSyncJob: {
+          id: job._id,
+          status: job.status,
+          completedAt: job.completedAt,
+          resultSummary: job.resultSummary,
+        },
+      };
+      await connection.save();
+
+      return res.status(202).json({ job, queued: queued });
+    }
+
+    Object.assign(job, snapshot);
+    await job.save();
 
     connection.metadata = {
       ...(connection.metadata || {}),
@@ -340,7 +398,7 @@ router.post("/connections/:connectionId/sync", requireTenantAdmin, async (req, r
     connection.lastSyncedAt = job.completedAt;
     await connection.save();
 
-    res.status(201).json({ job });
+    res.status(201).json({ job, queued: false });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
