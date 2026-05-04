@@ -1,8 +1,8 @@
-import SerengetiImg from "../assets/places/Serengeti2.jpg";
-import NgorongoroImg from "../assets/places/Ngorongoro.jpg";
-import TarangireImg from "../assets/places/tarangirepic.jpg";
-import ManyaraImg from "../assets/places/Manyara.jpg";
-import NatronImg from "../assets/places/NatronLake.jpg";
+import SerengetiImg from "../assets/momentlion.jpg";
+import NgorongoroImg from "../assets/rhino.jpg";
+import TarangireImg from "../assets/tembo.jpg";
+import ManyaraImg from "../assets/travel-cover2.jpg";
+import NatronImg from "../assets/Kilimanjaro.jpg";
 import { DESTINATION_META } from "./destinationMeta";
 
 const destinationImages = {
