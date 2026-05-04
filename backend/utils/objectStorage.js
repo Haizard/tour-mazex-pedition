@@ -1,3 +1,6 @@
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl as defaultGetSignedUrl } from "@aws-sdk/s3-request-presigner";
+
 const parseCsv = (value = "") =>
   String(value || "")
     .split(",")
@@ -12,6 +15,10 @@ export const getObjectStorageStrategy = (env = null) => {
   const bucket = String(runtimeEnv.S3_BUCKET || "").trim();
   const endpoint = String(runtimeEnv.S3_ENDPOINT || "").trim();
   const publicBaseUrl = String(runtimeEnv.S3_PUBLIC_BASE_URL || "").trim();
+  const region = String(runtimeEnv.S3_REGION || "us-east-1").trim();
+  const accessKeyId = String(runtimeEnv.S3_ACCESS_KEY_ID || "").trim();
+  const secretAccessKey = String(runtimeEnv.S3_SECRET_ACCESS_KEY || "").trim();
+  const forcePathStyle = String(runtimeEnv.S3_FORCE_PATH_STYLE || "true").trim().toLowerCase() !== "false";
 
   const s3Configured = Boolean(bucket && endpoint);
   const activeProvider = provider === "s3-compatible" && s3Configured ? "s3-compatible" : "mongo-inline";
@@ -23,6 +30,10 @@ export const getObjectStorageStrategy = (env = null) => {
     bucket,
     endpoint,
     publicBaseUrl,
+    region,
+    accessKeyId,
+    secretAccessKey,
+    forcePathStyle,
     cacheControl: runtimeEnv.MEDIA_CACHE_CONTROL || "public, max-age=31536000",
     signedUrlTtlSeconds: Number(runtimeEnv.S3_SIGNED_URL_TTL_SECONDS || 900),
     allowedMimePrefixes: parseCsv(runtimeEnv.MEDIA_ALLOWED_MIME_PREFIXES || "image/,video/,application/pdf"),
@@ -31,6 +42,42 @@ export const getObjectStorageStrategy = (env = null) => {
         ? ["S3-compatible storage requested but bucket or endpoint is missing, falling back to mongo-inline."]
         : [],
   };
+};
+
+const buildPublicUrl = (publicBaseUrl = "", storageKey = "") =>
+  publicBaseUrl ? `${String(publicBaseUrl).replace(/\/$/, "")}/${storageKey}` : "";
+
+export const createObjectStorageClient = (strategy = getObjectStorageStrategy()) => {
+  if (strategy.activeProvider !== "s3-compatible") {
+    return null;
+  }
+
+  const clientConfig = {
+    region: strategy.region || "us-east-1",
+    endpoint: strategy.endpoint,
+    forcePathStyle: strategy.forcePathStyle,
+  };
+
+  if (strategy.accessKeyId && strategy.secretAccessKey) {
+    clientConfig.credentials = {
+      accessKeyId: strategy.accessKeyId,
+      secretAccessKey: strategy.secretAccessKey,
+    };
+  }
+
+  return new S3Client(clientConfig);
+};
+
+export const assertMediaUploadAllowed = ({
+  buffer,
+  strategy = getObjectStorageStrategy(),
+  maxInlineBytes = 15 * 1024 * 1024,
+} = {}) => {
+  const size = Number(buffer?.length || 0);
+
+  if (strategy.activeProvider === "mongo-inline" && size > maxInlineBytes) {
+    throw new Error("File is too large. Max size for direct DB storage is 15MB.");
+  }
 };
 
 export const persistMediaAsset = ({
@@ -55,7 +102,7 @@ export const persistMediaAsset = ({
       storageKey,
       storageBucket: strategy.bucket,
       storageEndpoint: strategy.endpoint,
-      publicUrl: strategy.publicBaseUrl ? `${strategy.publicBaseUrl.replace(/\/$/, "")}/${storageKey}` : "",
+      publicUrl: buildPublicUrl(strategy.publicBaseUrl, storageKey),
       contentType,
       size,
       inlineData: null,
@@ -72,6 +119,43 @@ export const persistMediaAsset = ({
     size,
     inlineData: buffer,
   };
+};
+
+export const uploadStoredMediaAsset = async ({
+  filename,
+  contentType,
+  buffer,
+  tenantId,
+  strategy = getObjectStorageStrategy(),
+  s3Client = createObjectStorageClient(strategy),
+} = {}) => {
+  const asset = persistMediaAsset({
+    filename,
+    contentType,
+    buffer,
+    tenantId,
+    strategy,
+  });
+
+  assertMediaUploadAllowed({ buffer, strategy });
+
+  if (asset.storageProvider === "s3-compatible") {
+    if (!s3Client) {
+      throw new Error("S3-compatible storage is active but no object storage client is available.");
+    }
+
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: asset.storageBucket,
+        Key: asset.storageKey,
+        Body: buffer,
+        ContentType: contentType,
+        CacheControl: strategy.cacheControl,
+      })
+    );
+  }
+
+  return asset;
 };
 
 export const buildMediaResponsePayload = (media = {}) => ({
@@ -120,4 +204,44 @@ export const buildStoredMediaReadPlan = (media = {}, headers = {}) => {
     start,
     end,
   };
+};
+
+export const resolveStoredMediaReadPlan = async ({
+  media = {},
+  headers = {},
+  strategy = getObjectStorageStrategy(),
+  s3Client = createObjectStorageClient(strategy),
+  signUrl = defaultGetSignedUrl,
+} = {}) => {
+  const basePlan = buildStoredMediaReadPlan(media, headers);
+
+  if (basePlan.mode === "redirect") {
+    return basePlan;
+  }
+
+  if (
+    (media.storageProvider || "mongo-inline") === "s3-compatible" &&
+    media.storageBucket &&
+    media.storageKey
+  ) {
+    if (!s3Client) {
+      throw new Error("S3-compatible storage is active but no object storage client is available.");
+    }
+
+    const redirectUrl = await signUrl(
+      s3Client,
+      new GetObjectCommand({
+        Bucket: media.storageBucket,
+        Key: media.storageKey,
+      }),
+      { expiresIn: strategy.signedUrlTtlSeconds }
+    );
+
+    return {
+      mode: "redirect",
+      redirectUrl,
+    };
+  }
+
+  return basePlan;
 };

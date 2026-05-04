@@ -58,6 +58,23 @@ This removed legacy static assets and snippet files that were no longer part of 
 
 Do not assume older screenshots, snippet HTML files, or deleted legacy asset references are still part of the target system.
 
+## Recent Completed Slice After This Tracker Was Created
+
+Completed after the initial version of this file:
+
+- real S3-compatible media upload execution in `backend/utils/objectStorage.js`
+- signed-read redirect fallback for object-storage media when no public CDN URL exists
+- provider-aware media upload size enforcement so the Mongo inline ceiling only applies to inline storage
+- media route integration for the new object-storage behavior
+
+Verification that passed for this slice:
+
+```bash
+node --test backend/tests/objectStorage.test.js
+node -e "import('./backend/routes/mediaRoutes.js').then(() => console.log('media-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/utils/objectStorage.js backend/routes/mediaRoutes.js backend/tests/objectStorage.test.js
+```
+
 ## Main Truth About Current Project Status
 
 The product is no longer in "idea" stage and no longer only in "feature prototype" stage.
@@ -135,10 +152,12 @@ Confirmed implemented areas:
 - PostgreSQL reachable through Supabase pooler path
 - infrastructure readiness and data-platform visibility
 - object-storage abstraction layer exists
+- real S3-compatible media upload execution exists
+- signed object-storage read fallback exists
 
 Still unfinished inside Phase 4:
 
-- real S3/object-storage production cutover
+- full S3/object-storage production cutover across all generated artifacts, not only media uploads
 - pgvector installation and real retrieval pipeline
 - broader event/job orchestration beyond current Redis replay and support utilities
 
@@ -197,7 +216,7 @@ They are:
 1. PostgreSQL-first write ownership for selected core domains
 2. Route-by-route cutover audit to remove remaining Mongo-only business-truth dependencies
 3. Long-term migration cleanup and rollback/cutover strategy
-4. Real S3/object-storage production ownership for files and generated artifacts
+4. Full S3/object-storage production ownership for files and generated artifacts beyond the current media slice
 5. pgvector-based retrieval memory and semantic search activation
 6. Broader Redis job orchestration beyond current retry/replay support
 7. Widget productization hardening for third-party embedding
@@ -289,4 +308,3 @@ Future agents should avoid mixing unrelated local assets into implementation com
 If you are a new agent, start from this assumption:
 
 `Revenue and operations foundations are already implemented, PostgreSQL migration is already active, cutover is partially done, and the highest-value unfinished work is completing ownership/infrastructure correctness before expanding more ecosystem features.`
-

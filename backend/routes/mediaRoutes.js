@@ -3,10 +3,11 @@ import process from "node:process";
 import express from "express";
 import Media from "../models/Media.js";
 import {
+  assertMediaUploadAllowed,
   buildMediaResponsePayload,
-  buildStoredMediaReadPlan,
   getObjectStorageStrategy,
-  persistMediaAsset,
+  resolveStoredMediaReadPlan,
+  uploadStoredMediaAsset,
 } from "../utils/objectStorage.js";
 import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
 import {
@@ -43,13 +44,9 @@ router.post("/upload", async (req, res) => {
     // Convert Base64 string to Buffer
     const buffer = Buffer.from(data, "base64");
 
-    // Check size (MongoDB limit is 16MB)
-    if (buffer.length > 15 * 1024 * 1024) {
-      return res.status(400).json({ message: "File is too large. Max size for direct DB storage is 15MB." });
-    }
-
     const strategy = getObjectStorageStrategy();
-    const storedAsset = persistMediaAsset({
+    assertMediaUploadAllowed({ buffer, strategy });
+    const storedAsset = await uploadStoredMediaAsset({
       filename,
       contentType,
       buffer,
@@ -95,7 +92,10 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ message: "Media not found" });
     }
 
-    const readPlan = buildStoredMediaReadPlan(media, req.headers);
+    const readPlan = await resolveStoredMediaReadPlan({
+      media,
+      headers: req.headers,
+    });
     const cacheControl = getObjectStorageStrategy().cacheControl;
 
     if (readPlan.mode === "redirect") {
