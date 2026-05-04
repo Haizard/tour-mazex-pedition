@@ -162,6 +162,8 @@ node -e "import('./backend/controllers/chatController.js').then(() => console.lo
  npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/routes/homeContentRoutes.js backend/routes/faqRoutes.js backend/controllers/pageConfigController.js backend/controllers/chatController.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
 npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/routes/faqRoutes.js backend/controllers/chatController.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
 node --test backend/tests/pdfGenerators.test.js
+- **Wave 2: Commercial Truth (Quotes & Travelers)** - PostgreSQL-first for Lead Stage and Quote Pricing. [backend/tests/postgresFirstQuote.test.js](file:///c:/Users/SFG%20DESIGN/Desktop/tour-mazex-pedition/backend/tests/postgresFirstQuote.test.js)
+- **Wave 3: Operational Core (Guides, Accommodation, Pickups)** - PostgreSQL-first for Dispatch and Coordination. [backend/tests/postgresFirstGuideDriver.test.js](file:///c:/Users/SFG%20DESIGN/Desktop/tour-mazex-pedition/backend/tests/postgresFirstGuideDriver.test.js)
 node backend/tests/pdfStorage.integration.js
 node backend/tests/postgresFirstBooking.test.js
 node backend/tests/postgresFirstPayment.test.js

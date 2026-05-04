@@ -22,6 +22,10 @@ import {
   findAirportPickupRecord,
   syncAirportPickupRecord,
 } from "../utils/postgresOperationsRecords.js";
+import {
+  createPostgresFirstAirportPickup,
+  updatePostgresFirstAirportPickup,
+} from "../utils/postgresFirstAirportPickupService.js";
 import { fetchPrimaryAirportPickupData } from "../utils/postgresPrimaryReads.js";
 import { preferPrimaryCollection, preferPrimaryDashboard } from "../utils/postgresReadFallback.js";
 
@@ -195,9 +199,10 @@ router.post("/", async (req, res) => {
     const normalizedPayload = await enrichPickupContext(req, payload);
     await validatePickupPayload(req, normalizedPayload);
 
-    const pickup = new AirportPickup(normalizedPayload);
-    await pickup.save();
-    await syncAirportPickupViews(pickup.toObject());
+    const pickup = await createPostgresFirstAirportPickup(
+      normalizedPayload,
+      process.env
+    );
 
     const [driver] = normalizedPayload.driverId
       ? await Promise.all([GuideDriver.findOne(buildTenantFilter(req, { _id: normalizedPayload.driverId })).lean()])
@@ -268,21 +273,19 @@ router.patch("/:id", async (req, res) => {
     });
     await validatePickupPayload(req, mergedPayload, req.params.id);
 
-    const pickup = await AirportPickup.findOneAndUpdate(
-      buildTenantFilter(req, { _id: req.params.id }),
+    const pickup = await updatePostgresFirstAirportPickup(
+      req.params.id,
+      req.tenantId,
       {
-        $set: {
-          ...updates,
-          guestName: mergedPayload.guestName,
-          assignedTourTitle: mergedPayload.assignedTourTitle,
-          guestCount: mergedPayload.guestCount,
-          pickupDateTime: mergedPayload.pickupDateTime,
-          driverName: mergedPayload.driverName,
-        },
+        ...updates,
+        guestName: mergedPayload.guestName,
+        assignedTourTitle: mergedPayload.assignedTourTitle,
+        guestCount: mergedPayload.guestCount,
+        pickupDateTime: mergedPayload.pickupDateTime,
+        driverName: mergedPayload.driverName,
       },
-      { new: true }
-    ).lean();
-    await syncAirportPickupViews(pickup);
+      process.env
+    );
 
     const driver = pickup.driverId
       ? await GuideDriver.findOne(buildTenantFilter(req, { _id: pickup.driverId })).lean()

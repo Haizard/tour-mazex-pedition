@@ -20,6 +20,10 @@ import {
   findAccommodationReservationRecord,
   syncAccommodationReservationRecord,
 } from "../utils/postgresOperationsRecords.js";
+import {
+  createPostgresFirstAccommodationReservation,
+  updatePostgresFirstAccommodationReservation,
+} from "../utils/postgresFirstAccommodationService.js";
 import { fetchPrimaryAccommodationData } from "../utils/postgresPrimaryReads.js";
 import { preferPrimaryCollection, preferPrimaryDashboard } from "../utils/postgresReadFallback.js";
 
@@ -186,9 +190,10 @@ router.post("/", async (req, res) => {
     const normalizedPayload = await enrichBookingContext(req, payload);
     await validateReservationPayload(req, normalizedPayload);
 
-    const reservation = new AccommodationReservation(normalizedPayload);
-    await reservation.save();
-    await syncAccommodationViews(reservation.toObject());
+    const reservation = await createPostgresFirstAccommodationReservation(
+      normalizedPayload,
+      process.env
+    );
 
     const reservationView = await findAccommodationReservationRecord(reservation._id, req.tenantId, process.env);
     const responseReservation = reservationView ? buildAccommodationReservationView(reservationView) : reservation.toObject();
@@ -252,21 +257,19 @@ router.patch("/:id", async (req, res) => {
     });
     await validateReservationPayload(req, mergedPayload, req.params.id);
 
-    const reservation = await AccommodationReservation.findOneAndUpdate(
-      buildTenantFilter(req, { _id: req.params.id }),
+    const reservation = await updatePostgresFirstAccommodationReservation(
+      req.params.id,
+      req.tenantId,
       {
-        $set: {
-          ...updates,
-          bookingGuestName: mergedPayload.bookingGuestName,
-          assignedTourTitle: mergedPayload.assignedTourTitle,
-          destination: mergedPayload.destination,
-          guestCount: mergedPayload.guestCount,
-          checkInDate: mergedPayload.checkInDate,
-        },
+        ...updates,
+        bookingGuestName: mergedPayload.bookingGuestName,
+        assignedTourTitle: mergedPayload.assignedTourTitle,
+        destination: mergedPayload.destination,
+        guestCount: mergedPayload.guestCount,
+        checkInDate: mergedPayload.checkInDate,
       },
-      { new: true }
-    ).lean();
-    await syncAccommodationViews(reservation);
+      process.env
+    );
 
     const reservationView = await findAccommodationReservationRecord(reservation._id, req.tenantId, process.env);
     const responseReservation = reservationView ? buildAccommodationReservationView(reservationView) : reservation;

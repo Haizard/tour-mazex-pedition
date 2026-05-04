@@ -20,6 +20,10 @@ import {
   findGuideDriverAssignmentRecord,
   syncGuideDriverAssignmentRecord,
 } from "../utils/postgresOperationsRecords.js";
+import {
+  createPostgresFirstGuideDriverAssignment,
+  updatePostgresFirstGuideDriverAssignment,
+} from "../utils/postgresFirstGuideDriverService.js";
 import { fetchPrimaryGuideDriverData } from "../utils/postgresPrimaryReads.js";
 import { preferPrimaryCollection, preferPrimaryDashboard } from "../utils/postgresReadFallback.js";
 
@@ -191,9 +195,10 @@ router.post("/", async (req, res) => {
     const normalizedPayload = await enrichAssignmentWindow(req, payload);
     await validateAssignmentPayload(req, normalizedPayload);
 
-    const member = new GuideDriver(normalizedPayload);
-    await member.save();
-    await syncGuideDriverViews(member.toObject());
+    const member = await createPostgresFirstGuideDriverAssignment(
+      normalizedPayload,
+      process.env
+    );
 
     const memberView = await findGuideDriverAssignmentRecord(member._id, req.tenantId, process.env);
     const responseMember = memberView ? buildGuideDriverAssignmentView(memberView) : member.toObject();
@@ -278,12 +283,12 @@ router.patch("/:id", async (req, res) => {
             assignedTourTitle: mergedUpdates.assignedTourTitle,
           };
 
-    const member = await GuideDriver.findOneAndUpdate(
-      buildTenantFilter(req, { _id: req.params.id }),
-      { $set: nextUpdateState },
-      { new: true }
-    ).lean();
-    await syncGuideDriverViews(member);
+    const member = await updatePostgresFirstGuideDriverAssignment(
+      req.params.id,
+      req.tenantId,
+      nextUpdateState,
+      process.env
+    );
 
     const memberView = await findGuideDriverAssignmentRecord(member._id, req.tenantId, process.env);
     const responseMember = memberView ? buildGuideDriverAssignmentView(memberView) : member;
