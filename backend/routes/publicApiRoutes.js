@@ -1,10 +1,11 @@
 import express from "express";
 import { requirePublicApiKey } from "../middleware/apiKeyMiddleware.js";
-import Tour from "../models/Tour.js";
+import TourPackage from "../models/TourPackage.js";
 import { createTravelerInquiry } from "../utils/postgresFirstTravelerService.js";
 import { findBookingRevenueRecord, findPaymentRevenueRecord } from "../utils/postgresRevenueRecords.js";
 import { findMediaAssetRecord } from "../utils/postgresMediaRecords.js";
 import { getSignedUrlForKey } from "../utils/objectStorage.js";
+import { trackReferralInteraction } from "../utils/referralTracker.js";
 
 const router = express.Router();
 
@@ -19,11 +20,11 @@ router.use(requirePublicApiKey);
  */
 router.get("/tours", async (req, res) => {
   try {
-    const tours = await Tour.find({ 
+    const tours = await TourPackage.find({ 
       tenantId: req.tenantId,
-      status: "active" 
+      isPubliclyDistributable: true
     })
-    .select("title slug description price currency duration images difficulty")
+    .select("title slug description price currency duration image difficulty")
     .lean();
 
     res.status(200).json({
@@ -33,9 +34,9 @@ router.get("/tours", async (req, res) => {
         title: t.title,
         slug: t.slug,
         price: t.price,
-        currency: t.currency,
+        currency: t.currency || "USD",
         duration: t.duration,
-        image: t.images?.[0] || null,
+        image: t.image || null,
       }))
     });
   } catch (error) {
@@ -58,8 +59,10 @@ router.post("/inquiry", async (req, res) => {
   }
 
   try {
-    // We use the PostgreSQL-first service to ensure the inquiry is recorded 
-    // in the primary system of record.
+    // 1. Validate Referral Code if present
+    const referralData = await trackReferralInteraction(req.tenantId, req.body.referralCode);
+
+    // 2. Use the PostgreSQL-first service to ensure the inquiry is recorded 
     const result = await createTravelerInquiry({
       tenantId: req.tenantId,
       name,
@@ -70,7 +73,8 @@ router.post("/inquiry", async (req, res) => {
       adults: Number(adults || 1),
       children: Number(children || 0),
       travelWhen: travelDate,
-      source: "public_api"
+      source: "public_api",
+      referralCode: referralData ? referralData.partnerCode : (req.body.referralCode || null)
     }, req.tenantId, process.env);
 
     res.status(201).json({

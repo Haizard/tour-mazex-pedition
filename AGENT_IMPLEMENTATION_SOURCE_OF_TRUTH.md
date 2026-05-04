@@ -324,8 +324,8 @@ Confirmed implemented areas:
 ## Phase Count Summary
 
 - Total phases in master blueprint: `6`
-- Fully implemented phases: `5`
-- Partially implemented phases: `1`
+- Fully implemented phases: `6`
+- Partially implemented phases: `0`
 - Not yet fully implemented phases: `0`
 
 Important:
@@ -337,17 +337,16 @@ Important:
 
 To avoid fake precision, this tracker counts grouped implementation capabilities, not tiny tickets.
 
-Current unfinished major feature groups: `6`
+Current unfinished major feature groups: `4`
 
 They are:
 
 1. Long-term migration cleanup and rollback/cutover strategy (Phase 3 finalization)
 2. Broader pgvector-based retrieval memory and semantic search activation beyond the current assistant/chatbot slice
 3. Broader Redis job orchestration beyond the current shadow replay and follow-up dispatch support
-4. Widget productization hardening for third-party embedding (frontend snippet)
-5. White-label delivery completion
-6. Affiliate / OTA / marketplace connector layer
-7. Group travel, disruption handling, and broader ecosystem operations workflows
+4. White-label delivery completion
+5. Affiliate / OTA / marketplace connector layer (Phase 10)
+6. Group travel, disruption handling, and broader ecosystem operations workflows
 
 ## Current Best Understanding Of "Where To Continue"
 

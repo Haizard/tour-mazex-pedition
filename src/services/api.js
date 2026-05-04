@@ -429,6 +429,12 @@ export const fetchEngagementRecordReadModel = (params = {}) =>
 export const fetchDistributionSummary = () => API.get("/distribution/summary");
 export const fetchDistributionBootstrap = (params = {}) =>
   API.get("/distribution/bootstrap", { params });
+export const fetchReferralPartners = (params = {}) =>
+  cachedGet("/distribution/partners", { params });
+export const createReferralPartner = (data) =>
+  API.post("/distribution/partners", data);
+export const deleteReferralPartner = (id) =>
+  API.delete(`/distribution/partners/${id}`);
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
 export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);

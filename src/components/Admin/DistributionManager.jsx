@@ -54,6 +54,11 @@ const DistributionManager = () => {
       value: distribution?.links?.partnerReferralUrl || "",
       description: "Hand this to partner agencies or affiliates so lead attribution flows back into the CRM.",
     },
+    {
+      label: "Public API Endpoint",
+      value: `${window.location.origin}/api/public/v1/tours`,
+      description: "Use this endpoint for custom integrations or mobile apps.",
+    },
   ];
 
   return (
@@ -126,33 +131,76 @@ const DistributionManager = () => {
 
         <Card className="border-none p-8 shadow-xl">
           <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
-            Embed Snippet
+            Platform Widget SDK
           </h3>
-          {loading ? (
-            <p className="text-sm font-medium text-slate-500">Loading embed snippet...</p>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm font-medium leading-6 text-slate-600">
-                Drop this iframe into a blog, partner page, or campaign site to capture attributed trip-planning
-                leads without forcing a full white-label build first.
-              </p>
-              <pre className="overflow-x-auto rounded-[28px] bg-slate-950 p-5 text-xs font-medium leading-6 text-emerald-200">
-                {distribution?.embedSnippet || "No embed snippet available."}
-              </pre>
-              {distribution?.embedSnippet && (
-                <button
-                  type="button"
-                  onClick={() => copyValue("Embed Snippet", distribution.embedSnippet)}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700"
-                >
-                  <FaCopy />
-                  {copiedLabel === "Embed Snippet" ? "Copied" : "Copy Snippet"}
-                </button>
-              )}
-            </div>
-          )}
+          <div className="space-y-4">
+            <p className="text-sm font-medium leading-6 text-slate-600">
+              The lightweight SDK allows partners to embed a tour discovery grid without using iframes.
+              Include this script tag and initialize it with your API key.
+            </p>
+            <pre className="overflow-x-auto rounded-[28px] bg-slate-950 p-5 text-xs font-medium leading-6 text-emerald-200">
+{`<script src="${window.location.origin}/sdk/platform-widget.js"></script>
+<div id="maz-tour-widget"></div>
+<script>
+  MazWidget.init({
+    tenantId: "${distribution?.tenantId || 'YOUR_TENANT_ID'}",
+    apiKey: "${distribution?.apiSecret || 'YOUR_API_KEY'}",
+    containerId: 'maz-tour-widget'
+  });
+</script>`}
+            </pre>
+            <button
+              type="button"
+              onClick={() => copyValue("SDK Snippet", `<script src="${window.location.origin}/sdk/platform-widget.js"></script>...`)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700"
+            >
+              <FaCopy />
+              {copiedLabel === "SDK Snippet" ? "Copied" : "Copy SDK Snippet"}
+            </button>
+          </div>
         </Card>
       </div>
+
+      <Card className="border-none p-8 shadow-xl">
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">
+            Referral Partners
+          </h3>
+          <button className="rounded-2xl bg-zinc-950 px-5 py-2 text-[11px] font-black uppercase tracking-widest text-white hover:bg-zinc-800">
+            Add Partner
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <th className="pb-4">Partner Name</th>
+                <th className="pb-4">Code</th>
+                <th className="pb-4">Status</th>
+                <th className="pb-4">Referrals</th>
+                <th className="pb-4">Revenue</th>
+                <th className="pb-4">Commission</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50 text-sm font-medium">
+              {distribution?.partners?.map(p => (
+                <tr key={p.id}>
+                  <td className="py-4 text-slate-900">{p.name}</td>
+                  <td className="py-4"><code className="rounded bg-slate-100 px-2 py-1">{p.partnerCode}</code></td>
+                  <td className="py-4"><Badge variant={p.status === 'active' ? 'success' : 'warning'}>{p.status}</Badge></td>
+                  <td className="py-4 text-slate-600">{p.totalReferrals}</td>
+                  <td className="py-4 text-slate-900 font-bold">${p.totalRevenueGenerated.toLocaleString()}</td>
+                  <td className="py-4 text-slate-600">{p.commissionPercent}%</td>
+                </tr>
+              )) || (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-slate-400">No referral partners active yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 };

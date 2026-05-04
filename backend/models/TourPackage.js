@@ -42,6 +42,7 @@ const tourPackageSchema = new mongoose.Schema({
   tripAdvisorRating: { type: Number },
   tripAdvisorReviewCount: { type: Number },
   featured: { type: Boolean, default: false },
+  isPubliclyDistributable: { type: Boolean, default: true },
   // Group Tour Fields
   isGroupTour: { type: Boolean, default: false },
   maxCapacity: { type: Number, default: 0 },
