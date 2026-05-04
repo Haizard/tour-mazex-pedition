@@ -1,5 +1,41 @@
 import Gallery from '../models/Gallery.js';
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { storeGeneratedMediaAsset } from "../utils/generatedMediaStorage.js";
+
+const slugifyFilenamePart = (value = "") =>
+    String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "gallery-image";
+
+export const resolveGalleryImageAsset = async ({
+    img = "",
+    tenantId = "",
+    location = "",
+    storeMediaAsset = storeGeneratedMediaAsset,
+} = {}) => {
+    const normalizedImage = String(img || "").trim();
+
+    if (!normalizedImage || !normalizedImage.startsWith("data:")) {
+        return {
+            img: normalizedImage,
+            imageMediaId: null,
+        };
+    }
+
+    const storedMedia = await storeMediaAsset({
+        tenantId,
+        filenameBase: `gallery-${slugifyFilenamePart(location)}`,
+        dataUrl: normalizedImage,
+    });
+
+    return {
+        img: storedMedia.url,
+        imageMediaId: storedMedia.mediaId,
+    };
+};
 
 // Get all gallery posts
 export const getGalleryPosts = async (req, res) => {
@@ -14,8 +50,19 @@ export const getGalleryPosts = async (req, res) => {
 // Create a new gallery post
 export const createGalleryPost = async (req, res) => {
     const post = req.body;
-    const newPost = new Gallery(withTenantId(req, post));
     try {
+        const resolvedImage = await resolveGalleryImageAsset({
+            img: post.img,
+            tenantId: req.tenantId,
+            location: post.location,
+        });
+
+        const newPost = new Gallery(
+            withTenantId(req, {
+                ...post,
+                ...resolvedImage,
+            })
+        );
         await newPost.save();
         res.status(201).json(newPost);
     } catch (error) {

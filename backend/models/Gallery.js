@@ -7,6 +7,7 @@ const gallerySchema = new mongoose.Schema({
         index: true,
     },
     img: { type: String, required: true },
+    imageMediaId: { type: String, default: null, trim: true },
     location: { type: String, required: true },
     caption: { type: String },
 }, { timestamps: true });
