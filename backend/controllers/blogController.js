@@ -2,11 +2,7 @@ import process from "node:process";
 import Blog from '../models/Blog.js';
 import { rewriteContentWithAi, generateSeoWithAi } from "../utils/aiRewrite.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
-import {
-    buildAssistantKnowledgeRecord,
-    deleteAssistantKnowledgeEmbedding,
-    syncAssistantKnowledgeEmbedding,
-} from "../utils/pgvectorRetrieval.js";
+import { syncBlogVector, deleteBlogVector } from "../utils/postgresBlogVectorService.js";
 import { storeGeneratedMediaAsset } from "../utils/generatedMediaStorage.js";
 
 const slugify = (text = '') =>
@@ -51,32 +47,6 @@ export const resolveBlogImageAsset = async ({
         image: storedMedia.url,
         imageMediaId: storedMedia.mediaId,
     };
-};
-
-const syncBlogKnowledgeEmbedding = async (blog = {}) => {
-    try {
-        await syncAssistantKnowledgeEmbedding(
-            buildAssistantKnowledgeRecord({
-                sourceType: "blog-post",
-                sourceId: blog._id,
-                tenantId: blog.tenantId,
-                title: blog.title || "",
-                body: [
-                    blog.category,
-                    blog.content,
-                    blog.author,
-                ].filter(Boolean).join(" "),
-                metadata: {
-                    category: blog.category || "",
-                    author: blog.author || "",
-                    destinationSlug: blog.destinationSlug || "",
-                },
-            }),
-            process.env
-        );
-    } catch (error) {
-        console.error("Blog knowledge embedding sync failed:", error.message);
-    }
 };
 
 export const getAllBlogs = async (req, res) => {
@@ -133,7 +103,7 @@ export const createBlog = async (req, res) => {
     const newBlog = new Blog(withTenantId(req, blog));
     try {
         await newBlog.save();
-        await syncBlogKnowledgeEmbedding(newBlog.toObject());
+        await syncBlogVector(newBlog.toObject(), process.env);
         res.status(201).json(normalizeBlog(newBlog));
     } catch (error) {
         res.status(409).json({ message: error.message });
@@ -164,7 +134,7 @@ export const updateBlog = async (req, res) => {
             { new: true, runValidators: true }
         );
 
-        await syncBlogKnowledgeEmbedding(updatedBlog.toObject());
+        await syncBlogVector(updatedBlog.toObject(), process.env);
         res.status(200).json(normalizeBlog(updatedBlog));
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -175,13 +145,7 @@ export const deleteBlog = async (req, res) => {
     try {
         const deletedBlog = await Blog.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id }));
         if (deletedBlog) {
-            await deleteAssistantKnowledgeEmbedding(
-                {
-                    sourceType: "blog-post",
-                    sourceId: deletedBlog._id,
-                },
-                process.env
-            );
+            await deleteBlogVector(deletedBlog._id, process.env);
         }
         res.status(200).json({ message: 'Blog deleted successfully' });
     } catch (error) {

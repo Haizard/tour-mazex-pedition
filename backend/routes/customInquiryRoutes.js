@@ -43,6 +43,7 @@ import {
     createPostgresFirstTraveler,
     updatePostgresFirstTraveler,
 } from '../utils/postgresFirstTravelerService.js';
+import { searchAssistantKnowledge } from '../utils/pgvectorRetrieval.js';
 
 const router = express.Router();
 
@@ -529,6 +530,52 @@ router.post('/:id/quotes/:quoteId/generate-pdf', requireTenantAdmin, async (req,
     }
 });
 
+router.get('/:id/suggested-tours', requireTenantAdmin, async (req, res) => {
+    try {
+        const inquiry = await CustomInquiry.findOne(
+            buildTenantFilter(req, { _id: req.params.id })
+        ).lean();
+
+        if (!inquiry) {
+            return res.status(404).json({ message: 'Inquiry not found.' });
+        }
+
+        // 1. Perform Semantic Search using the traveler's message and destinations
+        const searchQuery = [
+            inquiry.message,
+            ...(Array.isArray(inquiry.destinations) ? inquiry.destinations : []),
+            inquiry.budget ? `Budget: ${inquiry.budget}` : "",
+        ].filter(Boolean).join(" ");
+
+        const vectorResults = await searchAssistantKnowledge({
+            tenantId: String(req.tenantId),
+            query: searchQuery,
+            sourceTypes: ["tour-package"],
+            limit: 5,
+            env: process.env,
+        });
+
+        const tourIds = vectorResults.tourIds || [];
+        if (!tourIds.length) {
+            return res.status(200).json([]);
+        }
+
+        // 2. Fetch the actual Tour documents
+        const suggestedTours = await TourPackage.find(
+            buildTenantFilter(req, { _id: { $in: tourIds } })
+        ).lean();
+
+        // 3. Sort by the order returned by pgvector (relevance)
+        const sortedTours = tourIds
+            .map(id => suggestedTours.find(t => String(t._id) === String(id)))
+            .filter(Boolean);
+
+        res.status(200).json(sortedTours);
+    } catch (error) {
+        console.error("Semantic tour suggestion failed:", error.message);
+        res.status(500).json({ message: error.message });
+    }
+});
 
 // Delete (Admin)
 router.delete('/:id', requireTenantAdmin, async (req, res) => {

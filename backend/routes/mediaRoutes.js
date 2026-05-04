@@ -18,17 +18,24 @@ import {
 
 const router = express.Router();
 
-const syncMediaViews = async (media = {}) => {
-  await syncMongoDocumentToShadowStore({
-    entityType: "media-assets",
-    document: media,
-    model: Media,
-  });
-
+const syncMediaViews = async (media = {}, env = globalThis.process?.env || {}) => {
+  // 1. PRIMARY: Sync to PostgreSQL (Non-blocking but logged)
   try {
-    await syncMediaAssetRecord(media);
+    await syncMediaAssetRecord(media, env);
   } catch (error) {
-    console.error("Media asset record sync failed:", error.message);
+    console.error("[PostgresMediaSyncError] Media asset record sync failed:", error.message);
+  }
+
+  // 2. SECONDARY: Sync to MongoDB Shadow Store (Non-blocking)
+  try {
+    await syncMongoDocumentToShadowStore({
+      entityType: "media-assets",
+      document: media,
+      model: Media,
+      env,
+    });
+  } catch (error) {
+    console.error("[ShadowWriteError] Media MongoDB shadow sync failed:", error.message);
   }
 };
 
@@ -54,7 +61,7 @@ router.post("/upload", async (req, res) => {
       strategy,
     });
 
-    const media = new Media({
+    const mediaData = {
       tenantId,
       filename,
       contentType,
@@ -65,17 +72,33 @@ router.post("/upload", async (req, res) => {
       storageBucket: storedAsset.storageBucket,
       storageEndpoint: storedAsset.storageEndpoint,
       publicUrl: storedAsset.publicUrl,
-    });
+      updatedAt: new Date(),
+    };
 
-    await media.save();
-    await syncMediaViews(media.toObject());
+    // 1. PRIMARY: Write to PostgreSQL
+    try {
+      await syncMediaAssetRecord(mediaData, process.env);
+    } catch (pgError) {
+      console.error("[PostgresMediaSyncError] Primary media write failed:", pgError.message);
+      // We continue because the asset is already in S3, we want to try Mongo shadow too
+    }
 
-    const mediaView = await findMediaAssetRecord(media._id, tenantId, process.env);
-    const responseMedia = mediaView ? buildMediaAssetView(mediaView) : buildMediaResponsePayload(media);
+    // 2. SECONDARY: Shadow to MongoDB (Non-blocking resilience)
+    let responseMedia = mediaData;
+    try {
+      const media = new Media(mediaData);
+      await media.save();
+      responseMedia = media.toObject();
+    } catch (mongoError) {
+      console.error("[ShadowWriteError] Media MongoDB shadow write failed:", mongoError.message);
+    }
+
+    const mediaView = await findMediaAssetRecord(mediaData._id || responseMedia._id, tenantId, process.env);
+    const finalMedia = mediaView ? buildMediaAssetView(mediaView) : buildMediaResponsePayload(responseMedia);
 
     res.status(201).json({
       message: "Media uploaded successfully",
-      ...responseMedia,
+      ...finalMedia,
     });
   } catch (error) {
     console.error("Upload error:", error);
