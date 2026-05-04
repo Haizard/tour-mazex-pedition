@@ -73,6 +73,10 @@ Completed after the initial version of this file:
 - customer support assistant now prefers vector-ranked language/doc matches before falling back to lexical scoring
 - pgvector content retrieval now also covers tours and blogs for traveler-facing chatbot relevance
 - tour and blog controllers now sync content embeddings into the shared assistant knowledge index
+- Redis-backed payment webhook queue, dedupe, and processing lock added in `backend/utils/paymentWebhookQueue.js`
+- payment webhook processing loop added in `backend/utils/paymentWebhookProcessor.js`
+- payment webhooks now fast-ack through Redis queueing when Redis is available, with inline fallback if Redis is unavailable
+- standalone payment webhook drain script added in `backend/scripts/processPaymentWebhooks.js`
 
 Verification that passed for this slice:
 
@@ -91,6 +95,10 @@ npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatb
 node -e "import('./backend/controllers/tourController.js').then(() => console.log('tour-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/controllers/blogController.js').then(() => console.log('blog-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/controllers/tourController.js backend/controllers/blogController.js
+node --test backend/tests/paymentWebhookQueue.test.js backend/tests/paymentWebhookState.test.js
+node -e "import('./backend/routes/paymentRoutes.js').then(() => console.log('payment-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
+node -e "import('./backend/scripts/processPaymentWebhooks.js').then(() => console.log('process-payment-webhooks-import-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/utils/paymentWebhookQueue.js backend/utils/paymentRevenueSync.js backend/utils/paymentWebhookProcessor.js backend/routes/paymentRoutes.js backend/server.js backend/scripts/processPaymentWebhooks.js backend/tests/paymentWebhookQueue.test.js backend/tests/paymentWebhookState.test.js
 ```
 
 ## Main Truth About Current Project Status
@@ -173,6 +181,7 @@ Confirmed implemented areas:
 - real S3-compatible media upload execution exists
 - signed object-storage read fallback exists
 - Redis-backed follow-up dispatch queue and short processing lock exist
+- Redis-backed payment webhook queue and processing lock exist
 - pgvector-backed assistant retrieval foundation exists for language/documentation knowledge
 - pgvector-backed assistant retrieval also covers tours and blogs for chatbot content ranking
 
@@ -180,7 +189,7 @@ Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, not only media uploads
 - deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice
-- broader event/job orchestration beyond current shadow replay and follow-up queue support
+- broader event/job orchestration beyond current shadow replay, follow-up queue, and payment webhook queue support
 
 ### Phase 5. Open distribution channels
 

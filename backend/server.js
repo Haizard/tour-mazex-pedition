@@ -59,6 +59,7 @@ import {
   registerMongooseListeners,
 } from "./utils/database.js";
 import { startShadowWriteReplayLoop } from "./utils/postgresShadowWrites.js";
+import { startPaymentWebhookProcessingLoop } from "./utils/paymentWebhookProcessor.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -237,6 +238,7 @@ if (!isVercelRuntime) {
   });
 
   startShadowWriteReplayLoop();
+  startPaymentWebhookProcessingLoop();
 
   app.listen(PORT, () => {
     console.log(`Server is listening on port: ${PORT}`);

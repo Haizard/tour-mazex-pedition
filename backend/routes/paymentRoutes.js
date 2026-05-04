@@ -13,11 +13,6 @@ import {
   shouldIgnoreWebhookEvent,
 } from "../utils/paymentWebhookState.js";
 import { buildTenantFilter, resolveTenantBaseUrl, withTenantId } from "../utils/tenantContext.js";
-import QuoteProposal from "../models/QuoteProposal.js";
-import {
-  deleteMongoDocumentFromShadowStore,
-  syncMongoDocumentToShadowStore,
-} from "../utils/postgresShadowWrites.js";
 import {
   buildPaymentRevenueView,
   buildPublicPaymentRevenueView,
@@ -25,13 +20,21 @@ import {
   findPaymentRevenueRecord,
   findPaymentRevenueRecordByProviderReference,
   findPaymentRevenueRecordByPublicToken,
-  syncBookingRevenueRecord,
-  syncPaymentRevenueRecord,
-  syncQuoteRevenueRecord,
 } from "../utils/postgresRevenueRecords.js";
 import { fetchPrimaryPayments } from "../utils/postgresPrimaryReads.js";
 import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
 import { safePrimaryLookup } from "../utils/safePrimaryLookup.js";
+import { getRedisClient } from "../utils/redisClient.js";
+import {
+  buildPaymentWebhookJob,
+  enqueuePaymentWebhookJob,
+  markPaymentWebhookQueued,
+} from "../utils/paymentWebhookQueue.js";
+import {
+  deletePaymentShadowArtifacts,
+  syncLinkedPaymentRevenueRecords,
+  syncPaymentRevenueShadowWrites,
+} from "../utils/paymentRevenueSync.js";
 
 const router = express.Router();
 
@@ -54,112 +57,12 @@ const toPaymentResponse = (payment = {}) => ({
   },
 });
 
-const buildBookingPaymentState = (payment = {}) => {
-  if (payment.status === "paid") {
-    return { paymentStatus: "paid", revenueStage: "paid", paymentRequired: false };
-  }
-
-  if (payment.status === "pending") {
-    return { paymentStatus: "pending", revenueStage: "awaiting-payment", paymentRequired: true };
-  }
-
-  if (payment.status === "failed") {
-    return { paymentStatus: "failed", revenueStage: "awaiting-payment", paymentRequired: true };
-  }
-
-  if (payment.status === "cancelled") {
-    return { paymentStatus: "cancelled", revenueStage: "cancelled", paymentRequired: true };
-  }
-
-  if (payment.status === "refunded") {
-    return { paymentStatus: "refunded", revenueStage: "cancelled", paymentRequired: true };
-  }
-
-  return { paymentStatus: "not-started", revenueStage: "new", paymentRequired: true };
-};
-
 const syncLinkedRevenueRecords = async (req, payment = {}) => {
-  const paymentTimestamp =
-    payment.refundedAt ||
-    payment.paidAt ||
-    payment.failedAt ||
-    payment.cancelledAt ||
-    payment.updatedAt ||
-    new Date();
-
-  if (payment.bookingId) {
-    const bookingPatch = {
-      ...buildBookingPaymentState(payment),
-      paymentUpdatedAt: paymentTimestamp,
-      convertedAt: payment.status === "paid" ? paymentTimestamp : undefined,
-    };
-
-    Object.keys(bookingPatch).forEach((key) => bookingPatch[key] === undefined && delete bookingPatch[key]);
-
-    await Booking.findOneAndUpdate(
-      buildTenantFilter(req, { _id: payment.bookingId }),
-      { $set: bookingPatch }
-    );
-
-    const quotePatch = {
-      paymentStatus: payment.status || "pending",
-      lastPaymentAt: paymentTimestamp,
-    };
-    if (payment.status === "paid") {
-      quotePatch.conversionStage = "converted";
-    }
-
-    await QuoteProposal.updateMany(
-      buildTenantFilter(req, { bookingId: payment.bookingId }),
-      { $set: quotePatch }
-    );
-  }
+  await syncLinkedPaymentRevenueRecords(String(req.tenantId || ""), payment);
 };
 
 const syncRevenueShadowWrites = async (req, payment = {}) => {
-  await syncMongoDocumentToShadowStore({
-    entityType: "payments",
-    document: payment,
-    model: PaymentTransaction,
-  });
-
-  try {
-    await syncPaymentRevenueRecord(payment);
-  } catch (error) {
-    console.error("Payment revenue record sync failed:", error.message);
-  }
-
-  if (payment.bookingId) {
-    const booking = await Booking.findOne(buildTenantFilter(req, { _id: payment.bookingId })).lean();
-    if (booking) {
-      await syncMongoDocumentToShadowStore({
-        entityType: "bookings",
-        document: booking,
-        model: Booking,
-      });
-
-      try {
-        await syncBookingRevenueRecord(booking);
-      } catch (error) {
-        console.error("Booking revenue record sync failed:", error.message);
-      }
-    }
-
-    const quotes = await QuoteProposal.find(buildTenantFilter(req, { bookingId: payment.bookingId })).lean();
-    for (const quote of quotes) {
-      await syncMongoDocumentToShadowStore({
-        entityType: "quotes",
-        document: quote,
-        model: QuoteProposal,
-      });
-
-      try {
-        await syncQuoteRevenueRecord(quote);
-      } catch (error) {
-        console.error("Quote revenue record sync failed:", error.message);
-      }
-    }
-  }
+  await syncPaymentRevenueShadowWrites(String(req.tenantId || ""), payment);
 };
 
 router.get("/checkout/:token", async (req, res) => {
@@ -302,6 +205,39 @@ router.post("/webhooks/:provider", async (req, res) => {
       return res.status(404).json({ message: "Payment transaction not found." });
     }
 
+    const job = buildPaymentWebhookJob({
+      paymentId: payment._id,
+      provider,
+      publicToken,
+      providerReference,
+      status,
+      externalEventId,
+      occurredAt,
+      failureReason,
+    });
+
+    const redisClient = await getRedisClient(process.env).catch(() => null);
+    if (redisClient) {
+      const queued = await markPaymentWebhookQueued({
+        redisClient,
+        job,
+      });
+
+      if (!queued) {
+        return res.status(200).json({ ignored: true, queued: false });
+      }
+
+      await enqueuePaymentWebhookJob({
+        redisClient,
+        job,
+      });
+
+      return res.status(202).json({
+        ignored: false,
+        queued: true,
+      });
+    }
+
     if (
       shouldIgnoreWebhookEvent({
         currentStatus: payment.status,
@@ -310,7 +246,7 @@ router.post("/webhooks/:provider", async (req, res) => {
         processedEventIds: payment.processedEventIds,
       })
     ) {
-      return res.status(200).json({ ignored: true });
+      return res.status(200).json({ ignored: true, queued: false });
     }
 
     const patch = buildPaymentStatusPatch({
@@ -330,6 +266,7 @@ router.post("/webhooks/:provider", async (req, res) => {
 
     return res.status(200).json({
       ignored: false,
+      queued: false,
       payment: toPaymentResponse(payment.toObject()),
     });
   } catch (error) {
@@ -519,10 +456,7 @@ router.delete("/:id", async (req, res) => {
     }
 
     await deletePaymentRevenueRecord(payment._id, payment.tenantId);
-    await deleteMongoDocumentFromShadowStore({
-      entityType: "payments",
-      sourceId: payment._id,
-    });
+    await deletePaymentShadowArtifacts(payment);
 
     res.status(200).json({ message: "Payment transaction deleted" });
   } catch (error) {
