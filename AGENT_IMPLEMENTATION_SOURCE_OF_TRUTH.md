@@ -77,6 +77,10 @@ Completed after the initial version of this file:
 - payment webhook processing loop added in `backend/utils/paymentWebhookProcessor.js`
 - payment webhooks now fast-ack through Redis queueing when Redis is available, with inline fallback if Redis is unavailable
 - standalone payment webhook drain script added in `backend/scripts/processPaymentWebhooks.js`
+- Redis-backed scheduled social post dispatch queue, dedupe, and processing lock added in `backend/utils/socialPostQueue.js`
+- scheduled social post processing loop added in `backend/utils/socialPostProcessor.js`
+- scheduled social publishing now queues due posts through Redis when Redis is available, with inline fallback if Redis is unavailable
+- standalone scheduled social post drain script added in `backend/scripts/processSocialPosts.js`
 
 Verification that passed for this slice:
 
@@ -99,6 +103,10 @@ node --test backend/tests/paymentWebhookQueue.test.js backend/tests/paymentWebho
 node -e "import('./backend/routes/paymentRoutes.js').then(() => console.log('payment-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/scripts/processPaymentWebhooks.js').then(() => console.log('process-payment-webhooks-import-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/utils/paymentWebhookQueue.js backend/utils/paymentRevenueSync.js backend/utils/paymentWebhookProcessor.js backend/routes/paymentRoutes.js backend/server.js backend/scripts/processPaymentWebhooks.js backend/tests/paymentWebhookQueue.test.js backend/tests/paymentWebhookState.test.js
+node --test backend/tests/socialPostQueue.test.js backend/tests/socialAutomation.test.js
+node -e "import('./backend/controllers/socialPostController.js').then(() => console.log('social-post-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+node -e "import('./backend/scripts/processSocialPosts.js').then(() => console.log('process-social-posts-import-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/utils/socialPostQueue.js backend/utils/socialPostProcessor.js backend/controllers/socialPostController.js backend/server.js backend/scripts/processSocialPosts.js backend/tests/socialPostQueue.test.js backend/tests/socialAutomation.test.js
 ```
 
 ## Main Truth About Current Project Status
@@ -182,6 +190,7 @@ Confirmed implemented areas:
 - signed object-storage read fallback exists
 - Redis-backed follow-up dispatch queue and short processing lock exist
 - Redis-backed payment webhook queue and processing lock exist
+- Redis-backed scheduled social post dispatch queue and processing lock exist
 - pgvector-backed assistant retrieval foundation exists for language/documentation knowledge
 - pgvector-backed assistant retrieval also covers tours and blogs for chatbot content ranking
 
@@ -189,7 +198,7 @@ Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, not only media uploads
 - deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice
-- broader event/job orchestration beyond current shadow replay, follow-up queue, and payment webhook queue support
+- broader event/job orchestration beyond current shadow replay, follow-up queue, payment webhook queue, and scheduled social post queue support
 
 ### Phase 5. Open distribution channels
 

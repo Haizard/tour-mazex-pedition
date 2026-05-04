@@ -60,6 +60,7 @@ import {
 } from "./utils/database.js";
 import { startShadowWriteReplayLoop } from "./utils/postgresShadowWrites.js";
 import { startPaymentWebhookProcessingLoop } from "./utils/paymentWebhookProcessor.js";
+import { startSocialPostProcessingLoop } from "./utils/socialPostProcessor.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -239,6 +240,7 @@ if (!isVercelRuntime) {
 
   startShadowWriteReplayLoop();
   startPaymentWebhookProcessingLoop();
+  startSocialPostProcessingLoop();
 
   app.listen(PORT, () => {
     console.log(`Server is listening on port: ${PORT}`);

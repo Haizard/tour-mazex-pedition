@@ -7,6 +7,12 @@ import {
   publishSocialPostToPlatforms,
 } from "../utils/socialAutomation.js";
 import { generateSocialPostSuggestions } from "../utils/socialPostGeneration.js";
+import { getRedisClient } from "../utils/redisClient.js";
+import {
+  buildSocialPostDispatchJob,
+  enqueueSocialPostDispatchJob,
+  markSocialPostDispatchQueued,
+} from "../utils/socialPostQueue.js";
 
 const sanitizePlatforms = (platforms = []) =>
   Array.isArray(platforms)
@@ -266,6 +272,49 @@ export const runScheduledSocialPosts = async (req, res) => {
       });
     }
 
+    const redisClient = await getRedisClient().catch(() => null);
+    if (redisClient) {
+      let queuedCount = 0;
+      let skippedCount = 0;
+
+      for (const socialPost of duePosts) {
+        const job = buildSocialPostDispatchJob({
+          postId: socialPost._id,
+          tenantId: socialPost.tenantId,
+        });
+
+        const queued = await markSocialPostDispatchQueued({
+          redisClient,
+          job,
+        });
+
+        if (!queued) {
+          skippedCount += 1;
+          continue;
+        }
+
+        await enqueueSocialPostDispatchJob({
+          redisClient,
+          job,
+        });
+        queuedCount += 1;
+      }
+
+      return res.status(202).json({
+        processedCount: 0,
+        publishedCount: 0,
+        failedCount: 0,
+        queuedCount,
+        skippedCount,
+        mode: "queued",
+        results: duePosts.map((post) => ({
+          postId: post._id,
+          title: post.title,
+          status: "queued",
+        })),
+      });
+    }
+
     const results = [];
 
     for (const socialPost of duePosts) {
@@ -297,6 +346,9 @@ export const runScheduledSocialPosts = async (req, res) => {
       processedCount: results.length,
       publishedCount: results.filter((item) => item.status === "published").length,
       failedCount: results.filter((item) => item.status === "failed").length,
+      queuedCount: 0,
+      skippedCount: 0,
+      mode: "inline",
       results,
     });
   } catch (error) {
