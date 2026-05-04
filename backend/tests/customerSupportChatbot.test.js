@@ -32,6 +32,30 @@ test("selectLanguageAssistantProfile matches active locale packs for the visitor
   assert.equal(match?.language, "French");
 });
 
+test("selectLanguageAssistantProfile prefers pgvector-ranked matches when available", () => {
+  const match = selectLanguageAssistantProfile({
+    profiles: [
+      {
+        _id: "profile-1",
+        language: "French",
+        localeCode: "fr-FR",
+        status: "active",
+      },
+      {
+        _id: "profile-2",
+        language: "German",
+        localeCode: "de-DE",
+        status: "active",
+      },
+    ],
+    visitorProfile: {},
+    message: "hello",
+    vectorMatchIds: ["profile-2"],
+  });
+
+  assert.equal(match?._id, "profile-2");
+});
+
 test("selectTravelDocumentationGuides pulls market-relevant guidance", () => {
   const guides = selectTravelDocumentationGuides({
     guides: [
@@ -58,6 +82,32 @@ test("selectTravelDocumentationGuides pulls market-relevant guidance", () => {
   assert.equal(guides.length, 1);
   assert.equal(guides[0].market, "France");
   assert.equal(guides[0].topic, "Visa");
+});
+
+test("selectTravelDocumentationGuides prefers pgvector-ranked guide ids when available", () => {
+  const guides = selectTravelDocumentationGuides({
+    guides: [
+      {
+        _id: "guide-1",
+        market: "France",
+        topic: "Visa",
+        requirementSummary: "French passport holders can use the Tanzania eVisa flow.",
+        status: "active",
+      },
+      {
+        _id: "guide-2",
+        market: "United States",
+        topic: "Vaccines",
+        requirementSummary: "Carry yellow fever proof when arriving from a risk area.",
+        status: "active",
+      },
+    ],
+    visitorProfile: {},
+    message: "hello",
+    vectorMatchIds: ["guide-2"],
+  });
+
+  assert.equal(guides[0]._id, "guide-2");
 });
 
 test("buildCustomerSupportContext includes multilingual and documentation instructions when enabled", () => {

@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import process from "node:process";
 import TourPackage from "../models/TourPackage.js";
 import Blog from "../models/Blog.js";
 import ChatConversation from "../models/ChatConversation.js";
@@ -8,6 +9,7 @@ import { buildTenantFilter } from "../utils/tenantContext.js";
 import { buildSalesAssistantPayload } from "../utils/chatSalesAssistant.js";
 import { canAccessFeature } from "../utils/subscriptionPlans.js";
 import { buildCustomerSupportContext } from "../utils/customerSupportChatbot.js";
+import { searchAssistantKnowledge } from "../utils/pgvectorRetrieval.js";
 
 const normalizeTranscript = (items = []) =>
     (items || [])
@@ -138,6 +140,24 @@ export const handleChat = async (req, res) => {
                 : Promise.resolve([]),
         ]);
 
+        const vectorMatches = await searchAssistantKnowledge({
+            tenantId: String(req.tenantId || ""),
+            query: [
+                visitorProfile.preferredLocale,
+                visitorProfile.browserLanguage,
+                visitorProfile.market,
+                message,
+            ]
+                .filter(Boolean)
+                .join(" "),
+            sourceTypes: [
+                featureAccess.multilingualAiAssistant ? "language-assistant-profile" : "",
+                featureAccess.travelDocumentationAssistant ? "travel-documentation-guide" : "",
+            ].filter(Boolean),
+            limit: 6,
+            env: process.env,
+        });
+
         const { systemInstruction, assistantSignals } = buildCustomerSupportContext({
             tenantName: brandName,
             tours,
@@ -146,6 +166,7 @@ export const handleChat = async (req, res) => {
             visitorProfile,
             languageProfiles,
             travelDocumentationGuides,
+            vectorMatches,
             featureAccess,
         });
 

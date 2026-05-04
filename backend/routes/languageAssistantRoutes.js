@@ -16,6 +16,11 @@ import {
   syncLanguageAssistantProfileRecord,
 } from "../utils/postgresAssistantRecords.js";
 import { fetchPrimaryLanguageAssistantProfiles } from "../utils/postgresPrimaryReads.js";
+import {
+  deleteAssistantKnowledgeEmbedding,
+  buildAssistantKnowledgeRecord,
+  syncAssistantKnowledgeEmbedding,
+} from "../utils/pgvectorRetrieval.js";
 
 const router = express.Router();
 
@@ -33,6 +38,33 @@ const syncLanguageAssistantViews = async (profile = {}) => {
     await syncLanguageAssistantProfileRecord(profile);
   } catch (error) {
     console.error("Language assistant profile sync failed:", error.message);
+  }
+
+  try {
+    await syncAssistantKnowledgeEmbedding(
+      buildAssistantKnowledgeRecord({
+        sourceType: "language-assistant-profile",
+        sourceId: profile._id,
+        tenantId: profile.tenantId,
+        title: `${profile.language || "Language"} assistant ${profile.localeCode || ""}`.trim(),
+        body: [
+          profile.tone,
+          ...(Array.isArray(profile.useCases) ? profile.useCases : []),
+          ...(Array.isArray(profile.glossary) ? profile.glossary : []),
+          profile.notes,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        metadata: {
+          language: profile.language || "",
+          localeCode: profile.localeCode || "",
+          status: profile.status || "",
+        },
+      }),
+      process.env
+    );
+  } catch (error) {
+    console.error("Language assistant embedding sync failed:", error.message);
   }
 };
 
@@ -138,6 +170,13 @@ router.delete("/:id", async (req, res) => {
     }
 
     await deleteLanguageAssistantProfileRecord(profile._id, profile.tenantId);
+    await deleteAssistantKnowledgeEmbedding(
+      {
+        sourceType: "language-assistant-profile",
+        sourceId: profile._id,
+      },
+      process.env
+    );
     await deleteMongoDocumentFromShadowStore({
       entityType: "language-assistant-profiles",
       sourceId: profile._id,

@@ -31,6 +31,7 @@ export const selectLanguageAssistantProfile = ({
   profiles = [],
   visitorProfile = {},
   message = "",
+  vectorMatchIds = [],
 }) => {
   const activeProfiles = (profiles || []).filter(
     (profile) => profile?.status === "active"
@@ -49,6 +50,9 @@ export const selectLanguageAssistantProfile = ({
   ]).map((item) => normalizeText(item));
 
   const messageTokens = tokenize(message);
+  const vectorRank = new Map(
+    (vectorMatchIds || []).map((id, index) => [String(id), Math.max(1, 100 - index)])
+  );
 
   const rankedProfiles = activeProfiles
     .map((profile) => {
@@ -76,6 +80,11 @@ export const selectLanguageAssistantProfile = ({
         }
       });
 
+      const profileId = String(profile?._id || "");
+      if (profileId && vectorRank.has(profileId)) {
+        score += vectorRank.get(profileId);
+      }
+
       return {
         ...profile,
         matchScore: score,
@@ -91,6 +100,7 @@ export const selectTravelDocumentationGuides = ({
   visitorProfile = {},
   message = "",
   limit = 3,
+  vectorMatchIds = [],
 }) => {
   const activeGuides = (guides || []).filter((guide) => guide?.status === "active");
   if (!activeGuides.length) {
@@ -108,6 +118,9 @@ export const selectTravelDocumentationGuides = ({
   ])
     .map((item) => normalizeText(item))
     .filter(Boolean);
+  const vectorRank = new Map(
+    (vectorMatchIds || []).map((id, index) => [String(id), Math.max(2, 100 - index)])
+  );
 
   return activeGuides
     .map((guide) => {
@@ -125,10 +138,12 @@ export const selectTravelDocumentationGuides = ({
         (score, hint) => (searchable.includes(hint) ? score + Math.max(2, hint.length > 4 ? 3 : 1) : score),
         0
       );
+      const guideId = String(guide?._id || "");
+      const vectorBoost = guideId && vectorRank.has(guideId) ? vectorRank.get(guideId) : 0;
 
       return {
         ...guide,
-        matchScore,
+        matchScore: matchScore + vectorBoost,
       };
     })
     .filter((guide) => guide.matchScore > 0)
@@ -144,6 +159,7 @@ export const buildCustomerSupportContext = ({
   visitorProfile = {},
   languageProfiles = [],
   travelDocumentationGuides = [],
+  vectorMatches = {},
   featureAccess = {},
 }) => {
   const matchedLanguageProfile = featureAccess.multilingualAiAssistant
@@ -151,6 +167,7 @@ export const buildCustomerSupportContext = ({
         profiles: languageProfiles,
         visitorProfile,
         message,
+        vectorMatchIds: vectorMatches.languageProfileIds || [],
       })
     : null;
 
@@ -159,6 +176,7 @@ export const buildCustomerSupportContext = ({
         guides: travelDocumentationGuides,
         visitorProfile,
         message,
+        vectorMatchIds: vectorMatches.travelGuideIds || [],
       })
     : [];
 

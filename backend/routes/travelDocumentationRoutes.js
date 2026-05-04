@@ -16,6 +16,11 @@ import {
   syncTravelDocumentationGuideRecord,
 } from "../utils/postgresAssistantRecords.js";
 import { fetchPrimaryTravelDocumentationGuides } from "../utils/postgresPrimaryReads.js";
+import {
+  deleteAssistantKnowledgeEmbedding,
+  buildAssistantKnowledgeRecord,
+  syncAssistantKnowledgeEmbedding,
+} from "../utils/pgvectorRetrieval.js";
 
 const router = express.Router();
 
@@ -33,6 +38,32 @@ const syncTravelDocumentationViews = async (guide = {}) => {
     await syncTravelDocumentationGuideRecord(guide);
   } catch (error) {
     console.error("Travel documentation guide sync failed:", error.message);
+  }
+
+  try {
+    await syncAssistantKnowledgeEmbedding(
+      buildAssistantKnowledgeRecord({
+        sourceType: "travel-documentation-guide",
+        sourceId: guide._id,
+        tenantId: guide.tenantId,
+        title: `${guide.market || "Traveler market"} ${guide.topic || "guide"}`.trim(),
+        body: [
+          guide.requirementSummary,
+          guide.sourceLabel,
+          guide.notes,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        metadata: {
+          market: guide.market || "",
+          topic: guide.topic || "",
+          status: guide.status || "",
+        },
+      }),
+      process.env
+    );
+  } catch (error) {
+    console.error("Travel documentation embedding sync failed:", error.message);
   }
 };
 
@@ -140,6 +171,13 @@ router.delete("/:id", async (req, res) => {
     }
 
     await deleteTravelDocumentationGuideRecord(guide._id, guide.tenantId);
+    await deleteAssistantKnowledgeEmbedding(
+      {
+        sourceType: "travel-documentation-guide",
+        sourceId: guide._id,
+      },
+      process.env
+    );
     await deleteMongoDocumentFromShadowStore({
       entityType: "travel-documentation-guides",
       sourceId: guide._id,

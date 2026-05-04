@@ -68,6 +68,9 @@ Completed after the initial version of this file:
 - media route integration for the new object-storage behavior
 - Redis-backed follow-up dispatch queue and processing lock in `backend/utils/followUpProcessor.js`
 - follow-up processing script moved toward queue + drain orchestration instead of only direct synchronous sending
+- pgvector-backed assistant knowledge index migration added for language packs and travel documentation guides
+- deterministic embedding + vector search helper added in `backend/utils/pgvectorRetrieval.js`
+- customer support assistant now prefers vector-ranked language/doc matches before falling back to lexical scoring
 
 Verification that passed for this slice:
 
@@ -78,6 +81,11 @@ npx eslint backend/utils/objectStorage.js backend/routes/mediaRoutes.js backend/
 node --test backend/tests/followUpProcessor.test.js
 node -e "import('./backend/scripts/processFollowUps.js').then(() => console.log('process-followups-import-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/utils/followUpProcessor.js backend/scripts/processFollowUps.js backend/tests/followUpProcessor.test.js
+node --test backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
+node -e "import('./backend/controllers/chatController.js').then(() => console.log('chat-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+node -e "import('./backend/routes/languageAssistantRoutes.js').then(() => console.log('language-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
+node -e "import('./backend/routes/travelDocumentationRoutes.js').then(() => console.log('travel-doc-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/controllers/chatController.js backend/routes/languageAssistantRoutes.js backend/routes/travelDocumentationRoutes.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
 ```
 
 ## Main Truth About Current Project Status
@@ -160,11 +168,12 @@ Confirmed implemented areas:
 - real S3-compatible media upload execution exists
 - signed object-storage read fallback exists
 - Redis-backed follow-up dispatch queue and short processing lock exist
+- pgvector-backed assistant retrieval foundation exists for language/documentation knowledge
 
 Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, not only media uploads
-- pgvector installation and real retrieval pipeline
+- broader pgvector coverage beyond the current assistant/documentation retrieval slice
 - broader event/job orchestration beyond current shadow replay and follow-up queue support
 
 ### Phase 5. Open distribution channels
@@ -223,7 +232,7 @@ They are:
 2. Route-by-route cutover audit to remove remaining Mongo-only business-truth dependencies
 3. Long-term migration cleanup and rollback/cutover strategy
 4. Full S3/object-storage production ownership for files and generated artifacts beyond the current media slice
-5. pgvector-based retrieval memory and semantic search activation
+5. Broader pgvector-based retrieval memory and semantic search activation beyond the current assistant/documentation slice
 6. Broader Redis job orchestration beyond the current shadow replay and follow-up dispatch support
 7. Widget productization hardening for third-party embedding
 8. External API product layer for non-full-site consumers
