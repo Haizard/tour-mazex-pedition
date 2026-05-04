@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   buildCustomerSupportContext,
+  selectFaqEntries,
   rankContentByVectorMatches,
   selectLanguageAssistantProfile,
   selectTravelDocumentationGuides,
@@ -111,6 +112,29 @@ test("selectTravelDocumentationGuides prefers pgvector-ranked guide ids when ava
   assert.equal(guides[0]._id, "guide-2");
 });
 
+test("selectFaqEntries prefers pgvector-ranked faq ids when available", () => {
+  const faqs = selectFaqEntries({
+    faqs: [
+      {
+        _id: "faq-1",
+        question: "Do I need a visa for Tanzania?",
+        answer: "Most travelers can use the eVisa route.",
+        category: "Visa",
+      },
+      {
+        _id: "faq-2",
+        question: "When is the best safari season?",
+        answer: "June to October is a classic dry-season window.",
+        category: "Safari planning",
+      },
+    ],
+    message: "hello",
+    vectorMatchIds: ["faq-2"],
+  });
+
+  assert.equal(faqs[0]._id, "faq-2");
+});
+
 test("buildCustomerSupportContext includes multilingual and documentation instructions when enabled", () => {
   const result = buildCustomerSupportContext({
     tenantName: "MAZ Expeditions",
@@ -153,6 +177,17 @@ test("buildCustomerSupportContext includes multilingual and documentation instru
         status: "active",
       },
     ],
+    faqs: [
+      {
+        _id: "faq-1",
+        question: "Do French travelers need a visa?",
+        answer: "French travelers should use the official Tanzania eVisa process.",
+        category: "Visa",
+      },
+    ],
+    vectorMatches: {
+      faqIds: ["faq-1"],
+    },
     featureAccess: {
       multilingualAiAssistant: true,
       travelDocumentationAssistant: true,
@@ -167,6 +202,10 @@ test("buildCustomerSupportContext includes multilingual and documentation instru
   );
   assert.equal(
     result.systemInstruction.includes("official Tanzania eVisa process"),
+    true
+  );
+  assert.equal(
+    result.systemInstruction.includes("Relevant frequently asked questions"),
     true
   );
 });

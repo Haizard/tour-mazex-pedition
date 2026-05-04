@@ -3,6 +3,7 @@ import process from "node:process";
 import TourPackage from "../models/TourPackage.js";
 import Blog from "../models/Blog.js";
 import ChatConversation from "../models/ChatConversation.js";
+import Faq from "../models/Faq.js";
 import LanguageAssistantProfile from "../models/LanguageAssistantProfile.js";
 import TravelDocumentationGuide from "../models/TravelDocumentationGuide.js";
 import { buildTenantFilter } from "../utils/tenantContext.js";
@@ -119,7 +120,7 @@ export const handleChat = async (req, res) => {
             ),
         };
 
-        const [tours, blogs, languageProfiles, travelDocumentationGuides] = await Promise.all([
+        const [tours, blogs, faqs, languageProfiles, travelDocumentationGuides] = await Promise.all([
             TourPackage.find(tenantFilter).select(
                 "title location price duration description tourType category"
             ),
@@ -127,6 +128,11 @@ export const handleChat = async (req, res) => {
                 .sort({ createdAt: -1 })
                 .limit(5)
                 .select("title content category"),
+            Faq.find(tenantFilter)
+                .sort({ createdAt: -1 })
+                .limit(12)
+                .select("question answer category")
+                .lean(),
             featureAccess.multilingualAiAssistant
                 ? LanguageAssistantProfile.find({
                     tenantId: req.tenantId,
@@ -156,6 +162,7 @@ export const handleChat = async (req, res) => {
             sourceTypes: [
                 "tour-package",
                 "blog-post",
+                "faq-entry",
                 featureAccess.multilingualAiAssistant ? "language-assistant-profile" : "",
                 featureAccess.travelDocumentationAssistant ? "travel-documentation-guide" : "",
             ].filter(Boolean),
@@ -176,6 +183,7 @@ export const handleChat = async (req, res) => {
             tenantName: brandName,
             tours: rankedTours,
             blogs: rankedBlogs,
+            faqs,
             message,
             visitorProfile,
             languageProfiles,

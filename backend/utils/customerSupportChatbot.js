@@ -175,10 +175,55 @@ export const selectTravelDocumentationGuides = ({
     .slice(0, limit);
 };
 
+export const selectFaqEntries = ({
+  faqs = [],
+  message = "",
+  limit = 3,
+  vectorMatchIds = [],
+} = {}) => {
+  const activeFaqs = (faqs || []).filter((faq) => faq?.question && faq?.answer);
+  if (!activeFaqs.length) {
+    return [];
+  }
+
+  const messageTokens = tokenize(message);
+  const vectorRank = new Map(
+    (vectorMatchIds || []).map((id, index) => [String(id), Math.max(2, 100 - index)])
+  );
+
+  return activeFaqs
+    .map((faq) => {
+      const searchable = normalizeText(
+        [faq.question, faq.answer, faq.category].filter(Boolean).join(" ")
+      );
+
+      let score = 0;
+      messageTokens.forEach((token) => {
+        if (token && searchable.includes(token)) {
+          score += token.length > 4 ? 3 : 1;
+        }
+      });
+
+      const faqId = String(faq?._id || "");
+      if (faqId && vectorRank.has(faqId)) {
+        score += vectorRank.get(faqId);
+      }
+
+      return {
+        ...faq,
+        matchScore: score,
+      };
+    })
+    .filter((faq) => faq.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore)
+    .slice(0, limit);
+};
+
 export const buildCustomerSupportContext = ({
   tenantName = "MAZ Expeditions",
   tours = [],
   blogs = [],
+  faqs = [],
   message = "",
   visitorProfile = {},
   languageProfiles = [],
@@ -203,6 +248,11 @@ export const buildCustomerSupportContext = ({
         vectorMatchIds: vectorMatches.travelGuideIds || [],
       })
     : [];
+  const matchedFaqs = selectFaqEntries({
+    faqs,
+    message,
+    vectorMatchIds: vectorMatches.faqIds || [],
+  });
 
   const compactTours = (tours || []).slice(0, 8).map((tour) =>
     `- ${tour.title} | ${tour.location || "Tanzania"} | ${tour.duration || "Custom duration"} | $${tour.price || "Quote"} | ${clip(tour.description, 140)}`
@@ -210,6 +260,9 @@ export const buildCustomerSupportContext = ({
 
   const compactBlogs = (blogs || []).slice(0, 5).map((blog) =>
     `- ${blog.title}${blog.category ? ` (${blog.category})` : ""}: ${clip(blog.content, 140)}`
+  );
+  const compactFaqs = matchedFaqs.map((faq) =>
+    `- ${faq.question}${faq.category ? ` (${faq.category})` : ""}: ${clip(faq.answer, 180)}`
   );
 
   const languageSection = matchedLanguageProfile
@@ -273,6 +326,9 @@ ${visitorContext || "No extra visitor context captured yet."}
 ${languageSection}
 
 ${travelDocumentationSection}
+
+Relevant frequently asked questions:
+${compactFaqs.join("\n") || "- No matching FAQ entries found."}
 
 Current tours:
 ${compactTours.join("\n") || "- No tour catalog loaded."}

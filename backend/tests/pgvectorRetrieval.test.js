@@ -66,10 +66,12 @@ test("groupAssistantKnowledgeMatches groups rows by source type and keeps rankin
     { source_type: "language-assistant-profile", source_id: "profile-1" },
     { source_type: "tour-package", source_id: "tour-2" },
     { source_type: "blog-post", source_id: "blog-1" },
+    { source_type: "faq-entry", source_id: "faq-1" },
   ]);
 
   assert.deepEqual(grouped.languageProfileIds, ["profile-2", "profile-1"]);
   assert.deepEqual(grouped.travelGuideIds, ["guide-1"]);
   assert.deepEqual(grouped.tourIds, ["tour-2"]);
   assert.deepEqual(grouped.blogIds, ["blog-1"]);
+  assert.deepEqual(grouped.faqIds, ["faq-1"]);
 });

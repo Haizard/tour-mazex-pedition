@@ -177,6 +177,10 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
         grouped.blogIds.push(sourceId);
       }
 
+      if (sourceType === "faq-entry") {
+        grouped.faqIds.push(sourceId);
+      }
+
       return grouped;
     },
     {
@@ -184,6 +188,7 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
       travelGuideIds: [],
       tourIds: [],
       blogIds: [],
+      faqIds: [],
     }
   );
 
@@ -226,6 +231,9 @@ export const searchAssistantKnowledge = async ({
     return {
       languageProfileIds: [],
       travelGuideIds: [],
+      tourIds: [],
+      blogIds: [],
+      faqIds: [],
     };
   }
 
@@ -244,6 +252,9 @@ export const searchAssistantKnowledge = async ({
     return {
       languageProfileIds: [],
       travelGuideIds: [],
+      tourIds: [],
+      blogIds: [],
+      faqIds: [],
     };
   }
 };

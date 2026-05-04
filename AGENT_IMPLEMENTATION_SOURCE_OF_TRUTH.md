@@ -87,6 +87,8 @@ Completed after the initial version of this file:
 - standalone email sync drain script added in `backend/scripts/processEmailSyncJobs.js`
 - AI-generated blog hero images now persist through the media/object-storage pipeline via `backend/utils/generatedMediaStorage.js`
 - blog automation now stores generated image assets as first-class media records and links them back on the `Blog` document with `imageMediaId`
+- tenant FAQ entries now sync into the pgvector assistant knowledge index
+- chatbot semantic retrieval now includes FAQ entries alongside tours, blogs, language packs, and travel documentation guides
 
 Verification that passed for this slice:
 
@@ -120,6 +122,10 @@ npx eslint backend/utils/emailSyncQueue.js backend/utils/emailSyncProcessor.js b
 node --test backend/tests/generatedMediaStorage.test.js
 node -e "import('./backend/controllers/blogAutomationController.js').then(() => console.log('blog-automation-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/utils/generatedMediaStorage.js backend/controllers/blogAutomationController.js backend/models/Blog.js backend/tests/generatedMediaStorage.test.js
+node --test backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
+node -e "import('./backend/routes/faqRoutes.js').then(() => console.log('faq-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
+node -e "import('./backend/controllers/chatController.js').then(() => console.log('chat-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/routes/faqRoutes.js backend/controllers/chatController.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
 ```
 
 ## Main Truth About Current Project Status
@@ -208,11 +214,12 @@ Confirmed implemented areas:
 - Redis-backed email sync dispatch queue and processing lock exist
 - pgvector-backed assistant retrieval foundation exists for language/documentation knowledge
 - pgvector-backed assistant retrieval also covers tours and blogs for chatbot content ranking
+- pgvector-backed assistant retrieval now also covers tenant FAQ entries for chatbot support relevance
 
 Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, beyond the current media upload and generated blog image slices
-- deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice
+- deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice for tours, blogs, docs, language packs, and FAQs
 - broader event/job orchestration beyond current shadow replay, follow-up queue, payment webhook queue, scheduled social post queue, and email sync queue support
 
 ### Phase 5. Open distribution channels
