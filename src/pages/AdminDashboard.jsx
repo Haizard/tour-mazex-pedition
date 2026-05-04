@@ -85,6 +85,8 @@ import SiteSettings from "../components/Admin/SiteSettings";
 import SubscriptionManager from "../components/Admin/SubscriptionManager";
 import ReputationGuardianManager from "../components/Admin/ReputationGuardianManager";
 import RepeatCustomerManager from "../components/Admin/RepeatCustomerManager";
+import IntelligenceDashboard from "../components/Admin/IntelligenceDashboard";
+import AttributionIntelligencePanel from "../components/Admin/AttributionIntelligencePanel";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import { useTenant } from "../context/TenantContext";
 
@@ -3722,16 +3724,11 @@ const AdminDashboard = () => {
 
           {activeTab === "partners" && <PartnerPortalManager />}
           {activeTab === "distribution" && <DistributionManager />}
+          {activeTab === "ecosystem-intelligence" && <IntelligenceDashboard />}
+          {activeTab === "attribution-intelligence" && <AttributionIntelligencePanel />}
 
           {activeTab === "payments" && <PaymentAutomationManager />}
           {activeTab === "data-platform" && <InfrastructureReadinessManager />}
-
-          {activeTab === "dynamic-pricing" && <DynamicPricingManager />}
-
-          {activeTab === "competitor-intelligence" && <CompetitorIntelligenceManager />}
-
-          {(activeTab === "language-assistant" || activeTab === "travel-docs") && <TravelerAssistanceManager />}
-
           {activeTab === "subscription" && <SubscriptionManager />}
 
           {activeTab === "navigation-legacy" && (

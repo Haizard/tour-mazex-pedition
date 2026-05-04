@@ -32,6 +32,7 @@ import {
   FaTags,
   FaUsers,
   FaWallet,
+  FaNetworkWired,
 } from "react-icons/fa";
 
 import Logo from "../../assets/maz-logo.jpeg";
@@ -114,6 +115,8 @@ const groupedMenuItems = [
     id: "intelligence",
     label: "Intelligence",
     items: [
+      { id: "ecosystem-intelligence", label: "Ecosystem", icon: <FaNetworkWired /> },
+      { id: "attribution-intelligence", label: "Commercial ROI", icon: <FaChartLine /> },
       { id: "competitor-intelligence", label: "Competitors", icon: <FaSearch />, accessKey: "competitorIntelligence" },
     ],
   },
