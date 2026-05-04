@@ -89,6 +89,8 @@ Completed after the initial version of this file:
 - blog automation now stores generated image assets as first-class media records and links them back on the `Blog` document with `imageMediaId`
 - tenant FAQ entries now sync into the pgvector assistant knowledge index
 - chatbot semantic retrieval now includes FAQ entries alongside tours, blogs, language packs, and travel documentation guides
+- marketing campaign entries now sync into the pgvector assistant knowledge index
+- chatbot semantic retrieval now includes campaign entries so current offers and CTAs can influence commercial responses
 
 Verification that passed for this slice:
 
@@ -126,6 +128,8 @@ node --test backend/tests/pgvectorRetrieval.test.js backend/tests/customerSuppor
 node -e "import('./backend/routes/faqRoutes.js').then(() => console.log('faq-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/controllers/chatController.js').then(() => console.log('chat-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/routes/faqRoutes.js backend/controllers/chatController.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
+node -e "import('./backend/controllers/marketingController.js').then(() => console.log('marketing-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/controllers/marketingController.js
 ```
 
 ## Main Truth About Current Project Status
@@ -215,11 +219,12 @@ Confirmed implemented areas:
 - pgvector-backed assistant retrieval foundation exists for language/documentation knowledge
 - pgvector-backed assistant retrieval also covers tours and blogs for chatbot content ranking
 - pgvector-backed assistant retrieval now also covers tenant FAQ entries for chatbot support relevance
+- pgvector-backed assistant retrieval now also covers marketing campaigns for commercial response relevance
 
 Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, beyond the current media upload and generated blog image slices
-- deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice for tours, blogs, docs, language packs, and FAQs
+- deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice for tours, blogs, docs, language packs, FAQs, and campaigns
 - broader event/job orchestration beyond current shadow replay, follow-up queue, payment webhook queue, scheduled social post queue, and email sync queue support
 
 ### Phase 5. Open distribution channels

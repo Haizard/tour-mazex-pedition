@@ -181,6 +181,10 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
         grouped.faqIds.push(sourceId);
       }
 
+      if (sourceType === "campaign-entry") {
+        grouped.campaignIds.push(sourceId);
+      }
+
       return grouped;
     },
     {
@@ -189,6 +193,7 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
       tourIds: [],
       blogIds: [],
       faqIds: [],
+      campaignIds: [],
     }
   );
 
@@ -234,6 +239,7 @@ export const searchAssistantKnowledge = async ({
       tourIds: [],
       blogIds: [],
       faqIds: [],
+      campaignIds: [],
     };
   }
 
@@ -255,6 +261,7 @@ export const searchAssistantKnowledge = async ({
       tourIds: [],
       blogIds: [],
       faqIds: [],
+      campaignIds: [],
     };
   }
 };

@@ -219,11 +219,66 @@ export const selectFaqEntries = ({
     .slice(0, limit);
 };
 
+export const selectCampaignEntries = ({
+  campaigns = [],
+  message = "",
+  limit = 3,
+  vectorMatchIds = [],
+} = {}) => {
+  const activeCampaigns = (campaigns || []).filter((campaign) =>
+    ["active", "scheduled", "draft"].includes(String(campaign?.status || "").toLowerCase())
+  );
+
+  if (!activeCampaigns.length) {
+    return [];
+  }
+
+  const messageTokens = tokenize(message);
+  const vectorRank = new Map(
+    (vectorMatchIds || []).map((id, index) => [String(id), Math.max(2, 100 - index)])
+  );
+
+  return activeCampaigns
+    .map((campaign) => {
+      const searchable = normalizeText(
+        [
+          campaign.title,
+          campaign.summary,
+          campaign.campaignType,
+          ...(Array.isArray(campaign.channels) ? campaign.channels : []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+      );
+
+      let score = 0;
+      messageTokens.forEach((token) => {
+        if (token && searchable.includes(token)) {
+          score += token.length > 4 ? 3 : 1;
+        }
+      });
+
+      const campaignId = String(campaign?._id || "");
+      if (campaignId && vectorRank.has(campaignId)) {
+        score += vectorRank.get(campaignId);
+      }
+
+      return {
+        ...campaign,
+        matchScore: score,
+      };
+    })
+    .filter((campaign) => campaign.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore)
+    .slice(0, limit);
+};
+
 export const buildCustomerSupportContext = ({
   tenantName = "MAZ Expeditions",
   tours = [],
   blogs = [],
   faqs = [],
+  campaigns = [],
   message = "",
   visitorProfile = {},
   languageProfiles = [],
@@ -253,6 +308,11 @@ export const buildCustomerSupportContext = ({
     message,
     vectorMatchIds: vectorMatches.faqIds || [],
   });
+  const matchedCampaigns = selectCampaignEntries({
+    campaigns,
+    message,
+    vectorMatchIds: vectorMatches.campaignIds || [],
+  });
 
   const compactTours = (tours || []).slice(0, 8).map((tour) =>
     `- ${tour.title} | ${tour.location || "Tanzania"} | ${tour.duration || "Custom duration"} | $${tour.price || "Quote"} | ${clip(tour.description, 140)}`
@@ -263,6 +323,9 @@ export const buildCustomerSupportContext = ({
   );
   const compactFaqs = matchedFaqs.map((faq) =>
     `- ${faq.question}${faq.category ? ` (${faq.category})` : ""}: ${clip(faq.answer, 180)}`
+  );
+  const compactCampaigns = matchedCampaigns.map((campaign) =>
+    `- ${campaign.title}${campaign.campaignType ? ` (${campaign.campaignType})` : ""}: ${clip(campaign.summary, 180)}${Array.isArray(campaign.channels) && campaign.channels.length ? ` Channels: ${campaign.channels.join(", ")}.` : ""}`
   );
 
   const languageSection = matchedLanguageProfile
@@ -329,6 +392,9 @@ ${travelDocumentationSection}
 
 Relevant frequently asked questions:
 ${compactFaqs.join("\n") || "- No matching FAQ entries found."}
+
+Current commercial campaigns:
+${compactCampaigns.join("\n") || "- No campaign matches found."}
 
 Current tours:
 ${compactTours.join("\n") || "- No tour catalog loaded."}

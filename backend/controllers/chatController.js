@@ -3,6 +3,7 @@ import process from "node:process";
 import TourPackage from "../models/TourPackage.js";
 import Blog from "../models/Blog.js";
 import ChatConversation from "../models/ChatConversation.js";
+import Campaign from "../models/Campaign.js";
 import Faq from "../models/Faq.js";
 import LanguageAssistantProfile from "../models/LanguageAssistantProfile.js";
 import TravelDocumentationGuide from "../models/TravelDocumentationGuide.js";
@@ -120,7 +121,7 @@ export const handleChat = async (req, res) => {
             ),
         };
 
-        const [tours, blogs, faqs, languageProfiles, travelDocumentationGuides] = await Promise.all([
+        const [tours, blogs, faqs, campaigns, languageProfiles, travelDocumentationGuides] = await Promise.all([
             TourPackage.find(tenantFilter).select(
                 "title location price duration description tourType category"
             ),
@@ -132,6 +133,11 @@ export const handleChat = async (req, res) => {
                 .sort({ createdAt: -1 })
                 .limit(12)
                 .select("question answer category")
+                .lean(),
+            Campaign.find(tenantFilter)
+                .sort({ scheduledFor: 1, updatedAt: -1 })
+                .limit(8)
+                .select("title campaignType summary status channels")
                 .lean(),
             featureAccess.multilingualAiAssistant
                 ? LanguageAssistantProfile.find({
@@ -163,6 +169,7 @@ export const handleChat = async (req, res) => {
                 "tour-package",
                 "blog-post",
                 "faq-entry",
+                "campaign-entry",
                 featureAccess.multilingualAiAssistant ? "language-assistant-profile" : "",
                 featureAccess.travelDocumentationAssistant ? "travel-documentation-guide" : "",
             ].filter(Boolean),
@@ -184,6 +191,7 @@ export const handleChat = async (req, res) => {
             tours: rankedTours,
             blogs: rankedBlogs,
             faqs,
+            campaigns,
             message,
             visitorProfile,
             languageProfiles,

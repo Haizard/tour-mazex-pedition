@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   buildCustomerSupportContext,
+  selectCampaignEntries,
   selectFaqEntries,
   rankContentByVectorMatches,
   selectLanguageAssistantProfile,
@@ -135,6 +136,31 @@ test("selectFaqEntries prefers pgvector-ranked faq ids when available", () => {
   assert.equal(faqs[0]._id, "faq-2");
 });
 
+test("selectCampaignEntries prefers pgvector-ranked campaign ids when available", () => {
+  const campaigns = selectCampaignEntries({
+    campaigns: [
+      {
+        _id: "campaign-1",
+        title: "Migration Priority",
+        summary: "Push urgency around migration timing.",
+        channels: ["email"],
+        status: "active",
+      },
+      {
+        _id: "campaign-2",
+        title: "Family Escape",
+        summary: "Promote school-holiday packages.",
+        channels: ["whatsapp"],
+        status: "scheduled",
+      },
+    ],
+    message: "hello",
+    vectorMatchIds: ["campaign-2"],
+  });
+
+  assert.equal(campaigns[0]._id, "campaign-2");
+});
+
 test("buildCustomerSupportContext includes multilingual and documentation instructions when enabled", () => {
   const result = buildCustomerSupportContext({
     tenantName: "MAZ Expeditions",
@@ -185,8 +211,18 @@ test("buildCustomerSupportContext includes multilingual and documentation instru
         category: "Visa",
       },
     ],
+    campaigns: [
+      {
+        _id: "campaign-1",
+        title: "Migration Priority",
+        summary: "Push urgency around migration timing.",
+        channels: ["email", "whatsapp"],
+        status: "active",
+      },
+    ],
     vectorMatches: {
       faqIds: ["faq-1"],
+      campaignIds: ["campaign-1"],
     },
     featureAccess: {
       multilingualAiAssistant: true,
@@ -206,6 +242,10 @@ test("buildCustomerSupportContext includes multilingual and documentation instru
   );
   assert.equal(
     result.systemInstruction.includes("Relevant frequently asked questions"),
+    true
+  );
+  assert.equal(
+    result.systemInstruction.includes("Current commercial campaigns"),
     true
   );
 });
