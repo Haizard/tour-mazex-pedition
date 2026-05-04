@@ -2,6 +2,8 @@ import { generateQuotePdfBuffer } from "./quotePdfGenerator.js";
 import { uploadStoredMediaAsset } from "./objectStorage.js";
 import Media from "../models/Media.js";
 import QuoteProposal from "../models/QuoteProposal.js";
+import { syncMediaAssetRecord } from "./postgresMediaRecords.js";
+import { syncQuoteRevenueRecord } from "./postgresRevenueRecords.js";
 
 /**
  * Generates and persists a PDF for a specific QuoteProposal.
@@ -28,7 +30,7 @@ export const persistQuotePdf = async ({ quoteId, tenantId, env = globalThis.proc
     env,
   });
 
-  const mediaRecord = new Media({
+  const mediaData = {
     tenantId,
     filename,
     contentType,
@@ -38,21 +40,48 @@ export const persistQuotePdf = async ({ quoteId, tenantId, env = globalThis.proc
     storageBucket: storageAsset.storageBucket,
     storageEndpoint: storageAsset.storageEndpoint,
     publicUrl: storageAsset.publicUrl,
-    data: storageAsset.inlineData, // Only if mongo-inline
-  });
+    data: storageAsset.inlineData,
+  };
 
-  await mediaRecord.save();
+  // PRIMARY: Sync Media Record to PostgreSQL
+  try {
+    await syncMediaAssetRecord(mediaData, env);
+  } catch (pgError) {
+    console.error("[PostgresMediaSyncError] Failed to sync Quote Media record:", pgError.message);
+  }
 
-  const updatedQuote = await QuoteProposal.findByIdAndUpdate(
-    quoteId,
-    {
-      $set: {
-        pdfMediaId: mediaRecord._id,
-        pdfGeneratedAt: new Date(),
+  // PRIMARY: Update Quote in PostgreSQL
+  const updatedPayload = {
+    ...quote,
+    pdfMediaId: mediaData._id,
+    pdfGeneratedAt: new Date(),
+  };
+
+  try {
+    await syncQuoteRevenueRecord(updatedPayload, env);
+  } catch (pgError) {
+    console.error("[PostgresQuoteSyncError] Failed to sync PDF link to Quote record:", pgError.message);
+  }
+
+  // SECONDARY: Shadow to MongoDB
+  try {
+    const mediaRecord = new Media(mediaData);
+    await mediaRecord.save();
+
+    const mongoQuote = await QuoteProposal.findByIdAndUpdate(
+      quoteId,
+      {
+        $set: {
+          pdfMediaId: mediaRecord._id,
+          pdfGeneratedAt: new Date(),
+        },
       },
-    },
-    { new: true }
-  ).populate("pdfMediaId");
+      { new: true }
+    ).populate("pdfMediaId").lean();
 
-  return updatedQuote;
+    return mongoQuote || updatedPayload;
+  } catch (mongoError) {
+    console.error("[ShadowWriteError] Quote MongoDB shadow failed:", mongoError.message);
+    return updatedPayload;
+  }
 };

@@ -78,6 +78,7 @@ export const buildBookingRevenueRecord = (booking = {}) => ({
   firstTouchAt: booking.firstTouchAt ? new Date(booking.firstTouchAt).toISOString() : null,
   convertedAt: booking.convertedAt ? new Date(booking.convertedAt).toISOString() : null,
   travelDate: booking.travelDate ? new Date(booking.travelDate).toISOString() : null,
+  itineraryMediaId: booking.itineraryMediaId ? String(booking.itineraryMediaId) : "",
   sourcePayload: booking,
 });
 
@@ -97,6 +98,7 @@ export const buildQuoteRevenueRecord = (quote = {}) => ({
   validUntil: quote.validUntil ? new Date(quote.validUntil).toISOString() : null,
   sentAt: quote.sentAt ? new Date(quote.sentAt).toISOString() : null,
   acceptedAt: quote.acceptedAt ? new Date(quote.acceptedAt).toISOString() : null,
+  pdfMediaId: quote.pdfMediaId ? String(quote.pdfMediaId) : "",
   sourcePayload: quote,
 });
 
@@ -117,6 +119,7 @@ export const buildPaymentRevenueRecord = (payment = {}) => ({
   paidAt: payment.paidAt ? new Date(payment.paidAt).toISOString() : null,
   refundedAt: payment.refundedAt ? new Date(payment.refundedAt).toISOString() : null,
   cancelledAt: payment.cancelledAt ? new Date(payment.cancelledAt).toISOString() : null,
+  invoiceMediaId: payment.invoiceMediaId ? String(payment.invoiceMediaId) : "",
   sourcePayload: payment,
 });
 
@@ -127,9 +130,9 @@ export const buildBookingRevenueUpsert = (booking = {}) => {
       insert into public.booking_records (
         source_id, tenant_id, quote_proposal_id, traveler_name, email, phone, package_tour,
         status, revenue_stage, payment_status, total_price, currency, referral_code, lead_source,
-        campaign_label, first_touch_at, converted_at, travel_date, source_payload
+        campaign_label, first_touch_at, converted_at, travel_date, itinerary_media_id, source_payload
       ) values (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb
       )
       on conflict (source_id)
       do update set
@@ -150,6 +153,7 @@ export const buildBookingRevenueUpsert = (booking = {}) => {
         first_touch_at = excluded.first_touch_at,
         converted_at = excluded.converted_at,
         travel_date = excluded.travel_date,
+        itinerary_media_id = excluded.itinerary_media_id,
         source_payload = excluded.source_payload,
         updated_at = now()
     `,
@@ -157,7 +161,7 @@ export const buildBookingRevenueUpsert = (booking = {}) => {
       record.sourceId, record.tenantId, record.quoteProposalId || null, record.travelerName, record.email,
       record.phone, record.packageTour, record.status, record.revenueStage, record.paymentStatus,
       record.totalPrice, record.currency, record.referralCode, record.leadSource, record.campaignLabel,
-      record.firstTouchAt, record.convertedAt, record.travelDate, JSON.stringify(record.sourcePayload || {}),
+      record.firstTouchAt, record.convertedAt, record.travelDate, record.itineraryMediaId || null, JSON.stringify(record.sourcePayload || {}),
     ],
   };
 };
@@ -168,9 +172,9 @@ export const buildQuoteRevenueUpsert = (quote = {}) => {
     text: `
       insert into public.quote_records (
         source_id, tenant_id, inquiry_id, booking_id, title, traveler_name, status,
-        conversion_stage, payment_status, currency, total_price, public_token, valid_until, sent_at, accepted_at, source_payload
+        conversion_stage, payment_status, currency, total_price, public_token, valid_until, sent_at, accepted_at, pdf_media_id, source_payload
       ) values (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb
       )
       on conflict (source_id)
       do update set
@@ -188,13 +192,15 @@ export const buildQuoteRevenueUpsert = (quote = {}) => {
         valid_until = excluded.valid_until,
         sent_at = excluded.sent_at,
         accepted_at = excluded.accepted_at,
+        pdf_media_id = excluded.pdf_media_id,
         source_payload = excluded.source_payload,
         updated_at = now()
     `,
     values: [
       record.sourceId, record.tenantId, record.inquiryId || null, record.bookingId || null, record.title,
       record.travelerName, record.status, record.conversionStage, record.paymentStatus, record.currency,
-      record.totalPrice, record.publicToken, record.validUntil, record.sentAt, record.acceptedAt, JSON.stringify(record.sourcePayload || {}),
+      record.totalPrice, record.publicToken, record.validUntil, record.sentAt, record.acceptedAt, 
+      record.pdfMediaId || null, JSON.stringify(record.sourcePayload || {}),
     ],
   };
 };
@@ -205,9 +211,9 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
     text: `
       insert into public.payment_records (
         source_id, tenant_id, booking_id, provider, public_token, provider_reference, customer_name, status,
-        currency, amount, fee_percent, fee_amount, failure_reason, paid_at, refunded_at, cancelled_at, source_payload
+        currency, amount, fee_percent, fee_amount, failure_reason, paid_at, refunded_at, cancelled_at, invoice_media_id, source_payload
       ) values (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb
       )
       on conflict (source_id)
       do update set
@@ -226,13 +232,14 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
         paid_at = excluded.paid_at,
         refunded_at = excluded.refunded_at,
         cancelled_at = excluded.cancelled_at,
+        invoice_media_id = excluded.invoice_media_id,
         source_payload = excluded.source_payload,
         updated_at = now()
     `,
     values: [
       record.sourceId, record.tenantId, record.bookingId || null, record.provider, record.publicToken, record.providerReference,
       record.customerName, record.status, record.currency, record.amount, record.feePercent, record.feeAmount,
-      record.failureReason, record.paidAt, record.refundedAt, record.cancelledAt, JSON.stringify(record.sourcePayload || {}),
+      record.failureReason, record.paidAt, record.refundedAt, record.cancelledAt, record.invoiceMediaId || null, JSON.stringify(record.sourcePayload || {}),
     ],
   };
 };
@@ -289,6 +296,7 @@ export const buildQuoteRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) =
       valid_until,
       sent_at,
       accepted_at,
+      pdf_media_id,
       source_payload
     from public.quote_records
     where source_id = $1 and tenant_id = $2
@@ -318,6 +326,7 @@ export const buildBookingRevenueLookup = ({ sourceId = "", tenantId = "" } = {})
       first_touch_at,
       converted_at,
       travel_date,
+      itinerary_media_id,
       source_payload,
       created_at,
       updated_at
@@ -347,6 +356,7 @@ export const buildPaymentPublicTokenLookup = ({ publicToken = "" } = {}) => ({
       pr.paid_at,
       pr.refunded_at,
       pr.cancelled_at,
+      pr.invoice_media_id,
       pr.updated_at,
       pr.source_payload,
       br.traveler_name as booking_name,
@@ -377,6 +387,7 @@ export const buildPaymentRevenueLookup = ({ sourceId = "", tenantId = "" } = {})
       pr.paid_at,
       pr.refunded_at,
       pr.cancelled_at,
+      pr.invoice_media_id,
       pr.source_payload,
       pr.updated_at,
       br.traveler_name as booking_name,
@@ -413,6 +424,7 @@ export const buildPaymentProviderReferenceLookup = ({
       pr.paid_at,
       pr.refunded_at,
       pr.cancelled_at,
+      pr.invoice_media_id,
       pr.updated_at,
       pr.source_payload,
       br.traveler_name as booking_name,
@@ -447,6 +459,7 @@ export const buildPublicQuoteRevenueView = (row = {}) => {
     validUntil: toIso(row.valid_until || payload.validUntil),
     sentAt: toIso(row.sent_at || payload.sentAt),
     acceptedAt: toIso(row.accepted_at || payload.acceptedAt),
+    pdfMediaId: String(row.pdf_media_id || payload.pdfMediaId || ""),
     travelerCount: Number(payload.travelerCount || 0),
     tripLengthDays: Number(payload.tripLengthDays || 0),
     itineraryOutline: Array.isArray(payload.itineraryOutline) ? payload.itineraryOutline : [],

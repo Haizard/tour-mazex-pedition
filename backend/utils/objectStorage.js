@@ -245,3 +245,30 @@ export const resolveStoredMediaReadPlan = async ({
 
   return basePlan;
 };
+
+/**
+ * Generates a signed URL for a specific bucket and key.
+ * Used for direct artifact retrieval (PDFs, invoices) outside the media model.
+ * 
+ * [SKILL: Storage Utility]
+ */
+export const getSignedUrlForKey = async ({
+  bucket,
+  key,
+  strategy = getObjectStorageStrategy(),
+  s3Client = createObjectStorageClient(strategy),
+  signUrl = defaultGetSignedUrl,
+} = {}) => {
+  if (strategy.activeProvider !== "s3-compatible" || !s3Client) {
+    return null;
+  }
+
+  return await signUrl(
+    s3Client,
+    new GetObjectCommand({
+      Bucket: bucket || strategy.bucket,
+      Key: key,
+    }),
+    { expiresIn: strategy.signedUrlTtlSeconds }
+  );
+};

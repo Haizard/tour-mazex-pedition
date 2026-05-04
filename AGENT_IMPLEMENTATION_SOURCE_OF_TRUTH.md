@@ -324,8 +324,8 @@ Confirmed implemented areas:
 ## Phase Count Summary
 
 - Total phases in master blueprint: `6`
-- Fully implemented phases: `3`
-- Partially implemented phases: `3`
+- Fully implemented phases: `5`
+- Partially implemented phases: `1`
 - Not yet fully implemented phases: `0`
 
 Important:
@@ -337,22 +337,17 @@ Important:
 
 To avoid fake precision, this tracker counts grouped implementation capabilities, not tiny tickets.
 
-Current unfinished major feature groups: `11`
+Current unfinished major feature groups: `6`
 
 They are:
 
-1. PostgreSQL-first write ownership for selected core domains
-2. Route-by-route cutover audit to remove remaining Mongo-only business-truth dependencies
-3. Long-term migration cleanup and rollback/cutover strategy
-4. Full S3/object-storage production ownership for files and generated artifacts beyond the current media slice
-5. Broader pgvector-based retrieval memory and semantic search activation beyond the current assistant/chatbot slice
-6. Broader Redis job orchestration beyond the current shadow replay and follow-up dispatch support
-7. Widget productization hardening for third-party embedding
-8. External API product layer for non-full-site consumers
-9. White-label delivery completion
-10. External partner self-service workflow completion
-11. Affiliate / OTA / marketplace connector layer
-12. Group travel, disruption handling, and broader ecosystem operations workflows
+1. Long-term migration cleanup and rollback/cutover strategy (Phase 3 finalization)
+2. Broader pgvector-based retrieval memory and semantic search activation beyond the current assistant/chatbot slice
+3. Broader Redis job orchestration beyond the current shadow replay and follow-up dispatch support
+4. Widget productization hardening for third-party embedding (frontend snippet)
+5. White-label delivery completion
+6. Affiliate / OTA / marketplace connector layer
+7. Group travel, disruption handling, and broader ecosystem operations workflows
 
 ## Current Best Understanding Of "Where To Continue"
 

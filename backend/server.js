@@ -48,6 +48,7 @@ import tourRoutes from "./routes/tourRoutes.js";
 import visionaryRoutes from "./routes/visionaryRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
 import infrastructureRoutes from "./routes/infrastructureRoutes.js";
+import publicApiRoutes from "./routes/publicApiRoutes.js";
 import travelerPortalRoutes from "./routes/travelerPortalRoutes.js";
 import {
   applySecurityHeaders,
@@ -222,6 +223,7 @@ app.use("/api/social-accounts", socialAccountRoutes);
 app.use("/api/social-posts", socialPostRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/infrastructure", infrastructureRoutes);
+app.use("/api/public/v1", publicApiRoutes);
 app.use("/api/traveler-portal", travelerPortalRoutes);
 
 app.use("/", seoRoutes);
