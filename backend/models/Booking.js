@@ -51,6 +51,15 @@ const bookingSchema = new mongoose.Schema({
         ),
         default: () => ({}),
     },
+    itineraryMediaId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Media',
+        default: null,
+    },
+    itineraryGeneratedAt: {
+        type: Date,
+        default: null,
+    },
 }, { timestamps: true });
 
 const Booking = mongoose.model('Booking', bookingSchema);

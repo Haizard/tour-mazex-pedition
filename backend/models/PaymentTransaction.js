@@ -115,6 +115,15 @@ const paymentTransactionSchema = new mongoose.Schema(
       ),
       default: () => ({}),
     },
+    invoiceMediaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Media",
+      default: null,
+    },
+    invoiceGeneratedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

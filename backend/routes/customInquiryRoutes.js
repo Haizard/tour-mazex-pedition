@@ -34,6 +34,7 @@ import {
     findQuoteRevenueRecordByPublicToken,
     syncQuoteRevenueRecord,
 } from '../utils/postgresRevenueRecords.js';
+import { persistQuotePdf } from '../utils/quotePdfStorage.js';
 
 const router = express.Router();
 
@@ -484,6 +485,27 @@ router.post('/:id/quotes/:quoteId/send', requireTenantAdmin, async (req, res) =>
         res.status(500).json({ message: error.message });
     }
 });
+
+// Generate PDF for Quote (Admin)
+router.post('/:id/quotes/:quoteId/generate-pdf', requireTenantAdmin, async (req, res) => {
+    try {
+        const quote = await persistQuotePdf({
+            quoteId: req.params.quoteId,
+            tenantId: req.tenantId,
+            env: process.env,
+        });
+
+        await syncQuoteRevenueViews(quote.toObject());
+
+        res.status(200).json({
+            message: 'PDF generated and stored successfully.',
+            quote,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 
 // Delete (Admin)
 router.delete('/:id', requireTenantAdmin, async (req, res) => {

@@ -10,6 +10,8 @@ import {
   syncPaymentRevenueRecord,
   syncQuoteRevenueRecord,
 } from "./postgresRevenueRecords.js";
+import { persistInvoicePdf } from "./invoicePdfStorage.js";
+import { persistItineraryPdf } from "./itineraryPdfStorage.js";
 
 export const buildBookingPaymentState = (payment = {}) => {
   if (payment.status === "paid") {
@@ -65,6 +67,21 @@ export const syncLinkedPaymentRevenueRecords = async (tenantId = "", payment = {
     buildTenantQuery(tenantId, { _id: payment.bookingId }),
     { $set: bookingPatch }
   );
+
+  // Trigger automated artifacts
+  if (payment.status === "paid") {
+    // Generate Invoice
+    persistInvoicePdf({
+      transactionId: payment._id,
+      tenantId,
+    }).catch((err) => console.error("Auto-invoice generation failed:", err.message));
+
+    // Generate/Update Itinerary (since it's now a paid/confirmed trip)
+    persistItineraryPdf({
+      bookingId: payment.bookingId,
+      tenantId,
+    }).catch((err) => console.error("Auto-itinerary generation failed:", err.message));
+  }
 
   const quotePatch = {
     paymentStatus: payment.status || "pending",

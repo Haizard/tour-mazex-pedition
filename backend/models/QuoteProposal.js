@@ -97,6 +97,12 @@ const quoteProposalSchema = new mongoose.Schema(
     sentAt: { type: Date, default: null },
     acceptedAt: { type: Date, default: null },
     lastPaymentAt: { type: Date, default: null },
+    pdfMediaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Media",
+      default: null,
+    },
+    pdfGeneratedAt: { type: Date, default: null },
     businessTruth: {
       type: new mongoose.Schema(
         createBusinessTruthMetadataSchemaDefinition({ entityKey: "quotes" }),

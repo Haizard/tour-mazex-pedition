@@ -54,6 +54,7 @@ import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
 import { safePrimaryLookup } from "../utils/safePrimaryLookup.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import QuoteProposal from "../models/QuoteProposal.js";
+import { persistItineraryPdf } from "../utils/itineraryPdfStorage.js";
 
 const router = express.Router();
 
@@ -268,6 +269,15 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
         }
 
         await syncBookingRevenueViews(updatedBooking.toObject());
+
+        // Trigger automated itinerary generation on confirmation
+        if (status === "Confirmed") {
+            persistItineraryPdf({
+                bookingId: updatedBooking._id,
+                tenantId: req.tenantId,
+                env: process.env,
+            }).catch((err) => console.error("Auto-itinerary generation failed:", err.message));
+        }
 
         // Trigger Growth Suite: Reputation Guardian & Repeat Customer Automation
         if (status === "Completed") {
@@ -625,6 +635,29 @@ router.delete('/:id', requireTenantAdmin, async (req, res) => {
         await LeadFollowUpSequence.deleteMany(buildTenantFilter(req, { bookingId: booking._id }));
 
         res.status(200).json({ message: 'Booking deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.post("/:id/generate-pdf", requireTenantAdmin, async (req, res) => {
+    try {
+        const booking = await persistItineraryPdf({
+            bookingId: req.params.id,
+            tenantId: req.tenantId,
+            env: process.env,
+        });
+
+        await syncMongoDocumentToShadowStore({
+            entityType: "bookings",
+            document: booking.toObject(),
+            model: Booking,
+        });
+
+        res.status(200).json({
+            message: "Itinerary PDF generated and stored successfully.",
+            booking,
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

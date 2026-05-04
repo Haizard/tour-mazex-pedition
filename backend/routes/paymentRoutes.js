@@ -35,6 +35,7 @@ import {
   syncLinkedPaymentRevenueRecords,
   syncPaymentRevenueShadowWrites,
 } from "../utils/paymentRevenueSync.js";
+import { persistInvoicePdf } from "../utils/invoicePdfStorage.js";
 
 const router = express.Router();
 
@@ -442,6 +443,25 @@ router.patch("/:id", async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/:id/generate-pdf", async (req, res) => {
+  try {
+    const payment = await persistInvoicePdf({
+      transactionId: req.params.id,
+      tenantId: req.tenantId,
+      env: process.env,
+    });
+
+    await syncPaymentRevenueShadowWrites(String(req.tenantId || ""), payment.toObject());
+
+    res.status(200).json({
+      message: "Invoice PDF generated and stored successfully.",
+      payment: toPaymentResponse(payment.toObject()),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
