@@ -105,13 +105,13 @@ Completed after the initial version of this file:
 - manual PDF generation routes added to `paymentRoutes.js` and `bookingRoutes.js`
 - PostgreSQL-first write ownership implemented for the Bookings domain via `backend/utils/postgresFirstBookingService.js`
 - Bookings creation and updates now prioritize PostgreSQL as the system of record before shadowing back to MongoDB
-- business-truth registry updated to reflect PostgreSQL ownership of the Bookings, Payments, and Quotes domains
-- PostgreSQL-first write ownership implemented for the Payments domain via `backend/utils/postgresFirstPaymentService.js`
-- Payment creation, status verification (checkout response), and webhook processing now prioritize PostgreSQL as the system of record before shadowing back to MongoDB
-- all major payment write paths in `paymentRoutes.js` refactored for relational-first ownership
+- business-truth registry updated to reflect PostgreSQL ownership of the Bookings, Payments, Quotes, and Travelers domains
 - PostgreSQL-first write ownership implemented for the Quotes domain via `backend/utils/postgresFirstQuoteService.js`
 - Quote generation and public response processing now prioritize PostgreSQL as the system of record before shadowing back to MongoDB
 - automated status transitions for quotes (triggered by payments) refactored for relational-first ownership in `paymentRevenueSync.js`
+- PostgreSQL-first write ownership implemented for the Travelers domain via `backend/utils/postgresFirstTravelerService.js`
+- Traveler inquiry creation (website & WhatsApp) and lead stage updates now prioritize PostgreSQL as the system of record before shadowing back to MongoDB
+- major write paths in `customInquiryRoutes.js` refactored for relational-first ownership
 
 Verification that passed for this slice:
 
@@ -166,7 +166,8 @@ node backend/tests/pdfStorage.integration.js
 node backend/tests/postgresFirstBooking.test.js
 node backend/tests/postgresFirstPayment.test.js
 node backend/tests/postgresFirstQuote.test.js
-npx eslint backend/utils/invoicePdfGenerator.js backend/utils/invoicePdfStorage.js backend/utils/itineraryPdfGenerator.js backend/utils/itineraryPdfStorage.js backend/utils/postgresFirstBookingService.js backend/utils/postgresFirstPaymentService.js backend/utils/postgresFirstQuoteService.js
+node backend/tests/postgresFirstTraveler.test.js
+npx eslint backend/utils/invoicePdfGenerator.js backend/utils/invoicePdfStorage.js backend/utils/itineraryPdfGenerator.js backend/utils/itineraryPdfStorage.js backend/utils/postgresFirstBookingService.js backend/utils/postgresFirstPaymentService.js backend/utils/postgresFirstQuoteService.js backend/utils/postgresFirstTravelerService.js
 node -e "import('./backend/controllers/marketingController.js').then(() => console.log('marketing-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/controllers/marketingController.js
 ```

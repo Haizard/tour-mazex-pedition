@@ -41,15 +41,15 @@ const businessTruthEntities = [
   {
     key: "travelers",
     label: "Travelers And Inquiries",
-    currentOwner: "mongodb",
+    currentOwner: "postgresql",
     targetOwner: "postgresql",
-    migrationMode: "shadow-prep",
+    migrationMode: "cutover",
     cutoverWave: 2,
     cutoverOrder: 4,
     serviceBoundary: "crm-and-attribution",
     stores: ["mongodb", "postgresql", "pgvector"],
     notes:
-      "Traveler identity, lead attribution, and structured CRM history should consolidate after quotes.",
+      "Traveler identity, lead attribution, and structured CRM history are now PostgreSQL-owned.",
   },
   {
     key: "guide-driver-assignments",

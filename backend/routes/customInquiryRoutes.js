@@ -39,6 +39,10 @@ import {
     createPostgresFirstQuote,
     updatePostgresFirstQuote,
 } from '../utils/postgresFirstQuoteService.js';
+import {
+    createPostgresFirstTraveler,
+    updatePostgresFirstTraveler,
+} from '../utils/postgresFirstTravelerService.js';
 
 const router = express.Router();
 
@@ -160,14 +164,15 @@ router.post('/', async (req, res) => {
             scoring.leadScoreReasons.push(`Referred traveler (Code: ${inquiryData.referralCode})`);
             scoring.leadTemperature = 'hot';
         }
-        const newInquiry = new CustomInquiry(withTenantId(req, {
-            ...inquiryData,
-            ...scoring,
-            automationSummary: automation.summary,
-            followUpMessage: automation.followUpMessage,
-        }));
-        await newInquiry.save();
-        await syncTravelerInquiryViews(newInquiry.toObject());
+        const newInquiry = await createPostgresFirstTraveler(
+            withTenantId(req, {
+                ...inquiryData,
+                ...scoring,
+                automationSummary: automation.summary,
+                followUpMessage: automation.followUpMessage,
+            }),
+            process.env
+        );
         const primaryInquiry = await safePrimaryLookup(
             () => findTravelerInquiryRecord(newInquiry._id, req.tenantId, process.env),
             {
@@ -223,15 +228,15 @@ router.post('/whatsapp-lead', async (req, res) => {
             scoring.leadScoreReasons.push(`Referred traveler (Code: ${inquiryData.referralCode})`);
             scoring.leadTemperature = 'hot';
         }
-        const newInquiry = new CustomInquiry(withTenantId(req, {
-            ...inquiryData,
-            ...scoring,
-            automationSummary: automation.summary,
-            followUpMessage: automation.followUpMessage,
-        }));
-
-        await newInquiry.save();
-        await syncTravelerInquiryViews(newInquiry.toObject());
+        const newInquiry = await createPostgresFirstTraveler(
+            withTenantId(req, {
+                ...inquiryData,
+                ...scoring,
+                automationSummary: automation.summary,
+                followUpMessage: automation.followUpMessage,
+            }),
+            process.env
+        );
         const primaryInquiry = await safePrimaryLookup(
             () => findTravelerInquiryRecord(newInquiry._id, req.tenantId, process.env),
             {
@@ -372,14 +377,12 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
             return res.status(400).json({ message: 'No inquiry updates were provided.' });
         }
 
-        const updated = await CustomInquiry.findOneAndUpdate(
-            buildTenantFilter(req, { _id: req.params.id }),
+        const updated = await updatePostgresFirstTraveler(
+            req.params.id,
+            req.tenantId,
             nextFields,
-            { new: true }
+            process.env
         );
-        if (updated) {
-            await syncTravelerInquiryViews(updated.toObject());
-        }
         const primaryInquiry = updated
             ? await safePrimaryLookup(
                 () => findTravelerInquiryRecord(updated._id, req.tenantId, process.env),
