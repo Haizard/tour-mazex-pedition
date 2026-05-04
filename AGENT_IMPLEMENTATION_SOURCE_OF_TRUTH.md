@@ -94,6 +94,9 @@ Completed after the initial version of this file:
 - chatbot semantic retrieval now includes FAQ entries alongside tours, blogs, language packs, and travel documentation guides
 - marketing campaign entries now sync into the pgvector assistant knowledge index
 - chatbot semantic retrieval now includes campaign entries so current offers and CTAs can influence commercial responses
+- tenant page configs now sync into the pgvector assistant knowledge index
+- tenant home-content sections now sync into the pgvector assistant knowledge index
+- chatbot semantic retrieval now includes live tenant site messaging from page configs and home-content sections
 
 Verification that passed for this slice:
 
@@ -134,8 +137,11 @@ node --test backend/tests/socialPostImageStorage.test.js backend/tests/socialPos
 node -e "import('./backend/controllers/socialPostController.js').then(() => console.log('social-post-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/controllers/socialPostController.js backend/models/SocialPost.js backend/tests/socialPostImageStorage.test.js backend/tests/socialPost.test.js
 node --test backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
+node -e "import('./backend/controllers/pageConfigController.js').then(() => console.log('page-config-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+node -e "import('./backend/routes/homeContentRoutes.js').then(() => console.log('home-content-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/routes/faqRoutes.js').then(() => console.log('faq-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/controllers/chatController.js').then(() => console.log('chat-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+ npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/routes/homeContentRoutes.js backend/routes/faqRoutes.js backend/controllers/pageConfigController.js backend/controllers/chatController.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
 npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/routes/faqRoutes.js backend/controllers/chatController.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
 node -e "import('./backend/controllers/marketingController.js').then(() => console.log('marketing-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/controllers/marketingController.js
@@ -231,11 +237,12 @@ Confirmed implemented areas:
 - pgvector-backed assistant retrieval also covers tours and blogs for chatbot content ranking
 - pgvector-backed assistant retrieval now also covers tenant FAQ entries for chatbot support relevance
 - pgvector-backed assistant retrieval now also covers marketing campaigns for commercial response relevance
+- pgvector-backed assistant retrieval now also covers live tenant page content and home-content messaging
 
 Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, beyond the current media upload and current blog image slices
-- deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice for tours, blogs, docs, language packs, FAQs, and campaigns
+- deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice for tours, blogs, docs, language packs, FAQs, campaigns, live page content, and home-content messaging
 - broader event/job orchestration beyond current shadow replay, follow-up queue, payment webhook queue, scheduled social post queue, and email sync queue support
 
 ### Phase 5. Open distribution channels

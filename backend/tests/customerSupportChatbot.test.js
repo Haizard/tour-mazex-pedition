@@ -5,6 +5,7 @@ import {
   buildCustomerSupportContext,
   selectCampaignEntries,
   selectFaqEntries,
+  selectSiteContentEntries,
   rankContentByVectorMatches,
   selectLanguageAssistantProfile,
   selectTravelDocumentationGuides,
@@ -161,6 +162,35 @@ test("selectCampaignEntries prefers pgvector-ranked campaign ids when available"
   assert.equal(campaigns[0]._id, "campaign-2");
 });
 
+test("selectSiteContentEntries prefers pgvector-ranked page and home content ids when available", () => {
+  const siteContent = selectSiteContentEntries({
+    pageConfigs: [
+      {
+        _id: "page-1",
+        pageType: "home",
+        title: "Safari Home",
+        seo: { description: "Luxury Tanzania journeys." },
+        sections: [],
+      },
+    ],
+    homeContents: [
+      {
+        _id: "home-1",
+        section: "welcome",
+        title: "Tailor-Made Tanzania",
+        description: "We shape private safari itineraries around your pace.",
+      },
+    ],
+    message: "custom safari planning",
+    vectorMatchIds: ["home-1", "page-1"],
+  });
+
+  assert.deepEqual(
+    siteContent.map((entry) => entry._id),
+    ["home-1", "page-1"]
+  );
+});
+
 test("buildCustomerSupportContext includes multilingual and documentation instructions when enabled", () => {
   const result = buildCustomerSupportContext({
     tenantName: "MAZ Expeditions",
@@ -220,9 +250,30 @@ test("buildCustomerSupportContext includes multilingual and documentation instru
         status: "active",
       },
     ],
+    pageConfigs: [
+      {
+        _id: "page-1",
+        pageType: "home",
+        title: "Safari Home",
+        seo: {
+          description: "Luxury Tanzania journeys tailored around your travel style.",
+        },
+        sections: [],
+      },
+    ],
+    homeContents: [
+      {
+        _id: "home-1",
+        section: "welcome",
+        title: "Tailor-Made Tanzania",
+        description: "We shape private safari itineraries around your pace, style, and goals.",
+      },
+    ],
     vectorMatches: {
       faqIds: ["faq-1"],
       campaignIds: ["campaign-1"],
+      pageConfigIds: ["page-1"],
+      homeContentIds: ["home-1"],
     },
     featureAccess: {
       multilingualAiAssistant: true,
@@ -246,6 +297,14 @@ test("buildCustomerSupportContext includes multilingual and documentation instru
   );
   assert.equal(
     result.systemInstruction.includes("Current commercial campaigns"),
+    true
+  );
+  assert.equal(
+    result.systemInstruction.includes("Live site messaging"),
+    true
+  );
+  assert.equal(
+    result.systemInstruction.includes("Tailor-Made Tanzania"),
     true
   );
 });

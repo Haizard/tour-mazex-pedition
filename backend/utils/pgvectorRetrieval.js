@@ -185,6 +185,14 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
         grouped.campaignIds.push(sourceId);
       }
 
+      if (sourceType === "page-config") {
+        grouped.pageConfigIds.push(sourceId);
+      }
+
+      if (sourceType === "home-content-section") {
+        grouped.homeContentIds.push(sourceId);
+      }
+
       return grouped;
     },
     {
@@ -194,6 +202,8 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
       blogIds: [],
       faqIds: [],
       campaignIds: [],
+      pageConfigIds: [],
+      homeContentIds: [],
     }
   );
 
@@ -240,6 +250,8 @@ export const searchAssistantKnowledge = async ({
       blogIds: [],
       faqIds: [],
       campaignIds: [],
+      pageConfigIds: [],
+      homeContentIds: [],
     };
   }
 
@@ -262,6 +274,8 @@ export const searchAssistantKnowledge = async ({
       blogIds: [],
       faqIds: [],
       campaignIds: [],
+      pageConfigIds: [],
+      homeContentIds: [],
     };
   }
 };

@@ -273,12 +273,94 @@ export const selectCampaignEntries = ({
     .slice(0, limit);
 };
 
+export const selectSiteContentEntries = ({
+  pageConfigs = [],
+  homeContents = [],
+  message = "",
+  limit = 4,
+  vectorMatchIds = [],
+} = {}) => {
+  const entries = [
+    ...(pageConfigs || []).map((page) => ({
+      ...page,
+      _siteContentType: "page-config",
+      _searchableText: [
+        page.pageType,
+        page.title,
+        page.slug,
+        page.seo?.title,
+        page.seo?.description,
+        ...(Array.isArray(page.seo?.keywords) ? page.seo.keywords : []),
+        ...(Array.isArray(page.sections)
+          ? page.sections.flatMap((section) => [
+              section.type,
+              section.variant,
+              JSON.stringify(section.contentConfig || {}),
+            ])
+          : []),
+      ]
+        .filter(Boolean)
+        .join(" "),
+    })),
+    ...(homeContents || []).map((section) => ({
+      ...section,
+      _siteContentType: "home-content-section",
+      _searchableText: [
+        section.section,
+        section.title,
+        section.subtitle,
+        section.description,
+        section.quote,
+        section.quoteAuthor,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    })),
+  ];
+
+  if (!entries.length) {
+    return [];
+  }
+
+  const messageTokens = tokenize(message);
+  const vectorRank = new Map(
+    (vectorMatchIds || []).map((id, index) => [String(id), Math.max(2, 100 - index)])
+  );
+
+  return entries
+    .map((entry) => {
+      const searchable = normalizeText(entry._searchableText);
+      let score = 0;
+
+      messageTokens.forEach((token) => {
+        if (token && searchable.includes(token)) {
+          score += token.length > 4 ? 3 : 1;
+        }
+      });
+
+      const entryId = String(entry?._id || "");
+      if (entryId && vectorRank.has(entryId)) {
+        score += vectorRank.get(entryId);
+      }
+
+      return {
+        ...entry,
+        matchScore: score,
+      };
+    })
+    .filter((entry) => entry.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore)
+    .slice(0, limit);
+};
+
 export const buildCustomerSupportContext = ({
   tenantName = "MAZ Expeditions",
   tours = [],
   blogs = [],
   faqs = [],
   campaigns = [],
+  pageConfigs = [],
+  homeContents = [],
   message = "",
   visitorProfile = {},
   languageProfiles = [],
@@ -313,6 +395,15 @@ export const buildCustomerSupportContext = ({
     message,
     vectorMatchIds: vectorMatches.campaignIds || [],
   });
+  const matchedSiteContent = selectSiteContentEntries({
+    pageConfigs,
+    homeContents,
+    message,
+    vectorMatchIds: [
+      ...(vectorMatches.pageConfigIds || []),
+      ...(vectorMatches.homeContentIds || []),
+    ],
+  });
 
   const compactTours = (tours || []).slice(0, 8).map((tour) =>
     `- ${tour.title} | ${tour.location || "Tanzania"} | ${tour.duration || "Custom duration"} | $${tour.price || "Quote"} | ${clip(tour.description, 140)}`
@@ -327,6 +418,28 @@ export const buildCustomerSupportContext = ({
   const compactCampaigns = matchedCampaigns.map((campaign) =>
     `- ${campaign.title}${campaign.campaignType ? ` (${campaign.campaignType})` : ""}: ${clip(campaign.summary, 180)}${Array.isArray(campaign.channels) && campaign.channels.length ? ` Channels: ${campaign.channels.join(", ")}.` : ""}`
   );
+  const compactSiteContent = matchedSiteContent.map((entry) => {
+    if (entry._siteContentType === "home-content-section") {
+      return `- Home section ${entry.section || "general"}: ${clip(
+        [entry.title, entry.subtitle, entry.description, entry.quote]
+          .filter(Boolean)
+          .join(" | "),
+        200
+      )}`;
+    }
+
+    return `- Page ${entry.pageType || "content"}${entry.title ? ` (${entry.title})` : ""}: ${clip(
+      [
+        entry.seo?.description,
+        ...(Array.isArray(entry.sections)
+          ? entry.sections.map((section) => JSON.stringify(section.contentConfig || {}))
+          : []),
+      ]
+        .filter(Boolean)
+        .join(" | "),
+      200
+    )}`;
+  });
 
   const languageSection = matchedLanguageProfile
     ? [
@@ -395,6 +508,9 @@ ${compactFaqs.join("\n") || "- No matching FAQ entries found."}
 
 Current commercial campaigns:
 ${compactCampaigns.join("\n") || "- No campaign matches found."}
+
+Live site messaging:
+${compactSiteContent.join("\n") || "- No matching live site content found."}
 
 Current tours:
 ${compactTours.join("\n") || "- No tour catalog loaded."}

@@ -68,6 +68,8 @@ test("groupAssistantKnowledgeMatches groups rows by source type and keeps rankin
     { source_type: "blog-post", source_id: "blog-1" },
     { source_type: "faq-entry", source_id: "faq-1" },
     { source_type: "campaign-entry", source_id: "campaign-1" },
+    { source_type: "page-config", source_id: "page-1" },
+    { source_type: "home-content-section", source_id: "home-1" },
   ]);
 
   assert.deepEqual(grouped.languageProfileIds, ["profile-2", "profile-1"]);
@@ -76,4 +78,6 @@ test("groupAssistantKnowledgeMatches groups rows by source type and keeps rankin
   assert.deepEqual(grouped.blogIds, ["blog-1"]);
   assert.deepEqual(grouped.faqIds, ["faq-1"]);
   assert.deepEqual(grouped.campaignIds, ["campaign-1"]);
+  assert.deepEqual(grouped.pageConfigIds, ["page-1"]);
+  assert.deepEqual(grouped.homeContentIds, ["home-1"]);
 });

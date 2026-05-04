@@ -7,6 +7,7 @@ import {
   isPagePubliclyAccessible,
   normalizePageSlug,
 } from "../utils/pagePublishing.js";
+import { syncAssistantKnowledgeEmbedding } from "../utils/pgvectorRetrieval.js";
 
 const normalizeSections = (sections = []) =>
   [...sections]
@@ -58,6 +59,37 @@ const isLegacyDefaultHomePage = (page) => {
     sections.length === defaultSections.length &&
     sections.every((section, index) => section.type === defaultSections[index]?.type) &&
     sections[0]?.contentConfig?.eyebrow === HOME_PAGE_DEFAULT.sections[0]?.contentConfig?.eyebrow
+  );
+};
+
+const syncPageConfigKnowledgeEmbedding = async (page = {}) => {
+  await syncAssistantKnowledgeEmbedding(
+    {
+      sourceType: "page-config",
+      sourceId: page._id,
+      tenantId: page.tenantId,
+      title: page.title || page.pageType || "Page content",
+      body: [
+        page.slug,
+        page.seo?.title,
+        page.seo?.description,
+        ...(Array.isArray(page.seo?.keywords) ? page.seo.keywords : []),
+        ...(Array.isArray(page.sections)
+          ? page.sections.flatMap((section) => [
+              section.type,
+              section.variant,
+              JSON.stringify(section.contentConfig || {}),
+            ])
+          : []),
+      ]
+        .filter(Boolean)
+        .join(" "),
+      metadata: {
+        pageType: page.pageType || "",
+        slug: page.slug || "",
+        status: page.status || "",
+      },
+    }
   );
 };
 
@@ -162,6 +194,8 @@ export const upsertPageConfig = async (req, res) => {
         }
       );
 
+      await syncPageConfigKnowledgeEmbedding(page.toObject ? page.toObject() : page);
+
       return res.status(200).json(page);
     }
 
@@ -183,6 +217,8 @@ export const upsertPageConfig = async (req, res) => {
         runValidators: true,
       }
     );
+
+    await syncPageConfigKnowledgeEmbedding(page.toObject ? page.toObject() : page);
 
     res.status(200).json(page);
   } catch (error) {

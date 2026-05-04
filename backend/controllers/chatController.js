@@ -5,7 +5,9 @@ import Blog from "../models/Blog.js";
 import ChatConversation from "../models/ChatConversation.js";
 import Campaign from "../models/Campaign.js";
 import Faq from "../models/Faq.js";
+import HomeContent from "../models/HomeContent.js";
 import LanguageAssistantProfile from "../models/LanguageAssistantProfile.js";
+import PageConfig from "../models/PageConfig.js";
 import TravelDocumentationGuide from "../models/TravelDocumentationGuide.js";
 import { buildTenantFilter } from "../utils/tenantContext.js";
 import { buildSalesAssistantPayload } from "../utils/chatSalesAssistant.js";
@@ -121,7 +123,7 @@ export const handleChat = async (req, res) => {
             ),
         };
 
-        const [tours, blogs, faqs, campaigns, languageProfiles, travelDocumentationGuides] = await Promise.all([
+        const [tours, blogs, faqs, campaigns, pageConfigs, homeContents, languageProfiles, travelDocumentationGuides] = await Promise.all([
             TourPackage.find(tenantFilter).select(
                 "title location price duration description tourType category"
             ),
@@ -138,6 +140,16 @@ export const handleChat = async (req, res) => {
                 .sort({ scheduledFor: 1, updatedAt: -1 })
                 .limit(8)
                 .select("title campaignType summary status channels")
+                .lean(),
+            PageConfig.find(tenantFilter)
+                .sort({ updatedAt: -1 })
+                .limit(8)
+                .select("pageType slug title status seo sections")
+                .lean(),
+            HomeContent.find(tenantFilter)
+                .sort({ updatedAt: -1 })
+                .limit(8)
+                .select("section title subtitle description quote quoteAuthor")
                 .lean(),
             featureAccess.multilingualAiAssistant
                 ? LanguageAssistantProfile.find({
@@ -170,6 +182,8 @@ export const handleChat = async (req, res) => {
                 "blog-post",
                 "faq-entry",
                 "campaign-entry",
+                "page-config",
+                "home-content-section",
                 featureAccess.multilingualAiAssistant ? "language-assistant-profile" : "",
                 featureAccess.travelDocumentationAssistant ? "travel-documentation-guide" : "",
             ].filter(Boolean),
@@ -192,6 +206,8 @@ export const handleChat = async (req, res) => {
             blogs: rankedBlogs,
             faqs,
             campaigns,
+            pageConfigs,
+            homeContents,
             message,
             visitorProfile,
             languageProfiles,
