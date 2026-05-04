@@ -9,6 +9,11 @@ const blogSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: { type: String, required: true },
     image: { type: String, required: true },
+    imageMediaId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Media",
+        default: null,
+    },
     author: { type: String, default: "Admin" },
     category: { type: String },
     destinationSlug: { type: String, trim: true, default: "" },

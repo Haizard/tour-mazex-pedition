@@ -1,7 +1,9 @@
+import process from "node:process";
 import { GoogleGenAI } from "@google/genai";
 import Blog from "../models/Blog.js";
 import TourPackage from "../models/TourPackage.js";
 import { buildTenantFilter } from "../utils/tenantContext.js";
+import { storeGeneratedMediaAsset } from "../utils/generatedMediaStorage.js";
 
 const generateAiImage = async (ai, prompt) => {
     const imageModels = [
@@ -181,8 +183,21 @@ Every blog must end with a strong closing CTA that encourages booking a package 
         const blogData = parseAiSections(response.text);
 
         let imageUrl = await generateAiImage(ai, blogData.imagePrompt || blogData.title);
+        let imageMediaId = null;
         if (!imageUrl) {
             imageUrl = "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&q=80&w=1200";
+        } else if (imageUrl.startsWith("data:")) {
+            try {
+                const storedMedia = await storeGeneratedMediaAsset({
+                    tenantId: req.tenantId,
+                    filenameBase: `${blogData.title || "daily-blog"}-hero`,
+                    dataUrl: imageUrl,
+                });
+                imageUrl = storedMedia.url;
+                imageMediaId = storedMedia.mediaId;
+            } catch (storageError) {
+                console.warn("AI Blogger: Generated image storage failed, keeping inline fallback.", storageError.message);
+            }
         }
 
         const newBlog = new Blog({
@@ -191,6 +206,7 @@ Every blog must end with a strong closing CTA that encourages booking a package 
             content: blogData.content,
             category: blogData.category,
             image: imageUrl,
+            imageMediaId,
             author: `${brandName} Expert`
         });
 

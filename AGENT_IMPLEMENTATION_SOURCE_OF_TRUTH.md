@@ -85,6 +85,8 @@ Completed after the initial version of this file:
 - email sync processing loop added in `backend/utils/emailSyncProcessor.js`
 - email sync trigger route now queues scaffold jobs through Redis when Redis is available, with inline fallback if Redis is unavailable
 - standalone email sync drain script added in `backend/scripts/processEmailSyncJobs.js`
+- AI-generated blog hero images now persist through the media/object-storage pipeline via `backend/utils/generatedMediaStorage.js`
+- blog automation now stores generated image assets as first-class media records and links them back on the `Blog` document with `imageMediaId`
 
 Verification that passed for this slice:
 
@@ -115,6 +117,9 @@ node --test backend/tests/emailSyncQueue.test.js
 node -e "import('./backend/routes/emailRoutes.js').then(() => console.log('email-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/scripts/processEmailSyncJobs.js').then(() => console.log('process-email-sync-import-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/utils/emailSyncQueue.js backend/utils/emailSyncProcessor.js backend/routes/emailRoutes.js backend/server.js backend/scripts/processEmailSyncJobs.js backend/tests/emailSyncQueue.test.js
+node --test backend/tests/generatedMediaStorage.test.js
+node -e "import('./backend/controllers/blogAutomationController.js').then(() => console.log('blog-automation-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/utils/generatedMediaStorage.js backend/controllers/blogAutomationController.js backend/models/Blog.js backend/tests/generatedMediaStorage.test.js
 ```
 
 ## Main Truth About Current Project Status
@@ -196,6 +201,7 @@ Confirmed implemented areas:
 - object-storage abstraction layer exists
 - real S3-compatible media upload execution exists
 - signed object-storage read fallback exists
+- AI-generated blog hero images now flow through the media/object-storage layer instead of remaining only as inline data URLs
 - Redis-backed follow-up dispatch queue and short processing lock exist
 - Redis-backed payment webhook queue and processing lock exist
 - Redis-backed scheduled social post dispatch queue and processing lock exist
@@ -205,7 +211,7 @@ Confirmed implemented areas:
 
 Still unfinished inside Phase 4:
 
-- full S3/object-storage production cutover across all generated artifacts, not only media uploads
+- full S3/object-storage production cutover across all generated artifacts, beyond the current media upload and generated blog image slices
 - deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice
 - broader event/job orchestration beyond current shadow replay, follow-up queue, payment webhook queue, scheduled social post queue, and email sync queue support
 
