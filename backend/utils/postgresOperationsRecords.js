@@ -249,3 +249,92 @@ export const findAirportPickupRecord = (sourceId, tenantId, env) =>
     text: "select * from public.airport_pickup_records where source_id = $1 and tenant_id = $2 limit 1",
     values: [String(sourceId || ""), String(tenantId || "")],
   }, env);
+
+// --- View Builders ---
+
+export const buildGuideDriverAssignmentView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  assignedBookingId: String(row.assigned_booking_id || ""),
+  staffType: String(row.staff_type || "guide"),
+  fullName: String(row.full_name || ""),
+  phone: String(row.phone || ""),
+  email: String(row.email || ""),
+  homeBase: String(row.home_base || ""),
+  availabilityStatus: String(row.availability_status || "available"),
+  languages: Array.isArray(row.languages) ? row.languages : [],
+  specialties: Array.isArray(row.specialties) ? row.specialties : [],
+  assignedTourTitle: String(row.assigned_tour_title || ""),
+  assignmentDate: row.assignment_date ? new Date(row.assignment_date).toISOString() : null,
+  assignmentStartDate: row.assignment_start_date ? new Date(row.assignment_start_date).toISOString() : null,
+  assignmentEndDate: row.assignment_end_date ? new Date(row.assignment_end_date).toISOString() : null,
+  assignmentNotes: String(row.assignment_notes || ""),
+  licenseCategory: String(row.license_category || ""),
+  createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+  updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+});
+
+// --- Deletes ---
+
+export const deleteGuideDriverAssignmentRecord = (sourceId, tenantId, env = globalThis.process?.env || {}) =>
+  deleteRecord({
+    text: "delete from public.guide_driver_assignment_records where source_id = $1 and tenant_id = $2",
+    values: [String(sourceId || ""), String(tenantId || "")],
+  }, env);
+
+export const deleteAccommodationReservationRecord = (sourceId, tenantId, env = globalThis.process?.env || {}) =>
+  deleteRecord({
+    text: "delete from public.accommodation_reservation_records where source_id = $1 and tenant_id = $2",
+    values: [String(sourceId || ""), String(tenantId || "")],
+  }, env);
+
+export const deleteAirportPickupRecord = (sourceId, tenantId, env = globalThis.process?.env || {}) =>
+  deleteRecord({
+    text: "delete from public.airport_pickup_records where source_id = $1 and tenant_id = $2",
+    values: [String(sourceId || ""), String(tenantId || "")],
+  }, env);
+
+// --- Accommodation View Builder ---
+
+export const buildAccommodationReservationView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  bookingId: String(row.booking_id || ""),
+  bookingGuestName: String(row.booking_guest_name || ""),
+  hotelName: String(row.hotel_name || ""),
+  supplierName: String(row.supplier_name || ""),
+  supplierContact: String(row.supplier_contact || ""),
+  destination: String(row.destination || ""),
+  reservationCode: String(row.reservation_code || ""),
+  roomPlan: String(row.room_plan || ""),
+  checkInDate: row.check_in_date ? new Date(row.check_in_date).toISOString() : null,
+  checkOutDate: row.check_out_date ? new Date(row.check_out_date).toISOString() : null,
+  guestCount: Number(row.guest_count || 1),
+  status: String(row.status || "pending"),
+  notes: String(row.notes || ""),
+  assignedTourTitle: String(row.assigned_tour_title || ""),
+  createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+  updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+});
+
+// --- Airport Pickup View Builder ---
+
+export const buildAirportPickupView = (row = {}) => ({
+  _id: String(row.source_id || ""),
+  tenantId: String(row.tenant_id || ""),
+  bookingId: String(row.booking_id || ""),
+  driverId: String(row.driver_id || ""),
+  guestName: String(row.guest_name || ""),
+  airportCode: String(row.airport_code || ""),
+  flightNumber: String(row.flight_number || ""),
+  pickupDateTime: row.pickup_date_time ? new Date(row.pickup_date_time).toISOString() : null,
+  destinationLabel: String(row.destination_label || ""),
+  assignedTourTitle: String(row.assigned_tour_title || ""),
+  driverName: String(row.driver_name || ""),
+  vehicleLabel: String(row.vehicle_label || ""),
+  guestCount: Number(row.guest_count || 1),
+  status: String(row.status || "pending"),
+  notes: String(row.notes || ""),
+  createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+  updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+});
