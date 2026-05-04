@@ -158,4 +158,48 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+router.get("/:id/referral-link", async (req, res) => {
+  try {
+    const partner = await PartnerAccount.findOne(
+      buildTenantFilter(req, { _id: req.params.id })
+    ).lean();
+
+    if (!partner) {
+      return res.status(404).json({ message: "Partner account not found." });
+    }
+
+    const { resolveTenantBaseUrl } = await import("../utils/tenantContext.js");
+    const baseUrl = resolveTenantBaseUrl(req);
+    const referralCode = String(
+      partner.referralCode || partner.companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+    );
+
+    const params = new URLSearchParams({
+      source: "partner-referral",
+      campaign: `partner-${referralCode}`,
+      referral: referralCode,
+      utm_source: "partner",
+      utm_medium: "referral",
+      utm_campaign: referralCode,
+    });
+
+    res.status(200).json({
+      partnerId: partner._id,
+      companyName: partner.companyName,
+      referralCode,
+      referralUrl: `${baseUrl}/plan-my-trip?${params.toString()}`,
+      embedUrl: `${baseUrl}/embed/plan-my-trip?${params.toString()}`,
+      apiEndpoint: `${baseUrl}/api/v1/inquiries`,
+      attribution: {
+        sourceChannel: "partner-referral",
+        campaignLabel: `partner-${referralCode}`,
+        referralCode,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
+

@@ -27,6 +27,8 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import followUpRoutes from "./routes/followUpRoutes.js";
 import dynamicPricingRoutes from "./routes/dynamicPricingRoutes.js";
 import distributionRoutes from "./routes/distributionRoutes.js";
+import publicApiRoutes from "./routes/publicApiRoutes.js";
+import apiKeyRoutes from "./routes/apiKeyRoutes.js";
 import competitorIntelligenceRoutes from "./routes/competitorIntelligenceRoutes.js";
 import languageAssistantRoutes from "./routes/languageAssistantRoutes.js";
 import travelDocumentationRoutes from "./routes/travelDocumentationRoutes.js";
@@ -194,6 +196,10 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/follow-ups", followUpRoutes);
 app.use("/api/dynamic-pricing", dynamicPricingRoutes);
 app.use("/api/distribution", distributionRoutes);
+// Public External API — wide-open CORS for partner/OTA integrations (no credentials)
+app.use("/api/v1", cors({ origin: "*", credentials: false }), publicApiRoutes);
+// Admin API key management
+app.use("/api/admin/api-keys", apiKeyRoutes);
 app.use("/api/competitor-intelligence", competitorIntelligenceRoutes);
 app.use("/api/language-assistants", languageAssistantRoutes);
 app.use("/api/travel-docs", travelDocumentationRoutes);
