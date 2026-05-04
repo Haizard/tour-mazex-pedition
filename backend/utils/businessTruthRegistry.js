@@ -15,15 +15,15 @@ const businessTruthEntities = [
   {
     key: "payments",
     label: "Payments",
-    currentOwner: "mongodb",
+    currentOwner: "postgresql",
     targetOwner: "postgresql",
-    migrationMode: "shadow-prep",
+    migrationMode: "cutover",
     cutoverWave: 1,
     cutoverOrder: 2,
     serviceBoundary: "revenue-core",
     stores: ["mongodb", "postgresql", "redis"],
     notes:
-      "Provider references, settlement states, refunds, and webhook idempotency should become SQL-backed business truth.",
+      "Provider references, settlement states, refunds, and webhook idempotency are now PostgreSQL-owned.",
   },
   {
     key: "quotes",

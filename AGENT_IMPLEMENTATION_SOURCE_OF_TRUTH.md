@@ -105,7 +105,10 @@ Completed after the initial version of this file:
 - manual PDF generation routes added to `paymentRoutes.js` and `bookingRoutes.js`
 - PostgreSQL-first write ownership implemented for the Bookings domain via `backend/utils/postgresFirstBookingService.js`
 - Bookings creation and updates now prioritize PostgreSQL as the system of record before shadowing back to MongoDB
-- business-truth registry updated to reflect PostgreSQL ownership of the Bookings domain
+- business-truth registry updated to reflect PostgreSQL ownership of the Bookings and Payments domains
+- PostgreSQL-first write ownership implemented for the Payments domain via `backend/utils/postgresFirstPaymentService.js`
+- Payment creation, status verification (checkout response), and webhook processing now prioritize PostgreSQL as the system of record before shadowing back to MongoDB
+- all major payment write paths in `paymentRoutes.js` refactored for relational-first ownership
 
 Verification that passed for this slice:
 
@@ -158,7 +161,8 @@ npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatb
 node --test backend/tests/pdfGenerators.test.js
 node backend/tests/pdfStorage.integration.js
 node backend/tests/postgresFirstBooking.test.js
-npx eslint backend/utils/invoicePdfGenerator.js backend/utils/invoicePdfStorage.js backend/utils/itineraryPdfGenerator.js backend/utils/itineraryPdfStorage.js backend/utils/postgresFirstBookingService.js
+node backend/tests/postgresFirstPayment.test.js
+npx eslint backend/utils/invoicePdfGenerator.js backend/utils/invoicePdfStorage.js backend/utils/itineraryPdfGenerator.js backend/utils/itineraryPdfStorage.js backend/utils/postgresFirstBookingService.js backend/utils/postgresFirstPaymentService.js
 node -e "import('./backend/controllers/marketingController.js').then(() => console.log('marketing-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/controllers/marketingController.js
 ```

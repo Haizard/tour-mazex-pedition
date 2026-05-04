@@ -36,6 +36,10 @@ import {
   syncPaymentRevenueShadowWrites,
 } from "../utils/paymentRevenueSync.js";
 import { persistInvoicePdf } from "../utils/invoicePdfStorage.js";
+import {
+  createPostgresFirstPayment,
+  updatePostgresFirstPayment,
+} from "../utils/postgresFirstPaymentService.js";
 
 const router = express.Router();
 
@@ -132,10 +136,13 @@ router.post("/checkout/:token/respond", async (req, res) => {
       failureReason: req.body.failureReason,
     });
 
-    Object.assign(payment, updates);
-    await payment.save();
+    await updatePostgresFirstPayment(
+      payment._id,
+      payment.tenantId,
+      updates,
+      process.env
+    );
     await syncLinkedRevenueRecords(req, payment.toObject());
-    await syncRevenueShadowWrites(req, payment.toObject());
 
     const refreshedPayment = await safePrimaryLookup(
       () => findPaymentRevenueRecordByPublicToken(req.params.token, process.env),
@@ -258,12 +265,16 @@ router.post("/webhooks/:provider", async (req, res) => {
       failureReason,
     });
 
-    Object.assign(payment, patch, {
-      providerReference: providerReference || payment.providerReference || "",
-    });
-    await payment.save();
+    await updatePostgresFirstPayment(
+      payment._id,
+      payment.tenantId,
+      {
+        ...patch,
+        providerReference: providerReference || payment.providerReference || "",
+      },
+      process.env
+    );
     await syncLinkedRevenueRecords(req, payment.toObject());
-    await syncRevenueShadowWrites(req, payment.toObject());
 
     return res.status(200).json({
       ignored: false,
@@ -327,14 +338,8 @@ router.post("/", async (req, res) => {
     const amount = Number(payload.amount || 0);
     const feePercent = Number(payload.feePercent || 0);
     payload.feeAmount = Number(payload.feeAmount || ((amount * feePercent) / 100).toFixed(2));
-    const payment = new PaymentTransaction(payload);
-    const baseUrl = resolveTenantBaseUrl(req);
-    payment.checkoutUrl =
-      payment.checkoutUrl ||
-      buildPublicPaymentCheckoutUrl(baseUrl, payment.publicToken);
-    await payment.save();
+    const payment = await createPostgresFirstPayment(payload, process.env);
     await syncLinkedRevenueRecords(req, payment.toObject());
-    await syncRevenueShadowWrites(req, payment.toObject());
     const primaryPayment = await safePrimaryLookup(
       () => findPaymentRevenueRecord(payment._id, req.tenantId, process.env),
       {
@@ -420,13 +425,13 @@ router.patch("/:id", async (req, res) => {
       );
     }
 
-    const payment = await PaymentTransaction.findOneAndUpdate(
-      buildTenantFilter(req, { _id: req.params.id }),
-      { $set: nextUpdates },
-      { new: true }
-    ).lean();
+    const payment = await updatePostgresFirstPayment(
+      req.params.id,
+      req.tenantId,
+      nextUpdates,
+      process.env
+    );
     await syncLinkedRevenueRecords(req, payment);
-    await syncRevenueShadowWrites(req, payment);
     const primaryPayment = await safePrimaryLookup(
       () => findPaymentRevenueRecord(payment._id, req.tenantId, process.env),
       {
@@ -454,7 +459,12 @@ router.post("/:id/generate-pdf", async (req, res) => {
       env: process.env,
     });
 
-    await syncPaymentRevenueShadowWrites(String(req.tenantId || ""), payment.toObject());
+    await updatePostgresFirstPayment(
+      payment._id,
+      payment.tenantId,
+      {},
+      process.env
+    );
 
     res.status(200).json({
       message: "Invoice PDF generated and stored successfully.",
