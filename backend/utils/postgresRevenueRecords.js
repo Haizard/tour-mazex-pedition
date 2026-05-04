@@ -79,6 +79,8 @@ export const buildBookingRevenueRecord = (booking = {}) => ({
   convertedAt: booking.convertedAt ? new Date(booking.convertedAt).toISOString() : null,
   travelDate: booking.travelDate ? new Date(booking.travelDate).toISOString() : null,
   itineraryMediaId: booking.itineraryMediaId ? String(booking.itineraryMediaId) : "",
+  distributorTenantId: booking.distributorTenantId ? String(booking.distributorTenantId) : "",
+  marketplaceCommissionPercent: Number(booking.marketplaceCommissionPercent || 0),
   sourcePayload: booking,
 });
 
@@ -120,6 +122,7 @@ export const buildPaymentRevenueRecord = (payment = {}) => ({
   refundedAt: payment.refundedAt ? new Date(payment.refundedAt).toISOString() : null,
   cancelledAt: payment.cancelledAt ? new Date(payment.cancelledAt).toISOString() : null,
   invoiceMediaId: payment.invoiceMediaId ? String(payment.invoiceMediaId) : "",
+  marketplacePayoutAmount: Number(payment.marketplacePayoutAmount || 0),
   sourcePayload: payment,
 });
 
@@ -130,9 +133,10 @@ export const buildBookingRevenueUpsert = (booking = {}) => {
       insert into public.booking_records (
         source_id, tenant_id, quote_proposal_id, traveler_name, email, phone, package_tour,
         status, revenue_stage, payment_status, total_price, currency, referral_code, lead_source,
-        campaign_label, first_touch_at, converted_at, travel_date, itinerary_media_id, source_payload
+        campaign_label, first_touch_at, converted_at, travel_date, itinerary_media_id,
+        distributor_tenant_id, marketplace_commission_percent, source_payload
       ) values (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22::jsonb
       )
       on conflict (source_id)
       do update set
@@ -154,6 +158,8 @@ export const buildBookingRevenueUpsert = (booking = {}) => {
         converted_at = excluded.converted_at,
         travel_date = excluded.travel_date,
         itinerary_media_id = excluded.itinerary_media_id,
+        distributor_tenant_id = excluded.distributor_tenant_id,
+        marketplace_commission_percent = excluded.marketplace_commission_percent,
         source_payload = excluded.source_payload,
         updated_at = now()
     `,
@@ -161,7 +167,8 @@ export const buildBookingRevenueUpsert = (booking = {}) => {
       record.sourceId, record.tenantId, record.quoteProposalId || null, record.travelerName, record.email,
       record.phone, record.packageTour, record.status, record.revenueStage, record.paymentStatus,
       record.totalPrice, record.currency, record.referralCode, record.leadSource, record.campaignLabel,
-      record.firstTouchAt, record.convertedAt, record.travelDate, record.itineraryMediaId || null, JSON.stringify(record.sourcePayload || {}),
+      record.firstTouchAt, record.convertedAt, record.travelDate, record.itineraryMediaId || null, 
+      record.distributorTenantId || null, record.marketplaceCommissionPercent, JSON.stringify(record.sourcePayload || {}),
     ],
   };
 };
@@ -211,9 +218,10 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
     text: `
       insert into public.payment_records (
         source_id, tenant_id, booking_id, provider, public_token, provider_reference, customer_name, status,
-        currency, amount, fee_percent, fee_amount, failure_reason, paid_at, refunded_at, cancelled_at, invoice_media_id, source_payload
+        currency, amount, fee_percent, fee_amount, failure_reason, paid_at, refunded_at, cancelled_at, invoice_media_id,
+        marketplace_payout_amount, source_payload
       ) values (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb
       )
       on conflict (source_id)
       do update set
@@ -233,13 +241,15 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
         refunded_at = excluded.refunded_at,
         cancelled_at = excluded.cancelled_at,
         invoice_media_id = excluded.invoice_media_id,
+        marketplace_payout_amount = excluded.marketplace_payout_amount,
         source_payload = excluded.source_payload,
         updated_at = now()
     `,
     values: [
       record.sourceId, record.tenantId, record.bookingId || null, record.provider, record.publicToken, record.providerReference,
       record.customerName, record.status, record.currency, record.amount, record.feePercent, record.feeAmount,
-      record.failureReason, record.paidAt, record.refundedAt, record.cancelledAt, record.invoiceMediaId || null, JSON.stringify(record.sourcePayload || {}),
+      record.failureReason, record.paidAt, record.refundedAt, record.cancelledAt, record.invoiceMediaId || null,
+      record.marketplacePayoutAmount, JSON.stringify(record.sourcePayload || {}),
     ],
   };
 };
