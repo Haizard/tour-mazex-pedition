@@ -7,6 +7,7 @@ import {
     deleteAssistantKnowledgeEmbedding,
     syncAssistantKnowledgeEmbedding,
 } from "../utils/pgvectorRetrieval.js";
+import { storeGeneratedMediaAsset } from "../utils/generatedMediaStorage.js";
 
 const slugify = (text = '') =>
     text
@@ -22,6 +23,33 @@ const normalizeBlog = (blogDoc) => {
     return {
         ...blog,
         views: typeof blog.views === 'number' ? blog.views : 0,
+    };
+};
+
+export const resolveBlogImageAsset = async ({
+    image = "",
+    tenantId = "",
+    title = "",
+    storeMediaAsset = storeGeneratedMediaAsset,
+} = {}) => {
+    const normalizedImage = String(image || "").trim();
+
+    if (!normalizedImage || !normalizedImage.startsWith("data:")) {
+        return {
+            image: normalizedImage,
+            imageMediaId: null,
+        };
+    }
+
+    const storedMedia = await storeMediaAsset({
+        tenantId,
+        filenameBase: `${title || "blog"}-hero`,
+        dataUrl: normalizedImage,
+    });
+
+    return {
+        image: storedMedia.url,
+        imageMediaId: storedMedia.mediaId,
     };
 };
 
@@ -91,8 +119,15 @@ export const getBlogById = async (req, res) => {
 };
 
 export const createBlog = async (req, res) => {
+    const imageAsset = await resolveBlogImageAsset({
+        image: req.body.image,
+        tenantId: req.tenantId,
+        title: req.body.title,
+    });
+
     const blog = {
         ...req.body,
+        ...imageAsset,
         views: typeof req.body.views === 'number' ? req.body.views : 0,
     };
     const newBlog = new Blog(withTenantId(req, blog));
@@ -112,10 +147,20 @@ export const updateBlog = async (req, res) => {
 
         const nextViews =
             typeof req.body.views === 'number' ? req.body.views : (existingBlog.views ?? 0);
+        const imageAsset = Object.prototype.hasOwnProperty.call(req.body, "image")
+            ? await resolveBlogImageAsset({
+                image: req.body.image,
+                tenantId: req.tenantId,
+                title: req.body.title || existingBlog.title,
+            })
+            : {
+                image: existingBlog.image,
+                imageMediaId: existingBlog.imageMediaId || null,
+            };
 
         const updatedBlog = await Blog.findOneAndUpdate(
             buildTenantFilter(req, { _id: req.params.id }),
-            { ...req.body, views: nextViews },
+            { ...req.body, ...imageAsset, views: nextViews },
             { new: true, runValidators: true }
         );
 
