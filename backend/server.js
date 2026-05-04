@@ -49,7 +49,6 @@ import tourRoutes from "./routes/tourRoutes.js";
 import visionaryRoutes from "./routes/visionaryRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
 import infrastructureRoutes from "./routes/infrastructureRoutes.js";
-import publicApiRoutes from "./routes/publicApiRoutes.js";
 import travelerPortalRoutes from "./routes/travelerPortalRoutes.js";
 import {
   applySecurityHeaders,
