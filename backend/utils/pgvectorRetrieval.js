@@ -169,11 +169,21 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
         grouped.travelGuideIds.push(sourceId);
       }
 
+      if (sourceType === "tour-package") {
+        grouped.tourIds.push(sourceId);
+      }
+
+      if (sourceType === "blog-post") {
+        grouped.blogIds.push(sourceId);
+      }
+
       return grouped;
     },
     {
       languageProfileIds: [],
       travelGuideIds: [],
+      tourIds: [],
+      blogIds: [],
     }
   );
 

@@ -1,7 +1,13 @@
+import process from "node:process";
 import TourPackage from '../models/TourPackage.js';
 import Blog from '../models/Blog.js';
 import { rewriteContentWithAi, generateSeoWithAi, generateFullTourPackageWithAi } from "../utils/aiRewrite.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import {
+    buildAssistantKnowledgeRecord,
+    deleteAssistantKnowledgeEmbedding,
+    syncAssistantKnowledgeEmbedding,
+} from "../utils/pgvectorRetrieval.js";
 
 const slugifyTitle = (value = '') =>
     value
@@ -11,6 +17,38 @@ const slugifyTitle = (value = '') =>
         .replace(/&/g, ' and ')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
+
+const syncTourKnowledgeEmbedding = async (tour = {}) => {
+    try {
+        await syncAssistantKnowledgeEmbedding(
+            buildAssistantKnowledgeRecord({
+                sourceType: "tour-package",
+                sourceId: tour._id,
+                tenantId: tour.tenantId,
+                title: tour.title || "",
+                body: [
+                    tour.location,
+                    tour.description,
+                    tour.duration,
+                    tour.tourType,
+                    tour.category,
+                    ...(Array.isArray(tour.destinationsVisited) ? tour.destinationsVisited : []),
+                    ...(Array.isArray(tour.inclusions) ? tour.inclusions : []),
+                ].filter(Boolean).join(" "),
+                metadata: {
+                    location: tour.location || "",
+                    duration: tour.duration || "",
+                    price: Number(tour.price || 0),
+                    tourType: tour.tourType || "",
+                    category: tour.category || "",
+                },
+            }),
+            process.env
+        );
+    } catch (error) {
+        console.error("Tour knowledge embedding sync failed:", error.message);
+    }
+};
 
 // Get all tour packages (with search/filter)
 export const getTourPackages = async (req, res) => {
@@ -74,6 +112,7 @@ export const createTourPackage = async (req, res) => {
     const newTour = new TourPackage(withTenantId(req, tour));
     try {
         await newTour.save();
+        await syncTourKnowledgeEmbedding(newTour.toObject());
         res.status(201).json(newTour);
     } catch (error) {
         res.status(409).json({ message: error.message });
@@ -91,6 +130,7 @@ export const updateTourPackage = async (req, res) => {
             { new: true }
         );
         if (!updatedTour) return res.status(404).json({ message: 'Tour package not found' });
+        await syncTourKnowledgeEmbedding(updatedTour.toObject());
         res.status(200).json(updatedTour);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -103,6 +143,13 @@ export const deleteTourPackage = async (req, res) => {
     try {
         const deletedTour = await TourPackage.findOneAndDelete(buildTenantFilter(req, { _id: id }));
         if (!deletedTour) return res.status(404).json({ message: 'Tour package not found' });
+        await deleteAssistantKnowledgeEmbedding(
+            {
+                sourceType: "tour-package",
+                sourceId: deletedTour._id,
+            },
+            process.env
+        );
         res.status(200).json({ message: 'Tour package deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });

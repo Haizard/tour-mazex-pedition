@@ -27,6 +27,30 @@ const clip = (value = "", maxLength = 320) => {
   return `${normalized.slice(0, maxLength - 3).trim()}...`;
 };
 
+export const rankContentByVectorMatches = ({
+  items = [],
+  vectorMatchIds = [],
+} = {}) => {
+  const vectorRank = new Map(
+    (vectorMatchIds || []).map((id, index) => [String(id), index])
+  );
+
+  return [...(items || [])].sort((left, right) => {
+    const leftRank = vectorRank.has(String(left?._id || ""))
+      ? vectorRank.get(String(left?._id || ""))
+      : Number.POSITIVE_INFINITY;
+    const rightRank = vectorRank.has(String(right?._id || ""))
+      ? vectorRank.get(String(right?._id || ""))
+      : Number.POSITIVE_INFINITY;
+
+    if (leftRank !== rightRank) {
+      return leftRank - rightRank;
+    }
+
+    return 0;
+  });
+};
+
 export const selectLanguageAssistantProfile = ({
   profiles = [],
   visitorProfile = {},

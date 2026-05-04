@@ -8,7 +8,10 @@ import TravelDocumentationGuide from "../models/TravelDocumentationGuide.js";
 import { buildTenantFilter } from "../utils/tenantContext.js";
 import { buildSalesAssistantPayload } from "../utils/chatSalesAssistant.js";
 import { canAccessFeature } from "../utils/subscriptionPlans.js";
-import { buildCustomerSupportContext } from "../utils/customerSupportChatbot.js";
+import {
+    buildCustomerSupportContext,
+    rankContentByVectorMatches,
+} from "../utils/customerSupportChatbot.js";
 import { searchAssistantKnowledge } from "../utils/pgvectorRetrieval.js";
 
 const normalizeTranscript = (items = []) =>
@@ -151,6 +154,8 @@ export const handleChat = async (req, res) => {
                 .filter(Boolean)
                 .join(" "),
             sourceTypes: [
+                "tour-package",
+                "blog-post",
                 featureAccess.multilingualAiAssistant ? "language-assistant-profile" : "",
                 featureAccess.travelDocumentationAssistant ? "travel-documentation-guide" : "",
             ].filter(Boolean),
@@ -158,10 +163,19 @@ export const handleChat = async (req, res) => {
             env: process.env,
         });
 
+        const rankedTours = rankContentByVectorMatches({
+            items: tours,
+            vectorMatchIds: vectorMatches.tourIds || [],
+        });
+        const rankedBlogs = rankContentByVectorMatches({
+            items: blogs,
+            vectorMatchIds: vectorMatches.blogIds || [],
+        });
+
         const { systemInstruction, assistantSignals } = buildCustomerSupportContext({
             tenantName: brandName,
-            tours,
-            blogs,
+            tours: rankedTours,
+            blogs: rankedBlogs,
             message,
             visitorProfile,
             languageProfiles,

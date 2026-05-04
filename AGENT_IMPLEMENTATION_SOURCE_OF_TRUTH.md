@@ -71,6 +71,8 @@ Completed after the initial version of this file:
 - pgvector-backed assistant knowledge index migration added for language packs and travel documentation guides
 - deterministic embedding + vector search helper added in `backend/utils/pgvectorRetrieval.js`
 - customer support assistant now prefers vector-ranked language/doc matches before falling back to lexical scoring
+- pgvector content retrieval now also covers tours and blogs for traveler-facing chatbot relevance
+- tour and blog controllers now sync content embeddings into the shared assistant knowledge index
 
 Verification that passed for this slice:
 
@@ -86,6 +88,9 @@ node -e "import('./backend/controllers/chatController.js').then(() => console.lo
 node -e "import('./backend/routes/languageAssistantRoutes.js').then(() => console.log('language-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/routes/travelDocumentationRoutes.js').then(() => console.log('travel-doc-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/controllers/chatController.js backend/routes/languageAssistantRoutes.js backend/routes/travelDocumentationRoutes.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
+node -e "import('./backend/controllers/tourController.js').then(() => console.log('tour-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+node -e "import('./backend/controllers/blogController.js').then(() => console.log('blog-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/controllers/tourController.js backend/controllers/blogController.js
 ```
 
 ## Main Truth About Current Project Status
@@ -169,11 +174,12 @@ Confirmed implemented areas:
 - signed object-storage read fallback exists
 - Redis-backed follow-up dispatch queue and short processing lock exist
 - pgvector-backed assistant retrieval foundation exists for language/documentation knowledge
+- pgvector-backed assistant retrieval also covers tours and blogs for chatbot content ranking
 
 Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, not only media uploads
-- broader pgvector coverage beyond the current assistant/documentation retrieval slice
+- deeper pgvector coverage beyond the current assistant/chatbot content retrieval slice
 - broader event/job orchestration beyond current shadow replay and follow-up queue support
 
 ### Phase 5. Open distribution channels
@@ -232,7 +238,7 @@ They are:
 2. Route-by-route cutover audit to remove remaining Mongo-only business-truth dependencies
 3. Long-term migration cleanup and rollback/cutover strategy
 4. Full S3/object-storage production ownership for files and generated artifacts beyond the current media slice
-5. Broader pgvector-based retrieval memory and semantic search activation beyond the current assistant/documentation slice
+5. Broader pgvector-based retrieval memory and semantic search activation beyond the current assistant/chatbot slice
 6. Broader Redis job orchestration beyond the current shadow replay and follow-up dispatch support
 7. Widget productization hardening for third-party embedding
 8. External API product layer for non-full-site consumers

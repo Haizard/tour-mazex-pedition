@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   buildCustomerSupportContext,
+  rankContentByVectorMatches,
   selectLanguageAssistantProfile,
   selectTravelDocumentationGuides,
 } from "../utils/customerSupportChatbot.js";
@@ -167,5 +168,21 @@ test("buildCustomerSupportContext includes multilingual and documentation instru
   assert.equal(
     result.systemInstruction.includes("official Tanzania eVisa process"),
     true
+  );
+});
+
+test("rankContentByVectorMatches moves vector-ranked tours and blogs to the front", () => {
+  const items = rankContentByVectorMatches({
+    items: [
+      { _id: "tour-1", title: "Serengeti" },
+      { _id: "tour-2", title: "Zanzibar" },
+      { _id: "tour-3", title: "Kilimanjaro" },
+    ],
+    vectorMatchIds: ["tour-3", "tour-1"],
+  });
+
+  assert.deepEqual(
+    items.map((item) => item._id),
+    ["tour-3", "tour-1", "tour-2"]
   );
 });
