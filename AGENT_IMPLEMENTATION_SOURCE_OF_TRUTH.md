@@ -99,6 +99,13 @@ Completed after the initial version of this file:
 - tenant page configs now sync into the pgvector assistant knowledge index
 - tenant home-content sections now sync into the pgvector assistant knowledge index
 - chatbot semantic retrieval now includes live tenant site messaging from page configs and home-content sections
+- professional Invoice PDF generation and storage added via `backend/utils/invoicePdfGenerator.js` and `backend/utils/invoicePdfStorage.js`
+- detailed Itinerary PDF generation and storage added via `backend/utils/itineraryPdfGenerator.js` and `backend/utils/itineraryPdfStorage.js`
+- automated PDF generation triggers integrated into payment and booking lifecycle updates
+- manual PDF generation routes added to `paymentRoutes.js` and `bookingRoutes.js`
+- PostgreSQL-first write ownership implemented for the Bookings domain via `backend/utils/postgresFirstBookingService.js`
+- Bookings creation and updates now prioritize PostgreSQL as the system of record before shadowing back to MongoDB
+- business-truth registry updated to reflect PostgreSQL ownership of the Bookings domain
 
 Verification that passed for this slice:
 
@@ -148,6 +155,10 @@ node -e "import('./backend/routes/faqRoutes.js').then(() => console.log('faq-rou
 node -e "import('./backend/controllers/chatController.js').then(() => console.log('chat-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
  npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/routes/homeContentRoutes.js backend/routes/faqRoutes.js backend/controllers/pageConfigController.js backend/controllers/chatController.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
 npx eslint backend/utils/pgvectorRetrieval.js backend/utils/customerSupportChatbot.js backend/routes/faqRoutes.js backend/controllers/chatController.js backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
+node --test backend/tests/pdfGenerators.test.js
+node backend/tests/pdfStorage.integration.js
+node backend/tests/postgresFirstBooking.test.js
+npx eslint backend/utils/invoicePdfGenerator.js backend/utils/invoicePdfStorage.js backend/utils/itineraryPdfGenerator.js backend/utils/itineraryPdfStorage.js backend/utils/postgresFirstBookingService.js
 node -e "import('./backend/controllers/marketingController.js').then(() => console.log('marketing-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/controllers/marketingController.js
 ```

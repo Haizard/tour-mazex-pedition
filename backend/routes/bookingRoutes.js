@@ -55,6 +55,10 @@ import { safePrimaryLookup } from "../utils/safePrimaryLookup.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 import { persistItineraryPdf } from "../utils/itineraryPdfStorage.js";
+import {
+  createPostgresFirstBooking,
+  updatePostgresFirstBooking,
+} from "../utils/postgresFirstBookingService.js";
 
 const router = express.Router();
 
@@ -224,13 +228,15 @@ router.post('/', async (req, res) => {
             await tour.save();
         }
 
-        const newBooking = new Booking(withTenantId(req, {
+        const bookingPayload = withTenantId(req, {
             ...bookingData,
             ...buildBookingRevenueDefaults(bookingData),
             referralCode: bookingData.referralCode || undefined
-        }));
-        await newBooking.save();
+        });
+
+        const newBooking = await createPostgresFirstBooking(bookingPayload, process.env);
         await syncBookingRevenueViews(newBooking.toObject());
+
         const primaryBooking = await safePrimaryLookup(
             () => findBookingRevenueRecord(newBooking._id, req.tenantId, process.env),
             {
@@ -259,13 +265,14 @@ router.patch('/:id', requireTenantAdmin, async (req, res) => {
         if (status === "Completed") {
             bookingPatch.revenueStage = "paid";
         }
-        const updatedBooking = await Booking.findOneAndUpdate(
-            buildTenantFilter(req, { _id: req.params.id }),
-            { $set: bookingPatch },
-            { new: true }
+        const updatedBooking = await updatePostgresFirstBooking(
+            req.params.id,
+            req.tenantId,
+            bookingPatch,
+            process.env
         );
         if (!updatedBooking) {
-            return res.status(404).json({ message: 'Booking not found' });
+            return res.status(404).json({ message: "Booking not found" });
         }
 
         await syncBookingRevenueViews(updatedBooking.toObject());

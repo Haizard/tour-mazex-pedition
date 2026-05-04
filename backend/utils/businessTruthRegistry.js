@@ -2,15 +2,15 @@ const businessTruthEntities = [
   {
     key: "bookings",
     label: "Bookings",
-    currentOwner: "mongodb",
+    currentOwner: "postgresql",
     targetOwner: "postgresql",
-    migrationMode: "shadow-prep",
+    migrationMode: "cutover",
     cutoverWave: 1,
     cutoverOrder: 1,
     serviceBoundary: "revenue-core",
     stores: ["mongodb", "postgresql", "redis"],
     notes:
-      "Canonical traveler commitment, commercial state, and settlement lifecycle should move to PostgreSQL first.",
+      "Canonical traveler commitment, commercial state, and settlement lifecycle are now PostgreSQL-owned.",
   },
   {
     key: "payments",
