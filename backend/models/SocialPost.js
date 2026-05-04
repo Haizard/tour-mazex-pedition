@@ -55,6 +55,20 @@ const socialPostSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    imageAssets: [
+      {
+        url: {
+          type: String,
+          trim: true,
+          required: true,
+        },
+        mediaId: {
+          type: String,
+          default: null,
+          trim: true,
+        },
+      },
+    ],
     scheduledFor: {
       type: Date,
       default: null,

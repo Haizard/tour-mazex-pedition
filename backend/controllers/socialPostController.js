@@ -7,6 +7,7 @@ import {
   publishSocialPostToPlatforms,
 } from "../utils/socialAutomation.js";
 import { generateSocialPostSuggestions } from "../utils/socialPostGeneration.js";
+import { storeGeneratedMediaAsset } from "../utils/generatedMediaStorage.js";
 import { getRedisClient } from "../utils/redisClient.js";
 import {
   buildSocialPostDispatchJob,
@@ -38,6 +39,50 @@ const sanitizeImageUrls = (imageUrls = []) =>
   Array.isArray(imageUrls)
     ? imageUrls.map((imageUrl) => imageUrl?.toString().trim()).filter(Boolean)
     : [];
+
+const slugifyFilenamePart = (value = "") =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "creative";
+
+export const resolveSocialPostImageAssets = async ({
+  imageUrls = [],
+  tenantId = "",
+  title = "",
+  storeMediaAsset = storeGeneratedMediaAsset,
+} = {}) => {
+  const normalizedUrls = sanitizeImageUrls(imageUrls);
+  const imageAssets = [];
+
+  for (const [index, imageUrl] of normalizedUrls.entries()) {
+    if (!imageUrl.startsWith("data:")) {
+      imageAssets.push({
+        url: imageUrl,
+        mediaId: null,
+      });
+      continue;
+    }
+
+    const storedAsset = await storeMediaAsset({
+      tenantId,
+      filenameBase: `social-post-${slugifyFilenamePart(title)}-image-${index + 1}`,
+      dataUrl: imageUrl,
+    });
+
+    imageAssets.push({
+      url: storedAsset.url,
+      mediaId: storedAsset.mediaId,
+    });
+  }
+
+  return {
+    imageUrls: imageAssets.map((asset) => asset.url),
+    imageAssets,
+  };
+};
 
 const ensureFutureSchedule = (scheduledFor) => {
   if (!scheduledFor) {
@@ -144,14 +189,19 @@ export const createSocialPost = async (req, res) => {
     }
 
     const normalizedPlatforms = sanitizePlatforms(platforms);
-    const normalizedImageUrls = sanitizeImageUrls(imageUrls);
     const scheduleCheck = ensureFutureSchedule(scheduledFor);
 
     if (scheduleCheck?.error) {
       return res.status(400).json({ message: scheduleCheck.error });
     }
 
-    if (status === "scheduled" && normalizedImageUrls.length === 0) {
+    const normalizedImageAssets = await resolveSocialPostImageAssets({
+      imageUrls,
+      tenantId: req.tenantId,
+      title: title?.trim() || `${tourPackage.title} Social Post`,
+    });
+
+    if (status === "scheduled" && normalizedImageAssets.imageUrls.length === 0) {
       return res.status(400).json({ message: "Scheduled posts need at least one image." });
     }
 
@@ -164,7 +214,8 @@ export const createSocialPost = async (req, res) => {
         caption: caption?.trim(),
         hashtags: sanitizeHashtags(hashtags),
         callToAction: callToAction?.trim(),
-        imageUrls: normalizedImageUrls,
+        imageUrls: normalizedImageAssets.imageUrls,
+        imageAssets: normalizedImageAssets.imageAssets,
         scheduledFor: scheduleCheck?.value || null,
         generationMeta: generationMeta || {},
         createdBy: req.admin?._id?.toString() || "",
@@ -192,7 +243,13 @@ export const updateSocialPost = async (req, res) => {
     }
 
     if (updates.imageUrls) {
-      updates.imageUrls = sanitizeImageUrls(updates.imageUrls);
+      const normalizedImageAssets = await resolveSocialPostImageAssets({
+        imageUrls: updates.imageUrls,
+        tenantId: req.tenantId,
+        title: updates.title || "",
+      });
+      updates.imageUrls = normalizedImageAssets.imageUrls;
+      updates.imageAssets = normalizedImageAssets.imageAssets;
     }
 
     if (Object.prototype.hasOwnProperty.call(updates, "scheduledFor")) {

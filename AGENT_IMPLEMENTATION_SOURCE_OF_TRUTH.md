@@ -88,6 +88,8 @@ Completed after the initial version of this file:
 - AI-generated blog hero images now persist through the media/object-storage pipeline via `backend/utils/generatedMediaStorage.js`
 - blog automation now stores generated image assets as first-class media records and links them back on the `Blog` document with `imageMediaId`
 - manual blog create/update now also stores inline `data:` images through the media/object-storage pipeline via `resolveBlogImageAsset` in `backend/controllers/blogController.js`
+- social post create/update now also stores inline `data:` creative images through the media/object-storage pipeline via `resolveSocialPostImageAssets` in `backend/controllers/socialPostController.js`
+- social posts now persist first-class image asset references in addition to the existing plain `imageUrls` UI contract
 - tenant FAQ entries now sync into the pgvector assistant knowledge index
 - chatbot semantic retrieval now includes FAQ entries alongside tours, blogs, language packs, and travel documentation guides
 - marketing campaign entries now sync into the pgvector assistant knowledge index
@@ -128,6 +130,9 @@ npx eslint backend/utils/generatedMediaStorage.js backend/controllers/blogAutoma
 node --test backend/tests/blogImageStorage.test.js backend/tests/generatedMediaStorage.test.js
 node -e "import('./backend/controllers/blogController.js').then(() => console.log('blog-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/controllers/blogController.js backend/tests/blogImageStorage.test.js backend/tests/generatedMediaStorage.test.js backend/utils/generatedMediaStorage.js
+node --test backend/tests/socialPostImageStorage.test.js backend/tests/socialPost.test.js
+node -e "import('./backend/controllers/socialPostController.js').then(() => console.log('social-post-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/controllers/socialPostController.js backend/models/SocialPost.js backend/tests/socialPostImageStorage.test.js backend/tests/socialPost.test.js
 node --test backend/tests/pgvectorRetrieval.test.js backend/tests/customerSupportChatbot.test.js
 node -e "import('./backend/routes/faqRoutes.js').then(() => console.log('faq-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 node -e "import('./backend/controllers/chatController.js').then(() => console.log('chat-controller-ok')).catch((error) => { console.error(error); process.exit(1); })"
@@ -217,6 +222,7 @@ Confirmed implemented areas:
 - signed object-storage read fallback exists
 - AI-generated blog hero images now flow through the media/object-storage layer instead of remaining only as inline data URLs
 - editor-provided inline blog images now also flow through the media/object-storage layer on create/update
+- editor-provided inline social post creative images now also flow through the media/object-storage layer on create/update
 - Redis-backed follow-up dispatch queue and short processing lock exist
 - Redis-backed payment webhook queue and processing lock exist
 - Redis-backed scheduled social post dispatch queue and processing lock exist
