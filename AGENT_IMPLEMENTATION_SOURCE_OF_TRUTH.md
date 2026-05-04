@@ -66,6 +66,8 @@ Completed after the initial version of this file:
 - signed-read redirect fallback for object-storage media when no public CDN URL exists
 - provider-aware media upload size enforcement so the Mongo inline ceiling only applies to inline storage
 - media route integration for the new object-storage behavior
+- Redis-backed follow-up dispatch queue and processing lock in `backend/utils/followUpProcessor.js`
+- follow-up processing script moved toward queue + drain orchestration instead of only direct synchronous sending
 
 Verification that passed for this slice:
 
@@ -73,6 +75,9 @@ Verification that passed for this slice:
 node --test backend/tests/objectStorage.test.js
 node -e "import('./backend/routes/mediaRoutes.js').then(() => console.log('media-routes-ok')).catch((error) => { console.error(error); process.exit(1); })"
 npx eslint backend/utils/objectStorage.js backend/routes/mediaRoutes.js backend/tests/objectStorage.test.js
+node --test backend/tests/followUpProcessor.test.js
+node -e "import('./backend/scripts/processFollowUps.js').then(() => console.log('process-followups-import-ok')).catch((error) => { console.error(error); process.exit(1); })"
+npx eslint backend/utils/followUpProcessor.js backend/scripts/processFollowUps.js backend/tests/followUpProcessor.test.js
 ```
 
 ## Main Truth About Current Project Status
@@ -154,12 +159,13 @@ Confirmed implemented areas:
 - object-storage abstraction layer exists
 - real S3-compatible media upload execution exists
 - signed object-storage read fallback exists
+- Redis-backed follow-up dispatch queue and short processing lock exist
 
 Still unfinished inside Phase 4:
 
 - full S3/object-storage production cutover across all generated artifacts, not only media uploads
 - pgvector installation and real retrieval pipeline
-- broader event/job orchestration beyond current Redis replay and support utilities
+- broader event/job orchestration beyond current shadow replay and follow-up queue support
 
 ### Phase 5. Open distribution channels
 
@@ -218,7 +224,7 @@ They are:
 3. Long-term migration cleanup and rollback/cutover strategy
 4. Full S3/object-storage production ownership for files and generated artifacts beyond the current media slice
 5. pgvector-based retrieval memory and semantic search activation
-6. Broader Redis job orchestration beyond current retry/replay support
+6. Broader Redis job orchestration beyond the current shadow replay and follow-up dispatch support
 7. Widget productization hardening for third-party embedding
 8. External API product layer for non-full-site consumers
 9. White-label delivery completion
