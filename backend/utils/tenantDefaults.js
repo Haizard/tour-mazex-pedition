@@ -1,11 +1,17 @@
 export const LEGACY_TENANT_SLUG = "maz-expeditions";
 export const LEGACY_TENANT_NAME = "MAZ Expeditions";
 export const LEGACY_TENANT_SUBDOMAIN = "maz";
+export const PLATFORM_DOMAINS = [
+  "localhost",
+  "127.0.0.1",
+  "::1",
+  "mazexpeditions.vercel.app",
+];
+
 export const LEGACY_TENANT_DOMAINS = [
   "mazexpeditions.com",
   "www.mazexpeditions.com",
   "tourism-website-inky.vercel.app",
-  "mazexpeditions.vercel.app",
 ];
 
 export const DEFAULT_TENANT_THEME = {

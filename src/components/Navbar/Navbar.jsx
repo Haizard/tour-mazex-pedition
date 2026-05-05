@@ -113,6 +113,7 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
     };
   });
 
+// eslint-disable-next-line react/prop-types
 const Navbar = ({ handleOrderPopup }) => {
   const navigate = useNavigate();
   const { siteConfig, tenant, loading } = useTenant();
@@ -197,7 +198,7 @@ const Navbar = ({ handleOrderPopup }) => {
     if (menuItems.length === 0 || initialTours.length === 0) {
        loadMenuItems();
     }
-  }, [shouldUseDefaultMenu]); // Refresh when tenant context resolves for demo tenants.
+  }, [initialTours, menuItems.length, shouldUseDefaultMenu]); // Refresh when tenant context resolves for demo tenants.
 
   const navigationConfig = siteConfig?.navigationConfig || {};
   const footerConfig = siteConfig?.footerConfig || {};
@@ -381,6 +382,22 @@ const Navbar = ({ handleOrderPopup }) => {
                   </AnimatePresence>
                 </li>
               ))}
+              <li className="relative group flex items-center ml-2">
+                <NavLink
+                  to="/discover"
+                  className={({ isActive }) =>
+                    `flex items-center gap-1 text-[13px] xl:text-[14px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border-2 transition-all duration-300 ${
+                      isActive
+                        ? isScrolled ? "bg-safari-green text-white border-safari-green" : "bg-white text-safari-green border-white"
+                        : isScrolled
+                          ? "text-safari-green border-safari-green hover:bg-safari-green hover:text-white"
+                          : "text-white border-white hover:bg-white hover:text-safari-green"
+                    }`
+                  }
+                >
+                  Discover
+                </NavLink>
+              </li>
             </ul>
           </div>
 

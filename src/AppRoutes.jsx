@@ -31,7 +31,8 @@ const FeedbackPublicView = React.lazy(() => import("./pages/FeedbackPublicView")
 const PaymentPublicView = React.lazy(() => import("./pages/PaymentPublicView"));
 const EmbeddedPlanMyTrip = React.lazy(() => import("./pages/EmbeddedPlanMyTrip"));
 const TravelerPortal = React.lazy(() => import("./pages/TravelerPortal"));
-
+const GlobalDiscovery = React.lazy(() => import("./pages/GlobalDiscovery"));
+const DiscoveryTourDetail = React.lazy(() => import("./pages/DiscoveryTourDetail"));
 const DashboardRouteFallback = ({ label }) => (
   <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
     <div className="mx-auto max-w-4xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
@@ -89,6 +90,8 @@ const tenantSiteRoutes = (
     <Route path="payment/:token" element={withPublicSuspense(<PaymentPublicView />)} />
     <Route path="embed/plan-my-trip" element={withPublicSuspense(<EmbeddedPlanMyTrip />)} />
     <Route path="trip/:token" element={withPublicSuspense(<TravelerPortal />)} />
+    <Route path="discover" element={withPublicSuspense(<GlobalDiscovery />)} />
+    <Route path="discover/tour/:id" element={withPublicSuspense(<DiscoveryTourDetail />)} />
   </>
 );
 

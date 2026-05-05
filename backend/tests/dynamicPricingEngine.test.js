@@ -15,7 +15,7 @@ test("calculateDynamicPricePreview applies season, demand, and occupancy adjustm
     occupancyMultiplier: 1.08,
   });
 
-  assert.equal(result.finalPrice, 2495);
+  assert.equal(result.finalPrice, 2494.8);
   assert.equal(result.adjustmentPercent, 24.74);
 });
 

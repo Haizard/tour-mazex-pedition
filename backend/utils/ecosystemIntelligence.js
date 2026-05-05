@@ -3,8 +3,12 @@ import { createPostgresClient } from "./postgresClient.js";
 /**
  * Calculates high-level commercial intelligence metrics using PostgreSQL as the primary source of truth.
  */
-export const buildEcosystemIntelligenceReport = async (tenantId, env = globalThis.process?.env || {}) => {
-  const client = createPostgresClient(env);
+export const buildEcosystemIntelligenceReport = async (
+  tenantId,
+  env = globalThis.process?.env || {},
+  options = {}
+) => {
+  const client = options.client || createPostgresClient(env);
   if (!client) throw new Error("PostgreSQL client is not configured.");
 
   try {

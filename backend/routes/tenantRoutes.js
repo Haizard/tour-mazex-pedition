@@ -94,6 +94,14 @@ router.put("/site-config", requireTenantAdmin, async (req, res) => {
 
 router.get("/bootstrap", async (req, res) => {
   try {
+    if (req.isPlatform) {
+      return res.status(200).json({
+        isPlatform: true,
+        tenant: null,
+        theme: DEFAULT_TENANT_THEME,
+        siteConfig: DEFAULT_TENANT_SITE_CONFIG,
+      });
+    }
     const [theme, siteConfig, siteSettings, homePage] = await Promise.all([
       TenantTheme.findOne({ tenantId: req.tenantId }).lean(),
       TenantSiteConfig.findOne({ tenantId: req.tenantId }).lean(),

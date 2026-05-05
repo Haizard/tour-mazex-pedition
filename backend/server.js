@@ -43,6 +43,7 @@ import visionaryRoutes from "./routes/visionaryRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
 import infrastructureRoutes from "./routes/infrastructureRoutes.js";
 import travelerPortalRoutes from "./routes/travelerPortalRoutes.js";
+import discoveryRoutes from "./routes/discoveryRoutes.js";
 import {
   applySecurityHeaders,
   attachRequestMetadata,
@@ -59,7 +60,6 @@ import { startShadowWriteReplayLoop } from "./utils/postgresShadowWrites.js";
 import { startPaymentWebhookProcessingLoop } from "./utils/paymentWebhookProcessor.js";
 import { startSocialPostProcessingLoop } from "./utils/socialPostProcessor.js";
 import { startEmailSyncProcessingLoop } from "./utils/emailSyncProcessor.js";
-import { buildBusinessTruthCutoverPlan } from "./utils/businessTruthRegistry.js";
 import { orchestrator } from "./utils/backgroundOrchestrator.js";
 
 const app = express();
@@ -218,6 +218,7 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/infrastructure", infrastructureRoutes);
 app.use("/api/traveler-portal", travelerPortalRoutes);
+app.use("/api/discovery", discoveryRoutes);
 
 app.use("/", seoRoutes);
 

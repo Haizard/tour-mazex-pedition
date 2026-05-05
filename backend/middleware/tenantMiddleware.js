@@ -7,6 +7,13 @@ export const tenantMiddleware = async (req, res, next) => {
     const lookup = resolveTenantLookup(req);
     let tenant = null;
 
+    if (lookup.isPlatform) {
+      req.isPlatform = true;
+      req.tenant = null;
+      req.tenantId = null;
+      return next();
+    }
+
     if (lookup.slug) {
       tenant = await Tenant.findOne({ slug: lookup.slug, status: "active" }).lean();
     }

@@ -1,4 +1,5 @@
-import { LEGACY_TENANT_DOMAINS, LEGACY_TENANT_SLUG } from "./tenantDefaults.js";
+import process from "node:process";
+import { LEGACY_TENANT_DOMAINS, LEGACY_TENANT_SLUG, PLATFORM_DOMAINS } from "./tenantDefaults.js";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -33,6 +34,10 @@ export const resolveTenantLookup = (req) => {
 
   if (explicitSubdomain) {
     return { subdomain: explicitSubdomain, hostname };
+  }
+
+  if (PLATFORM_DOMAINS.includes(hostname)) {
+    return { isPlatform: true, hostname };
   }
 
   if (!hostname || isLocalHostname(hostname) || LEGACY_TENANT_DOMAINS.includes(hostname)) {
