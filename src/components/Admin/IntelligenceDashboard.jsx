@@ -66,9 +66,15 @@ const IntelligenceDashboard = () => {
         />
         <StatCard 
           label="Active Partners" 
-          value={partners.length} 
+          value={data.network.activePartnerships} 
           icon={<FaNetworkWired />} 
           color="bg-purple-50 text-purple-600" 
+        />
+        <StatCard 
+          label="Avg Commission" 
+          value={data.network.averageCommission} 
+          icon={<FaFunnelDollar />} 
+          color="bg-rose-50 text-rose-600" 
         />
       </div>
 

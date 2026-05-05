@@ -4,6 +4,8 @@ import MarketplacePartnership from "../models/MarketplacePartnership.js";
 import TourPackage from "../models/TourPackage.js";
 import Tenant from "../models/Tenant.js";
 
+import { createPostgresFirstPartnership } from "../utils/postgresFirstPartnershipService.js";
+
 const router = express.Router();
 
 // Public Discovery (requires API Key or Tenant Context - simplified here for Admin first)
@@ -36,14 +38,15 @@ router.post("/partnerships/request", async (req, res) => {
   const { providerTenantId } = req.body;
 
   try {
-    const partnership = new MarketplacePartnership({
+    const partnership = await createPostgresFirstPartnership({
       providerTenantId,
-      distributorTenantId: req.tenantId,
+      distributorTenantId: String(req.tenantId || ""),
       status: "requested"
-    });
-    await partnership.save();
+    }, process.env);
+
     res.status(201).json(partnership);
   } catch (error) {
+    console.error("Partnership Request Error:", error.message);
     res.status(500).json({ message: "Partnership request failed. You might already have a request with this provider." });
   }
 });

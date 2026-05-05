@@ -19,9 +19,9 @@ test("listBusinessTruthEntities returns entities in safe cutover order", () => {
 test("business truth entities declare current and target owners", () => {
   const payments = getBusinessTruthEntity("payments");
 
-  assert.equal(payments?.currentOwner, "mongodb");
+  assert.equal(payments?.currentOwner, "postgresql");
   assert.equal(payments?.targetOwner, "postgresql");
-  assert.equal(payments?.migrationMode, "shadow-prep");
+  assert.equal(payments?.migrationMode, "cutover");
 });
 
 test("summarizeInfrastructureTargets exposes service responsibilities", () => {

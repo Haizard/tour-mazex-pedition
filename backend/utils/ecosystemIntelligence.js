@@ -47,9 +47,20 @@ export const buildEcosystemIntelligenceReport = async (tenantId, env = globalThi
       order by total_attributed_revenue desc
     `, [tenantId]);
 
+    // 4. Network Health Metrics
+    const networkResult = await client.query(`
+      select 
+        count(*) as total_partnerships,
+        count(case when status = 'active' then 1 end) as active_partnerships,
+        sum(commission_percent) / nullif(count(*), 0) as average_commission
+      from public.marketplace_partnership_records
+      where provider_tenant_id = $1 or distributor_tenant_id = $1
+    `, [tenantId]);
+
     const funnel = funnelResult.rows[0] || {};
     const channels = revenueResult.rows || [];
     const partners = partnerResult.rows || [];
+    const network = networkResult.rows[0] || { total_partnerships: 0, active_partnerships: 0, average_commission: 0 };
 
     const totalGrossRevenue = channels.reduce((acc, c) => acc + Number(c.gross_revenue || 0), 0);
 
@@ -80,6 +91,11 @@ export const buildEcosystemIntelligenceReport = async (tenantId, env = globalThi
         bookings: Number(p.booking_count || 0),
         revenue: Number(p.total_attributed_revenue || 0),
       })),
+      network: {
+        totalPartnerships: Number(network.total_partnerships || 0),
+        activePartnerships: Number(network.active_partnerships || 0),
+        averageCommission: Number(network.average_commission || 0).toFixed(1) + "%",
+      },
       timestamp: new Date().toISOString(),
     };
   } finally {

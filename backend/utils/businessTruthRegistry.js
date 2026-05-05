@@ -93,15 +93,15 @@ const businessTruthEntities = [
   {
     key: "partner-contracts-and-attribution",
     label: "Partner Contracts And Attribution",
-    currentOwner: "mongodb",
+    currentOwner: "postgresql",
     targetOwner: "postgresql",
-    migrationMode: "planned",
+    migrationMode: "cutover",
     cutoverWave: 4,
     cutoverOrder: 8,
     serviceBoundary: "distribution-and-network",
     stores: ["mongodb", "postgresql", "redis", "pgvector"],
     notes:
-      "Commercial agreements, affiliate payouts, and attribution joins should land after the operational migration waves.",
+      "Commercial agreements, affiliate payouts, and attribution joins are now PostgreSQL-owned.",
   },
 ];
 
