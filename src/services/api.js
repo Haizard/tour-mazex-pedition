@@ -410,6 +410,8 @@ export const fetchDynamicPricingRules = () => cachedGet("/dynamic-pricing");
 export const fetchDynamicPricingDashboard = () => cachedGet("/dynamic-pricing/dashboard");
 export const fetchBusinessTruthRegistry = () => API.get("/infrastructure/business-truth");
 export const fetchInfrastructureHealth = () => API.get("/infrastructure/health");
+export const fetchEcosystemIntelligence = () => API.get("/infrastructure/intelligence");
+export const fetchDemandForecast = () => API.get("/infrastructure/demand-forecast");
 export const fetchRevenueRecordReadModel = (params = {}) =>
   API.get("/infrastructure/revenue-records", { params });
 export const fetchTravelerRecordReadModel = (params = {}) =>

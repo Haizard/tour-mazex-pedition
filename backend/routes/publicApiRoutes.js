@@ -75,7 +75,7 @@ router.post("/inquiry", async (req, res) => {
       travelWhen: travelDate,
       source: "public_api",
       referralCode: referralData ? referralData.partnerCode : (req.body.referralCode || null)
-    }, req.tenantId, process.env);
+    }, process.env);
 
     res.status(201).json({
       message: "Inquiry created successfully.",

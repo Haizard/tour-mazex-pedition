@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { fetchEcosystemIntelligence, fetchDemandForecast } from "../../services/api";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtCurrency = (n) =>
@@ -44,8 +44,8 @@ const AttributionIntelligencePanel = () => {
 
   useEffect(() => {
     Promise.all([
-      axios.get("/api/infrastructure/intelligence"),
-      axios.get("/api/infrastructure/demand-forecast").catch(() => ({ data: null })),
+      fetchEcosystemIntelligence(),
+      fetchDemandForecast().catch(() => ({ data: null })),
     ])
       .then(([intRes, demRes]) => {
         setData(intRes.data);

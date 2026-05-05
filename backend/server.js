@@ -1,11 +1,4 @@
 /* global process */
-import dotenv from "dotenv";
-dotenv.config();
-
-import dns from "dns";
-// Explicitly set DNS servers to Google's to bypass local DNS issues with SRV records
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
-
 import cors from "cors";
 import express from "express";
 import { tenantMiddleware } from "./middleware/tenantMiddleware.js";
@@ -201,7 +194,7 @@ app.use("/api/follow-ups", followUpRoutes);
 app.use("/api/dynamic-pricing", dynamicPricingRoutes);
 app.use("/api/distribution", distributionRoutes);
 // Public External API — wide-open CORS for partner/OTA integrations (no credentials)
-app.use("/api/v1", cors({ origin: "*", credentials: false }), publicApiRoutes);
+app.use("/api/public/v1", cors({ origin: "*", credentials: false }), publicApiRoutes);
 // Admin API key management
 app.use("/api/admin/api-keys", apiKeyRoutes);
 app.use("/api/competitor-intelligence", competitorIntelligenceRoutes);
@@ -224,7 +217,6 @@ app.use("/api/social-posts", socialPostRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/infrastructure", infrastructureRoutes);
-app.use("/api/public/v1", publicApiRoutes);
 app.use("/api/traveler-portal", travelerPortalRoutes);
 
 app.use("/", seoRoutes);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { fetchPublicTestimonials, fetchFeedbackReport } from "../../services/api";
 import { 
   FaShieldAlt, 
   FaStar, 
@@ -29,7 +29,7 @@ const ReputationGuardianManager = () => {
     try {
       setLoading(true);
       const [testimonialsRes] = await Promise.all([
-        axios.get("/api/bookings/public-testimonials")
+        fetchPublicTestimonials()
       ]);
       
       // We also need all feedback for stats, not just public ones
@@ -52,7 +52,7 @@ const ReputationGuardianManager = () => {
   const generateReport = async () => {
     try {
       setReportLoading(true);
-      const response = await axios.get("/api/bookings/feedback-report");
+      const response = await fetchFeedbackReport();
       setReport(response.data.report);
     } catch (error) {
       console.error("Failed to generate report:", error);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FaChartLine, FaUsers, FaFunnelDollar, FaNetworkWired } from "react-icons/fa";
-import axios from "axios";
+import { fetchEcosystemIntelligence } from "../../services/api";
 
 import Card from "../UI/Card";
 import Badge from "../UI/Badge";
@@ -13,7 +13,7 @@ const IntelligenceDashboard = () => {
   useEffect(() => {
     const fetchIntelligence = async () => {
       try {
-        const response = await axios.get("/api/infrastructure/intelligence");
+        const response = await fetchEcosystemIntelligence();
         setData(response.data);
       } catch (err) {
         setError("Failed to load ecosystem intelligence. Ensure PostgreSQL sync is healthy.");
