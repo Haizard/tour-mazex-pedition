@@ -80,6 +80,16 @@ export const buildCanonicalLegacySiteSettingsPayload = (records = []) => {
   }, { ...SITE_SETTINGS_DEFAULTS });
 };
 
+export const buildLegacySiteSettingsUpsertUpdate = (tenantId, canonicalPayload) => ({
+  $set: {
+    ...canonicalPayload,
+  },
+  $setOnInsert: {
+    tenantId,
+    ...SITE_SETTINGS_DEFAULTS,
+  },
+});
+
 const reconcileLegacySiteSettings = async (tenantId) => {
   const relatedRecords = await SiteSettings.find({
     $or: [{ tenantId }, missingTenantFilter],
@@ -91,16 +101,7 @@ const reconcileLegacySiteSettings = async (tenantId) => {
 
   const canonicalRecord = await SiteSettings.findOneAndUpdate(
     { tenantId },
-    {
-      $set: {
-        tenantId,
-        ...canonicalPayload,
-      },
-      $setOnInsert: {
-        tenantId,
-        ...SITE_SETTINGS_DEFAULTS,
-      },
-    },
+    buildLegacySiteSettingsUpsertUpdate(tenantId, canonicalPayload),
     {
       upsert: true,
       new: true,

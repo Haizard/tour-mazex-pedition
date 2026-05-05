@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildCanonicalLegacySiteSettingsPayload } from "../utils/tenantBootstrap.js";
+import {
+  buildCanonicalLegacySiteSettingsPayload,
+  buildLegacySiteSettingsUpsertUpdate,
+} from "../utils/tenantBootstrap.js";
 
 test("buildCanonicalLegacySiteSettingsPayload keeps the newest non-empty legacy site settings values", () => {
   const payload = buildCanonicalLegacySiteSettingsPayload([
@@ -43,4 +46,23 @@ test("buildCanonicalLegacySiteSettingsPayload falls back to empty defaults", () 
     reddit: "",
     logoUrl: "",
   });
+});
+
+test("buildLegacySiteSettingsUpsertUpdate avoids duplicate tenantId operators", () => {
+  const tenantId = "tenant-123";
+  const canonicalPayload = {
+    facebook: "https://facebook.com/legacy",
+    twitter: "",
+    instagram: "",
+    whatsapp: "",
+    youtube: "",
+    reddit: "",
+    logoUrl: "",
+  };
+
+  const update = buildLegacySiteSettingsUpsertUpdate(tenantId, canonicalPayload);
+
+  assert.equal(update.$set.tenantId, undefined);
+  assert.equal(update.$setOnInsert.tenantId, tenantId);
+  assert.equal(update.$set.facebook, "https://facebook.com/legacy");
 });
