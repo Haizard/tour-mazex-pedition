@@ -23,13 +23,13 @@ export const buildEcosystemIntelligenceReport = async (tenantId, env = globalThi
     // 2. Revenue & Channel Performance
     const revenueResult = await client.query(`
       select 
-        source_channel,
+        lead_source as source_channel,
         count(*) as booking_count,
         sum(total_price) as gross_revenue,
         avg(total_price) as average_booking_value
-      from public.booking_lifecycle_records
+      from public.booking_records
       where tenant_id = $1 and revenue_stage != 'cancelled'
-      group by source_channel
+      group by lead_source
       order by gross_revenue desc
     `, [tenantId]);
 
@@ -41,7 +41,7 @@ export const buildEcosystemIntelligenceReport = async (tenantId, env = globalThi
         count(b.source_id) as booking_count,
         sum(b.total_price) as total_attributed_revenue
       from public.partner_account_records p
-      left join public.booking_lifecycle_records b 
+      left join public.booking_records b 
         on b.referral_code = p.referral_code and b.tenant_id = p.tenant_id
       where p.tenant_id = $1
       group by p.company_name, p.referral_code

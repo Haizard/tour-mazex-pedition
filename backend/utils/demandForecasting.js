@@ -25,7 +25,7 @@ export const buildDemandForecastReport = async (tenantId, env = globalThis.proce
         count(*) as total_bookings,
         count(case when revenue_stage = 'paid' then 1 end) as paid_bookings,
         coalesce(sum(case when revenue_stage = 'paid' then total_price end), 0) as revenue
-      from public.booking_lifecycle_records
+      from public.booking_records
       where tenant_id = $1
         and created_at >= now() - interval '12 months'
         and revenue_stage != 'cancelled'
@@ -39,7 +39,7 @@ export const buildDemandForecastReport = async (tenantId, env = globalThis.proce
         to_char(created_at, 'Day') as day_of_week,
         extract(dow from created_at)::int as dow_index,
         count(*) as booking_count
-      from public.booking_lifecycle_records
+      from public.booking_records
       where tenant_id = $1
         and created_at >= now() - interval '90 days'
         and revenue_stage != 'cancelled'
@@ -59,7 +59,7 @@ export const buildDemandForecastReport = async (tenantId, env = globalThis.proce
         max(
           extract(epoch from (b.created_at - t.created_at)) / 86400
         )::int as max_days
-      from public.booking_lifecycle_records b
+      from public.booking_records b
       join public.traveler_inquiry_records t
         on t.source_id = b.source_id and t.tenant_id = b.tenant_id
       where b.tenant_id = $1
@@ -72,7 +72,7 @@ export const buildDemandForecastReport = async (tenantId, env = globalThis.proce
       select
         count(case when date_trunc('month', created_at) = date_trunc('month', now()) then 1 end) as current_month,
         count(case when date_trunc('month', created_at) = date_trunc('month', now() - interval '1 month') then 1 end) as last_month
-      from public.booking_lifecycle_records
+      from public.booking_records
       where tenant_id = $1 and revenue_stage != 'cancelled'
     `, [tenantId]);
 
