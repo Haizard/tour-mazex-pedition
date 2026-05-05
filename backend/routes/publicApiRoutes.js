@@ -1,7 +1,7 @@
 import express from "express";
 import { requirePublicApiKey } from "../middleware/apiKeyMiddleware.js";
 import TourPackage from "../models/TourPackage.js";
-import { createTravelerInquiry } from "../utils/postgresFirstTravelerService.js";
+import { createPostgresFirstTraveler } from "../utils/postgresFirstTravelerService.js";
 import { findBookingRevenueRecord, findPaymentRevenueRecord } from "../utils/postgresRevenueRecords.js";
 import { findMediaAssetRecord } from "../utils/postgresMediaRecords.js";
 import { getSignedUrlForKey } from "../utils/objectStorage.js";
@@ -63,7 +63,7 @@ router.post("/inquiry", async (req, res) => {
     const referralData = await trackReferralInteraction(req.tenantId, req.body.referralCode);
 
     // 2. Use the PostgreSQL-first service to ensure the inquiry is recorded 
-    const result = await createTravelerInquiry({
+    const result = await createPostgresFirstTraveler({
       tenantId: req.tenantId,
       name,
       email,
