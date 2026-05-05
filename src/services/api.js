@@ -309,7 +309,10 @@ export const updateEmailThread = (threadId, data) =>
   API.patch(`/email/threads/${threadId}`, data);
 export const createEmailThread = (data) => API.post("/email/threads", data);
 export const fetchUnifiedInboxItems = () => API.get("/unified-inbox");
-export const fetchTenantBootstrap = () => cachedGet("/tenant/bootstrap");
+export const fetchTenantBootstrap = () =>
+  API.get("/tenant/bootstrap", {
+    headers: getTenantHeaders(),
+  });
 export const fetchTenantSiteConfig = () => cachedGet("/tenant/site-config");
 export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", data);
 export const updateTenantDomainRequest = (data) => API.put("/tenant/domain-request", data);

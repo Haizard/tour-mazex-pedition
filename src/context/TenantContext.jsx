@@ -39,8 +39,7 @@ const applyTenantTheme = (theme) => {
 export const TenantProvider = ({ children }) => {
   const [state, setState] = React.useState(defaultTenantContext);
 
-  const loadTenantBootstrap = React.useCallback(async () => {
-    const timeoutMs = 12000;
+  const loadTenantBootstrapOnce = React.useCallback(async (timeoutMs = 20000) => {
     let timeoutId = null;
 
     try {
@@ -58,6 +57,18 @@ export const TenantProvider = ({ children }) => {
       }
     }
   }, []);
+
+  const loadTenantBootstrap = React.useCallback(async () => {
+    try {
+      return await loadTenantBootstrapOnce();
+    } catch (error) {
+      if (error.message !== "Tenant bootstrap timed out.") {
+        throw error;
+      }
+
+      return loadTenantBootstrapOnce(25000);
+    }
+  }, [loadTenantBootstrapOnce]);
 
   const refreshTenant = React.useCallback(async () => {
     const response = await loadTenantBootstrap();
