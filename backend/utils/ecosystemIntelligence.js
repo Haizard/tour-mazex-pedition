@@ -36,16 +36,14 @@ export const buildEcosystemIntelligenceReport = async (tenantId, env = globalThi
     // 3. Partner Performance (Commissions)
     const partnerResult = await client.query(`
       select 
-        p.company_name,
-        p.referral_code,
-        count(b.source_id) as booking_count,
-        sum(b.total_price) as total_attributed_revenue
-      from public.partner_account_records p
-      left join public.booking_records b 
-        on b.referral_code = p.referral_code and b.tenant_id = p.tenant_id
-      where p.tenant_id = $1
-      group by p.company_name, p.referral_code
-      having count(b.source_id) > 0
+        case when referral_code = '' then 'Direct' else referral_code end as company_name,
+        referral_code,
+        count(source_id) as booking_count,
+        sum(total_price) as total_attributed_revenue
+      from public.booking_records
+      where tenant_id = $1 and revenue_stage != 'cancelled'
+      group by referral_code
+      having count(source_id) > 0
       order by total_attributed_revenue desc
     `, [tenantId]);
 
