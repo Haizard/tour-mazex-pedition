@@ -29,6 +29,7 @@ import {
 import { HOME_PAGE_DEFAULT } from "./pageBuilderDefaults.js";
 import { hashAdminPassword } from "./adminAuth.js";
 import { buildDemoDomain, calculateNextRenewalDate } from "./domainProvisioning.js";
+import { withDuplicateKeyRetry } from "./mongoWriteRetry.js";
 
 const TENANT_OWNED_MODELS = [
   TourPackage,
@@ -99,15 +100,31 @@ const reconcileLegacySiteSettings = async (tenantId) => {
 
   const canonicalPayload = buildCanonicalLegacySiteSettingsPayload(relatedRecords);
 
-  const canonicalRecord = await SiteSettings.findOneAndUpdate(
-    { tenantId },
-    buildLegacySiteSettingsUpsertUpdate(tenantId, canonicalPayload),
-    {
-      upsert: true,
-      new: true,
-      runValidators: true,
-      setDefaultsOnInsert: true,
-    }
+  const canonicalRecord = await withDuplicateKeyRetry(
+    () =>
+      SiteSettings.findOneAndUpdate(
+        { tenantId },
+        buildLegacySiteSettingsUpsertUpdate(tenantId, canonicalPayload),
+        {
+          upsert: true,
+          new: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+        }
+      ),
+    () =>
+      SiteSettings.findOneAndUpdate(
+        { tenantId },
+        {
+          $set: {
+            ...canonicalPayload,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
   );
 
   await SiteSettings.deleteMany({

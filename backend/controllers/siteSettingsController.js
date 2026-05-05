@@ -1,4 +1,5 @@
 import SiteSettings from '../models/SiteSettings.js';
+import { withDuplicateKeyRetry } from "../utils/mongoWriteRetry.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 
 const DEFAULT_SITE_SETTINGS = Object.freeze({
@@ -19,6 +20,27 @@ const buildSiteSettingsUpsert = (req, overrides = {}) => ({
     $setOnInsert: withTenantId(req, DEFAULT_SITE_SETTINGS),
 });
 
+const upsertTenantSiteSettings = (req, overrides = {}) =>
+    withDuplicateKeyRetry(
+        () =>
+            SiteSettings.findOneAndUpdate(
+                buildTenantFilter(req),
+                buildSiteSettingsUpsert(req, overrides),
+                { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+            ),
+        () =>
+            SiteSettings.findOneAndUpdate(
+                buildTenantFilter(req),
+                {
+                    $set: withTenantId(req, {
+                        ...DEFAULT_SITE_SETTINGS,
+                        ...overrides,
+                    }),
+                },
+                { new: true, runValidators: true }
+            )
+    );
+
 // Get site settings
 export const getSettings = async (req, res) => {
     try {
@@ -26,11 +48,7 @@ export const getSettings = async (req, res) => {
             return res.json(DEFAULT_SITE_SETTINGS);
         }
 
-        const settings = await SiteSettings.findOneAndUpdate(
-            buildTenantFilter(req),
-            buildSiteSettingsUpsert(req),
-            { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
-        );
+        const settings = await upsertTenantSiteSettings(req);
 
         res.json(settings);
     } catch (error) {
@@ -46,19 +64,15 @@ export const updateSettings = async (req, res) => {
         }
 
         const { facebook, twitter, instagram, whatsapp, youtube, reddit, logoUrl } = req.body;
-        const settings = await SiteSettings.findOneAndUpdate(
-            buildTenantFilter(req),
-            buildSiteSettingsUpsert(req, {
-                ...(facebook !== undefined ? { facebook } : {}),
-                ...(twitter !== undefined ? { twitter } : {}),
-                ...(instagram !== undefined ? { instagram } : {}),
-                ...(whatsapp !== undefined ? { whatsapp } : {}),
-                ...(youtube !== undefined ? { youtube } : {}),
-                ...(reddit !== undefined ? { reddit } : {}),
-                ...(logoUrl !== undefined ? { logoUrl } : {}),
-            }),
-            { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
-        );
+        const settings = await upsertTenantSiteSettings(req, {
+            ...(facebook !== undefined ? { facebook } : {}),
+            ...(twitter !== undefined ? { twitter } : {}),
+            ...(instagram !== undefined ? { instagram } : {}),
+            ...(whatsapp !== undefined ? { whatsapp } : {}),
+            ...(youtube !== undefined ? { youtube } : {}),
+            ...(reddit !== undefined ? { reddit } : {}),
+            ...(logoUrl !== undefined ? { logoUrl } : {}),
+        });
 
         res.json(settings);
     } catch (error) {
