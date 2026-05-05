@@ -87,7 +87,6 @@ export const buildLegacySiteSettingsUpsertUpdate = (tenantId, canonicalPayload) 
   },
   $setOnInsert: {
     tenantId,
-    ...SITE_SETTINGS_DEFAULTS,
   },
 });
 

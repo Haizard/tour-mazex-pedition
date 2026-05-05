@@ -1,6 +1,6 @@
 import SiteSettings from '../models/SiteSettings.js';
 import { withDuplicateKeyRetry } from "../utils/mongoWriteRetry.js";
-import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { buildTenantFilter } from "../utils/tenantContext.js";
 
 const DEFAULT_SITE_SETTINGS = Object.freeze({
     facebook: '',
@@ -12,12 +12,14 @@ const DEFAULT_SITE_SETTINGS = Object.freeze({
     logoUrl: ''
 });
 
-const buildSiteSettingsUpsert = (req, overrides = {}) => ({
-    $set: withTenantId(req, {
+export const buildSiteSettingsUpsert = (req, overrides = {}) => ({
+    $set: {
         ...DEFAULT_SITE_SETTINGS,
         ...overrides,
-    }),
-    $setOnInsert: withTenantId(req, DEFAULT_SITE_SETTINGS),
+    },
+    $setOnInsert: {
+        tenantId: req.tenantId,
+    },
 });
 
 const upsertTenantSiteSettings = (req, overrides = {}) =>
@@ -32,10 +34,10 @@ const upsertTenantSiteSettings = (req, overrides = {}) =>
             SiteSettings.findOneAndUpdate(
                 buildTenantFilter(req),
                 {
-                    $set: withTenantId(req, {
+                    $set: {
                         ...DEFAULT_SITE_SETTINGS,
                         ...overrides,
-                    }),
+                    },
                 },
                 { new: true, runValidators: true }
             )
