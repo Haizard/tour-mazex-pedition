@@ -1,7 +1,9 @@
+/* eslint-disable react/prop-types */
 import React from "react";
 import { fetchTenantBootstrap } from "../services/api";
 
 const defaultTenantContext = {
+  isPlatform: false,
   tenant: null,
   theme: null,
   siteConfig: null,
@@ -60,6 +62,7 @@ export const TenantProvider = ({ children }) => {
   const refreshTenant = React.useCallback(async () => {
     const response = await loadTenantBootstrap();
     const nextState = {
+      isPlatform: Boolean(response.data?.isPlatform),
       tenant: response.data?.tenant || null,
       theme: response.data?.theme || null,
       siteConfig: response.data?.siteConfig || null,
@@ -84,6 +87,7 @@ export const TenantProvider = ({ children }) => {
         }
 
         const nextState = {
+          isPlatform: Boolean(response.data?.isPlatform),
           tenant: response.data?.tenant || null,
           theme: response.data?.theme || null,
           siteConfig: response.data?.siteConfig || null,

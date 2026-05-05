@@ -1,3 +1,4 @@
+import process from "node:process";
 import Tenant from "../models/Tenant.js";
 import TenantTheme from "../models/TenantTheme.js";
 import TenantSiteConfig from "../models/TenantSiteConfig.js";
@@ -17,6 +18,7 @@ import Taxonomy from "../models/Taxonomy.js";
 import TourPackage from "../models/TourPackage.js";
 import Visionary from "../models/Visionary.js";
 import {
+  LEGACY_TENANT_DEMO_SLUG,
   DEFAULT_TENANT_SITE_CONFIG,
   DEFAULT_TENANT_THEME,
   LEGACY_TENANT_DOMAINS,
@@ -33,7 +35,6 @@ const TENANT_OWNED_MODELS = [
   Blog,
   MenuItem,
   HomeContent,
-  SiteSettings,
   Gallery,
   Taxonomy,
   Booking,
@@ -45,6 +46,73 @@ const TENANT_OWNED_MODELS = [
 
 const missingTenantFilter = {
   $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
+};
+
+const SITE_SETTINGS_FIELDS = [
+  "facebook",
+  "twitter",
+  "instagram",
+  "whatsapp",
+  "youtube",
+  "reddit",
+  "logoUrl",
+];
+
+const SITE_SETTINGS_DEFAULTS = Object.freeze(
+  SITE_SETTINGS_FIELDS.reduce((accumulator, field) => ({ ...accumulator, [field]: "" }), {})
+);
+
+export const buildCanonicalLegacySiteSettingsPayload = (records = []) => {
+  const normalizedRecords = [...(records || [])].sort((left, right) => {
+    const leftDate = new Date(left?.updatedAt || left?.createdAt || 0).getTime();
+    const rightDate = new Date(right?.updatedAt || right?.createdAt || 0).getTime();
+    return rightDate - leftDate;
+  });
+
+  return normalizedRecords.reduce((payload, record) => {
+    SITE_SETTINGS_FIELDS.forEach((field) => {
+      if (!payload[field] && record?.[field]) {
+        payload[field] = record[field];
+      }
+    });
+
+    return payload;
+  }, { ...SITE_SETTINGS_DEFAULTS });
+};
+
+const reconcileLegacySiteSettings = async (tenantId) => {
+  const relatedRecords = await SiteSettings.find({
+    $or: [{ tenantId }, missingTenantFilter],
+  })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .lean();
+
+  const canonicalPayload = buildCanonicalLegacySiteSettingsPayload(relatedRecords);
+
+  const canonicalRecord = await SiteSettings.findOneAndUpdate(
+    { tenantId },
+    {
+      $set: {
+        tenantId,
+        ...canonicalPayload,
+      },
+      $setOnInsert: {
+        tenantId,
+        ...SITE_SETTINGS_DEFAULTS,
+      },
+    },
+    {
+      upsert: true,
+      new: true,
+      runValidators: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+
+  await SiteSettings.deleteMany({
+    _id: { $ne: canonicalRecord._id },
+    $or: [{ tenantId }, missingTenantFilter],
+  });
 };
 
 const safeDropIndex = async (Model, indexName) => {
@@ -67,7 +135,7 @@ export const ensureLegacyTenantFoundation = async () => {
         name: LEGACY_TENANT_NAME,
         slug: LEGACY_TENANT_SLUG,
         subdomain: LEGACY_TENANT_SUBDOMAIN,
-        demoDomain: buildDemoDomain(LEGACY_TENANT_SUBDOMAIN),
+        demoDomain: buildDemoDomain(LEGACY_TENANT_DEMO_SLUG),
         customDomains: LEGACY_TENANT_DOMAINS,
         isLegacy: true,
         status: "active",
@@ -104,6 +172,7 @@ export const ensureLegacyTenantFoundation = async () => {
 
   await safeDropIndex(HomeContent, "section_1");
   await safeDropIndex(Taxonomy, "slug_1");
+  await reconcileLegacySiteSettings(tenant._id);
 
   await TenantTheme.findOneAndUpdate(
     { tenantId: tenant._id },

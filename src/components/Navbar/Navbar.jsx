@@ -20,6 +20,13 @@ import { useRouteData } from "../../utils/routeData.jsx";
 
 import { FRONTEND_MENU_DEFAULTS, MENU_IMAGE_BY_KEY } from "./defaultMenuItems";
 
+const PLATFORM_MENU_ITEMS = [
+  { label: "Marketplace", link: "/discover", itemType: "link", categoryKey: "marketplace" },
+  { label: "Global Tours", link: "/discover", itemType: "link", categoryKey: "global-tours" },
+  { label: "Demo Tenant", link: "/demo/mazexpeditions", itemType: "link", categoryKey: "demo-tenant" },
+  { label: "Platform Admin", link: "/platform/login", itemType: "link", categoryKey: "platform-admin" },
+];
+
 const slugifyTitle = (value = "") =>
   value
     .toString()
@@ -116,10 +123,10 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
 // eslint-disable-next-line react/prop-types
 const Navbar = ({ handleOrderPopup }) => {
   const navigate = useNavigate();
-  const { siteConfig, tenant, loading } = useTenant();
+  const { siteConfig, tenant, loading, isPlatform } = useTenant();
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
-  const shouldUseDefaultMenu = !loading && (!tenant || tenant.slug === "maz-expeditions");
+  const shouldUseDefaultMenu = !loading && !isPlatform && (!tenant || tenant.slug === "maz-expeditions");
   const isLegacyTenant = shouldUseDefaultMenu;
   const initialTours = React.useMemo(() => 
     Array.isArray(sharedData.tours) ? sharedData.tours : [], 
@@ -131,6 +138,9 @@ const Navbar = ({ handleOrderPopup }) => {
 
   const initialMenuItems = React.useMemo(() => {
     const menuData =
+      isPlatform
+        ? PLATFORM_MENU_ITEMS
+        :
       Array.isArray(sharedData.menuItems) && sharedData.menuItems.length > 0
         ? sharedData.menuItems
         : shouldUseDefaultMenu
@@ -138,7 +148,7 @@ const Navbar = ({ handleOrderPopup }) => {
           : [];
 
     return buildMenuWithLiveTours(menuData, initialTours);
-  }, [initialTours, sharedData.menuItems, shouldUseDefaultMenu]);
+  }, [initialTours, isPlatform, sharedData.menuItems, shouldUseDefaultMenu]);
 
   const [showMenu, setShowMenu] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
@@ -168,6 +178,12 @@ const Navbar = ({ handleOrderPopup }) => {
   }, []);
 
   useEffect(() => {
+    if (isPlatform) {
+      setMenuItems(PLATFORM_MENU_ITEMS);
+      setSettings(null);
+      return undefined;
+    }
+
     const loadMenuItems = async () => {
       try {
         const [menuRes, toursRes, settingsRes] = await Promise.all([
@@ -198,14 +214,16 @@ const Navbar = ({ handleOrderPopup }) => {
     if (menuItems.length === 0 || initialTours.length === 0) {
        loadMenuItems();
     }
-  }, [initialTours, menuItems.length, shouldUseDefaultMenu]); // Refresh when tenant context resolves for demo tenants.
+  }, [initialTours, isPlatform, menuItems.length, shouldUseDefaultMenu]); // Refresh when tenant context resolves for demo tenants.
 
   const navigationConfig = siteConfig?.navigationConfig || {};
   const footerConfig = siteConfig?.footerConfig || {};
   const logoPlacement = navigationConfig.logoPlacement || "left";
 
   const handlePrimaryCta = () => {
-    const href = navigationConfig.ctaHref || (isLegacyTenant ? "/plan-my-trip" : "");
+    const href = isPlatform
+      ? "/discover"
+      : navigationConfig.ctaHref || (isLegacyTenant ? "/plan-my-trip" : "");
     if (!href) return;
     if (href === "popup") {
       handleOrderPopup();
@@ -236,12 +254,12 @@ const Navbar = ({ handleOrderPopup }) => {
           </div>
 
           <div className="flex-1 flex justify-center">
-            {(navigationConfig.ctaLabel || isLegacyTenant) && (
+            {(navigationConfig.ctaLabel || isLegacyTenant || isPlatform) && (
               <button
                 onClick={handlePrimaryCta}
                 className="bg-safari-green text-white px-8 py-1.5 rounded-lg text-sm font-medium tracking-wider hover:bg-opacity-90 transition-all shadow-md transform hover:scale-105 active:scale-95"
               >
-                {navigationConfig.ctaLabel || "PLAN MY TRIP"}
+                {isPlatform ? "EXPLORE MARKETPLACE" : navigationConfig.ctaLabel || "PLAN MY TRIP"}
               </button>
             )}
           </div>
@@ -253,9 +271,9 @@ const Navbar = ({ handleOrderPopup }) => {
                 <option>Germany DE</option>
               </select>
             )}
-            {(navigationConfig.aboutLabel || isLegacyTenant) && (
-              <Link to={navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
-                {navigationConfig.aboutLabel || "About Us"}
+            {(navigationConfig.aboutLabel || isLegacyTenant || isPlatform) && (
+              <Link to={isPlatform ? "/discover" : navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
+                {isPlatform ? "Marketplace" : navigationConfig.aboutLabel || "About Us"}
               </Link>
             )}
             {isLegacyTenant && (
@@ -281,7 +299,7 @@ const Navbar = ({ handleOrderPopup }) => {
           logoPlacement === "center" ? "justify-center gap-8" : "justify-between"
         }`}>
           <Link to="/" className="flex items-center" onClick={() => window.scrollTo(0, 0)}>
-            {(settings?.logoUrl || isLegacyTenant) ? (
+            {(settings?.logoUrl || isLegacyTenant || isPlatform) ? (
               <img
                 src={settings?.logoUrl || Logo}
                 alt="Logo"
@@ -289,7 +307,7 @@ const Navbar = ({ handleOrderPopup }) => {
               />
             ) : (
               <span className={`font-black uppercase tracking-widest ${isScrolled ? "text-[#2f2418]" : "text-white"}`}>
-                {tenant?.name || "Tenant"}
+                {isPlatform ? "MAZ Platform" : tenant?.name || "Tenant"}
               </span>
             )}
           </Link>
@@ -384,7 +402,7 @@ const Navbar = ({ handleOrderPopup }) => {
               ))}
               <li className="relative group flex items-center ml-2">
                 <NavLink
-                  to="/discover"
+                  to={isPlatform ? "/demo/mazexpeditions" : "/discover"}
                   className={({ isActive }) =>
                     `flex items-center gap-1 text-[13px] xl:text-[14px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border-2 transition-all duration-300 ${
                       isActive
@@ -395,7 +413,7 @@ const Navbar = ({ handleOrderPopup }) => {
                     }`
                   }
                 >
-                  Discover
+                  {isPlatform ? "Demo Tenant" : "Discover"}
                 </NavLink>
               </li>
             </ul>
@@ -424,7 +442,7 @@ const Navbar = ({ handleOrderPopup }) => {
         settings={settings}
         navigationConfig={navigationConfig}
         footerConfig={footerConfig}
-        brandName={tenant?.name || ""}
+        brandName={isPlatform ? "MAZ Platform" : tenant?.name || ""}
       />
     </nav>
   );

@@ -11,7 +11,7 @@ const WhatsAppButton = React.lazy(() => import("../components/WhatsApp/WhatsAppB
 const Layout = () => {
   const [orderPopup, setOrderPopup] = React.useState(false);
   const location = useLocation();
-  const { loading, bootstrapError } = useTenant();
+  const { loading, bootstrapError, isPlatform } = useTenant();
 
   const handleOrderPopup = () => {
     setOrderPopup((prev) => !prev);
@@ -25,9 +25,10 @@ const Layout = () => {
     /^\/demo\/[^/]+\/(admin|login)(\/|$)/.test(location.pathname);
   const shouldAutoPrompt =
     !isAdminRoute &&
+    !isPlatform &&
     !location.pathname.endsWith("/plan-my-trip") &&
     !location.pathname.endsWith("/tailor-made");
-  const shouldLoadAssistiveWidgets = !isAdminRoute;
+  const shouldLoadAssistiveWidgets = !isAdminRoute && !isPlatform;
 
   React.useEffect(() => {
     if (!shouldAutoPrompt) {

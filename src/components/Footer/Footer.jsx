@@ -32,6 +32,17 @@ const LEGACY_TOURS = [
   { title: "Day Trips", link: "/packages?type=Day Trip" },
 ];
 
+const PLATFORM_LINKS = [
+  { title: "Marketplace", link: "/discover" },
+  { title: "Global Tours", link: "/discover" },
+  { title: "Legacy Demo Tenant", link: "/demo/mazexpeditions" },
+  { title: "Platform Admin", link: "/platform/login" },
+];
+
+const PLATFORM_BLOGS = [
+  { title: "Explore the Marketplace", link: "/discover" },
+];
+
 const slugifyTitle = (value = "") =>
   value
     .toString()
@@ -55,8 +66,8 @@ const socialItems = (settings = {}) => [
 ].filter((item) => item.href);
 
 const Footer = () => {
-  const { siteConfig, tenant, loading } = useTenant();
-  const isLegacyTenant = !loading && (!tenant || tenant.slug === "maz-expeditions");
+  const { siteConfig, tenant, loading, isPlatform } = useTenant();
+  const isLegacyTenant = !loading && !isPlatform && (!tenant || tenant.slug === "maz-expeditions");
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
   const footerConfig = siteConfig?.footerConfig || {};
@@ -72,6 +83,13 @@ const Footer = () => {
     let active = true;
 
     const loadFooterData = async () => {
+      if (isPlatform) {
+        setPopularTours([]);
+        setPopularBlogs(PLATFORM_BLOGS);
+        setSettings(null);
+        return;
+      }
+
       try {
         const [toursRes, blogsRes, settingsRes] = await Promise.all([
           fetchTours(),
@@ -107,26 +125,33 @@ const Footer = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isPlatform]);
 
   const brandName =
-    footerConfig.brandName || tenant?.name || (isLegacyTenant ? "MAZ Expeditions" : "");
+    footerConfig.brandName ||
+    tenant?.name ||
+    (isPlatform ? "MAZ Expeditions Platform" : isLegacyTenant ? "MAZ Expeditions" : "");
   const brandDescription =
     footerConfig.brandDescription ||
+    (isPlatform
+      ? "A multi-operator travel marketplace where travelers can discover, compare, and book curated adventures across the MAZ ecosystem."
+      :
     (isLegacyTenant
       ? "Tanzania-based safari experts, creating personalized African journeys with local expertise and trusted guides."
-      : "");
-  const links = isLegacyTenant ? LEGACY_LINKS : [];
-  const tours = popularTours.length ? popularTours : isLegacyTenant ? LEGACY_TOURS : [];
+      : ""));
+  const links = isPlatform ? PLATFORM_LINKS : isLegacyTenant ? LEGACY_LINKS : [];
+  const tours = popularTours.length ? popularTours : isPlatform ? [] : isLegacyTenant ? LEGACY_TOURS : [];
   const blogs = popularBlogs.length
     ? popularBlogs
+    : isPlatform
+      ? PLATFORM_BLOGS
     : isLegacyTenant
       ? [{ title: "Explore Travel Articles", link: "/blogs" }]
       : [];
-  const primaryLabel = footerConfig.primaryCtaLabel || (isLegacyTenant ? "Plan My Trip" : "");
-  const primaryHref = footerConfig.primaryCtaHref || (isLegacyTenant ? "/plan-my-trip" : "");
-  const secondaryLabel = footerConfig.secondaryCtaLabel || (isLegacyTenant ? "Articles" : "");
-  const secondaryHref = footerConfig.secondaryCtaHref || (isLegacyTenant ? "/blogs" : "");
+  const primaryLabel = footerConfig.primaryCtaLabel || (isPlatform ? "Explore Marketplace" : isLegacyTenant ? "Plan My Trip" : "");
+  const primaryHref = footerConfig.primaryCtaHref || (isPlatform ? "/discover" : isLegacyTenant ? "/plan-my-trip" : "");
+  const secondaryLabel = footerConfig.secondaryCtaLabel || (isPlatform ? "View Demo Tenant" : isLegacyTenant ? "Articles" : "");
+  const secondaryHref = footerConfig.secondaryCtaHref || (isPlatform ? "/demo/mazexpeditions" : isLegacyTenant ? "/blogs" : "");
   const socials = socialItems(settings || {});
   const hasVisibleContent =
     brandName ||
@@ -147,7 +172,7 @@ const Footer = () => {
     <footer className="bg-[#1a1a1a] text-white">
       <div className="border-b border-white/10">
         <div className="container mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4">
-          {(settings?.logoUrl || isLegacyTenant) && (
+          {(settings?.logoUrl || isLegacyTenant || isPlatform) && (
             <Link to="/" onClick={() => window.scrollTo(0, 0)} className="shrink-0">
               <img
                 src={settings?.logoUrl || FooterLogo}
@@ -238,7 +263,7 @@ const Footer = () => {
 
         <div className="space-y-5 md:col-span-3">
           <h5 className="border-b border-safari-green pb-2 font-oswald text-lg font-semibold uppercase tracking-wide">
-            {footerConfig.ctaTitle || (isLegacyTenant ? "Plan Your Safari" : "Contact")}
+            {footerConfig.ctaTitle || (isPlatform ? "Explore The Network" : isLegacyTenant ? "Plan Your Safari" : "Contact")}
           </h5>
           {(footerConfig.ctaDescription || isLegacyTenant) && (
             <p className="text-sm leading-relaxed text-gray-400">
@@ -278,7 +303,7 @@ const Footer = () => {
                 : `Copyright ©${new Date().getFullYear()} ${brandName}`)}
           </p>
 
-          <Link to="/login" className="opacity-5 transition-opacity hover:opacity-30">
+          <Link to={isPlatform ? "/platform/login" : "/login"} className="opacity-5 transition-opacity hover:opacity-30">
             <FaShieldAlt size={10} className="text-gray-400" />
           </Link>
         </div>

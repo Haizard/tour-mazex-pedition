@@ -4,12 +4,18 @@ import PageRenderer from "../pageBuilder/PageRenderer";
 import { legacyHomePage } from "../pageBuilder/defaultPages";
 import { fetchPageConfig } from "../services/api";
 import { useTenant } from "../context/TenantContext";
+import GlobalDiscovery from "./GlobalDiscovery";
 
 const Home = () => {
-  const { tenant, loading } = useTenant();
+  const { tenant, loading, isPlatform } = useTenant();
   const [pageConfig, setPageConfig] = React.useState(null);
 
   React.useEffect(() => {
+    if (isPlatform) {
+      setPageConfig(null);
+      return undefined;
+    }
+
     let active = true;
 
     const loadPageConfig = async () => {
@@ -28,7 +34,20 @@ const Home = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isPlatform]);
+
+  if (isPlatform) {
+    return (
+      <div>
+        <SEO
+          title="MAZ Expeditions Marketplace"
+          description="Discover safari tours, trekking adventures, and curated travel experiences from operators across the MAZ platform."
+          keywords={["safari marketplace", "tanzania tours", "multi-tenant travel platform", "african safaris"]}
+        />
+        <GlobalDiscovery />
+      </div>
+    );
+  }
 
   const shouldUseLegacyFallback = !loading && (!tenant || tenant.slug === "maz-expeditions");
   const seo = pageConfig?.seo || (shouldUseLegacyFallback ? legacyHomePage.seo : {});

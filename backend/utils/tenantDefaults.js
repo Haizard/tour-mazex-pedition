@@ -1,6 +1,13 @@
 export const LEGACY_TENANT_SLUG = "maz-expeditions";
 export const LEGACY_TENANT_NAME = "MAZ Expeditions";
 export const LEGACY_TENANT_SUBDOMAIN = "maz";
+export const LEGACY_TENANT_DEMO_SLUG = "mazexpeditions";
+export const LEGACY_TENANT_ROUTE_ALIASES = [
+  LEGACY_TENANT_SLUG,
+  LEGACY_TENANT_DEMO_SLUG,
+  "mazexpedtion",
+  LEGACY_TENANT_SUBDOMAIN,
+];
 export const PLATFORM_DOMAINS = [
   "localhost",
   "127.0.0.1",

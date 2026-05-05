@@ -1,5 +1,10 @@
 import process from "node:process";
-import { LEGACY_TENANT_DOMAINS, LEGACY_TENANT_SLUG, PLATFORM_DOMAINS } from "./tenantDefaults.js";
+import {
+  LEGACY_TENANT_DOMAINS,
+  LEGACY_TENANT_ROUTE_ALIASES,
+  LEGACY_TENANT_SLUG,
+  PLATFORM_DOMAINS,
+} from "./tenantDefaults.js";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -16,10 +21,13 @@ export const isLocalHostname = (hostname = "") =>
   LOCAL_HOSTNAMES.has(normalizeHostname(hostname));
 
 export const resolveTenantLookup = (req) => {
-  const explicitSlug = (req.headers["x-tenant-slug"] || req.query.tenant || "")
+  const requestedSlug = (req.headers["x-tenant-slug"] || req.query.tenant || "")
     .toString()
     .trim()
     .toLowerCase();
+  const explicitSlug = LEGACY_TENANT_ROUTE_ALIASES.includes(requestedSlug)
+    ? LEGACY_TENANT_SLUG
+    : requestedSlug;
   const explicitSubdomain = (req.headers["x-tenant-subdomain"] || "")
     .toString()
     .trim()
