@@ -17,6 +17,7 @@ import Card from "../UI/Card";
 import {
   fetchUnifiedInboxItems,
   fetchWhatsAppTemplates,
+  recordUnifiedInboxAgentAction,
   sendInquiryWhatsAppViaApi,
   updateChatConversationStatus,
   updateContactMessageStatus,
@@ -75,6 +76,7 @@ const UnifiedInboxManager = () => {
   const [loading, setLoading] = useState(true);
   const [sendingWhatsAppId, setSendingWhatsAppId] = useState("");
   const [savingId, setSavingId] = useState("");
+  const [loggingActionId, setLoggingActionId] = useState("");
   const [copiedId, setCopiedId] = useState("");
   const [templates, setTemplates] = useState([]);
   const [showTemplatePicker, setShowTemplatePicker] = useState(""); // itemId
@@ -274,6 +276,32 @@ const UnifiedInboxManager = () => {
 
     if (item.sourceType === "email-thread") {
       navigate(`/admin?tab=email-foundation&recordType=email-thread&recordId=${item.sourceId}`);
+    }
+  };
+
+  const handleRecordAgentAction = async (item, action, actionIndex) => {
+    if (!item.agentDecision) {
+      return;
+    }
+
+    const actionId = `${item.id}-${action.type}-${actionIndex}`;
+    setLoggingActionId(actionId);
+    setError("");
+
+    try {
+      await recordUnifiedInboxAgentAction({
+        item,
+        decision: item.agentDecision,
+        action,
+        actionIndex,
+        status: "completed",
+        operatorNote: "Operator completed this recommended action from Unified Inbox.",
+      });
+      await loadData();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to log the agent action.");
+    } finally {
+      setLoggingActionId("");
     }
   };
 
@@ -511,6 +539,14 @@ const UnifiedInboxManager = () => {
                               <p className="mt-1 text-[11px] font-semibold leading-5 opacity-80">
                                 {action.description || "Use the central agent recommendation to guide the next operator move."}
                               </p>
+                              <button
+                                type="button"
+                                onClick={() => handleRecordAgentAction(item, action, index)}
+                                disabled={loggingActionId === `${item.id}-${action.type}-${index}`}
+                                className="mt-3 w-full rounded-xl bg-white/80 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-slate-700 ring-1 ring-inset ring-current/10 transition hover:bg-white disabled:opacity-60"
+                              >
+                                {loggingActionId === `${item.id}-${action.type}-${index}` ? "Logging..." : "Log Complete"}
+                              </button>
                             </div>
                           ))}
                         </div>

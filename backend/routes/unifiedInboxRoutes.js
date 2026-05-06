@@ -4,9 +4,11 @@ import ContactMessage from "../models/ContactMessage.js";
 import CustomInquiry from "../models/CustomInquiry.js";
 import ChatConversation from "../models/ChatConversation.js";
 import EmailThread from "../models/EmailThread.js";
+import AgentDecisionLog from "../models/AgentDecisionLog.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { requireSubscriptionFeature } from "../middleware/subscriptionAccessMiddleware.js";
 import { buildUnifiedInboxItems } from "../utils/unifiedInbox.js";
+import { buildAgentRecommendedActionRecord } from "../utils/agentDecisionAudit.js";
 
 const router = express.Router();
 
@@ -27,6 +29,50 @@ const normalizeParticipantEmails = (participants = []) =>
 
 router.use(requireTenantAdmin);
 router.use(requireSubscriptionFeature("unified-inbox"));
+
+router.post("/agent-actions", async (req, res) => {
+  try {
+    const { item, decision, action, actionIndex = 0, status = "completed", operatorNote = "" } = req.body || {};
+
+    if (!item?.sourceId && !item?.id) {
+      return res.status(400).json({ message: "Inbox item context is required." });
+    }
+
+    if (!decision?.primaryAgent) {
+      return res.status(400).json({ message: "Agent decision context is required." });
+    }
+
+    const auditRecord = buildAgentRecommendedActionRecord({
+      tenantId: req.tenantId,
+      item,
+      decision,
+      action,
+      actionIndex,
+      status,
+      operatorNote,
+    });
+
+    const savedLog = await AgentDecisionLog.findOneAndUpdate(
+      {
+        tenantId: req.tenantId,
+        decisionHash: auditRecord.decisionHash,
+        actionKey: auditRecord.actionKey,
+      },
+      {
+        $set: auditRecord,
+      },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      }
+    ).lean();
+
+    return res.status(201).json({ log: savedLog });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
 
 router.get("/", async (req, res) => {
   try {

@@ -129,6 +129,7 @@ Completed after the initial version of this file:
 - current orchestrator MVP routes social pricing intent to messaging sales, hot WhatsApp/chat leads to priority sales response, cold email leads to nurture, and risky pricing/legal claims to human review
 - `agentDecision` now also includes `recommendedActions` so the admin UI can render concrete operator actions such as priority sales reply, nurture follow-up, CRM scoring, or human review
 - Unified Inbox admin cards now surface the central agent brain directly: primary agent, lead temperature, priority, next action, lead score, auto-reply permission, human-review warning, score reasons, and recommended operator actions
+- Agent decision audit foundations added: recommended inbox actions can now be converted into stable audit records, persisted through `AgentDecisionLog`, and logged from the Unified Inbox UI with a `Log Complete` action
 - production intelligence endpoint was hardened so missing optional PostgreSQL partnership tables degrade to zero network metrics instead of returning `500`
 - `public.marketplace_partnership_records` migration was made retry-safe and applied to Supabase after production reported the missing relation
 - standalone email sync drain script added in `backend/scripts/processEmailSyncJobs.js`

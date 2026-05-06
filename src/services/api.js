@@ -319,6 +319,8 @@ export const updateEmailThread = (threadId, data) =>
   API.patch(`/email/threads/${threadId}`, data);
 export const createEmailThread = (data) => API.post("/email/threads", data);
 export const fetchUnifiedInboxItems = () => API.get("/unified-inbox");
+export const recordUnifiedInboxAgentAction = (data) =>
+  API.post("/unified-inbox/agent-actions", data);
 export const fetchTenantBootstrap = () =>
   API.get("/tenant/bootstrap", {
     headers: getTenantHeaders(),
