@@ -1,6 +1,6 @@
 ﻿# Agent Implementation Source Of Truth
 
-Last updated: 2026-05-05
+Last updated: 2026-05-06
 
 ## Purpose
 
@@ -118,6 +118,12 @@ Completed after the initial version of this file:
 - Redis-backed email sync dispatch queue, dedupe, and processing lock added in `backend/utils/emailSyncQueue.js`
 - email sync processing loop added in `backend/utils/emailSyncProcessor.js`
 - email sync trigger route now queues scaffold jobs through Redis when Redis is available, with inline fallback if Redis is unavailable
+- page builder AI variant generation added through `backend/utils/pageBuilderAiVariants.js` and page-config routes
+- page builder pasted HTML/CSS import conversion added through `backend/utils/pageBuilderSourceImport.js`
+- imported source sections now render as first-class `customHtml` page-builder sections through `src/sections/custom/CustomHtmlSection.jsx`
+- platform page builder UI now includes layout-only `AI Variants` and `Import Code` tools in `src/components/Admin/PageBuilderManager.jsx`
+- AI variants preserve existing section types and CMS fields while improving visual hierarchy, copy polish, spacing, and classic tourism styling
+- pasted HTML/CSS imports are sanitized, CSS-scoped, converted into editable CMS fields, and inserted as normal page-builder sections
 - standalone email sync drain script added in `backend/scripts/processEmailSyncJobs.js`
 - AI-generated blog hero images now persist through the media/object-storage pipeline via `backend/utils/generatedMediaStorage.js`
 - blog automation now stores generated image assets as first-class media records and links them back on the `Blog` document with `imageMediaId`

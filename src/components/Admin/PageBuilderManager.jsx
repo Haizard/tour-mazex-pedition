@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from "react";
 import {
   FaArrowDown,
@@ -5,10 +6,11 @@ import {
   FaEye,
   FaEyeSlash,
   FaGripVertical,
+  FaCode,
+  FaMagic,
   FaPlus,
   FaSave,
   FaTrash,
-  FaUpload,
 } from "react-icons/fa";
 import Button from "../UI/Button";
 import {
@@ -18,15 +20,17 @@ import {
   fetchPlatformTenantMenuItems,
   fetchPlatformTenantPageConfig,
   fetchPlatformTenantPageConfigs,
+  generatePlatformTenantPageBuilderVariants,
+  generatePageBuilderVariants,
   getMediaUrl,
+  importPlatformTenantPageBuilderSource,
+  importPageBuilderSource,
   updatePlatformTenantMenuItem,
   updatePageConfig,
   updatePlatformTenantPageConfig,
-  uploadMedia,
 } from "../../services/api";
 import { legacyHomePage } from "../../pageBuilder/defaultPages";
 import { sectionRegistry } from "../../sections/registry/sectionRegistry";
-import { useAdminAuth } from "../../context/AdminAuthContext";
 import MediaUploadField from "../UI/MediaUploadField";
 
 
@@ -444,6 +448,15 @@ const PageBuilderManager = ({
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [message, setMessage] = React.useState("");
+  const [aiPrompt, setAiPrompt] = React.useState(
+    "Make this feel more refined, premium, classic, and visually polished while preserving the original content meaning."
+  );
+  const [aiScope, setAiScope] = React.useState("section");
+  const [aiVariants, setAiVariants] = React.useState([]);
+  const [generatingVariants, setGeneratingVariants] = React.useState(false);
+  const [importName, setImportName] = React.useState("Imported Section");
+  const [importSource, setImportSource] = React.useState("");
+  const [importingSource, setImportingSource] = React.useState(false);
   const [newSectionType, setNewSectionType] = React.useState(
     Object.keys(sectionRegistry.metadata || {})[0] || "hero"
   );
@@ -760,6 +773,117 @@ const PageBuilderManager = ({
     }));
   };
 
+  const handleGenerateAiVariants = async () => {
+    if (!canManageLayout) return;
+    const targetSection = pageConfig.sections[selectedSectionIndex] || null;
+    if (aiScope === "section" && !targetSection) {
+      setMessage("Select a section before generating a section variant.");
+      return;
+    }
+
+    setGeneratingVariants(true);
+    setMessage("");
+
+    try {
+      const payload = {
+        scope: aiScope,
+        prompt: aiPrompt,
+        pageConfig,
+        sectionIndex: selectedSectionIndex,
+        targetSection,
+      };
+      const response = tenantId
+        ? await generatePlatformTenantPageBuilderVariants(tenantId, activePageType, payload)
+        : await generatePageBuilderVariants(activePageType, payload);
+      setAiVariants(Array.isArray(response.data?.variants) ? response.data.variants : []);
+      setMessage(
+        response.data?.source === "ai"
+          ? "AI variants are ready to preview."
+          : "Classic design variants are ready. AI credentials were not available, so the builder used its fallback designer."
+      );
+    } catch (error) {
+      console.error("Failed to generate page builder variants:", error);
+      setMessage(error?.response?.data?.message || "Failed to generate page builder variants.");
+    } finally {
+      setGeneratingVariants(false);
+    }
+  };
+
+  const applyAiVariant = (variant) => {
+    const sections = normalizeSections(variant.sections || []);
+    if (!sections.length) return;
+
+    setPageConfig((current) => {
+      if (aiScope === "page") {
+        return {
+          ...current,
+          sections,
+        };
+      }
+
+      const nextSections = [...current.sections];
+      nextSections[selectedSectionIndex] = {
+        ...(nextSections[selectedSectionIndex] || {}),
+        ...sections[0],
+        order: selectedSectionIndex + 1,
+      };
+      return {
+        ...current,
+        sections: reorderSections(nextSections),
+      };
+    });
+    setActiveTool("section");
+    setMessage(`${variant.name || "Variant"} applied locally. Save the layout when ready.`);
+  };
+
+  const handleImportSource = async () => {
+    if (!canManageLayout) return;
+    if (!importSource.trim()) {
+      setMessage("Paste HTML/CSS source code before importing.");
+      return;
+    }
+
+    setImportingSource(true);
+    setMessage("");
+
+    try {
+      const payload = {
+        name: importName || "Imported Section",
+        sourceCode: importSource,
+      };
+      const response = tenantId
+        ? await importPlatformTenantPageBuilderSource(tenantId, payload)
+        : await importPageBuilderSource(payload);
+      const importedSection = response.data?.section;
+      if (!importedSection?.type) {
+        throw new Error("The importer did not return a section.");
+      }
+
+      setPageConfig((current) => {
+        const nextSections = reorderSections([
+          ...current.sections,
+          {
+            ...importedSection,
+            order: current.sections.length + 1,
+          },
+        ]);
+        setSelectedSectionIndex(nextSections.length - 1);
+        return {
+          ...current,
+          sections: nextSections,
+        };
+      });
+      setActiveTool("section");
+      setImportSource("");
+      setMessage("Imported section added locally. Review the editable fields, then save the layout.");
+    } catch (error) {
+      console.error("Failed to import pasted source:", error);
+      setMessage(error?.response?.data?.message || error.message || "Failed to import pasted source.");
+    } finally {
+      setImportingSource(false);
+    }
+  };
+
   const handleAddCurrentPageToNavbar = async () => {
     if (!tenantId || !canManageLayout || !canPublishPageToNavbar) return;
     setSaving(true);
@@ -1031,6 +1155,122 @@ const PageBuilderManager = ({
     </div>
   );
 
+  const renderAiVariantTool = () => (
+    <div className={EDITOR_PANEL_CLASS}>
+      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">AI Variants</p>
+      <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Generate A Better Version</h3>
+      <p className="mt-2 text-sm font-medium text-slate-500">
+        Create polished classic variants from the current page-builder content, then apply one to the local draft.
+      </p>
+      {canManageLayout ? (
+        <div className="mt-6 space-y-5">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_1fr_auto]">
+            <select
+              value={aiScope}
+              onChange={(e) => setAiScope(e.target.value)}
+              className={INPUT_CLASS}
+            >
+              <option value="section">Selected Section</option>
+              <option value="page">Whole Page</option>
+            </select>
+            <textarea
+              rows={3}
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              className={TEXTAREA_CLASS}
+            />
+            <Button
+              type="button"
+              onClick={handleGenerateAiVariants}
+              disabled={generatingVariants}
+              className="rounded-2xl px-6 py-4 inline-flex items-center justify-center gap-3"
+            >
+              <FaMagic />
+              {generatingVariants ? "Generating..." : "Generate"}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            {aiVariants.map((variant, index) => (
+              <div key={`${variant.name}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+                  Variant {index + 1}
+                </p>
+                <h4 className="mt-2 text-lg font-black text-slate-950">{variant.name}</h4>
+                <p className="mt-2 min-h-[48px] text-sm font-semibold text-slate-500">
+                  {variant.summary}
+                </p>
+                <div className="mt-4 rounded-xl bg-white p-3 text-xs font-bold text-slate-500">
+                  {variant.sections?.length || 0} section{variant.sections?.length === 1 ? "" : "s"}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => applyAiVariant(variant)}
+                  className="mt-4 w-full rounded-xl bg-slate-950 px-4 py-3 text-xs font-black uppercase tracking-widest text-white"
+                >
+                  Apply Variant
+                </button>
+              </div>
+            ))}
+            {!aiVariants.length && (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-500 xl:col-span-3">
+                Generate variants to preview classic design upgrades for this page.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-500">
+          AI layout variants are managed by the platform administrator.
+        </div>
+      )}
+    </div>
+  );
+
+  const renderImportSourceTool = () => (
+    <div className={EDITOR_PANEL_CLASS}>
+      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Import Code</p>
+      <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Convert HTML/CSS To A Section</h3>
+      <p className="mt-2 text-sm font-medium text-slate-500">
+        Paste a section or page fragment and convert it into an editable page-builder block.
+      </p>
+      {canManageLayout ? (
+        <div className="mt-6 space-y-4">
+          <input
+            type="text"
+            value={importName}
+            onChange={(e) => setImportName(e.target.value)}
+            className={INPUT_CLASS}
+            placeholder="Import name"
+          />
+          <textarea
+            rows={14}
+            value={importSource}
+            onChange={(e) => setImportSource(e.target.value)}
+            className={`${TEXTAREA_CLASS} font-mono text-xs`}
+            placeholder="<section>...</section><style>...</style>"
+          />
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs font-semibold text-slate-500">
+            The importer removes scripts and event handlers, scopes CSS to the imported section, and extracts text, image, and CTA fields for CMS editing.
+          </div>
+          <Button
+            type="button"
+            onClick={handleImportSource}
+            disabled={importingSource}
+            className="rounded-2xl px-6 py-4 inline-flex items-center justify-center gap-3"
+          >
+            <FaCode />
+            {importingSource ? "Importing..." : "Import Section"}
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-500">
+          Source-code imports are managed by the platform administrator.
+        </div>
+      )}
+    </div>
+  );
+
   const renderSectionEditor = () => {
     if (!selectedSection) {
       return (
@@ -1278,6 +1518,8 @@ const PageBuilderManager = ({
               {[
                 ["settings", "Page Settings"],
                 ["add", "Add Section"],
+                ["ai", "AI Variants"],
+                ["import", "Import Code"],
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -1340,6 +1582,8 @@ const PageBuilderManager = ({
         <main className="min-w-0">
           {activeTool === "settings" && renderPageSettings()}
           {activeTool === "add" && renderAddSectionTool()}
+          {activeTool === "ai" && renderAiVariantTool()}
+          {activeTool === "import" && renderImportSourceTool()}
           {activeTool === "section" && renderSectionEditor()}
         </main>
       </div>

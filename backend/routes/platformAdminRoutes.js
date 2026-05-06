@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import process from "node:process";
 import express from "express";
 import ContactMessage from "../models/ContactMessage.js";
 import CustomInquiry from "../models/CustomInquiry.js";
@@ -14,7 +15,13 @@ import EmailThread from "../models/EmailThread.js";
 import PageConfig from "../models/PageConfig.js";
 import MenuItem from "../models/MenuItem.js";
 import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.js";
-import { getPageConfig, listPageConfigs, upsertPageConfig } from "../controllers/pageConfigController.js";
+import {
+  generatePageBuilderAiVariants,
+  getPageConfig,
+  importPageBuilderSource,
+  listPageConfigs,
+  upsertPageConfig,
+} from "../controllers/pageConfigController.js";
 import { defaultMenuItems } from "../data/defaultMenuItems.js";
 import {
   DEFAULT_TENANT_THEME,
@@ -58,6 +65,7 @@ const createUniqueTenantIdentifiers = async (name, preferredSlug = "", preferred
   let subdomain = baseSubdomain;
 
   // Keep incrementing until both identifiers are available together.
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const existingTenant = await Tenant.findOne({
       $or: [{ slug }, { subdomain }, { demoDomain: buildDemoDomain(subdomain) }],
@@ -416,6 +424,18 @@ router.put(
   "/tenants/:tenantId/page-config/:pageType",
   loadTenantForPlatformPageConfig,
   upsertPageConfig
+);
+
+router.post(
+  "/tenants/:tenantId/page-config/:pageType/ai-variants",
+  loadTenantForPlatformPageConfig,
+  generatePageBuilderAiVariants
+);
+
+router.post(
+  "/tenants/:tenantId/page-config/import-source",
+  loadTenantForPlatformPageConfig,
+  importPageBuilderSource
 );
 
 router.get(

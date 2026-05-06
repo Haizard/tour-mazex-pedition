@@ -1,7 +1,14 @@
+import process from "node:process";
 import PageConfig from "../models/PageConfig.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
 import { HOME_PAGE_DEFAULT } from "../utils/pageBuilderDefaults.js";
+import {
+  buildAiVariantPrompt,
+  buildClassicDesignVariants,
+  parseAiVariantResponse,
+} from "../utils/pageBuilderAiVariants.js";
+import { buildImportedSectionFromSource } from "../utils/pageBuilderSourceImport.js";
 import {
   getDefaultPageSlug,
   isPagePubliclyAccessible,
@@ -223,5 +230,99 @@ export const upsertPageConfig = async (req, res) => {
     res.status(200).json(page);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+const canManagePageBuilderLayout = (req) => Boolean(req.platformAdmin);
+
+const generateAiVariantsWithProvider = async ({ prompt, baseSections }) => {
+  if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
+    return [];
+  }
+
+  try {
+    const { GoogleGenAI } = await import("@google/genai");
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
+    });
+    const response = await ai.models.generateContent({
+      model: process.env.PAGE_BUILDER_AI_MODEL || "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    return parseAiVariantResponse({
+      rawText: response.text || "",
+      baseSections,
+    });
+  } catch (error) {
+    console.warn("Page builder AI variant generation fell back to deterministic variants:", error.message);
+    return [];
+  }
+};
+
+export const generatePageBuilderAiVariants = async (req, res) => {
+  try {
+    if (!canManagePageBuilderLayout(req)) {
+      return res.status(403).json({ message: "Only platform administrators can generate layout variants." });
+    }
+
+    const pageType = req.params.pageType || req.body.pageType || "home";
+    const pageConfig = req.body.pageConfig || (await PageConfig.findOne(buildTenantFilter(req, { pageType })).lean());
+
+    if (!pageConfig) {
+      return res.status(404).json({ message: "Page config not found." });
+    }
+
+    const scope = req.body.scope === "page" ? "page" : "section";
+    const targetSection =
+      req.body.targetSection ||
+      (scope === "section" ? normalizeSections(pageConfig.sections || [])[Number(req.body.sectionIndex) || 0] : null);
+    const baseSections = normalizeSections(scope === "page" ? pageConfig.sections || [] : [targetSection].filter(Boolean));
+
+    if (!baseSections.length) {
+      return res.status(400).json({ message: "Select at least one section before generating variants." });
+    }
+
+    const prompt = buildAiVariantPrompt({
+      scope,
+      customPrompt: req.body.prompt || "",
+      pageConfig,
+      targetSection,
+    });
+
+    const aiVariants = await generateAiVariantsWithProvider({ prompt, baseSections });
+    const variants = aiVariants.length
+      ? aiVariants
+      : buildClassicDesignVariants({ scope, pageConfig, targetSection });
+
+    return res.status(200).json({
+      prompt,
+      source: aiVariants.length ? "ai" : "deterministic-fallback",
+      variants,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const importPageBuilderSource = async (req, res) => {
+  try {
+    if (!canManagePageBuilderLayout(req)) {
+      return res.status(403).json({ message: "Only platform administrators can import layout source code." });
+    }
+
+    const sourceCode = req.body.sourceCode?.toString() || "";
+    if (!sourceCode.trim()) {
+      return res.status(400).json({ message: "HTML/CSS source code is required." });
+    }
+
+    const section = buildImportedSectionFromSource({
+      sourceCode,
+      name: req.body.name || "Imported Section",
+    });
+
+    return res.status(200).json({ section });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
 };

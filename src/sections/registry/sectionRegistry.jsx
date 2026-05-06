@@ -8,6 +8,7 @@ import BlogsComp from "../../components/Blogs/BlogsComp";
 import AfricanDestinations from "../../components/Home/AfricanDestinations";
 import Testimonial from "../../components/Testimonial/Testimonial";
 import TripCtaSection from "../cta/TripCtaSection";
+import CustomHtmlSection from "../custom/CustomHtmlSection";
 import LogoSlider from "../../components/Home/LogoSlider";
 import ReviewWall from "../../components/Public/ReviewWall";
 
@@ -26,6 +27,7 @@ const sectionComponents = {
   testimonials: Testimonial,
   tourDetail: PackageDetail,
   cta: TripCtaSection,
+  customHtml: CustomHtmlSection,
   logoCloud: LogoSlider,
   reviewWall: ReviewWall,
 };
@@ -622,6 +624,28 @@ const metadata = {
     ],
     styleSchema: sharedStyleSchema,
   },
+  customHtml: {
+    key: "customHtml",
+    label: "Imported HTML Section",
+    category: "custom",
+    supportedVariants: ["imported"],
+    allowMultiple: true,
+    presets: [{ value: "imported", label: "Imported HTML/CSS" }],
+    editorSchema: [
+      { group: "contentConfig", path: "importName", type: "text", placeholder: "Import name", colSpan: 2 },
+      { group: "contentConfig", path: "eyebrow", type: "text", placeholder: "Eyebrow" },
+      { group: "contentConfig", path: "title", type: "text", placeholder: "Title" },
+      { group: "contentConfig", path: "body", type: "textarea", placeholder: "Body copy", rows: 5, colSpan: 2 },
+      { group: "contentConfig", path: "imageUrl", type: "media", placeholder: "Image URL" },
+      { group: "contentConfig", path: "imageAlt", type: "text", placeholder: "Image alt text" },
+      { group: "contentConfig", path: "ctaLabel", type: "text", placeholder: "CTA label" },
+      { group: "contentConfig", path: "ctaHref", type: "text", placeholder: "CTA link" },
+      { group: "contentConfig", path: "htmlTemplate", type: "textarea", placeholder: "HTML template", rows: 10, colSpan: 2 },
+      { group: "styleConfig", path: "customCss", type: "textarea", placeholder: "Scoped CSS", rows: 10, colSpan: 2 },
+      { group: "contentConfig", path: "importedNotes", type: "textarea", placeholder: "Import notes", rows: 3, colSpan: 2 },
+    ],
+    styleSchema: sharedStyleSchema,
+  },
 };
 
 const buildSectionProps = (section) => {
@@ -755,6 +779,14 @@ const buildSectionProps = (section) => {
       logos: contentConfig.logos?.map(l => typeof l === 'string' ? l : l.image) || [],
       backgroundColor: contentConfig.backgroundColor,
       title: contentConfig.title,
+    };
+  }
+
+  if (section.type === "customHtml") {
+    return {
+      ...contentConfig,
+      customCss: section.styleConfig?.customCss || "",
+      scopeClass: section.styleConfig?.scopeClass || "",
     };
   }
 
