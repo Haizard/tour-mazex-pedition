@@ -33,14 +33,18 @@ const LEGACY_TOURS = [
 ];
 
 const PLATFORM_LINKS = [
+  { title: "Features", link: "/features" },
   { title: "Marketplace", link: "/discover" },
-  { title: "Global Tours", link: "/discover" },
-  { title: "Legacy Demo Tenant", link: "/demo/mazexpeditions" },
-  { title: "Platform Admin", link: "/platform/login" },
+  { title: "Pricing", link: "/pricing" },
+  { title: "How It Works", link: "/how-it-works" },
 ];
 
 const PLATFORM_BLOGS = [
-  { title: "Explore the Marketplace", link: "/discover" },
+  { title: "For Operators", link: "/operators" },
+  { title: "Affiliate Partners", link: "/partners" },
+  { title: "Demo Tenant", link: "/demo/mazexpeditions" },
+  { title: "Platform Admin", link: "/platform/login" },
+  { title: "Security", link: "/security" },
 ];
 
 const slugifyTitle = (value = "") =>
@@ -134,7 +138,7 @@ const Footer = () => {
   const brandDescription =
     footerConfig.brandDescription ||
     (isPlatform
-      ? "A multi-operator travel marketplace where travelers can discover, compare, and book curated adventures across the MAZ ecosystem."
+      ? "An AI-powered tourism growth platform for operators, marketplace discovery, WhatsApp sales, booking automation, and commission partnerships."
       :
     (isLegacyTenant
       ? "Tanzania-based safari experts, creating personalized African journeys with local expertise and trusted guides."
@@ -150,8 +154,8 @@ const Footer = () => {
       : [];
   const primaryLabel = footerConfig.primaryCtaLabel || (isPlatform ? "Explore Marketplace" : isLegacyTenant ? "Plan My Trip" : "");
   const primaryHref = footerConfig.primaryCtaHref || (isPlatform ? "/discover" : isLegacyTenant ? "/plan-my-trip" : "");
-  const secondaryLabel = footerConfig.secondaryCtaLabel || (isPlatform ? "View Demo Tenant" : isLegacyTenant ? "Articles" : "");
-  const secondaryHref = footerConfig.secondaryCtaHref || (isPlatform ? "/demo/mazexpeditions" : isLegacyTenant ? "/blogs" : "");
+  const secondaryLabel = footerConfig.secondaryCtaLabel || (isPlatform ? "See Pricing" : isLegacyTenant ? "Articles" : "");
+  const secondaryHref = footerConfig.secondaryCtaHref || (isPlatform ? "/pricing" : isLegacyTenant ? "/blogs" : "");
   const socials = socialItems(settings || {});
   const hasVisibleContent =
     brandName ||

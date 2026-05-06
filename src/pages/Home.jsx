@@ -4,7 +4,7 @@ import PageRenderer from "../pageBuilder/PageRenderer";
 import { legacyHomePage } from "../pageBuilder/defaultPages";
 import { fetchPageConfig } from "../services/api";
 import { useTenant } from "../context/TenantContext";
-import GlobalDiscovery from "./GlobalDiscovery";
+import PlatformHome from "./PlatformHome";
 
 const Home = () => {
   const { tenant, loading, isPlatform } = useTenant();
@@ -44,7 +44,7 @@ const Home = () => {
           description="Discover safari tours, trekking adventures, and curated travel experiences from operators across the MAZ platform."
           keywords={["safari marketplace", "tanzania tours", "multi-tenant travel platform", "african safaris"]}
         />
-        <GlobalDiscovery />
+        <PlatformHome />
       </div>
     );
   }

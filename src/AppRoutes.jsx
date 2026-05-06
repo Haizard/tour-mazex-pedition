@@ -24,6 +24,8 @@ const PackagesPage = React.lazy(() => import("./pages/PackagesPage"));
 const BlogDetail = React.lazy(() => import("./components/Blogs/BlogDetail"));
 const BlogCategory = React.lazy(() => import("./pages/BlogCategory"));
 const PlanMyTrip = React.lazy(() => import("./pages/PlanMyTrip"));
+const PricingPage = React.lazy(() => import("./pages/PricingPage"));
+const PlatformInfoPage = React.lazy(() => import("./pages/PlatformInfoPage"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 const QuotePublicView = React.lazy(() => import("./pages/QuotePublicView"));
@@ -82,6 +84,12 @@ const tenantSiteRoutes = (
     <Route path="gallery" element={withPublicSuspense(<Gallery />)} />
     <Route path="plan-my-trip" element={withPublicSuspense(<PlanMyTrip />)} />
     <Route path="tailor-made" element={<ConfiguredPage pageType="tailor-made" fallback={PlanMyTrip} />} />
+    <Route path="features" element={withPublicSuspense(<PlatformInfoPage page="features" />)} />
+    <Route path="operators" element={withPublicSuspense(<PlatformInfoPage page="operators" />)} />
+    <Route path="partners" element={withPublicSuspense(<PlatformInfoPage page="partners" />)} />
+    <Route path="how-it-works" element={withPublicSuspense(<PlatformInfoPage page="how-it-works" />)} />
+    <Route path="security" element={withPublicSuspense(<PlatformInfoPage page="security" />)} />
+    <Route path="pricing" element={withPublicSuspense(<PricingPage />)} />
     <Route path="landing" element={<ConfiguredPage pageType="landing" />} />
     <Route path="privacy-policy" element={withPublicSuspense(<PrivacyPolicy />)} />
     <Route path="terms" element={withPublicSuspense(<TermsConditions />)} />
