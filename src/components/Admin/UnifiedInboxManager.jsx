@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaCopy, FaEnvelopeOpenText, FaGlobeAfrica, FaInbox, FaWhatsapp } from "react-icons/fa";
+import {
+  FaBolt,
+  FaCopy,
+  FaEnvelopeOpenText,
+  FaExclamationTriangle,
+  FaGlobeAfrica,
+  FaInbox,
+  FaRobot,
+  FaWhatsapp,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 import Badge from "../UI/Badge";
@@ -31,6 +40,32 @@ const statusTone = {
   new: "bg-amber-50 text-amber-700",
   replied: "bg-sky-50 text-sky-700",
 };
+
+const priorityTone = {
+  urgent: "border-red-200 bg-red-50 text-red-700",
+  review: "border-amber-200 bg-amber-50 text-amber-700",
+  normal: "border-sky-200 bg-sky-50 text-sky-700",
+  low: "border-slate-200 bg-slate-50 text-slate-600",
+};
+
+const temperatureTone = {
+  hot: "bg-red-100 text-red-700",
+  warm: "bg-amber-100 text-amber-700",
+  cold: "bg-slate-100 text-slate-600",
+};
+
+const actionTone = {
+  reply: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  "follow-up": "border-sky-200 bg-sky-50 text-sky-700",
+  review: "border-amber-200 bg-amber-50 text-amber-700",
+  score: "border-slate-200 bg-slate-50 text-slate-600",
+  tag: "border-stone-200 bg-stone-50 text-stone-700",
+};
+
+const formatAgentLabel = (value = "") =>
+  value
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const UnifiedInboxManager = () => {
   const navigate = useNavigate();
@@ -75,9 +110,18 @@ const UnifiedInboxManager = () => {
   }, []);
 
   const handleAiSuggest = (item) => {
-    // Simulated AI suggestion based on inquiry context
     const firstName = item.linkedInquiry?.firstName || item.contactName?.split(" ")[0] || "Traveler";
-    const suggestion = `Hi ${firstName}, I'm just checking in to see if you have any updates on your safari plans. I'd love to help you finalize the details!`;
+    const decision = item.agentDecision;
+    let suggestion = `Hi ${firstName}, I'm just checking in to see if you have any updates on your safari plans. I'd love to help you finalize the details!`;
+
+    if (decision?.requiresHumanReview) {
+      suggestion = `Review ${firstName}'s conversation before replying. The AI detected a guardrail risk, so confirm pricing, policy, or safety details with a human operator first.`;
+    } else if (decision?.primaryAgent === "messaging-sales-agent") {
+      suggestion = `Hi ${firstName}, thanks for your interest. I can help match the best tour package for your dates, group size, and budget. Would you like me to share the strongest options now?`;
+    } else if (decision?.primaryAgent === "email-nurture-agent") {
+      suggestion = `Hi ${firstName}, I wanted to follow up with a few helpful travel ideas based on your inquiry. If your plans are still active, I can send a short itinerary and next steps.`;
+    }
+
     setAiSuggestions(curr => ({ ...curr, [item.id]: suggestion }));
   };
 
@@ -303,10 +347,16 @@ const UnifiedInboxManager = () => {
           )}
 
           {!loading &&
-            filteredItems.map((item) => (
+            filteredItems.map((item) => {
+              const agentDecision = item.agentDecision || null;
+              const recommendedActions = Array.isArray(agentDecision?.recommendedActions)
+                ? agentDecision.recommendedActions
+                : [];
+
+              return (
               <div key={item.id} className="rounded-[28px] border border-slate-200 bg-white p-5">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                  <div className="space-y-3">
+                  <div className="space-y-3 xl:flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-black uppercase tracking-wide text-slate-900">
                         {item.contactName || item.title}
@@ -333,6 +383,69 @@ const UnifiedInboxManager = () => {
                     </div>
 
                     <p className="text-sm leading-6 text-slate-600">{item.preview || "No preview available yet."}</p>
+
+                    {agentDecision && (
+                      <div className="rounded-[26px] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-amber-50/60 px-4 py-4 shadow-sm">
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="grid h-9 w-9 place-items-center rounded-2xl bg-slate-900 text-white">
+                              <FaRobot />
+                            </span>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                                Agent Brain
+                              </p>
+                              <p className="text-sm font-black uppercase tracking-tight text-slate-900">
+                                {formatAgentLabel(agentDecision.primaryAgent || "central-router")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest ${temperatureTone[agentDecision.leadTemperature] || temperatureTone.cold}`}>
+                              {agentDecision.leadTemperature || "cold"} lead
+                            </span>
+                            <span className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${priorityTone[agentDecision.priority] || priorityTone.normal}`}>
+                              {agentDecision.priority || "normal"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 text-xs font-bold text-slate-600 md:grid-cols-3">
+                          <p>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Next Action</span>
+                            {formatAgentLabel(agentDecision.nextAction || "review")}
+                          </p>
+                          <p>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Lead Score</span>
+                            {agentDecision.leadScore ?? 0}/100
+                          </p>
+                          <p>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Auto Reply</span>
+                            {agentDecision.autoReplyAllowed ? "Allowed" : "Human check"}
+                          </p>
+                        </div>
+
+                        {agentDecision.requiresHumanReview && (
+                          <div className="mt-4 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-5 text-amber-800">
+                            <FaExclamationTriangle className="mt-0.5 shrink-0" />
+                            Human review required before AI sends or confirms sensitive details.
+                          </div>
+                        )}
+
+                        {agentDecision.leadScoreReasons?.length > 0 && (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {agentDecision.leadScoreReasons.slice(0, 3).map((reason) => (
+                              <span
+                                key={`${item.id}-reason-${reason}`}
+                                className="rounded-full bg-white px-3 py-1 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200"
+                              >
+                                {formatAgentLabel(reason)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {item.channel === "website" && (
                       <div className="rounded-[24px] bg-slate-50 px-4 py-4">
@@ -377,7 +490,33 @@ const UnifiedInboxManager = () => {
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-3 xl:w-[240px]">
+                  <div className="flex flex-col gap-3 xl:w-[260px]">
+                    {recommendedActions.length > 0 && (
+                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="mb-3 flex items-center gap-2">
+                          <FaBolt className="text-amber-500" />
+                          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
+                            Recommended Actions
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          {recommendedActions.slice(0, 3).map((action, index) => (
+                            <div
+                              key={`${item.id}-agent-action-${action.type}-${index}`}
+                              className={`rounded-2xl border px-3 py-3 ${actionTone[action.type] || actionTone.tag}`}
+                            >
+                              <p className="text-[10px] font-black uppercase tracking-widest">
+                                {action.label || formatAgentLabel(action.type)}
+                              </p>
+                              <p className="mt-1 text-[11px] font-semibold leading-5 opacity-80">
+                                {action.description || "Use the central agent recommendation to guide the next operator move."}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => handleCopy(item)}
@@ -556,7 +695,8 @@ const UnifiedInboxManager = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
         </div>
       </Card>
     </div>
