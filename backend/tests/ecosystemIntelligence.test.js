@@ -97,3 +97,36 @@ test("buildEcosystemIntelligenceReport aggregates funnel, revenue, partners, and
   assert.equal(report.network.averageCommission, "14.5%");
   assert.ok(report.timestamp);
 });
+
+test("buildEcosystemIntelligenceReport falls back when partnership table is missing", async () => {
+  const fakeClient = {
+    async connect() {},
+    async query(sql) {
+      if (sql.includes("traveler_inquiry_records")) {
+        return {
+          rows: [{ total_inquiries: "0", qualified_leads: "0", converted_leads: "0" }],
+        };
+      }
+
+      if (sql.includes("from public.booking_records")) {
+        return { rows: [] };
+      }
+
+      if (sql.includes("marketplace_partnership_records")) {
+        const error = new Error('relation "public.marketplace_partnership_records" does not exist');
+        error.code = "42P01";
+        throw error;
+      }
+
+      return { rows: [] };
+    },
+    async end() {},
+  };
+
+  const report = await buildEcosystemIntelligenceReport("tenant_1", {}, { client: fakeClient });
+
+  assert.equal(report.network.totalPartnerships, 0);
+  assert.equal(report.network.activePartnerships, 0);
+  assert.equal(report.network.averageCommission, "0.0%");
+  assert.equal(report.network.degraded, true);
+});

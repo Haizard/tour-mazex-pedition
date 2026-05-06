@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildAgentActionPlan,
   buildAgentDecision,
   classifyAgentIntent,
   routeAgentEvent,
@@ -77,3 +78,26 @@ test("buildAgentDecision flags low-confidence replies for human review", () => {
   assert.equal(decision.autoReplyAllowed, false);
 });
 
+test("buildAgentActionPlan exposes concrete inbox operator actions", () => {
+  const actions = buildAgentActionPlan({
+    primaryAgent: "messaging-sales-agent",
+    nextAction: "priority-sales-response",
+    priority: "urgent",
+    autoReplyAllowed: true,
+    requiresHumanReview: false,
+  });
+
+  assert.equal(actions[0].type, "reply");
+  assert.equal(actions[0].label, "Send priority sales reply");
+  assert.equal(actions.some((action) => action.type === "follow-up"), true);
+});
+
+test("buildAgentDecision includes recommended actions for the admin UI", () => {
+  const decision = buildAgentDecision({
+    channel: "email",
+    text: "Maybe later, just browsing.",
+  });
+
+  assert.equal(Array.isArray(decision.recommendedActions), true);
+  assert.equal(decision.recommendedActions[0].type, "follow-up");
+});

@@ -88,6 +88,79 @@ export const routeAgentEvent = ({ channel = "", text = "", leadTemperature = "" 
   };
 };
 
+export const buildAgentActionPlan = (decision = {}) => {
+  if (decision.requiresHumanReview || decision.nextAction === "human-review-required") {
+    return [
+      {
+        type: "review",
+        label: "Send to human review",
+        description: "Sensitive pricing, legal, or guarantee language needs operator approval.",
+        urgency: "high",
+      },
+    ];
+  }
+
+  if (decision.primaryAgent === "email-nurture-agent") {
+    return [
+      {
+        type: "follow-up",
+        label: "Schedule nurture follow-up",
+        description: "Keep the lead warm with a gentle email sequence.",
+        urgency: "low",
+      },
+      {
+        type: "tag",
+        label: "Mark as nurture lead",
+        description: "Keep this conversation in the CRM nurture queue.",
+        urgency: "low",
+      },
+    ];
+  }
+
+  if (decision.nextAction === "invite-to-direct-conversation") {
+    return [
+      {
+        type: "reply",
+        label: "Invite to WhatsApp or Messenger",
+        description: "Move public social interest into a direct sales conversation.",
+        urgency: "normal",
+      },
+      {
+        type: "score",
+        label: "Create or update lead profile",
+        description: "Capture the social buying signal in CRM.",
+        urgency: "normal",
+      },
+    ];
+  }
+
+  if (decision.primaryAgent === "messaging-sales-agent") {
+    return [
+      {
+        type: "reply",
+        label: decision.priority === "urgent" ? "Send priority sales reply" : "Send sales qualification reply",
+        description: "Respond with package guidance and collect dates, group size, and budget.",
+        urgency: decision.priority === "urgent" ? "high" : "normal",
+      },
+      {
+        type: "follow-up",
+        label: "Prepare follow-up sequence",
+        description: "Queue a follow-up if the traveler does not respond.",
+        urgency: "normal",
+      },
+    ];
+  }
+
+  return [
+    {
+      type: "score",
+      label: "Score and route lead",
+      description: "Update the CRM profile and decide the next best channel.",
+      urgency: "normal",
+    },
+  ];
+};
+
 export const buildAgentDecision = ({ channel = "", text = "", lead = {} } = {}) => {
   const scoring = scoreInquiryLead({
     ...lead,
@@ -104,7 +177,7 @@ export const buildAgentDecision = ({ channel = "", text = "", lead = {} } = {}) 
   const requiresHumanReview = intent.needsHumanReview;
   const urgent = scoring.leadTemperature === "hot" || route.nextAction === "priority-sales-response";
 
-  return {
+  const decision = {
     ...route,
     intent: intent.primaryIntent,
     buyingSignal: intent.buyingSignal,
@@ -121,6 +194,11 @@ export const buildAgentDecision = ({ channel = "", text = "", lead = {} } = {}) 
       "route-sensitive-or-legal-claims-to-human",
     ],
   };
+
+  return {
+    ...decision,
+    recommendedActions: buildAgentActionPlan(decision),
+  };
 };
 
 export const enrichInboxItemWithAgentDecision = (item = {}) => ({
@@ -136,4 +214,3 @@ export const enrichInboxItemWithAgentDecision = (item = {}) => ({
     },
   }),
 });
-

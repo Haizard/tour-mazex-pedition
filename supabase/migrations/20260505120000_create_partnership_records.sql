@@ -27,6 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_partnership_status ON public.marketplace_partners
 ALTER TABLE public.marketplace_partnership_records ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
+DROP POLICY IF EXISTS "Service role full access" ON public.marketplace_partnership_records;
 CREATE POLICY "Service role full access" ON public.marketplace_partnership_records
     USING (true)
     WITH CHECK (true);

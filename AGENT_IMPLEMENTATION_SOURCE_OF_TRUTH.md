@@ -127,6 +127,9 @@ Completed after the initial version of this file:
 - first coordinated multi-agent orchestration layer added in `backend/utils/aiAgentOrchestrator.js`
 - unified inbox items now include `agentDecision` with primary agent, supporting agents, next action, lead temperature, priority, auto-reply permission, human-review flag, and shared guardrails
 - current orchestrator MVP routes social pricing intent to messaging sales, hot WhatsApp/chat leads to priority sales response, cold email leads to nurture, and risky pricing/legal claims to human review
+- `agentDecision` now also includes `recommendedActions` so the admin UI can render concrete operator actions such as priority sales reply, nurture follow-up, CRM scoring, or human review
+- production intelligence endpoint was hardened so missing optional PostgreSQL partnership tables degrade to zero network metrics instead of returning `500`
+- `public.marketplace_partnership_records` migration was made retry-safe and applied to Supabase after production reported the missing relation
 - standalone email sync drain script added in `backend/scripts/processEmailSyncJobs.js`
 - AI-generated blog hero images now persist through the media/object-storage pipeline via `backend/utils/generatedMediaStorage.js`
 - blog automation now stores generated image assets as first-class media records and links them back on the `Blog` document with `imageMediaId`
