@@ -1,3 +1,5 @@
+import { enrichInboxItemWithAgentDecision } from "./aiAgentOrchestrator.js";
+
 const toTimestamp = (value) => {
   const timestamp = new Date(value || 0).getTime();
   return Number.isNaN(timestamp) ? 0 : timestamp;
@@ -119,5 +121,7 @@ export const buildUnifiedInboxItems = ({
     ...inquiries.map(normalizeInquiryItem),
     ...contactMessages.map(normalizeContactMessageItem),
     ...chatConversations.map(normalizeChatConversationItem),
-  ].sort((left, right) => toTimestamp(right.lastActivityAt) - toTimestamp(left.lastActivityAt));
+  ]
+    .map(enrichInboxItemWithAgentDecision)
+    .sort((left, right) => toTimestamp(right.lastActivityAt) - toTimestamp(left.lastActivityAt));
 

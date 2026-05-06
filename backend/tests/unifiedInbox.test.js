@@ -57,6 +57,7 @@ test("buildUnifiedInboxItems merges email threads and inquiries into a recency-s
   assert.equal(items.length, 4);
   assert.equal(items[0].channel, "website");
   assert.equal(items[0].sourceId, "chat-1");
+  assert.equal(items[0].agentDecision.primaryAgent, "messaging-sales-agent");
   assert.equal(items[1].channel, "whatsapp");
   assert.equal(items[1].sourceId, "inquiry-1");
   assert.equal(items[2].channel, "email");
@@ -106,4 +107,23 @@ test("buildUnifiedInboxItems exposes conversion metadata for operator workflows"
   assert.equal(items[0].conversionStage, "qualified");
   assert.equal(items[0].canReply, true);
   assert.equal(items[0].canEscalate, true);
+  assert.equal(items[0].agentDecision.guardrails.includes("never-invent-prices"), true);
+});
+
+test("buildUnifiedInboxItems routes cold email threads to nurture agent", () => {
+  const items = buildUnifiedInboxItems({
+    emailThreads: [
+      {
+        _id: "thread-cold",
+        subject: "Maybe later",
+        participants: ["guest@example.com"],
+        status: "open",
+        previewText: "Just browsing for now, maybe later.",
+        lastMessageAt: "2026-04-20T10:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(items[0].agentDecision.primaryAgent, "email-nurture-agent");
+  assert.equal(items[0].agentDecision.nextAction, "schedule-nurture-follow-up");
 });

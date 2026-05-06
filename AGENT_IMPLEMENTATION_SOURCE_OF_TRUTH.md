@@ -124,6 +124,9 @@ Completed after the initial version of this file:
 - platform page builder UI now includes layout-only `AI Variants` and `Import Code` tools in `src/components/Admin/PageBuilderManager.jsx`
 - AI variants preserve existing section types and CMS fields while improving visual hierarchy, copy polish, spacing, and classic tourism styling
 - pasted HTML/CSS imports are sanitized, CSS-scoped, converted into editable CMS fields, and inserted as normal page-builder sections
+- first coordinated multi-agent orchestration layer added in `backend/utils/aiAgentOrchestrator.js`
+- unified inbox items now include `agentDecision` with primary agent, supporting agents, next action, lead temperature, priority, auto-reply permission, human-review flag, and shared guardrails
+- current orchestrator MVP routes social pricing intent to messaging sales, hot WhatsApp/chat leads to priority sales response, cold email leads to nurture, and risky pricing/legal claims to human review
 - standalone email sync drain script added in `backend/scripts/processEmailSyncJobs.js`
 - AI-generated blog hero images now persist through the media/object-storage pipeline via `backend/utils/generatedMediaStorage.js`
 - blog automation now stores generated image assets as first-class media records and links them back on the `Blog` document with `imageMediaId`
