@@ -130,6 +130,7 @@ Completed after the initial version of this file:
 - `agentDecision` now also includes `recommendedActions` so the admin UI can render concrete operator actions such as priority sales reply, nurture follow-up, CRM scoring, or human review
 - Unified Inbox admin cards now surface the central agent brain directly: primary agent, lead temperature, priority, next action, lead score, auto-reply permission, human-review warning, score reasons, and recommended operator actions
 - Agent decision audit foundations added: recommended inbox actions can now be converted into stable audit records, persisted through `AgentDecisionLog`, and logged from the Unified Inbox UI with a `Log Complete` action
+- Compliant B2B tourism lead discovery foundation added: operators can analyze approved public business source text, extract public business email/WhatsApp contacts, block personal email providers and direct review-platform scraping, score marketplace/commission fit, and persist candidates via `TourismLeadCandidate`
 - production intelligence endpoint was hardened so missing optional PostgreSQL partnership tables degrade to zero network metrics instead of returning `500`
 - `public.marketplace_partnership_records` migration was made retry-safe and applied to Supabase after production reported the missing relation
 - standalone email sync drain script added in `backend/scripts/processEmailSyncJobs.js`

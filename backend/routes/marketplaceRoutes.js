@@ -2,14 +2,100 @@ import express from "express";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import MarketplacePartnership from "../models/MarketplacePartnership.js";
 import TourPackage from "../models/TourPackage.js";
-import Tenant from "../models/Tenant.js";
+import TourismLeadCandidate from "../models/TourismLeadCandidate.js";
 
 import { createPostgresFirstPartnership } from "../utils/postgresFirstPartnershipService.js";
+import { analyzeTourismLeadSource } from "../utils/tourismLeadDiscovery.js";
 
 const router = express.Router();
 
 // Public Discovery (requires API Key or Tenant Context - simplified here for Admin first)
 router.use(requireTenantAdmin);
+
+router.post("/lead-discovery/analyze", async (req, res) => {
+  try {
+    const {
+      sourceUrl,
+      officialWebsiteUrl = "",
+      pageText = "",
+      organizationName = "",
+      categories = [],
+      operatorNotes = "",
+    } = req.body || {};
+
+    if (!sourceUrl || !pageText) {
+      return res.status(400).json({ message: "sourceUrl and pageText are required for compliant analysis." });
+    }
+
+    const analysis = analyzeTourismLeadSource({
+      sourceUrl,
+      officialWebsiteUrl,
+      pageText,
+      organizationName,
+      categories,
+    });
+
+    const candidate = await TourismLeadCandidate.findOneAndUpdate(
+      {
+        tenantId: req.tenantId,
+        sourceUrl,
+      },
+      {
+        $set: {
+          tenantId: req.tenantId,
+          organizationName,
+          sourceUrl,
+          officialWebsiteUrl,
+          sourcePolicy: analysis.sourcePolicy,
+          allowedContacts: analysis.allowedContacts,
+          blockedContacts: analysis.blockedContacts,
+          categories,
+          complianceFlags: analysis.complianceFlags,
+          leadScore: analysis.leadScore,
+          leadTemperature: analysis.leadTemperature,
+          leadScoreReasons: analysis.leadScoreReasons,
+          recommendedUseCases: analysis.recommendedUseCases,
+          outreachAllowed: analysis.outreachAllowed,
+          sourceExcerpt: pageText.slice(0, 1200),
+          operatorNotes,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      }
+    ).lean();
+
+    return res.status(201).json({ candidate });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/lead-discovery/candidates", async (req, res) => {
+  try {
+    const { status, temperature } = req.query;
+    const query = { tenantId: req.tenantId };
+
+    if (status) {
+      query.outreachStatus = status;
+    }
+
+    if (temperature) {
+      query.leadTemperature = temperature;
+    }
+
+    const candidates = await TourismLeadCandidate.find(query)
+      .sort({ leadScore: -1, updatedAt: -1 })
+      .limit(100)
+      .lean();
+
+    return res.status(200).json({ candidates });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
 
 /**
  * GET /api/marketplace/tours
@@ -42,7 +128,7 @@ router.post("/partnerships/request", async (req, res) => {
       providerTenantId,
       distributorTenantId: String(req.tenantId || ""),
       status: "requested"
-    }, process.env);
+    }, globalThis.process?.env || {});
 
     res.status(201).json(partnership);
   } catch (error) {

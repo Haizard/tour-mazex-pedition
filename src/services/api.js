@@ -458,6 +458,10 @@ export const createReferralPartner = (data) =>
   API.post("/distribution/partners", data);
 export const deleteReferralPartner = (id) =>
   API.delete(`/distribution/partners/${id}`);
+export const analyzeTourismLeadDiscoverySource = (data) =>
+  API.post("/marketplace/lead-discovery/analyze", data);
+export const fetchTourismLeadDiscoveryCandidates = (params = {}) =>
+  cachedGet("/marketplace/lead-discovery/candidates", { params });
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
 export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);
