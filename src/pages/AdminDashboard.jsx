@@ -78,6 +78,7 @@ import PartnerPortalManager from "../components/Admin/PartnerPortalManager";
 import PaymentAutomationManager from "../components/Admin/PaymentAutomationManager";
 import InfrastructureReadinessManager from "../components/Admin/InfrastructureReadinessManager";
 import DistributionManager from "../components/Admin/DistributionManager";
+import MarketplaceVisibilityManager from "../components/Admin/MarketplaceVisibilityManager";
 import DynamicPricingManager from "../components/Admin/DynamicPricingManager";
 import TravelerAssistanceManager from "../components/Admin/TravelerAssistanceManager";
 import CompetitorIntelligenceManager from "../components/Admin/CompetitorIntelligenceManager";
@@ -99,6 +100,46 @@ const slugifyValue = (value = "") =>
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+const createDefaultTourFormData = () => ({
+  title: "",
+  description: "",
+  price: "",
+  image: "",
+  galleryImages: "",
+  location: "",
+  startLocation: "",
+  endLocation: "",
+  destinationsVisited: "",
+  author: "Admin",
+  date: "",
+  duration: "",
+  maxGroupSize: "",
+  tourType: "Safari",
+  category: "Luxury",
+  destinationSlug: "",
+  accommodationType: "",
+  inclusions: "",
+  exclusions: "",
+  itinerary: [{ day: 1, events: "", accommodation: "" }],
+  faqs: [{ question: "", answer: "" }],
+  pricingTable: { greenSeason: "", highSeason: "", peakSeason: "" },
+  tripAdvisorUrl: "",
+  tripAdvisorRating: "",
+  tripAdvisorReviewCount: "",
+  isMarketplaceVisible: false,
+  isPubliclyDistributable: true,
+  isGroupTour: false,
+  maxCapacity: 12,
+  currentBookings: 0,
+  launchDate: "",
+  seoTitle: "",
+  seoDescription: "",
+  seoKeywords: "",
+  seoOgImage: "",
+  seoCanonicalUrl: "",
+  seoSchema: "",
+});
 
 const AdminDashboard = () => {
   const getPreferredTaxonomyName = (items, type, preferredName, fallbackName) =>
@@ -190,43 +231,7 @@ const AdminDashboard = () => {
   }, [activeTab, gatedTabAccess]);
 
   // Form States
-  const [tourFormData, setTourFormData] = useState({
-    title: "",
-    description: "",
-    price: "",
-    image: "",
-    galleryImages: "",
-    location: "",
-    startLocation: "",
-    endLocation: "",
-    destinationsVisited: "",
-    author: "Admin",
-    date: "",
-    duration: "",
-    maxGroupSize: "",
-    tourType: "Safari",
-    category: "Luxury",
-    destinationSlug: "",
-    accommodationType: "",
-    inclusions: "",
-    exclusions: "",
-    itinerary: [{ day: 1, events: "", accommodation: "" }],
-    faqs: [{ question: "", answer: "" }],
-    pricingTable: { greenSeason: "", highSeason: "", peakSeason: "" },
-    tripAdvisorUrl: "",
-    tripAdvisorRating: "",
-    tripAdvisorReviewCount: "",
-    isGroupTour: false,
-    maxCapacity: 12,
-    currentBookings: 0,
-    launchDate: "",
-    seoTitle: "",
-    seoDescription: "",
-    seoKeywords: "",
-    seoOgImage: "",
-    seoCanonicalUrl: "",
-    seoSchema: "",
-  });
+  const [tourFormData, setTourFormData] = useState(createDefaultTourFormData);
 
   const [blogFormData, setBlogFormData] = useState({
     title: "",
@@ -693,7 +698,10 @@ const AdminDashboard = () => {
   };
 
   const handleTourInputChange = (e) =>
-    setTourFormData({ ...tourFormData, [e.target.name]: e.target.value });
+    setTourFormData({
+      ...tourFormData,
+      [e.target.name]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
+    });
   const handleBlogInputChange = (e) =>
     setBlogFormData({ ...blogFormData, [e.target.name]: e.target.value });
   const handleFaqInputChange = (e) =>
@@ -825,6 +833,18 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleMarketplaceVisibilityToggle = async (tourId, field, value) => {
+    try {
+      await updateTour(tourId, { [field]: value });
+      setTours((prevTours) =>
+        prevTours.map((tour) => (tour._id === tourId ? { ...tour, [field]: value } : tour)),
+      );
+    } catch (error) {
+      console.error(error);
+      alert("Unable to update marketplace visibility right now.");
+    }
+  };
+
   const handleGenerateBlogSeoWithAi = async () => {
     if (!blogFormData.title || !blogFormData.content) {
       alert("Please provide a title and content to generate SEO metadata.");
@@ -901,34 +921,7 @@ const AdminDashboard = () => {
     try {
       if (editingTourId) await updateTour(editingTourId, processed);
       else await createTour(processed);
-        setTourFormData({
-          ...tourFormData,
-          title: "",
-          description: "",
-          price: "",
-          image: "",
-          galleryImages: "",
-          location: "",
-          startLocation: "",
-          endLocation: "",
-          destinationsVisited: "",
-          destinationSlug: "",
-          accommodationType: "",
-          inclusions: "",
-          exclusions: "",
-          itinerary: [{ day: 1, events: "", accommodation: "" }],
-          faqs: [{ question: "", answer: "" }],
-          pricingTable: { greenSeason: "", highSeason: "", peakSeason: "" },
-          tripAdvisorUrl: "",
-          tripAdvisorRating: "",
-          tripAdvisorReviewCount: "",
-          seoTitle: "",
-          seoDescription: "",
-          seoKeywords: "",
-          seoOgImage: "",
-          seoCanonicalUrl: "",
-          seoSchema: "",
-        });
+      setTourFormData(createDefaultTourFormData());
       setEditingTourId(null);
       setPackageView("list");
       loadTours();
@@ -1239,42 +1232,7 @@ const AdminDashboard = () => {
                   onClick={() => {
                     setPackageView("form");
                     if (!editingTourId) {
-                      setTourFormData({
-                        title: "",
-                        description: "",
-                        price: "",
-                        image: "",
-                        galleryImages: "",
-                        location: "",
-                        startLocation: "",
-                        endLocation: "",
-                        destinationsVisited: "",
-                        author: "Admin",
-                        date: "",
-                        duration: "",
-                        maxGroupSize: "",
-                        tourType: "Safari",
-                        category: "Luxury",
-                        accommodationType: "",
-                        inclusions: "",
-                        exclusions: "",
-                        itinerary: [{ day: 1, events: "", accommodation: "" }],
-                        faqs: [{ question: "", answer: "" }],
-                        pricingTable: { greenSeason: "", highSeason: "", peakSeason: "" },
-                        tripAdvisorUrl: "",
-                        tripAdvisorRating: "",
-                        tripAdvisorReviewCount: "",
-                        isGroupTour: false,
-                        maxCapacity: 12,
-                        currentBookings: 0,
-                        launchDate: "",
-                        seoTitle: "",
-                        seoDescription: "",
-                        seoKeywords: "",
-                        seoOgImage: "",
-                        seoCanonicalUrl: "",
-                        seoSchema: "",
-                      });
+                      setTourFormData(createDefaultTourFormData());
                     }
                   }}
                   className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
@@ -1797,6 +1755,62 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
+                  <div className="rounded-[28px] border border-primary/10 bg-primary/5 p-6 md:p-8">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">
+                          Marketplace Controls
+                        </p>
+                        <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-slate-900">
+                          Discover Visibility
+                        </h3>
+                        <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-600">
+                          Choose whether this package appears on the platform discover page and whether
+                          distribution partners are allowed to use it in public network feeds.
+                        </p>
+                      </div>
+                      <Badge variant={tourFormData.isMarketplaceVisible ? "primary" : "secondary"}>
+                        {tourFormData.isMarketplaceVisible ? "Marketplace Live" : "Hidden from Discover"}
+                      </Badge>
+                    </div>
+                    <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                      <label className="flex items-start gap-4 rounded-[24px] border border-white/80 bg-white px-5 py-5 shadow-sm">
+                        <input
+                          type="checkbox"
+                          name="isMarketplaceVisible"
+                          checked={Boolean(tourFormData.isMarketplaceVisible)}
+                          onChange={handleTourInputChange}
+                          className="mt-1 h-5 w-5 rounded accent-primary"
+                        />
+                        <span>
+                          <span className="block text-sm font-black uppercase tracking-wide text-slate-900">
+                            Show on Marketplace
+                          </span>
+                          <span className="mt-1 block text-sm font-medium leading-6 text-slate-600">
+                            Lets travelers find this tour from the public discover page and marketplace detail flow.
+                          </span>
+                        </span>
+                      </label>
+                      <label className="flex items-start gap-4 rounded-[24px] border border-white/80 bg-white px-5 py-5 shadow-sm">
+                        <input
+                          type="checkbox"
+                          name="isPubliclyDistributable"
+                          checked={Boolean(tourFormData.isPubliclyDistributable)}
+                          onChange={handleTourInputChange}
+                          className="mt-1 h-5 w-5 rounded accent-primary"
+                        />
+                        <span>
+                          <span className="block text-sm font-black uppercase tracking-wide text-slate-900">
+                            Allow Distribution Partners
+                          </span>
+                          <span className="mt-1 block text-sm font-medium leading-6 text-slate-600">
+                            Keeps this package eligible for public APIs, partner planners, and future referral channels.
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* FAQs */}
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -1949,19 +1963,7 @@ const AdminDashboard = () => {
                         variant="outline"
                         onClick={() => {
                           setEditingTourId(null);
-                          setTourFormData({
-                            ...tourFormData,
-                            title: "",
-                            description: "",
-                            destinationSlug: "",
-                            image: tourFormData.image || "",
-                            location: tourFormData.location || "",
-                            startLocation: tourFormData.startLocation || "",
-                            endLocation: tourFormData.endLocation || "",
-                            accommodationType: tourFormData.accommodationType || "",
-                            inclusions: tourFormData.inclusions || "",
-                            exclusions: tourFormData.exclusions || "",
-                          });
+                          setTourFormData(createDefaultTourFormData());
                           setPackageView("list");
                         }}
                         className="w-full md:w-auto py-3 md:py-2 rounded-xl text-xs font-bold order-2 md:order-1"
@@ -2026,6 +2028,9 @@ const AdminDashboard = () => {
                               tripAdvisorRating: t.tripAdvisorRating || "",
                               tripAdvisorReviewCount:
                                 t.tripAdvisorReviewCount || "",
+                              isMarketplaceVisible: Boolean(t.isMarketplaceVisible),
+                              isPubliclyDistributable:
+                                t.isPubliclyDistributable !== false,
                               launchDate: t.launchDate || "",
                               isGroupTour: Boolean(t.isGroupTour),
                               maxCapacity: t.maxCapacity ?? 12,
@@ -3723,7 +3728,15 @@ const AdminDashboard = () => {
           {activeTab === "airport-pickups" && <AirportPickupManager />}
 
           {activeTab === "partners" && <PartnerPortalManager />}
-          {activeTab === "distribution" && <DistributionManager />}
+          {activeTab === "distribution" && (
+            <div className="space-y-8">
+              <DistributionManager />
+              <MarketplaceVisibilityManager
+                tours={tours}
+                onToggle={handleMarketplaceVisibilityToggle}
+              />
+            </div>
+          )}
           {activeTab === "ecosystem-intelligence" && <IntelligenceDashboard />}
           {activeTab === "attribution-intelligence" && <AttributionIntelligencePanel />}
 

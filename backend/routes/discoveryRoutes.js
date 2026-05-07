@@ -4,63 +4,154 @@ import Tenant from "../models/Tenant.js";
 
 const router = express.Router();
 
+const buildRegex = (value = "") => new RegExp(String(value).trim(), "i");
+
+const buildDiscoverySort = (sort = "") => {
+  if (sort === "price-asc") {
+    return { price: 1, featured: -1, createdAt: -1 };
+  }
+
+  if (sort === "price-desc") {
+    return { price: -1, featured: -1, createdAt: -1 };
+  }
+
+  if (sort === "newest") {
+    return { createdAt: -1, featured: -1 };
+  }
+
+  return { featured: -1, createdAt: -1 };
+};
+
+const toDiscoveryCard = (tour = {}) => ({
+  _id: String(tour._id || ""),
+  title: tour.title || "",
+  description: tour.description || "",
+  image: tour.image || "",
+  location: tour.location || "",
+  duration: tour.duration || "",
+  category: tour.category || "",
+  price: Number(tour.price || 0),
+  featured: tour.featured === true,
+  operator: {
+    id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
+    name: tour.tenantId?.name || "Verified Operator",
+    slug: tour.tenantId?.slug || "",
+  },
+  tripAdvisorRating: tour.tripAdvisorRating ?? null,
+  tripAdvisorReviewCount: tour.tripAdvisorReviewCount ?? null,
+});
+
+const toDiscoveryDetail = (tour = {}) => ({
+  ...tour,
+  operator: {
+    id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
+    name: tour.tenantId?.name || "Verified Operator",
+    slug: tour.tenantId?.slug || "",
+  },
+});
+
+const buildDiscoveryQuery = async ({ q, location, minPrice, maxPrice, category, operator, duration }) => {
+  const query = { isMarketplaceVisible: true };
+
+  if (q) {
+    const regex = buildRegex(q);
+    query.$or = [
+      { title: { $regex: regex } },
+      { description: { $regex: regex } },
+      { destinationsVisited: { $regex: regex } },
+    ];
+  }
+
+  if (location) {
+    query.location = { $regex: buildRegex(location) };
+  }
+
+  if (category) {
+    query.category = { $regex: buildRegex(category) };
+  }
+
+  if (duration) {
+    query.duration = { $regex: buildRegex(duration) };
+  }
+
+  if (minPrice || maxPrice) {
+    query.price = {};
+    if (minPrice) query.price.$gte = Number(minPrice);
+    if (maxPrice) query.price.$lte = Number(maxPrice);
+  }
+
+  if (operator) {
+    const operatorRegex = buildRegex(operator);
+    const matchedOperators = await Tenant.find({
+      $or: [
+        { slug: { $regex: operatorRegex } },
+        { name: { $regex: operatorRegex } },
+      ],
+    })
+      .select("_id")
+      .lean();
+
+    const tenantIds = matchedOperators.map((tenant) => tenant._id);
+
+    if (!tenantIds.length) {
+      query.tenantId = { $in: [] };
+    } else {
+      query.tenantId = { $in: tenantIds };
+    }
+  }
+
+  return query;
+};
+
 /**
  * GET /api/discovery/tours
  * Fetch global tours marked as marketplace visible.
- * Supports filtering, searching, and pagination.
+ * Supports filtering, searching, sorting, and pagination.
  */
 router.get("/tours", async (req, res) => {
   try {
     const {
-      q, // Search query
+      q,
       location,
       minPrice,
       maxPrice,
       category,
+      operator,
+      duration,
+      sort,
       limit = 20,
       page = 1,
     } = req.query;
 
-    const query = { isMarketplaceVisible: true };
+    const query = await buildDiscoveryQuery({
+      q,
+      location,
+      minPrice,
+      maxPrice,
+      category,
+      operator,
+      duration,
+    });
 
-    if (q) {
-      query.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
-        { destinationsVisited: { $regex: q, $options: "i" } },
-      ];
-    }
-
-    if (location) {
-      query.location = { $regex: location, $options: "i" };
-    }
-
-    if (category) {
-      query.category = { $regex: category, $options: "i" };
-    }
-
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
-    }
-
-    const skip = (Number(page) - 1) * Number(limit);
+    const parsedLimit = Math.max(Number(limit) || 20, 1);
+    const parsedPage = Math.max(Number(page) || 1, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
 
     const tours = await TourPackage.find(query)
+      .sort(buildDiscoverySort(sort))
       .populate("tenantId", "name slug")
       .skip(skip)
-      .limit(Number(limit))
+      .limit(parsedLimit)
       .lean();
 
     const total = await TourPackage.countDocuments(query);
 
     res.status(200).json({
-      tours,
+      tours: tours.map(toDiscoveryCard),
       pagination: {
         total,
-        page: Number(page),
-        pages: Math.ceil(total / Number(limit)),
+        page: parsedPage,
+        pages: Math.ceil(total / parsedLimit),
       },
     });
   } catch (error) {
@@ -76,14 +167,16 @@ router.get("/tours/:id", async (req, res) => {
   try {
     const tour = await TourPackage.findOne({
       _id: req.params.id,
-      isMarketplaceVisible: true
-    }).populate("tenantId", "name slug").lean();
+      isMarketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
 
     if (!tour) {
       return res.status(404).json({ message: "Tour not found in marketplace." });
     }
 
-    res.status(200).json(tour);
+    res.status(200).json(toDiscoveryDetail(tour));
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch tour details", error: error.message });
   }
@@ -93,11 +186,9 @@ router.get("/tours/:id", async (req, res) => {
  * GET /api/discovery/operators
  * Fetch a list of active operators on the network.
  */
-router.get("/operators", async (req, res) => {
+router.get("/operators", async (_req, res) => {
   try {
-    const operators = await Tenant.find({ status: "active" })
-      .select("name slug customDomains")
-      .lean();
+    const operators = await Tenant.find({ status: "active" }).select("name slug customDomains").lean();
 
     res.status(200).json(operators);
   } catch (error) {
