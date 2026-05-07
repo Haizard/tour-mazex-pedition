@@ -308,6 +308,13 @@ export const checkPlatformTenantDomainVerification = (tenantId, domain) =>
       headers: getPlatformAdminHeaders(),
     }
   );
+export const fetchPlatformTenantDomainSetupPlan = (tenantId, domain) =>
+  API.get(
+    `/platform-admin/tenants/${tenantId}/domains/${encodeURIComponent(domain)}/setup-plan`,
+    {
+      headers: getPlatformAdminHeaders(),
+    }
+  );
 export const renewPlatformTenantDomainService = (tenantId, data) =>
   API.post(`/platform-admin/tenants/${tenantId}/renew-domain-service`, data, {
     headers: getPlatformAdminHeaders(),

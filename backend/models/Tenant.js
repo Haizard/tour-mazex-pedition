@@ -50,6 +50,25 @@ const domainServiceSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const domainProviderSchema = new mongoose.Schema(
+  {
+    provider: {
+      type: String,
+      enum: ["manual", "cloudflare"],
+      default: "manual",
+    },
+    autoManageDns: { type: Boolean, default: false },
+    zoneId: { type: String, default: "" },
+    accountId: { type: String, default: "" },
+    nameserverMode: {
+      type: String,
+      enum: ["external", "delegated"],
+      default: "external",
+    },
+  },
+  { _id: false }
+);
+
 const tenantSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -124,6 +143,16 @@ const tenantSchema = new mongoose.Schema(
         renewalCycle: "yearly",
         includesHosting: true,
         includesManagedDns: true,
+      }),
+    },
+    domainProvider: {
+      type: domainProviderSchema,
+      default: () => ({
+        provider: "manual",
+        autoManageDns: false,
+        zoneId: "",
+        accountId: "",
+        nameserverMode: "external",
       }),
     },
   },

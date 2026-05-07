@@ -38,6 +38,10 @@ import {
   getPlatformDomainTargetHost,
   verifyCustomDomainRecord,
 } from "../utils/domainDnsVerifier.js";
+import {
+  buildDomainSetupPlan,
+  getDomainProviderCapabilities,
+} from "../utils/dnsProviderAdapters.js";
 
 const router = express.Router();
 
@@ -277,6 +281,13 @@ router.get("/tenants", async (_req, res) => {
           : buildDemoDomain(tenant.subdomain || tenant.slug),
         primaryDomain: tenant.customDomains?.[0] || "",
         demoAccessEnabled: tenant.demoAccessEnabled !== false,
+        domainProvider: tenant.domainProvider || {
+          provider: "manual",
+          autoManageDns: false,
+          zoneId: "",
+          accountId: "",
+          nameserverMode: "external",
+        },
         adminCount: adminLookup[String(tenant._id)] || 0,
         admins: adminListLookup[String(tenant._id)] || [],
         pageConfigCount: pageLookup[String(tenant._id)] || 0,
@@ -711,6 +722,13 @@ router.post("/tenants", async (req, res) => {
         includesHosting: req.body.domainService?.includesHosting ?? true,
         includesManagedDns: req.body.domainService?.includesManagedDns ?? true,
       },
+      domainProvider: {
+        provider: req.body.domainProvider?.provider || "manual",
+        autoManageDns: req.body.domainProvider?.autoManageDns === true,
+        zoneId: req.body.domainProvider?.zoneId?.toString().trim() || "",
+        accountId: req.body.domainProvider?.accountId?.toString().trim() || "",
+        nameserverMode: req.body.domainProvider?.nameserverMode || "external",
+      },
     });
 
     await Promise.all([
@@ -879,6 +897,17 @@ router.put("/tenants/:tenantId", async (req, res) => {
           req.body.domainService.annualPriceUsd ??
             existingTenant.domainService?.annualPriceUsd
         ),
+      };
+    }
+
+    if (req.body.domainProvider && typeof req.body.domainProvider === "object") {
+      update.domainProvider = {
+        ...(existingTenant.domainProvider || {}),
+        provider: req.body.domainProvider.provider || existingTenant.domainProvider?.provider || "manual",
+        autoManageDns: req.body.domainProvider.autoManageDns === true,
+        zoneId: req.body.domainProvider.zoneId?.toString().trim() || "",
+        accountId: req.body.domainProvider.accountId?.toString().trim() || "",
+        nameserverMode: req.body.domainProvider.nameserverMode || existingTenant.domainProvider?.nameserverMode || "external",
       };
     }
 
@@ -1056,6 +1085,34 @@ router.post("/tenants/:tenantId/domains/:domain/check", async (req, res) => {
         primaryDomain: tenant.customDomains?.[0] || "",
       },
       verification,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.get("/tenants/:tenantId/domains/:domain/setup-plan", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId).lean();
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const normalizedDomain = req.params.domain.trim().toLowerCase();
+    const currentRecord = (tenant.customDomainRecords || []).find(
+      (record) => record.domain === normalizedDomain
+    );
+
+    if (!currentRecord) {
+      return res.status(404).json({ message: "Domain verification record not found." });
+    }
+
+    const setupPlan = await buildDomainSetupPlan(tenant, currentRecord, process.env);
+
+    res.status(200).json({
+      setupPlan,
+      capabilities: getDomainProviderCapabilities(tenant),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

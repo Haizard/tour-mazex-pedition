@@ -3,6 +3,7 @@ import {
   checkPlatformTenantDomainVerification,
   createPlatformTenant,
   fetchPlatformSummary,
+  fetchPlatformTenantDomainSetupPlan,
   fetchPlatformTenantMarketing,
   fetchPlatformTenantSupport,
   fetchPlatformTenants,
@@ -124,6 +125,11 @@ const createTenantFormState = (tenant) => ({
   customDomains: (tenant?.customDomains || []).join("\n"),
   requestedCustomDomains: (tenant?.requestedCustomDomains || []).join("\n"),
   demoAccessEnabled: tenant?.demoAccessEnabled !== false,
+  domainProviderName: tenant?.domainProvider?.provider || "manual",
+  domainAutoManageDns: tenant?.domainProvider?.autoManageDns === true,
+  domainZoneId: tenant?.domainProvider?.zoneId || "",
+  domainAccountId: tenant?.domainProvider?.accountId || "",
+  domainNameserverMode: tenant?.domainProvider?.nameserverMode || "external",
   enableCustomDomains: Boolean(tenant?.features?.enableCustomDomains),
   enablePageBuilder: Boolean(tenant?.features?.enablePageBuilder),
   enableAiContent: tenant?.features?.enableAiContent !== false,
@@ -195,6 +201,7 @@ const PlatformAdminDashboard = () => {
   const [creatingTenant, setCreatingTenant] = useState(false);
   const [renewingDomain, setRenewingDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState("");
+  const [domainPlans, setDomainPlans] = useState({});
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -337,6 +344,13 @@ const PlatformAdminDashboard = () => {
           includesHosting: tenantForm.includesHosting,
           includesManagedDns: tenantForm.includesManagedDns,
         },
+        domainProvider: {
+          provider: tenantForm.domainProviderName,
+          autoManageDns: tenantForm.domainAutoManageDns,
+          zoneId: tenantForm.domainZoneId,
+          accountId: tenantForm.domainAccountId,
+          nameserverMode: tenantForm.domainNameserverMode,
+        },
       });
       if (tenantForm.adminUsername || tenantForm.adminPassword) {
         await updatePlatformTenantAdmin(selectedTenant._id, {
@@ -430,6 +444,30 @@ const PlatformAdminDashboard = () => {
       setVerifyingDomain("");
     }
   };
+
+  useEffect(() => {
+    const loadDomainPlans = async () => {
+      if (!selectedTenant?.customDomainRecords?.length) {
+        setDomainPlans({});
+        return;
+      }
+
+      const entries = await Promise.all(
+        selectedTenant.customDomainRecords.map(async (record) => {
+          try {
+            const response = await fetchPlatformTenantDomainSetupPlan(selectedTenant._id, record.domain);
+            return [record.domain, response.data];
+          } catch (_error) {
+            return [record.domain, null];
+          }
+        })
+      );
+
+      setDomainPlans(Object.fromEntries(entries));
+    };
+
+    loadDomainPlans();
+  }, [selectedTenant?._id, selectedTenant?.customDomainRecords]);
 
   const renderTenantList = () => (
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
@@ -530,6 +568,14 @@ const PlatformAdminDashboard = () => {
           <div><label className={labelClass}>Demo Subdomain</label><input className={inputClass} value={tenantForm.subdomain} onChange={(event) => setTenantForm((current) => ({ ...current, subdomain: event.target.value.toLowerCase() }))} /></div>
           <div><label className={labelClass}>Custom Domains</label><textarea rows={5} className={inputClass} value={tenantForm.customDomains} onChange={(event) => setTenantForm((current) => ({ ...current, customDomains: event.target.value }))} placeholder="One custom domain per line" /></div>
           <div><label className={labelClass}>Requested Domains</label><textarea rows={3} className={inputClass} value={tenantForm.requestedCustomDomains} onChange={(event) => setTenantForm((current) => ({ ...current, requestedCustomDomains: event.target.value }))} /></div>
+          <div><label className={labelClass}>DNS Provider</label><select className={inputClass} value={tenantForm.domainProviderName} onChange={(event) => setTenantForm((current) => ({ ...current, domainProviderName: event.target.value }))}><option value="manual">Manual / Any Provider</option><option value="cloudflare">Cloudflare</option></select></div>
+          <div><label className={labelClass}>Nameserver Mode</label><select className={inputClass} value={tenantForm.domainNameserverMode} onChange={(event) => setTenantForm((current) => ({ ...current, domainNameserverMode: event.target.value }))}><option value="external">Customer keeps DNS elsewhere</option><option value="delegated">Customer delegates DNS to platform</option></select></div>
+          <div><label className={labelClass}>Zone ID</label><input className={inputClass} value={tenantForm.domainZoneId} onChange={(event) => setTenantForm((current) => ({ ...current, domainZoneId: event.target.value }))} placeholder="Optional now, required for provider automation" /></div>
+          <div><label className={labelClass}>Provider Account ID</label><input className={inputClass} value={tenantForm.domainAccountId} onChange={(event) => setTenantForm((current) => ({ ...current, domainAccountId: event.target.value }))} placeholder="Optional provider account reference" /></div>
+          <label className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 px-4 py-4 text-sm font-bold text-zinc-700">
+            Platform auto-manages DNS when provider integration is available
+            <input type="checkbox" checked={tenantForm.domainAutoManageDns} onChange={(event) => setTenantForm((current) => ({ ...current, domainAutoManageDns: event.target.checked }))} className="h-4 w-4 accent-zinc-950" />
+          </label>
           <label className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 px-4 py-4 text-sm font-bold text-zinc-700">
             Demo link stays active after launch
             <input type="checkbox" checked={tenantForm.demoAccessEnabled} onChange={(event) => setTenantForm((current) => ({ ...current, demoAccessEnabled: event.target.checked }))} className="h-4 w-4 accent-zinc-950" />
@@ -549,6 +595,25 @@ const PlatformAdminDashboard = () => {
               <button type="button" disabled={verifyingDomain === record.domain} onClick={() => handleMarkVerified(record.domain)} className="mt-4 rounded-xl border border-zinc-300 px-4 py-2 text-xs font-black uppercase tracking-widest disabled:opacity-40">
                 {verifyingDomain === record.domain ? "Checking DNS..." : record.status === "verified" ? "Re-check DNS" : "Check DNS Now"}
               </button>
+              {domainPlans[record.domain]?.setupPlan ? (
+                <div className="mt-4 rounded-xl bg-white p-4">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500">Setup Plan</p>
+                  <p className="mt-2 text-xs font-semibold text-zinc-600">{domainPlans[record.domain].setupPlan.instructions}</p>
+                  <div className="mt-3 space-y-2">
+                    {domainPlans[record.domain].setupPlan.records.map((item, index) => (
+                      <div key={`${record.domain}-${index}`} className="rounded-lg border border-zinc-200 px-3 py-3 text-xs font-semibold text-zinc-600">
+                        <p><span className="font-black text-zinc-900">Type:</span> {item.type}</p>
+                        <p className="break-all"><span className="font-black text-zinc-900">Host:</span> {item.host}</p>
+                        <p className="break-all"><span className="font-black text-zinc-900">Value:</span> {item.value}</p>
+                        <p><span className="font-black text-zinc-900">Purpose:</span> {item.purpose}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-[11px] font-black uppercase tracking-widest text-zinc-400">
+                    Provider: {domainPlans[record.domain].capabilities?.provider || "manual"} / {domainPlans[record.domain].capabilities?.supportsAutomaticDnsWrites ? "auto-DNS capable" : "manual DNS only"}
+                  </p>
+                </div>
+              ) : null}
             </div>
           ))}
           {!selectedTenant?.customDomainRecords?.length && <EmptyState title="No verification records" body="Save custom domains to generate DNS verification records." />}
