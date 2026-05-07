@@ -54,7 +54,7 @@ const domainProviderSchema = new mongoose.Schema(
   {
     provider: {
       type: String,
-      enum: ["manual", "cloudflare"],
+      enum: ["manual", "cloudflare", "namecheap", "godaddy"],
       default: "manual",
     },
     autoManageDns: { type: Boolean, default: false },

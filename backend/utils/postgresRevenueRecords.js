@@ -59,6 +59,10 @@ const toIso = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 };
 
+const isMissingColumnError = (error, columnName = "") =>
+  error?.code === "42703" ||
+  String(error?.message || "").toLowerCase().includes(`column "${String(columnName).toLowerCase()}"`);
+
 export const buildBookingRevenueRecord = (booking = {}) => ({
   sourceId: String(booking._id || ""),
   tenantId: String(booking.tenantId || ""),
@@ -173,6 +177,52 @@ export const buildBookingRevenueUpsert = (booking = {}) => {
   };
 };
 
+export const buildLegacyBookingRevenueUpsert = (booking = {}) => {
+  const record = buildBookingRevenueRecord(booking);
+  return {
+    text: `
+      insert into public.booking_records (
+        source_id, tenant_id, quote_proposal_id, traveler_name, email, phone, package_tour,
+        status, revenue_stage, payment_status, total_price, currency, referral_code, lead_source,
+        campaign_label, first_touch_at, converted_at, travel_date,
+        distributor_tenant_id, marketplace_commission_percent, source_payload
+      ) values (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21::jsonb
+      )
+      on conflict (source_id)
+      do update set
+        tenant_id = excluded.tenant_id,
+        quote_proposal_id = excluded.quote_proposal_id,
+        traveler_name = excluded.traveler_name,
+        email = excluded.email,
+        phone = excluded.phone,
+        package_tour = excluded.package_tour,
+        status = excluded.status,
+        revenue_stage = excluded.revenue_stage,
+        payment_status = excluded.payment_status,
+        total_price = excluded.total_price,
+        currency = excluded.currency,
+        referral_code = excluded.referral_code,
+        lead_source = excluded.lead_source,
+        campaign_label = excluded.campaign_label,
+        first_touch_at = excluded.first_touch_at,
+        converted_at = excluded.converted_at,
+        travel_date = excluded.travel_date,
+        distributor_tenant_id = excluded.distributor_tenant_id,
+        marketplace_commission_percent = excluded.marketplace_commission_percent,
+        source_payload = excluded.source_payload,
+        updated_at = now()
+    `,
+    values: [
+      record.sourceId, record.tenantId, record.quoteProposalId || null, record.travelerName, record.email,
+      record.phone, record.packageTour, record.status, record.revenueStage, record.paymentStatus,
+      record.totalPrice, record.currency, record.referralCode, record.leadSource, record.campaignLabel,
+      record.firstTouchAt, record.convertedAt, record.travelDate,
+      record.distributorTenantId || null, record.marketplaceCommissionPercent, JSON.stringify(record.sourcePayload || {}),
+    ],
+  };
+};
+
 export const buildQuoteRevenueUpsert = (quote = {}) => {
   const record = buildQuoteRevenueRecord(quote);
   return {
@@ -208,6 +258,44 @@ export const buildQuoteRevenueUpsert = (quote = {}) => {
       record.travelerName, record.status, record.conversionStage, record.paymentStatus, record.currency,
       record.totalPrice, record.publicToken, record.validUntil, record.sentAt, record.acceptedAt, 
       record.pdfMediaId || null, JSON.stringify(record.sourcePayload || {}),
+    ],
+  };
+};
+
+export const buildLegacyQuoteRevenueUpsert = (quote = {}) => {
+  const record = buildQuoteRevenueRecord(quote);
+  return {
+    text: `
+      insert into public.quote_records (
+        source_id, tenant_id, inquiry_id, booking_id, title, traveler_name, status,
+        conversion_stage, payment_status, currency, total_price, public_token, valid_until, sent_at, accepted_at, source_payload
+      ) values (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb
+      )
+      on conflict (source_id)
+      do update set
+        tenant_id = excluded.tenant_id,
+        inquiry_id = excluded.inquiry_id,
+        booking_id = excluded.booking_id,
+        title = excluded.title,
+        traveler_name = excluded.traveler_name,
+        status = excluded.status,
+        conversion_stage = excluded.conversion_stage,
+        payment_status = excluded.payment_status,
+        currency = excluded.currency,
+        total_price = excluded.total_price,
+        public_token = excluded.public_token,
+        valid_until = excluded.valid_until,
+        sent_at = excluded.sent_at,
+        accepted_at = excluded.accepted_at,
+        source_payload = excluded.source_payload,
+        updated_at = now()
+    `,
+    values: [
+      record.sourceId, record.tenantId, record.inquiryId || null, record.bookingId || null, record.title,
+      record.travelerName, record.status, record.conversionStage, record.paymentStatus, record.currency,
+      record.totalPrice, record.publicToken, record.validUntil, record.sentAt, record.acceptedAt,
+      JSON.stringify(record.sourcePayload || {}),
     ],
   };
 };
@@ -249,6 +337,47 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
       record.sourceId, record.tenantId, record.bookingId || null, record.provider, record.publicToken, record.providerReference,
       record.customerName, record.status, record.currency, record.amount, record.feePercent, record.feeAmount,
       record.failureReason, record.paidAt, record.refundedAt, record.cancelledAt, record.invoiceMediaId || null,
+      record.marketplacePayoutAmount, JSON.stringify(record.sourcePayload || {}),
+    ],
+  };
+};
+
+export const buildLegacyPaymentRevenueUpsert = (payment = {}) => {
+  const record = buildPaymentRevenueRecord(payment);
+  return {
+    text: `
+      insert into public.payment_records (
+        source_id, tenant_id, booking_id, provider, public_token, provider_reference, customer_name, status,
+        currency, amount, fee_percent, fee_amount, failure_reason, paid_at, refunded_at, cancelled_at,
+        marketplace_payout_amount, source_payload
+      ) values (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb
+      )
+      on conflict (source_id)
+      do update set
+        tenant_id = excluded.tenant_id,
+        booking_id = excluded.booking_id,
+        provider = excluded.provider,
+        public_token = excluded.public_token,
+        provider_reference = excluded.provider_reference,
+        customer_name = excluded.customer_name,
+        status = excluded.status,
+        currency = excluded.currency,
+        amount = excluded.amount,
+        fee_percent = excluded.fee_percent,
+        fee_amount = excluded.fee_amount,
+        failure_reason = excluded.failure_reason,
+        paid_at = excluded.paid_at,
+        refunded_at = excluded.refunded_at,
+        cancelled_at = excluded.cancelled_at,
+        marketplace_payout_amount = excluded.marketplace_payout_amount,
+        source_payload = excluded.source_payload,
+        updated_at = now()
+    `,
+    values: [
+      record.sourceId, record.tenantId, record.bookingId || null, record.provider, record.publicToken, record.providerReference,
+      record.customerName, record.status, record.currency, record.amount, record.feePercent, record.feeAmount,
+      record.failureReason, record.paidAt, record.refundedAt, record.cancelledAt,
       record.marketplacePayoutAmount, JSON.stringify(record.sourcePayload || {}),
     ],
   };
@@ -315,6 +444,34 @@ export const buildQuoteRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) =
   values: [String(sourceId || ""), String(tenantId || "")],
 });
 
+export const buildLegacyQuoteRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select
+      source_id,
+      tenant_id,
+      inquiry_id,
+      booking_id,
+      title,
+      traveler_name,
+      status,
+      conversion_stage,
+      payment_status,
+      currency,
+      total_price,
+      public_token,
+      valid_until,
+      sent_at,
+      accepted_at,
+      source_payload,
+      created_at,
+      updated_at
+    from public.quote_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
 export const buildBookingRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
   text: `
     select
@@ -337,6 +494,37 @@ export const buildBookingRevenueLookup = ({ sourceId = "", tenantId = "" } = {})
       converted_at,
       travel_date,
       itinerary_media_id,
+      source_payload,
+      created_at,
+      updated_at
+    from public.booking_records
+    where source_id = $1 and tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildLegacyBookingRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select
+      source_id,
+      tenant_id,
+      quote_proposal_id,
+      traveler_name,
+      email,
+      phone,
+      package_tour,
+      status,
+      revenue_stage,
+      payment_status,
+      total_price,
+      currency,
+      referral_code,
+      lead_source,
+      campaign_label,
+      first_touch_at,
+      converted_at,
+      travel_date,
       source_payload,
       created_at,
       updated_at
@@ -398,6 +586,37 @@ export const buildPaymentRevenueLookup = ({ sourceId = "", tenantId = "" } = {})
       pr.refunded_at,
       pr.cancelled_at,
       pr.invoice_media_id,
+      pr.source_payload,
+      pr.updated_at,
+      br.traveler_name as booking_name,
+      br.revenue_stage as booking_revenue_stage,
+      br.payment_status as booking_payment_status
+    from public.payment_records pr
+    left join public.booking_records br
+      on br.source_id = pr.booking_id and br.tenant_id = pr.tenant_id
+    where pr.source_id = $1 and pr.tenant_id = $2
+    limit 1
+  `,
+  values: [String(sourceId || ""), String(tenantId || "")],
+});
+
+export const buildLegacyPaymentRevenueLookup = ({ sourceId = "", tenantId = "" } = {}) => ({
+  text: `
+    select
+      pr.source_id,
+      pr.booking_id,
+      pr.provider,
+      pr.provider_reference,
+      pr.customer_name,
+      pr.status,
+      pr.currency,
+      pr.amount,
+      pr.fee_percent,
+      pr.fee_amount,
+      pr.failure_reason,
+      pr.paid_at,
+      pr.refunded_at,
+      pr.cancelled_at,
       pr.source_payload,
       pr.updated_at,
       br.traveler_name as booking_name,
@@ -536,14 +755,41 @@ export const buildBookingRevenueView = (row = {}) =>
 export const buildPaymentRevenueView = (row = {}) =>
   normalizePrimaryPaymentRows([row])[0] || null;
 
-export const syncBookingRevenueRecord = (booking, env) =>
-  upsertRecord(buildBookingRevenueUpsert(booking), env);
+export const syncBookingRevenueRecord = async (booking, env) => {
+  try {
+    await upsertRecord(buildBookingRevenueUpsert(booking), env);
+  } catch (error) {
+    if (!isMissingColumnError(error, "itinerary_media_id")) {
+      throw error;
+    }
 
-export const syncQuoteRevenueRecord = (quote, env) =>
-  upsertRecord(buildQuoteRevenueUpsert(quote), env);
+    await upsertRecord(buildLegacyBookingRevenueUpsert(booking), env);
+  }
+};
 
-export const syncPaymentRevenueRecord = (payment, env) =>
-  upsertRecord(buildPaymentRevenueUpsert(payment), env);
+export const syncQuoteRevenueRecord = async (quote, env) => {
+  try {
+    await upsertRecord(buildQuoteRevenueUpsert(quote), env);
+  } catch (error) {
+    if (!isMissingColumnError(error, "pdf_media_id")) {
+      throw error;
+    }
+
+    await upsertRecord(buildLegacyQuoteRevenueUpsert(quote), env);
+  }
+};
+
+export const syncPaymentRevenueRecord = async (payment, env) => {
+  try {
+    await upsertRecord(buildPaymentRevenueUpsert(payment), env);
+  } catch (error) {
+    if (!isMissingColumnError(error, "invoice_media_id")) {
+      throw error;
+    }
+
+    await upsertRecord(buildLegacyPaymentRevenueUpsert(payment), env);
+  }
+};
 
 export const deleteBookingRevenueRecord = (sourceId, tenantId, env) =>
   deleteRecord(buildBookingRevenueDelete({ sourceId, tenantId }), env);
@@ -558,16 +804,37 @@ export const findQuoteRevenueRecordByPublicToken = (publicToken, env) =>
   querySingleRow(buildQuotePublicTokenLookup({ publicToken }), env);
 
 export const findQuoteRevenueRecord = (sourceId, tenantId, env) =>
-  querySingleRow(buildQuoteRevenueLookup({ sourceId, tenantId }), env);
+  querySingleRow(buildQuoteRevenueLookup({ sourceId, tenantId }), env).catch((error) => {
+    if (!isMissingColumnError(error, "pdf_media_id")) {
+      throw error;
+    }
 
-export const findBookingRevenueRecord = (sourceId, tenantId, env) =>
-  querySingleRow(buildBookingRevenueLookup({ sourceId, tenantId }), env);
+    return querySingleRow(buildLegacyQuoteRevenueLookup({ sourceId, tenantId }), env);
+  });
+
+export const findBookingRevenueRecord = async (sourceId, tenantId, env) => {
+  try {
+    return await querySingleRow(buildBookingRevenueLookup({ sourceId, tenantId }), env);
+  } catch (error) {
+    if (!isMissingColumnError(error, "itinerary_media_id")) {
+      throw error;
+    }
+
+    return querySingleRow(buildLegacyBookingRevenueLookup({ sourceId, tenantId }), env);
+  }
+};
 
 export const findPaymentRevenueRecordByPublicToken = (publicToken, env) =>
   querySingleRow(buildPaymentPublicTokenLookup({ publicToken }), env);
 
 export const findPaymentRevenueRecord = (sourceId, tenantId, env) =>
-  querySingleRow(buildPaymentRevenueLookup({ sourceId, tenantId }), env);
+  querySingleRow(buildPaymentRevenueLookup({ sourceId, tenantId }), env).catch((error) => {
+    if (!isMissingColumnError(error, "invoice_media_id")) {
+      throw error;
+    }
+
+    return querySingleRow(buildLegacyPaymentRevenueLookup({ sourceId, tenantId }), env);
+  });
 
 export const findPaymentRevenueRecordByProviderReference = (provider, providerReference, env) =>
   querySingleRow(buildPaymentProviderReferenceLookup({ provider, providerReference }), env);

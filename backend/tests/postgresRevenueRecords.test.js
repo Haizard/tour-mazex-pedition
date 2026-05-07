@@ -7,6 +7,8 @@ import {
   buildBookingRevenueView,
   buildPaymentRevenueLookup,
   buildBookingRevenueUpsert,
+  buildLegacyBookingRevenueLookup,
+  buildLegacyBookingRevenueUpsert,
   buildPaymentRevenueView,
   buildPaymentProviderReferenceLookup,
   buildPaymentPublicTokenLookup,
@@ -15,10 +17,14 @@ import {
   buildPublicPaymentRevenueView,
   buildPublicQuoteRevenueView,
   buildQuoteRevenueLookup,
+  buildLegacyQuoteRevenueLookup,
+  buildLegacyQuoteRevenueUpsert,
   buildQuoteRevenueView,
   buildQuotePublicTokenLookup,
   buildQuoteRevenueDelete,
   buildQuoteRevenueUpsert,
+  buildLegacyPaymentRevenueLookup,
+  buildLegacyPaymentRevenueUpsert,
 } from "../utils/postgresRevenueRecords.js";
 
 test("buildBookingRevenueUpsert targets booking_records", () => {
@@ -32,6 +38,20 @@ test("buildBookingRevenueUpsert targets booking_records", () => {
   assert.equal(statement.text.includes("booking_records"), true);
   assert.equal(statement.values[0], "booking-1");
   assert.equal(statement.values[3], "Amina");
+});
+
+test("buildLegacyBookingRevenueUpsert omits itinerary_media_id for older databases", () => {
+  const statement = buildLegacyBookingRevenueUpsert({
+    _id: "booking-1",
+    tenantId: "tenant-1",
+    name: "Amina",
+    totalPrice: 3200,
+    itineraryMediaId: "media-1",
+  });
+
+  assert.equal(statement.text.includes("booking_records"), true);
+  assert.equal(statement.text.includes("itinerary_media_id"), false);
+  assert.equal(statement.values.length, 21);
 });
 
 test("buildQuoteRevenueUpsert targets quote_records", () => {
@@ -49,6 +69,20 @@ test("buildQuoteRevenueUpsert targets quote_records", () => {
   assert.equal(statement.values[11], "quote-public-token");
 });
 
+test("buildLegacyQuoteRevenueUpsert omits pdf_media_id for older databases", () => {
+  const statement = buildLegacyQuoteRevenueUpsert({
+    _id: "quote-1",
+    tenantId: "tenant-1",
+    inquiryId: "inquiry-1",
+    title: "Northern Circuit",
+    pdfMediaId: "media-1",
+  });
+
+  assert.equal(statement.text.includes("quote_records"), true);
+  assert.equal(statement.text.includes("pdf_media_id"), false);
+  assert.equal(statement.values.length, 16);
+});
+
 test("buildPaymentRevenueUpsert targets payment_records", () => {
   const statement = buildPaymentRevenueUpsert({
     _id: "payment-1",
@@ -62,6 +96,20 @@ test("buildPaymentRevenueUpsert targets payment_records", () => {
   assert.equal(statement.values[0], "payment-1");
   assert.equal(statement.values[4], "payment-public-token");
   assert.equal(statement.values[8], "USD");
+});
+
+test("buildLegacyPaymentRevenueUpsert omits invoice_media_id for older databases", () => {
+  const statement = buildLegacyPaymentRevenueUpsert({
+    _id: "payment-1",
+    tenantId: "tenant-1",
+    provider: "stripe",
+    amount: 500,
+    invoiceMediaId: "media-1",
+  });
+
+  assert.equal(statement.text.includes("payment_records"), true);
+  assert.equal(statement.text.includes("invoice_media_id"), false);
+  assert.equal(statement.values.length, 18);
 });
 
 test("buildBookingRevenueDelete targets booking_records", () => {
@@ -107,6 +155,17 @@ test("buildQuoteRevenueLookup targets quote_records by source and tenant", () =>
   assert.deepEqual(statement.values, ["quote-1", "tenant-1"]);
 });
 
+test("buildLegacyQuoteRevenueLookup omits pdf_media_id for older databases", () => {
+  const statement = buildLegacyQuoteRevenueLookup({
+    sourceId: "quote-1",
+    tenantId: "tenant-1",
+  });
+
+  assert.equal(statement.text.includes("from public.quote_records"), true);
+  assert.equal(statement.text.includes("pdf_media_id"), false);
+  assert.deepEqual(statement.values, ["quote-1", "tenant-1"]);
+});
+
 test("buildBookingRevenueLookup targets booking_records by source and tenant", () => {
   const statement = buildBookingRevenueLookup({
     sourceId: "booking-1",
@@ -115,6 +174,17 @@ test("buildBookingRevenueLookup targets booking_records by source and tenant", (
 
   assert.equal(statement.text.includes("from public.booking_records"), true);
   assert.equal(statement.text.includes("where source_id = $1 and tenant_id = $2"), true);
+  assert.deepEqual(statement.values, ["booking-1", "tenant-1"]);
+});
+
+test("buildLegacyBookingRevenueLookup omits itinerary_media_id for older databases", () => {
+  const statement = buildLegacyBookingRevenueLookup({
+    sourceId: "booking-1",
+    tenantId: "tenant-1",
+  });
+
+  assert.equal(statement.text.includes("from public.booking_records"), true);
+  assert.equal(statement.text.includes("itinerary_media_id"), false);
   assert.deepEqual(statement.values, ["booking-1", "tenant-1"]);
 });
 
@@ -147,6 +217,17 @@ test("buildPaymentRevenueLookup targets payment_records by source and tenant", (
 
   assert.equal(statement.text.includes("from public.payment_records pr"), true);
   assert.equal(statement.text.includes("where pr.source_id = $1 and pr.tenant_id = $2"), true);
+  assert.deepEqual(statement.values, ["payment-1", "tenant-1"]);
+});
+
+test("buildLegacyPaymentRevenueLookup omits invoice_media_id for older databases", () => {
+  const statement = buildLegacyPaymentRevenueLookup({
+    sourceId: "payment-1",
+    tenantId: "tenant-1",
+  });
+
+  assert.equal(statement.text.includes("from public.payment_records pr"), true);
+  assert.equal(statement.text.includes("invoice_media_id"), false);
   assert.deepEqual(statement.values, ["payment-1", "tenant-1"]);
 });
 

@@ -315,6 +315,14 @@ export const fetchPlatformTenantDomainSetupPlan = (tenantId, domain) =>
       headers: getPlatformAdminHeaders(),
     }
   );
+export const applyPlatformTenantManagedDns = (tenantId, domain) =>
+  API.post(
+    `/platform-admin/tenants/${tenantId}/domains/${encodeURIComponent(domain)}/apply-dns`,
+    {},
+    {
+      headers: getPlatformAdminHeaders(),
+    }
+  );
 export const renewPlatformTenantDomainService = (tenantId, data) =>
   API.post(`/platform-admin/tenants/${tenantId}/renew-domain-service`, data, {
     headers: getPlatformAdminHeaders(),

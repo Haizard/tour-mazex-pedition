@@ -39,6 +39,7 @@ import {
   verifyCustomDomainRecord,
 } from "../utils/domainDnsVerifier.js";
 import {
+  applyManagedDnsProviderRecords,
   buildDomainSetupPlan,
   getDomainProviderCapabilities,
 } from "../utils/dnsProviderAdapters.js";
@@ -1113,6 +1114,38 @@ router.get("/tenants/:tenantId/domains/:domain/setup-plan", async (req, res) => 
     res.status(200).json({
       setupPlan,
       capabilities: getDomainProviderCapabilities(tenant),
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/tenants/:tenantId/domains/:domain/apply-dns", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId);
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const normalizedDomain = req.params.domain.trim().toLowerCase();
+    const currentRecord = (tenant.customDomainRecords || []).find(
+      (record) => record.domain === normalizedDomain,
+    );
+
+    if (!currentRecord) {
+      return res.status(404).json({ message: "Domain verification record not found." });
+    }
+
+    const automation = await applyManagedDnsProviderRecords(
+      tenant.toObject ? tenant.toObject() : tenant,
+      currentRecord.toObject ? currentRecord.toObject() : currentRecord,
+      process.env,
+    );
+
+    res.status(200).json({
+      automation,
+      message: `DNS records were submitted to ${automation.provider} for ${normalizedDomain}.`,
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

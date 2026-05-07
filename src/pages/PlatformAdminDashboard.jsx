@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  applyPlatformTenantManagedDns,
   checkPlatformTenantDomainVerification,
   createPlatformTenant,
   fetchPlatformSummary,
@@ -168,6 +169,23 @@ const inputClass = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 
 const panelClass = "rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm";
 const labelClass = "mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500";
 
+const domainProviderOptions = [
+  { value: "manual", label: "Manual / Any Provider" },
+  { value: "cloudflare", label: "Cloudflare" },
+  { value: "namecheap", label: "Namecheap" },
+  { value: "godaddy", label: "GoDaddy" },
+];
+
+const domainProviderHints = {
+  manual: "Works with any registrar or DNS provider. Your team or the customer adds the records manually, and the platform verifies them.",
+  cloudflare:
+    "Good when DNS is already on Cloudflare. Auto-DNS needs Cloudflare API credentials and the correct zone.",
+  namecheap:
+    "Best when you buy and manage the domain in your own Namecheap account. Auto-DNS needs Namecheap API access plus server IPv4 whitelisting.",
+  godaddy:
+    "Best when you buy and manage the domain in your own GoDaddy account. Auto-DNS needs production GoDaddy API credentials for that account.",
+};
+
 const StatCard = ({ label, value }) => (
   <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
     <p className="text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">{label}</p>
@@ -201,6 +219,7 @@ const PlatformAdminDashboard = () => {
   const [creatingTenant, setCreatingTenant] = useState(false);
   const [renewingDomain, setRenewingDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState("");
+  const [applyingDomain, setApplyingDomain] = useState("");
   const [domainPlans, setDomainPlans] = useState({});
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -445,6 +464,27 @@ const PlatformAdminDashboard = () => {
     }
   };
 
+  const handleApplyManagedDns = async (domain) => {
+    if (!selectedTenant || !domain) return;
+    setApplyingDomain(domain);
+    setError("");
+    setNotice("");
+    try {
+      const response = await applyPlatformTenantManagedDns(selectedTenant._id, domain);
+      const automation = response.data?.automation;
+      setNotice(
+        automation?.provider
+          ? `${automation.provider} accepted ${automation.recordsApplied} managed DNS record${automation.recordsApplied === 1 ? "" : "s"} for ${domain}.`
+          : `DNS automation request was submitted for ${domain}.`,
+      );
+      await loadPlatformData(selectedTenant._id);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to apply provider DNS automation right now.");
+    } finally {
+      setApplyingDomain("");
+    }
+  };
+
   useEffect(() => {
     const loadDomainPlans = async () => {
       if (!selectedTenant?.customDomainRecords?.length) {
@@ -568,7 +608,17 @@ const PlatformAdminDashboard = () => {
           <div><label className={labelClass}>Demo Subdomain</label><input className={inputClass} value={tenantForm.subdomain} onChange={(event) => setTenantForm((current) => ({ ...current, subdomain: event.target.value.toLowerCase() }))} /></div>
           <div><label className={labelClass}>Custom Domains</label><textarea rows={5} className={inputClass} value={tenantForm.customDomains} onChange={(event) => setTenantForm((current) => ({ ...current, customDomains: event.target.value }))} placeholder="One custom domain per line" /></div>
           <div><label className={labelClass}>Requested Domains</label><textarea rows={3} className={inputClass} value={tenantForm.requestedCustomDomains} onChange={(event) => setTenantForm((current) => ({ ...current, requestedCustomDomains: event.target.value }))} /></div>
-          <div><label className={labelClass}>DNS Provider</label><select className={inputClass} value={tenantForm.domainProviderName} onChange={(event) => setTenantForm((current) => ({ ...current, domainProviderName: event.target.value }))}><option value="manual">Manual / Any Provider</option><option value="cloudflare">Cloudflare</option></select></div>
+          <div>
+            <label className={labelClass}>DNS Provider</label>
+            <select className={inputClass} value={tenantForm.domainProviderName} onChange={(event) => setTenantForm((current) => ({ ...current, domainProviderName: event.target.value }))}>
+              {domainProviderOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs font-semibold text-zinc-500">
+              {domainProviderHints[tenantForm.domainProviderName] || domainProviderHints.manual}
+            </p>
+          </div>
           <div><label className={labelClass}>Nameserver Mode</label><select className={inputClass} value={tenantForm.domainNameserverMode} onChange={(event) => setTenantForm((current) => ({ ...current, domainNameserverMode: event.target.value }))}><option value="external">Customer keeps DNS elsewhere</option><option value="delegated">Customer delegates DNS to platform</option></select></div>
           <div><label className={labelClass}>Zone ID</label><input className={inputClass} value={tenantForm.domainZoneId} onChange={(event) => setTenantForm((current) => ({ ...current, domainZoneId: event.target.value }))} placeholder="Optional now, required for provider automation" /></div>
           <div><label className={labelClass}>Provider Account ID</label><input className={inputClass} value={tenantForm.domainAccountId} onChange={(event) => setTenantForm((current) => ({ ...current, domainAccountId: event.target.value }))} placeholder="Optional provider account reference" /></div>
@@ -595,6 +645,16 @@ const PlatformAdminDashboard = () => {
               <button type="button" disabled={verifyingDomain === record.domain} onClick={() => handleMarkVerified(record.domain)} className="mt-4 rounded-xl border border-zinc-300 px-4 py-2 text-xs font-black uppercase tracking-widest disabled:opacity-40">
                 {verifyingDomain === record.domain ? "Checking DNS..." : record.status === "verified" ? "Re-check DNS" : "Check DNS Now"}
               </button>
+              {["namecheap", "godaddy"].includes(domainPlans[record.domain]?.capabilities?.provider) && tenantForm.domainAutoManageDns ? (
+                <button
+                  type="button"
+                  disabled={applyingDomain === record.domain}
+                  onClick={() => handleApplyManagedDns(record.domain)}
+                  className="mt-3 rounded-xl bg-zinc-950 px-4 py-2 text-xs font-black uppercase tracking-widest text-white disabled:opacity-40"
+                >
+                  {applyingDomain === record.domain ? "Applying DNS..." : "Apply Provider DNS"}
+                </button>
+              ) : null}
               {domainPlans[record.domain]?.setupPlan ? (
                 <div className="mt-4 rounded-xl bg-white p-4">
                   <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500">Setup Plan</p>
@@ -612,6 +672,12 @@ const PlatformAdminDashboard = () => {
                   <p className="mt-3 text-[11px] font-black uppercase tracking-widest text-zinc-400">
                     Provider: {domainPlans[record.domain].capabilities?.provider || "manual"} / {domainPlans[record.domain].capabilities?.supportsAutomaticDnsWrites ? "auto-DNS capable" : "manual DNS only"}
                   </p>
+                  {domainPlans[record.domain].capabilities?.requiresWhitelistedServerIp ? (
+                    <p className="mt-2 text-xs font-semibold text-zinc-500">Needs Namecheap API access and your server IPv4 whitelisted before auto-DNS can succeed.</p>
+                  ) : null}
+                  {domainPlans[record.domain].capabilities?.requiresApiSecret ? (
+                    <p className="mt-2 text-xs font-semibold text-zinc-500">Needs GoDaddy production API key and secret from the account that owns this domain.</p>
+                  ) : null}
                 </div>
               ) : null}
             </div>
