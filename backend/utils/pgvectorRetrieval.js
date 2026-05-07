@@ -221,9 +221,30 @@ const executeStatement = async (statement, env = globalThis.process?.env || {}) 
   }
 };
 
+export const isMissingAssistantKnowledgeInfrastructureError = (error) => {
+  const message = String(error?.message || "").toLowerCase();
+  const code = String(error?.code || "");
+
+  return (
+    code === "42P01" &&
+    message.includes("assistant_knowledge_embeddings")
+  );
+};
+
 export const syncAssistantKnowledgeEmbedding = async (record = {}, env = globalThis.process?.env || {}) => {
   const statement = buildAssistantKnowledgeUpsert(record);
-  await executeStatement(statement, env);
+  try {
+    await executeStatement(statement, env);
+  } catch (error) {
+    if (isMissingAssistantKnowledgeInfrastructureError(error)) {
+      console.warn(
+        "Assistant knowledge vector sync skipped because assistant_knowledge_embeddings is not provisioned yet."
+      );
+      return null;
+    }
+
+    throw error;
+  }
 };
 
 export const deleteAssistantKnowledgeEmbedding = async ({
@@ -231,7 +252,18 @@ export const deleteAssistantKnowledgeEmbedding = async ({
   sourceId,
 } = {}, env = globalThis.process?.env || {}) => {
   const statement = buildAssistantKnowledgeDelete({ sourceType, sourceId });
-  await executeStatement(statement, env);
+  try {
+    await executeStatement(statement, env);
+  } catch (error) {
+    if (isMissingAssistantKnowledgeInfrastructureError(error)) {
+      console.warn(
+        "Assistant knowledge vector delete skipped because assistant_knowledge_embeddings is not provisioned yet."
+      );
+      return null;
+    }
+
+    throw error;
+  }
 };
 
 export const searchAssistantKnowledge = async ({

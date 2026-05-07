@@ -8,6 +8,7 @@ import {
   buildDeterministicEmbedding,
   buildPgvectorLiteral,
   groupAssistantKnowledgeMatches,
+  isMissingAssistantKnowledgeInfrastructureError,
 } from "../utils/pgvectorRetrieval.js";
 
 test("buildDeterministicEmbedding is stable and produces the expected dimensions", () => {
@@ -80,4 +81,22 @@ test("groupAssistantKnowledgeMatches groups rows by source type and keeps rankin
   assert.deepEqual(grouped.campaignIds, ["campaign-1"]);
   assert.deepEqual(grouped.pageConfigIds, ["page-1"]);
   assert.deepEqual(grouped.homeContentIds, ["home-1"]);
+});
+
+test("isMissingAssistantKnowledgeInfrastructureError detects unprovisioned vector table errors", () => {
+  assert.equal(
+    isMissingAssistantKnowledgeInfrastructureError({
+      code: "42P01",
+      message: 'relation "public.assistant_knowledge_embeddings" does not exist',
+    }),
+    true,
+  );
+
+  assert.equal(
+    isMissingAssistantKnowledgeInfrastructureError({
+      code: "23505",
+      message: "duplicate key value violates unique constraint",
+    }),
+    false,
+  );
 });
