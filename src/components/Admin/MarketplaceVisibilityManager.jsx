@@ -24,6 +24,7 @@ const MarketplaceVisibilityManager = ({ tours = [], onToggle }) => {
 
   const visibleCount = tours.filter((tour) => tour.isMarketplaceVisible).length;
   const distributableCount = tours.filter((tour) => tour.isPubliclyDistributable !== false).length;
+  const hasInventory = tours.length > 0;
 
   return (
     <Card className="border-none p-8 shadow-xl">
@@ -45,6 +46,34 @@ const MarketplaceVisibilityManager = ({ tours = [], onToggle }) => {
           <Badge variant="accent">{distributableCount} Partner Ready</Badge>
         </div>
       </div>
+
+      {!hasInventory && (
+        <div className="mt-6 rounded-[28px] border border-dashed border-slate-300 bg-slate-50 px-6 py-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">
+            No Packages Yet
+          </p>
+          <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
+            Add tours in the inventory tab first, then come back here to choose which ones should
+            appear on the public marketplace.
+          </p>
+        </div>
+      )}
+
+      {hasInventory && visibleCount === 0 && (
+        <div className="mt-6 rounded-[28px] border border-amber-200 bg-amber-50 px-6 py-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-700">
+            Discover Page Is Currently Empty
+          </p>
+          <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-slate-900">
+            No tours are marketplace-visible yet.
+          </h3>
+          <p className="mt-3 max-w-3xl text-sm font-medium leading-7 text-slate-700">
+            Travelers will see an empty discover page until at least one package is marked
+            <span className="font-black"> Show on Discover</span>. Use the buttons below to publish the
+            right packages without leaving this screen.
+          </p>
+        </div>
+      )}
 
       <div className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-4">
         <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">
@@ -78,7 +107,7 @@ const MarketplaceVisibilityManager = ({ tours = [], onToggle }) => {
                 <td className="py-4">
                   <p className="font-black uppercase tracking-tight text-slate-900">{tour.title}</p>
                   <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
-                    {tour.duration || "Multi-day"} {tour.tourType ? `• ${tour.tourType}` : ""}
+                    {tour.duration || "Multi-day"} {tour.tourType ? `- ${tour.tourType}` : ""}
                   </p>
                 </td>
                 <td className="py-4 text-slate-600">{tour.location || "Unassigned"}</td>
