@@ -10,6 +10,8 @@ import {
   buildLegacyBookingRevenueLookup,
   buildLegacyBookingRevenueUpsert,
   buildPaymentRevenueView,
+  buildLegacyPaymentProviderReferenceLookup,
+  buildLegacyPaymentPublicTokenLookup,
   buildPaymentProviderReferenceLookup,
   buildPaymentPublicTokenLookup,
   buildPaymentRevenueDelete,
@@ -51,7 +53,9 @@ test("buildLegacyBookingRevenueUpsert omits itinerary_media_id for older databas
 
   assert.equal(statement.text.includes("booking_records"), true);
   assert.equal(statement.text.includes("itinerary_media_id"), false);
-  assert.equal(statement.values.length, 21);
+  assert.equal(statement.text.includes("distributor_tenant_id"), false);
+  assert.equal(statement.text.includes("marketplace_commission_percent"), false);
+  assert.equal(statement.values.length, 19);
 });
 
 test("buildQuoteRevenueUpsert targets quote_records", () => {
@@ -109,7 +113,8 @@ test("buildLegacyPaymentRevenueUpsert omits invoice_media_id for older databases
 
   assert.equal(statement.text.includes("payment_records"), true);
   assert.equal(statement.text.includes("invoice_media_id"), false);
-  assert.equal(statement.values.length, 18);
+  assert.equal(statement.text.includes("marketplace_payout_amount"), false);
+  assert.equal(statement.values.length, 17);
 });
 
 test("buildBookingRevenueDelete targets booking_records", () => {
@@ -205,7 +210,18 @@ test("buildPaymentPublicTokenLookup targets the public token in payment_records"
   });
 
   assert.equal(statement.text.includes("payment_records"), true);
+  assert.equal(statement.text.includes("from public.payment_records pr"), true);
   assert.equal(statement.text.includes("where pr.public_token = $1"), true);
+  assert.deepEqual(statement.values, ["payment-token-1"]);
+});
+
+test("buildLegacyPaymentPublicTokenLookup omits invoice_media_id for older databases", () => {
+  const statement = buildLegacyPaymentPublicTokenLookup({
+    publicToken: "payment-token-1",
+  });
+
+  assert.equal(statement.text.includes("from public.payment_records pr"), true);
+  assert.equal(statement.text.includes("invoice_media_id"), false);
   assert.deepEqual(statement.values, ["payment-token-1"]);
 });
 
@@ -239,6 +255,18 @@ test("buildPaymentProviderReferenceLookup targets provider references in payment
 
   assert.equal(statement.text.includes("payment_records"), true);
   assert.equal(statement.text.includes("where pr.provider = $1"), true);
+  assert.equal(statement.text.includes("and pr.provider_reference = $2"), true);
+  assert.deepEqual(statement.values, ["stripe", "pi_123"]);
+});
+
+test("buildLegacyPaymentProviderReferenceLookup omits invoice_media_id for older databases", () => {
+  const statement = buildLegacyPaymentProviderReferenceLookup({
+    provider: "stripe",
+    providerReference: "pi_123",
+  });
+
+  assert.equal(statement.text.includes("from public.payment_records pr"), true);
+  assert.equal(statement.text.includes("invoice_media_id"), false);
   assert.equal(statement.text.includes("and pr.provider_reference = $2"), true);
   assert.deepEqual(statement.values, ["stripe", "pi_123"]);
 });
