@@ -3,9 +3,10 @@ import process from "node:process";
 import CustomInquiry from '../models/CustomInquiry.js';
 import QuoteProposal from '../models/QuoteProposal.js';
 import SiteSettings from '../models/SiteSettings.js';
+import Tenant from "../models/Tenant.js";
 import TourPackage from '../models/TourPackage.js';
 import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
-import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
+import { buildTenantFilter } from '../utils/tenantContext.js';
 import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
 import { generateQuoteProposal } from '../utils/quoteProposal.js';
@@ -47,9 +48,53 @@ import { searchAssistantKnowledge } from '../utils/pgvectorRetrieval.js';
 
 const router = express.Router();
 
-const getTenantWhatsAppNumber = async (req) => {
-    const settings = await SiteSettings.findOne(buildTenantFilter(req)).select('whatsapp');
+const getTenantWhatsAppNumber = async (tenantId) => {
+    if (!tenantId) {
+        return '';
+    }
+
+    const settings = await SiteSettings.findOne({ tenantId }).select('whatsapp');
     return settings?.whatsapp || '';
+};
+
+const resolveInquiryTenantContext = async (req, body = {}) => {
+    if (req.tenantId) {
+        return {
+            tenantId: req.tenantId,
+            tenant: req.tenant || null,
+        };
+    }
+
+    if (body.operatorTenantId) {
+        const tenant = await Tenant.findById(body.operatorTenantId).select("_id name slug status").lean();
+        if (tenant?.status === "active") {
+            return {
+                tenantId: tenant._id,
+                tenant,
+            };
+        }
+    }
+
+    if (body.operatorTenantSlug) {
+        const tenant = await Tenant.findOne({
+            slug: String(body.operatorTenantSlug).trim().toLowerCase(),
+            status: "active",
+        })
+            .select("_id name slug status")
+            .lean();
+
+        if (tenant) {
+            return {
+                tenantId: tenant._id,
+                tenant,
+            };
+        }
+    }
+
+    return {
+        tenantId: null,
+        tenant: null,
+    };
 };
 
 const buildInquiryPayload = (body = {}, sourceChannel = 'website') => ({
@@ -151,10 +196,15 @@ router.get('/', requireTenantAdmin, async (req, res) => {
 // Create a new inquiry (Customer)
 router.post('/', async (req, res) => {
     try {
+        const inquiryContext = await resolveInquiryTenantContext(req, req.body);
+        if (!inquiryContext.tenantId) {
+            throw new Error("Tenant ID is required for traveler creation.");
+        }
+
         const inquiryData = buildInquiryPayload(req.body, req.body.sourceChannel || 'website');
-        const whatsappNumber = await getTenantWhatsAppNumber(req);
+        const whatsappNumber = await getTenantWhatsAppNumber(inquiryContext.tenantId);
         const automation = generateInquiryLeadAutomation(inquiryData, {
-            tenantName: req.tenant?.name || 'MAZ Expeditions',
+            tenantName: inquiryContext.tenant?.name || req.tenant?.name || 'MAZ Expeditions',
             whatsappNumber,
         });
         const scoring = scoreInquiryLead(inquiryData);
@@ -166,16 +216,17 @@ router.post('/', async (req, res) => {
             scoring.leadTemperature = 'hot';
         }
         const newInquiry = await createPostgresFirstTraveler(
-            withTenantId(req, {
+            {
                 ...inquiryData,
                 ...scoring,
                 automationSummary: automation.summary,
                 followUpMessage: automation.followUpMessage,
-            }),
+                tenantId: inquiryContext.tenantId,
+            },
             process.env
         );
         const primaryInquiry = await safePrimaryLookup(
-            () => findTravelerInquiryRecord(newInquiry._id, req.tenantId, process.env),
+            () => findTravelerInquiryRecord(newInquiry._id, inquiryContext.tenantId, process.env),
             {
                 onError: (error) => {
                     console.error("Primary inquiry create refresh failed:", error.message);
@@ -193,6 +244,11 @@ router.post('/', async (req, res) => {
 
 router.post('/whatsapp-lead', async (req, res) => {
     try {
+        const inquiryContext = await resolveInquiryTenantContext(req, req.body);
+        if (!inquiryContext.tenantId) {
+            throw new Error("Tenant ID is required for traveler creation.");
+        }
+
         const fullName = req.body.name?.toString().trim() || '';
         const [firstName = '', ...remainingNames] = fullName.split(' ');
         const lastName = remainingNames.join(' ').trim() || 'Lead';
@@ -216,9 +272,9 @@ router.post('/whatsapp-lead', async (req, res) => {
             message: req.body.message || `Interested in ${destinations[0]} and would like pricing plus itinerary ideas.`,
         }, 'whatsapp-button');
 
-        const whatsappNumber = await getTenantWhatsAppNumber(req);
+        const whatsappNumber = await getTenantWhatsAppNumber(inquiryContext.tenantId);
         const automation = generateInquiryLeadAutomation(inquiryData, {
-            tenantName: req.tenant?.name || 'MAZ Expeditions',
+            tenantName: inquiryContext.tenant?.name || req.tenant?.name || 'MAZ Expeditions',
             whatsappNumber,
         });
         const scoring = scoreInquiryLead(inquiryData);
@@ -230,16 +286,17 @@ router.post('/whatsapp-lead', async (req, res) => {
             scoring.leadTemperature = 'hot';
         }
         const newInquiry = await createPostgresFirstTraveler(
-            withTenantId(req, {
+            {
                 ...inquiryData,
                 ...scoring,
                 automationSummary: automation.summary,
                 followUpMessage: automation.followUpMessage,
-            }),
+                tenantId: inquiryContext.tenantId,
+            },
             process.env
         );
         const primaryInquiry = await safePrimaryLookup(
-            () => findTravelerInquiryRecord(newInquiry._id, req.tenantId, process.env),
+            () => findTravelerInquiryRecord(newInquiry._id, inquiryContext.tenantId, process.env),
             {
                 onError: (error) => {
                     console.error("Primary WhatsApp inquiry refresh failed:", error.message);

@@ -20,13 +20,13 @@ const PricingPage = () => (
         <div className="mt-8 flex flex-wrap gap-4">
           <Link
             to="/contact"
-            className="rounded-full bg-emerald-700 px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-lg shadow-emerald-700/20"
+            className="rounded-full bg-[#2f5b3a] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-lg shadow-emerald-700/20 hover:bg-[#24492f]"
           >
             Start Free Trial
           </Link>
           <Link
             to="/contact"
-            className="rounded-full border border-slate-300 px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-900"
+            className="rounded-full border border-[#ccb98f] bg-white/80 px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-900 hover:border-[#2f5b3a] hover:text-[#2f5b3a]"
           >
             Book a Demo
           </Link>
@@ -39,12 +39,12 @@ const PricingPage = () => (
             key={plan.code}
             className={`relative overflow-hidden rounded-[32px] border p-8 ${
               plan.highlighted
-                ? "border-emerald-600 bg-slate-900 text-white shadow-2xl shadow-emerald-900/15"
-                : "border-slate-200 bg-white text-slate-900 shadow-sm"
+                ? "border-[#2f5b3a] bg-[linear-gradient(180deg,#224433_0%,#173121_100%)] text-white shadow-2xl shadow-emerald-900/15"
+                : "border-[#dccfb7] bg-white text-slate-900 shadow-sm"
             }`}
           >
             {plan.highlighted && (
-              <div className="absolute right-5 top-5 rounded-full bg-emerald-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-slate-950">
+              <div className="absolute right-5 top-5 rounded-full bg-[#e0b85c] px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-[#173121]">
                 Most Popular
               </div>
             )}
@@ -65,7 +65,7 @@ const PricingPage = () => (
                 <div
                   key={feature}
                   className={`rounded-2xl px-4 py-3 text-sm font-bold ${
-                    plan.highlighted ? "bg-white/10 text-white" : "bg-slate-100 text-slate-900"
+                    plan.highlighted ? "bg-white/10 text-white" : "bg-[#f4efe5] text-slate-900"
                   }`}
                 >
                   {feature}
@@ -100,7 +100,7 @@ const PricingPage = () => (
           </p>
         </div>
 
-        <div className="rounded-[32px] bg-slate-900 p-8 text-white shadow-xl">
+        <div className="rounded-[32px] bg-[linear-gradient(180deg,#234232_0%,#173121_100%)] p-8 text-white shadow-xl">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-300">
             Add-Ons
           </p>

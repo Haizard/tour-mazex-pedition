@@ -242,7 +242,7 @@ const Navbar = ({ handleOrderPopup }) => {
   return (
     <nav className="fixed top-0 w-full z-[1000] font-oswald">
       <div
-        className={`hidden md:block bg-[#6f5336] text-white border-b border-white/10 overflow-hidden transition-all duration-300 ${
+        className={`hidden md:block bg-[#4c6b42] text-white border-b border-white/10 overflow-hidden transition-all duration-300 ${
           isScrolled ? "max-h-0 py-0 opacity-0" : "max-h-24 py-3 opacity-100"
         }`}
       >
@@ -260,7 +260,7 @@ const Navbar = ({ handleOrderPopup }) => {
             {(navigationConfig.ctaLabel || isLegacyTenant || isPlatform) && (
               <button
                 onClick={handlePrimaryCta}
-                className="bg-safari-green text-white px-8 py-1.5 rounded-lg text-sm font-medium tracking-wider hover:bg-opacity-90 transition-all shadow-md transform hover:scale-105 active:scale-95"
+                className="rounded-lg bg-[#e0b85c] px-8 py-1.5 text-sm font-black tracking-wider text-[#264232] shadow-md transition-all hover:bg-[#ebca7c] transform hover:scale-105 active:scale-95"
               >
                 {isPlatform ? "EXPLORE MARKETPLACE" : navigationConfig.ctaLabel || "PLAN MY TRIP"}
               </button>
@@ -294,8 +294,8 @@ const Navbar = ({ handleOrderPopup }) => {
       <div
         className={`w-full py-2.5 md:py-5 border-b shadow-lg transition-all duration-300 ${
           isScrolled
-            ? "bg-[#f4ede3] border-[#d8c7b4]"
-            : "bg-[#6f5336] border-white/10"
+            ? "bg-[#f4efe4] border-[#d8c7b4]"
+            : "bg-[#5f7f53] border-white/10"
         }`}
       >
         <div className={`container relative mx-auto flex items-center px-4 ${
@@ -310,7 +310,7 @@ const Navbar = ({ handleOrderPopup }) => {
               <img
                 src={settings?.logoUrl || Logo}
                 alt="Logo"
-                className="h-12 sm:h-14 md:h-20 w-auto object-contain mix-blend-multiply brightness-110 transition-all duration-300"
+                className="h-12 w-auto rounded-2xl bg-white/70 p-1.5 object-contain shadow-sm transition-all duration-300 sm:h-14 md:h-20"
               />
             ) : (
               <span className={`font-black uppercase tracking-widest ${isScrolled ? "text-[#2f2418]" : "text-white"}`}>

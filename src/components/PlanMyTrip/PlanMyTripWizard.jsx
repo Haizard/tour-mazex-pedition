@@ -160,6 +160,8 @@ const PlanMyTripWizard = ({
   defaultReferralCode = "",
   defaultMessage = "",
   defaultDestinations = [],
+  operatorTenantId = "",
+  operatorTenantSlug = "",
 }) => {
   const [showForm, setShowForm] = useState(!showIntro);
   const [currentStep, setCurrentStep] = useState(0);
@@ -267,6 +269,8 @@ const PlanMyTripWizard = ({
         sourceChannel,
         campaignLabel,
         referralCode: formData.referralCode || defaultReferralCode || "",
+        operatorTenantId,
+        operatorTenantSlug,
       });
       setSuccessAutomation(response.data?.automation || null);
       setSuccess(true);

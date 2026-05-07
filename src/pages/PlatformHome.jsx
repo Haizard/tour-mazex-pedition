@@ -100,13 +100,13 @@ const PlatformHome = () => (
           <div className="mt-9 flex flex-wrap gap-4">
             <Link
               to="/discover"
-              className="rounded-full bg-slate-950 px-7 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-2xl shadow-slate-900/20 transition hover:-translate-y-0.5"
+              className="rounded-full bg-[#2f5b3a] px-7 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-2xl shadow-emerald-950/20 transition hover:-translate-y-0.5 hover:bg-[#24492f]"
             >
               Explore Marketplace
             </Link>
             <Link
               to="/pricing"
-              className="rounded-full border border-slate-300 bg-white/70 px-7 py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-950 transition hover:border-slate-950"
+              className="rounded-full border border-[#cdbd9c] bg-white/80 px-7 py-4 text-sm font-black uppercase tracking-[0.22em] text-[#2b241c] transition hover:border-[#2f5b3a] hover:text-[#2f5b3a]"
             >
               See Pricing
             </Link>
@@ -152,10 +152,10 @@ const PlatformHome = () => (
       </div>
     </section>
 
-    <section className="border-y border-slate-200 bg-white px-6 py-8 md:px-10">
+    <section className="border-y border-[#d9ccb4] bg-[#fffaf1] px-6 py-8 md:px-10">
       <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-4">
         {platformStats.map(([value, label]) => (
-          <div key={value} className="rounded-3xl bg-slate-50 px-5 py-6">
+          <div key={value} className="rounded-3xl bg-[#f2ebde] px-5 py-6">
             <p className="text-2xl font-black uppercase tracking-tight text-slate-950">{value}</p>
             <p className="mt-1 text-xs font-black uppercase tracking-[0.24em] text-slate-500">{label}</p>
           </div>
@@ -190,7 +190,7 @@ const PlatformHome = () => (
       </div>
     </section>
 
-    <section className="bg-slate-950 px-6 py-20 text-white md:px-10">
+    <section className="bg-[linear-gradient(180deg,#234232_0%,#16281f_100%)] px-6 py-20 text-white md:px-10">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.35em] text-amber-300">
@@ -233,7 +233,7 @@ const PlatformHome = () => (
         <div className="space-y-4">
           {bookingSteps.map((step, index) => (
             <div key={step} className="flex gap-4 rounded-[28px] border border-slate-200 bg-white p-5">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-950 text-sm font-black text-white">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#2f5b3a] text-sm font-black text-white">
                 {index + 1}
               </span>
               <p className="pt-2 text-sm font-black uppercase tracking-wide text-slate-700">{step}</p>
@@ -244,7 +244,7 @@ const PlatformHome = () => (
     </section>
 
     <section className="px-6 pb-24 md:px-10">
-      <div className="mx-auto max-w-7xl overflow-hidden rounded-[42px] bg-[linear-gradient(135deg,#18402b,#101827)] p-8 text-white shadow-2xl md:p-12">
+      <div className="mx-auto max-w-7xl overflow-hidden rounded-[42px] bg-[linear-gradient(135deg,#305d3b,#173121)] p-8 text-white shadow-2xl md:p-12">
         <div className="grid gap-8 lg:grid-cols-[1fr_0.8fr] lg:items-center">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.35em] text-amber-300">

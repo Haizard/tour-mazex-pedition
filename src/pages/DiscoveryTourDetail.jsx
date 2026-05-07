@@ -6,6 +6,7 @@ import {
   FaCheckCircle,
   FaClock,
   FaCompass,
+  FaHeadset,
   FaMapMarkerAlt,
   FaRoute,
   FaStar,
@@ -186,36 +187,11 @@ const DiscoveryTourDetail = () => {
             <section className="overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
               <div className="relative h-[320px] md:h-[500px]">
                 <img src={tour.image} alt={tour.title} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/18 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#102519]/74 via-[#102519]/18 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 text-white">
-                  <div className="flex flex-wrap gap-3">
-                    <span className="rounded-full bg-white/15 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur">
-                      {tour.operator?.name || "Verified Operator"}
-                    </span>
-                    <span className="rounded-full bg-[#d9a441]/90 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#2d2312]">
-                      {tour.category || "Curated Journey"}
-                    </span>
-                    {tour.tripAdvisorRating && (
-                      <span className="rounded-full bg-white/15 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur">
-                        {tour.tripAdvisorRating}/5 rating
-                      </span>
-                    )}
-                  </div>
                   <h1 className="mt-5 max-w-4xl text-3xl font-black uppercase tracking-[-0.05em] md:text-6xl">
                     {tour.title}
                   </h1>
-                  <p className="mt-4 max-w-3xl text-sm font-medium leading-7 text-white/82 md:text-base">
-                    {tour.description}
-                  </p>
-                  <div className="mt-6 flex flex-wrap gap-3 text-[11px] font-black uppercase tracking-[0.18em] text-white/90">
-                    <span className="rounded-full bg-white/15 px-4 py-2 backdrop-blur">{tour.location}</span>
-                    <span className="rounded-full bg-white/15 px-4 py-2 backdrop-blur">
-                      {tour.duration || "Multi-day"}
-                    </span>
-                    <span className="rounded-full bg-white/15 px-4 py-2 backdrop-blur">
-                      Starting from ${Number(tour.price || 0).toLocaleString()}
-                    </span>
-                  </div>
                 </div>
               </div>
             </section>
@@ -237,6 +213,23 @@ const DiscoveryTourDetail = () => {
 
             <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <div className="flex flex-wrap gap-3">
+                  <span className="rounded-full bg-[#224433] px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                    {tour.operator?.name || "Verified Operator"}
+                  </span>
+                  <span className="rounded-full bg-[#f4e1b4] px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#6b531f]">
+                    {tour.category || "Curated Journey"}
+                  </span>
+                  <span className="rounded-full bg-[#eef4ed] px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#224433]">
+                    {tour.location || "East Africa"}
+                  </span>
+                  <span className="rounded-full bg-[#eef4ed] px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#224433]">
+                    {tour.duration || "Multi-day"}
+                  </span>
+                  <span className="rounded-full bg-[#fff7e6] px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#6b531f]">
+                    From ${Number(tour.price || 0).toLocaleString()}
+                  </span>
+                </div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
                   Experience Overview
                 </p>
@@ -273,11 +266,11 @@ const DiscoveryTourDetail = () => {
                       <FaCheckCircle className="mt-1 text-primary" />
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                          Verified operator profile
+                          Marketplace visibility
                         </p>
                         <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                          This listing is tied to {tour.operator?.name || "a verified operator"} inside the
-                          platform, so inquiries keep the correct tenant attribution.
+                          This package is currently published on the marketplace and can accept traveler
+                          inquiries from this page.
                         </p>
                       </div>
                     </div>
@@ -286,25 +279,25 @@ const DiscoveryTourDetail = () => {
                       <FaStar className="mt-1 text-[#d9a441]" />
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                          Review snapshot
+                          External review signal
                         </p>
                         <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
                           {tour.tripAdvisorRating
                             ? `${tour.tripAdvisorRating}/5 from ${tour.tripAdvisorReviewCount || 0} published reviews.`
-                            : "No external review score has been published for this package yet."}
+                            : "No published external review snapshot is connected to this package yet."}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
-                      <FaCompass className="mt-1 text-primary" />
+                      <FaHeadset className="mt-1 text-primary" />
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-slate-900">
                           Marketplace inquiry flow
                         </p>
                         <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                          Use the inquiry form to request dates, availability, and a final quote from the
-                          operator who owns this itinerary.
+                          Use the inquiry form to request dates, availability, and a quote. Marketplace
+                          inquiries from this page are routed to {tour.operator?.name || "the listed operator"}.
                         </p>
                       </div>
                     </div>
@@ -522,6 +515,8 @@ const DiscoveryTourDetail = () => {
                   campaignLabel={`tour_${tour._id}`}
                   defaultDestinations={[tour.title]}
                   defaultMessage={`I'm interested in booking the "${tour.title}" operated by ${tour.operator?.name || "your partner"}.`}
+                  operatorTenantId={tour.operator?.id || ""}
+                  operatorTenantSlug={tour.operator?.slug || ""}
                 />
               </div>
             </div>
@@ -543,7 +538,7 @@ const DiscoveryTourDetail = () => {
                     Marketplace status
                   </p>
                   <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">
-                    Visible and inquiry-ready
+                    {tour.isMarketplaceVisible ? "Visible and inquiry-ready" : "Visibility not confirmed"}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-4 py-4">
@@ -551,9 +546,9 @@ const DiscoveryTourDetail = () => {
                     External reviews
                   </p>
                   <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">
-                    {tour.tripAdvisorReviewCount
-                      ? `${tour.tripAdvisorReviewCount} published reviews`
-                      : "Review count unavailable"}
+                    {tour.tripAdvisorRating || tour.tripAdvisorReviewCount
+                      ? `${tour.tripAdvisorReviewCount || "Some"} published reviews`
+                      : "Not connected yet"}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-4 py-4">
@@ -561,7 +556,7 @@ const DiscoveryTourDetail = () => {
                     Inquiry setup
                   </p>
                   <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">
-                    Operator attribution preserved
+                    Routes to listed operator
                   </p>
                 </div>
               </div>

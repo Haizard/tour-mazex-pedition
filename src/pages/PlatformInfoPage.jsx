@@ -63,10 +63,10 @@ const PlatformInfoPage = ({ page = "features" }) => {
             {content.description}
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link to="/discover" className="rounded-full bg-slate-950 px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white">
+            <Link to="/discover" className="rounded-full bg-[#2f5b3a] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white hover:bg-[#24492f]">
               Explore Marketplace
             </Link>
-            <Link to="/pricing" className="rounded-full border border-slate-300 bg-white px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-950">
+            <Link to="/pricing" className="rounded-full border border-[#cdbd9c] bg-white px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-950 hover:border-[#2f5b3a] hover:text-[#2f5b3a]">
               See Pricing
             </Link>
           </div>
@@ -74,8 +74,8 @@ const PlatformInfoPage = ({ page = "features" }) => {
 
         <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {content.points.map((point, index) => (
-            <article key={point} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
-              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-100 text-sm font-black text-emerald-800">
+            <article key={point} className="rounded-[30px] border border-[#dccfb7] bg-white p-6 shadow-sm">
+              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#e3efe3] text-sm font-black text-[#2f5b3a]">
                 {index + 1}
               </span>
               <h2 className="mt-5 text-lg font-black uppercase tracking-tight">{point}</h2>

@@ -179,7 +179,7 @@ const Footer = () => {
   }
 
   return (
-    <footer className="bg-[#1a1a1a] text-white">
+    <footer className="bg-[linear-gradient(180deg,#264232_0%,#173121_100%)] text-white">
       <div className="border-b border-white/10">
         <div className="container mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           {(settings?.logoUrl || isLegacyTenant || isPlatform) && (
@@ -200,7 +200,7 @@ const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={item.label}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-gray-400 transition hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[#d8e5d3] transition hover:bg-[#e0b85c] hover:text-[#173121]"
               >
                 {item.icon}
               </a>
@@ -226,16 +226,16 @@ const Footer = () => {
             </h5>
           )}
           {brandDescription && (
-            <p className="max-w-sm text-sm leading-relaxed text-gray-400">
+            <p className="max-w-sm text-sm leading-relaxed text-[#d8e5d3]">
               {brandDescription}
             </p>
           )}
           {isLegacyTenant && (
             <div className="space-y-2 text-sm">
-              <a href="tel:+255762226648" className="flex items-center gap-2 text-gray-400 hover:text-safari-green">
+              <a href="tel:+255762226648" className="flex items-center gap-2 text-[#d8e5d3] hover:text-[#e0b85c]">
                 <FaPhone className="text-safari-green" /> +255 762 226648
               </a>
-              <a href="mailto:info@mazexpeditions.com" className="flex items-center gap-2 text-gray-400 hover:text-safari-green">
+              <a href="mailto:info@mazexpeditions.com" className="flex items-center gap-2 text-[#d8e5d3] hover:text-[#e0b85c]">
                 <FaEnvelope className="text-safari-green" /> info@mazexpeditions.com
               </a>
             </div>
@@ -259,7 +259,7 @@ const Footer = () => {
                       <Link
                         to={item.link}
                         onClick={() => window.scrollTo(0, 0)}
-                        className="text-sm text-gray-400 transition hover:text-safari-green"
+                        className="text-sm text-[#d8e5d3] transition hover:text-[#e0b85c]"
                       >
                         {item.title}
                       </Link>
@@ -276,7 +276,7 @@ const Footer = () => {
             {footerConfig.ctaTitle || (isPlatform ? "Explore The Network" : isLegacyTenant ? "Plan Your Safari" : "Contact")}
           </h5>
           {(footerConfig.ctaDescription || isLegacyTenant) && (
-            <p className="text-sm leading-relaxed text-gray-400">
+            <p className="text-sm leading-relaxed text-[#d8e5d3]">
               {footerConfig.ctaDescription ||
                 "All our custom itineraries are inspired by our travel experts and can be tailor-made for you."}
             </p>
@@ -286,7 +286,7 @@ const Footer = () => {
               <Link
                 to={scopedPrimaryHref}
                 onClick={() => window.scrollTo(0, 0)}
-                className="rounded bg-safari-green px-4 py-2 font-oswald text-xs uppercase tracking-wider text-white transition hover:bg-green-800"
+                className="rounded bg-[#e0b85c] px-4 py-2 font-oswald text-xs uppercase tracking-wider text-[#173121] transition hover:bg-[#ebca7c]"
               >
                 {primaryLabel}
               </Link>
@@ -295,7 +295,7 @@ const Footer = () => {
               <Link
                 to={scopedSecondaryHref}
                 onClick={() => window.scrollTo(0, 0)}
-                className="rounded border border-green-400 px-4 py-2 font-oswald text-xs uppercase tracking-wider text-green-400 transition hover:bg-green-400 hover:text-black"
+                className="rounded border border-[#9cc08d] px-4 py-2 font-oswald text-xs uppercase tracking-wider text-[#d8e5d3] transition hover:bg-[#9cc08d] hover:text-[#173121]"
               >
                 {secondaryLabel}
               </Link>
@@ -304,9 +304,9 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="border-t border-white/5 bg-black/40">
+      <div className="border-t border-white/5 bg-[#102519]/70">
         <div className="container mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-4 text-center md:flex-row">
-          <p className="text-xs font-medium text-gray-500">
+          <p className="text-xs font-medium text-[#b8c9b2]">
             {footerConfig.copyrightLabel ||
               (isLegacyTenant
                 ? "Copyright ©2025 MAZ Expeditions | All rights reserved"
