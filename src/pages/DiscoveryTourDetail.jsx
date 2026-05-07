@@ -7,7 +7,10 @@ import {
   FaClock,
   FaCompass,
   FaMapMarkerAlt,
+  FaRoute,
   FaStar,
+  FaSuitcaseRolling,
+  FaUsers,
 } from "react-icons/fa";
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 
@@ -89,9 +92,65 @@ const DiscoveryTourDetail = () => {
     return tour.itinerary.filter((day) => Array.isArray(day.events) && day.events.length > 0);
   }, [tour]);
 
+  const galleryImages = useMemo(() => {
+    const images = [];
+
+    if (tour?.image) {
+      images.push(tour.image);
+    }
+
+    if (Array.isArray(tour?.galleryImages)) {
+      for (const image of tour.galleryImages) {
+        if (image && !images.includes(image)) {
+          images.push(image);
+        }
+      }
+    }
+
+    return images.slice(0, 4);
+  }, [tour]);
+
+  const quickStats = useMemo(
+    () => [
+      {
+        label: "Location",
+        value: tour?.location || "Custom route",
+        icon: <FaMapMarkerAlt className="text-primary" />,
+      },
+      {
+        label: "Duration",
+        value: tour?.duration || "Multi-day",
+        icon: <FaClock className="text-primary" />,
+      },
+      {
+        label: "Starting price",
+        value: `$${Number(tour?.price || 0).toLocaleString()}`,
+        icon: <FaCalendarCheck className="text-primary" />,
+      },
+      {
+        label: "Travel style",
+        value: tour?.tourType || tour?.category || "Curated package",
+        icon: <FaCompass className="text-primary" />,
+      },
+      {
+        label: "Group size",
+        value: tour?.maxGroupSize ? `${tour.maxGroupSize} guests` : "Private or custom",
+        icon: <FaUsers className="text-primary" />,
+      },
+      {
+        label: "Route type",
+        value: tour?.startLocation && tour?.endLocation
+          ? `${tour.startLocation} to ${tour.endLocation}`
+          : "Operator-planned flow",
+        icon: <FaRoute className="text-primary" />,
+      },
+    ],
+    [tour],
+  );
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f6f1e8] px-6 pt-24">
+      <div className="flex min-h-screen items-center justify-center bg-[#f6f1e8] px-6 pt-32 md:pt-40">
         <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
       </div>
     );
@@ -99,7 +158,7 @@ const DiscoveryTourDetail = () => {
 
   if (!tour) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f6f1e8] px-6 pt-24 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f6f1e8] px-6 pt-32 text-center md:pt-40">
         <h2 className="text-2xl font-black uppercase text-slate-800">Tour Not Found</h2>
         <p className="mt-2 text-slate-500">This tour may no longer be available on the marketplace.</p>
         <Link
@@ -113,11 +172,11 @@ const DiscoveryTourDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f1e8] px-4 pb-16 pt-24 md:px-6">
+    <div className="min-h-screen bg-[#f6f1e8] px-4 pb-20 pt-32 md:px-6 md:pt-40">
       <div className="mx-auto max-w-7xl">
         <Link
           to="/discover"
-          className="mb-6 inline-flex items-center text-sm font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-primary"
+          className="mb-8 inline-flex items-center text-sm font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-primary"
         >
           <FaArrowLeft className="mr-2" /> Back to Discovery
         </Link>
@@ -125,10 +184,10 @@ const DiscoveryTourDetail = () => {
         <div className="grid gap-8 xl:grid-cols-[1fr_380px]">
           <div className="space-y-8">
             <section className="overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
-              <div className="relative h-[280px] md:h-[420px]">
+              <div className="relative h-[320px] md:h-[500px]">
                 <img src={tour.image} alt={tour.title} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 text-white">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/18 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 text-white">
                   <div className="flex flex-wrap gap-3">
                     <span className="rounded-full bg-white/15 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur">
                       {tour.operator?.name || "Verified Operator"}
@@ -136,119 +195,225 @@ const DiscoveryTourDetail = () => {
                     <span className="rounded-full bg-[#d9a441]/90 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#2d2312]">
                       {tour.category || "Curated Journey"}
                     </span>
+                    {tour.tripAdvisorRating && (
+                      <span className="rounded-full bg-white/15 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur">
+                        {tour.tripAdvisorRating}/5 rating
+                      </span>
+                    )}
                   </div>
-                  <h1 className="mt-4 max-w-4xl text-3xl font-black uppercase tracking-[-0.05em] md:text-5xl">
+                  <h1 className="mt-5 max-w-4xl text-3xl font-black uppercase tracking-[-0.05em] md:text-6xl">
                     {tour.title}
                   </h1>
-                  <div className="mt-5 flex flex-wrap gap-3 text-[11px] font-black uppercase tracking-[0.18em] text-white/90">
+                  <p className="mt-4 max-w-3xl text-sm font-medium leading-7 text-white/82 md:text-base">
+                    {tour.description}
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3 text-[11px] font-black uppercase tracking-[0.18em] text-white/90">
                     <span className="rounded-full bg-white/15 px-4 py-2 backdrop-blur">{tour.location}</span>
                     <span className="rounded-full bg-white/15 px-4 py-2 backdrop-blur">
                       {tour.duration || "Multi-day"}
                     </span>
                     <span className="rounded-full bg-white/15 px-4 py-2 backdrop-blur">
-                      Starting from ${tour.price}
+                      Starting from ${Number(tour.price || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
               </div>
+            </section>
 
-              <div className="p-6 md:p-8">
-                <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
-                      Experience Overview
-                    </p>
-                    <p className="mt-4 text-base font-medium leading-8 text-slate-600">
-                      {tour.description}
-                    </p>
+            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {quickStats.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-[30px] border border-[#d8c8ae] bg-white p-6 shadow-[0_18px_60px_rgba(35,66,50,0.08)]"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">{item.label}</p>
+                  <p className="mt-3 flex items-center gap-3 text-xl font-black uppercase tracking-tight text-slate-900">
+                    {item.icon}
+                    <span>{item.value}</span>
+                  </p>
+                </div>
+              ))}
+            </section>
+
+            <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                  Experience Overview
+                </p>
+                <div className="mt-5 rounded-[28px] bg-[#fbf8f1] p-5">
+                  <p className="text-base font-medium leading-8 text-slate-700">{tour.description}</p>
+                </div>
+
+                {(Array.isArray(tour.destinationsVisited) && tour.destinationsVisited.length > 0) && (
+                  <div className="mt-8">
+                    <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">
+                      Destinations on this route
+                    </h2>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      {tour.destinationsVisited.map((destination) => (
+                        <span
+                          key={destination}
+                          className="rounded-full border border-[#e2d2b7] bg-[#f6f1e8] px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-slate-700"
+                        >
+                          {destination}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+                )}
+              </div>
 
-                  <div className="rounded-[30px] border border-[#e4d6be] bg-[#fbf8f1] p-5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
-                      Marketplace Trust
-                    </p>
-                    <div className="mt-4 space-y-3">
-                      <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
-                        <FaCheckCircle className="mt-1 text-primary" />
-                        <div>
-                          <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                            Verified operator profile
-                          </p>
-                          <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                            This listing is tied to {tour.operator?.name || "a verified operator"} inside the
-                            platform, so inquiries keep the correct tenant attribution.
-                          </p>
-                        </div>
+              <div className="space-y-8">
+                <div className="rounded-[36px] border border-[#e4d6be] bg-[#fbf8f1] p-6 shadow-[0_18px_60px_rgba(35,66,50,0.06)]">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                    Marketplace Trust
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
+                      <FaCheckCircle className="mt-1 text-primary" />
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                          Verified operator profile
+                        </p>
+                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                          This listing is tied to {tour.operator?.name || "a verified operator"} inside the
+                          platform, so inquiries keep the correct tenant attribution.
+                        </p>
                       </div>
+                    </div>
 
-                      <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
-                        <FaStar className="mt-1 text-[#d9a441]" />
-                        <div>
-                          <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                            Review snapshot
-                          </p>
-                          <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                            {tour.tripAdvisorRating
-                              ? `${tour.tripAdvisorRating}/5 from ${tour.tripAdvisorReviewCount || 0} published reviews.`
-                              : "No external review score has been published for this package yet."}
-                          </p>
-                        </div>
+                    <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
+                      <FaStar className="mt-1 text-[#d9a441]" />
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                          Review snapshot
+                        </p>
+                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                          {tour.tripAdvisorRating
+                            ? `${tour.tripAdvisorRating}/5 from ${tour.tripAdvisorReviewCount || 0} published reviews.`
+                            : "No external review score has been published for this package yet."}
+                        </p>
                       </div>
+                    </div>
 
-                      <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
-                        <FaCompass className="mt-1 text-primary" />
-                        <div>
-                          <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                            Marketplace inquiry flow
-                          </p>
-                          <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                            Use the inquiry form to request dates, availability, and a final quote from the
-                            operator who owns this itinerary.
-                          </p>
-                        </div>
+                    <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
+                      <FaCompass className="mt-1 text-primary" />
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                          Marketplace inquiry flow
+                        </p>
+                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                          Use the inquiry form to request dates, availability, and a final quote from the
+                          operator who owns this itinerary.
+                        </p>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_18px_60px_rgba(35,66,50,0.08)]">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                    Why travelers shortlist this
+                  </p>
+                  <div className="mt-5 space-y-3">
+                    <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        Operator-led itinerary
+                      </p>
+                      <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                        Package details, pricing, and responses stay connected to the original operator.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        Clear route structure
+                      </p>
+                      <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                        Review the journey flow, accommodation notes, and route highlights before you inquire.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        Faster comparison
+                      </p>
+                      <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                        Compare this package with other marketplace trips without losing context on style or budget.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-3">
-              <div className="rounded-[30px] border border-[#d8c8ae] bg-white p-6 shadow-[0_18px_60px_rgba(35,66,50,0.08)]">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">Location</p>
-                <p className="mt-3 flex items-center gap-3 text-xl font-black uppercase tracking-tight text-slate-900">
-                  <FaMapMarkerAlt className="text-primary" />
-                  {tour.location}
+            {(Array.isArray(tour.inclusions) && tour.inclusions.length > 0) || (Array.isArray(tour.exclusions) && tour.exclusions.length > 0) ? (
+              <section className="grid gap-6 lg:grid-cols-2">
+                <div className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                  <div className="flex items-center gap-3">
+                    <FaCheckCircle className="text-primary" />
+                    <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">
+                      What’s included
+                    </h2>
+                  </div>
+                  <div className="mt-5 space-y-3">
+                    {(tour.inclusions || []).map((item) => (
+                      <div key={item} className="rounded-2xl bg-[#f6f1e8] px-4 py-4 text-sm font-medium text-slate-700">
+                        {item}
+                      </div>
+                    ))}
+                    {(!tour.inclusions || tour.inclusions.length === 0) && (
+                      <p className="text-sm font-medium text-slate-500">No inclusion details provided yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                  <div className="flex items-center gap-3">
+                    <FaSuitcaseRolling className="text-primary" />
+                    <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">
+                      What to plan for
+                    </h2>
+                  </div>
+                  <div className="mt-5 space-y-3">
+                    {(tour.exclusions || []).map((item) => (
+                      <div key={item} className="rounded-2xl bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700">
+                        {item}
+                      </div>
+                    ))}
+                    {(!tour.exclusions || tour.exclusions.length === 0) && (
+                      <p className="text-sm font-medium text-slate-500">No exclusion details provided yet.</p>
+                    )}
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {galleryImages.length > 1 && (
+              <section className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                  Visual Preview
                 </p>
-              </div>
-              <div className="rounded-[30px] border border-[#d8c8ae] bg-white p-6 shadow-[0_18px_60px_rgba(35,66,50,0.08)]">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">Duration</p>
-                <p className="mt-3 flex items-center gap-3 text-xl font-black uppercase tracking-tight text-slate-900">
-                  <FaClock className="text-primary" />
-                  {tour.duration || "Multi-day"}
-                </p>
-              </div>
-              <div className="rounded-[30px] border border-[#d8c8ae] bg-white p-6 shadow-[0_18px_60px_rgba(35,66,50,0.08)]">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
-                  Starting price
-                </p>
-                <p className="mt-3 flex items-center gap-3 text-xl font-black uppercase tracking-tight text-slate-900">
-                  <FaCalendarCheck className="text-primary" /> ${tour.price}
-                </p>
-              </div>
-            </section>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  Gallery from this package
+                </h2>
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  {galleryImages.map((image, index) => (
+                    <div key={`${image}-${index}`} className="overflow-hidden rounded-[28px] border border-slate-100 bg-slate-50">
+                      <img src={image} alt={`${tour.title} gallery ${index + 1}`} className="h-64 w-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {itineraryStops.length > 0 && (
               <section className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
-                <div className="mb-6 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
-                      Route Snapshot
-                    </p>
-                    <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
-                      Itinerary overview
-                    </h2>
-                  </div>
+                <div className="mb-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+                    Route Snapshot
+                  </p>
+                  <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                    Itinerary overview
+                  </h2>
                 </div>
                 <div className="space-y-4">
                   {itineraryStops.map((day) => (
@@ -269,6 +434,27 @@ const DiscoveryTourDetail = () => {
                           </p>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {(Array.isArray(tour.faqs) && tour.faqs.length > 0) && (
+              <section className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+                  Questions Travelers Ask
+                </p>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  Frequently asked questions
+                </h2>
+                <div className="mt-6 space-y-4">
+                  {tour.faqs.map((faq, index) => (
+                    <div key={`${faq.question}-${index}`} className="rounded-[28px] border border-slate-100 bg-slate-50 px-5 py-5">
+                      <h3 className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        {faq.question}
+                      </h3>
+                      <p className="mt-2 text-sm font-medium leading-7 text-slate-600">{faq.answer}</p>
                     </div>
                   ))}
                 </div>
@@ -307,7 +493,7 @@ const DiscoveryTourDetail = () => {
                           {relatedTour.title}
                         </h3>
                         <p className="mt-2 text-sm font-medium text-slate-600">
-                          {relatedTour.duration || "Multi-day"} • ${relatedTour.price}
+                          {relatedTour.duration || "Multi-day"} - ${Number(relatedTour.price || 0).toLocaleString()}
                         </p>
                       </div>
                     </Link>
@@ -317,7 +503,7 @@ const DiscoveryTourDetail = () => {
             )}
           </div>
 
-          <aside className="space-y-6 xl:sticky xl:top-24 xl:h-fit">
+          <aside className="space-y-6 xl:sticky xl:top-32 xl:h-fit">
             <div className="overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
               <div className="bg-[#234232] p-6 text-white">
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d9c79f]">
@@ -368,6 +554,14 @@ const DiscoveryTourDetail = () => {
                     {tour.tripAdvisorReviewCount
                       ? `${tour.tripAdvisorReviewCount} published reviews`
                       : "Review count unavailable"}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    Inquiry setup
+                  </p>
+                  <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">
+                    Operator attribution preserved
                   </p>
                 </div>
               </div>

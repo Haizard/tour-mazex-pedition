@@ -109,8 +109,8 @@ const GlobalDiscovery = () => {
   }, [featuredTour, tours]);
 
   return (
-    <div className="min-h-screen bg-[#f6f1e8] pt-20 text-slate-900">
-      <section className="relative overflow-hidden border-b border-[#d8c8ae] bg-[#234232] px-6 py-16 text-white">
+    <div className="min-h-screen bg-[#f6f1e8] pt-32 text-slate-900 md:pt-40">
+      <section className="relative overflow-hidden border-b border-[#d8c8ae] bg-[#234232] px-6 py-14 text-white md:py-16">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.16),_transparent_35%),linear-gradient(135deg,_rgba(20,43,31,0.96),_rgba(53,90,63,0.8))]" />
         <div className="absolute -right-12 top-10 h-48 w-48 rounded-full bg-[#d9a441]/20 blur-3xl" />
         <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
@@ -375,9 +375,9 @@ const GlobalDiscovery = () => {
             {featuredTour && !loading && (
               <Link
                 to={`/discover/tour/${featuredTour._id}`}
-                className="group grid overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_26px_80px_rgba(35,66,50,0.12)] lg:grid-cols-[1.2fr_0.8fr]"
+                className="group grid overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_26px_80px_rgba(35,66,50,0.12)] lg:grid-cols-[0.95fr_1.05fr]"
               >
-                <div className="relative min-h-[360px] overflow-hidden">
+                <div className="relative min-h-[260px] overflow-hidden lg:min-h-[320px]">
                   <img
                     src={featuredTour.image}
                     alt={featuredTour.title}
@@ -402,7 +402,7 @@ const GlobalDiscovery = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between p-6 md:p-8">
+                <div className="flex flex-col justify-between p-6 md:p-7">
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="rounded-full bg-[#234232] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">
@@ -412,10 +412,10 @@ const GlobalDiscovery = () => {
                         {featuredTour.category || "Curated"}
                       </span>
                     </div>
-                    <p className="mt-5 text-sm font-medium leading-7 text-slate-600">
+                    <p className="mt-4 line-clamp-4 text-sm font-medium leading-7 text-slate-600">
                       {featuredTour.description}
                     </p>
-                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       <div className="rounded-[24px] bg-slate-50 px-4 py-4">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                           Review signal
@@ -441,10 +441,21 @@ const GlobalDiscovery = () => {
                           Send an inquiry to receive operator-specific availability.
                         </p>
                       </div>
+                      <div className="rounded-[24px] bg-slate-50 px-4 py-4 sm:col-span-2 xl:col-span-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                          Trip shape
+                        </p>
+                        <p className="mt-2 text-base font-black uppercase tracking-tight text-slate-900">
+                          {featuredTour.duration || "Multi-day"}
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-slate-500">
+                          {featuredTour.location || "East Africa"} • {featuredTour.category || "Curated"}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-8 inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-primary">
+                  <div className="mt-6 inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-primary">
                     Explore this tour <FaArrowRight />
                   </div>
                 </div>

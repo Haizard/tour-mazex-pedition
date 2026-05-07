@@ -170,9 +170,10 @@ const PlanMyTripWizard = ({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [successAutomation, setSuccessAutomation] = useState(null);
+  const isCompact = compact === true;
 
-  const wrapperClass = compact
-    ? "w-full"
+  const wrapperClass = isCompact
+    ? "w-full overflow-hidden rounded-[28px] border border-[#d8c8ae] bg-white shadow-[0_18px_50px_rgba(35,66,50,0.12)]"
     : "overflow-hidden rounded-[36px] border border-gray-100 bg-white shadow-2xl";
 
   const setField = (name, value) => {
@@ -289,20 +290,26 @@ const PlanMyTripWizard = ({
 
   return (
     <div className={`${wrapperClass} ${className}`}>
-      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr]">
-        <div className="bg-primary p-6 md:p-10 text-white">
+      <div className={`grid grid-cols-1 ${isCompact ? "xl:grid-cols-1" : "md:grid-cols-[280px_1fr]"}`}>
+        <div className={`bg-primary text-white ${isCompact ? "p-5" : "p-6 md:p-10"}`}>
           <div className="mb-4 md:mb-5 inline-flex rounded-full border border-white/20 px-3 md:px-4 py-1 text-[9px] md:text-[10px] font-black uppercase tracking-[0.32em] text-white/85">
             Plan My Trip
           </div>
-          <h1 className="text-2xl md:text-4xl font-black uppercase leading-tight md:leading-none tracking-tighter">
+          <h1 className={`${isCompact ? "text-xl" : "text-2xl md:text-4xl"} font-black uppercase leading-tight md:leading-none tracking-tighter`}>
             Plan Your Trip
           </h1>
-          <p className="mt-3 md:mt-5 text-xs md:text-sm leading-6 md:leading-7 text-white/80 line-clamp-2 md:line-clamp-none">
+          <p className={`${isCompact ? "mt-3 text-sm leading-6 line-clamp-none" : "mt-3 md:mt-5 text-xs md:text-sm leading-6 md:leading-7 line-clamp-2 md:line-clamp-none"} text-white/80`}>
             Move through the steps and share the essentials our safari planners
             need to design your custom journey.
           </p>
 
-          <div className="mt-6 md:mt-10 space-y-3 md:space-y-4 overflow-x-auto md:overflow-visible flex md:flex-col pb-2 md:pb-0">
+          <div
+            className={
+              isCompact
+                ? "mt-5 grid grid-cols-2 gap-3"
+                : "mt-6 md:mt-10 space-y-3 md:space-y-4 overflow-x-auto md:overflow-visible flex md:flex-col pb-2 md:pb-0"
+            }
+          >
             {stepConfig.map((step, index) => {
               const isActive = index === currentStep;
               const isDone = index < currentStep || success;
@@ -332,7 +339,7 @@ const PlanMyTripWizard = ({
                       </p>
                     </div>
                   </div>
-                  <p className="mt-2 md:mt-3 text-[10px] md:text-xs leading-relaxed md:leading-6 text-white/70 hidden md:block">
+                  <p className={`mt-2 md:mt-3 text-[10px] md:text-xs leading-relaxed md:leading-6 text-white/70 ${isCompact ? "hidden" : "hidden md:block"}`}>
                     {step.description}
                   </p>
                 </div>
@@ -341,7 +348,7 @@ const PlanMyTripWizard = ({
           </div>
         </div>
 
-        <div className="p-6 md:p-10">
+        <div className={isCompact ? "p-5" : "p-6 md:p-10"}>
           {success ? (
             <div className="flex min-h-[300px] md:min-h-[520px] flex-col items-center justify-center text-center">
               <div className="mb-6 flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-full bg-green-100 text-3xl md:text-4xl text-green-600">
@@ -391,17 +398,30 @@ const PlanMyTripWizard = ({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
-              <div>
-                <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.26em] text-primary">
-                  {stepConfig[currentStep].title}
-                </p>
-                <h2 className="mt-1 md:mt-2 text-xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 leading-tight">
-                  {currentStep === 0 && "Tell us who is traveling"}
-                  {currentStep === 1 && "Shape the core of the itinerary"}
-                  {currentStep === 2 && "Choose your timing and stay style"}
-                  {currentStep === 3 && "Add your final trip notes"}
-                </h2>
-              </div>
+              {!isCompact && (
+                <div>
+                  <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.26em] text-primary">
+                    {stepConfig[currentStep].title}
+                  </p>
+                  <h2 className="mt-1 md:mt-2 text-xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 leading-tight">
+                    {currentStep === 0 && "Tell us who is traveling"}
+                    {currentStep === 1 && "Shape the core of the itinerary"}
+                    {currentStep === 2 && "Choose your timing and stay style"}
+                    {currentStep === 3 && "Add your final trip notes"}
+                  </h2>
+                </div>
+              )}
+
+              {isCompact && (
+                <div className="rounded-[24px] bg-[#f6f1e8] px-4 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.26em] text-primary">
+                    {stepConfig[currentStep].title}
+                  </p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+                    {stepConfig[currentStep].description}
+                  </p>
+                </div>
+              )}
 
               {currentStep === 0 && (
                 <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2">
