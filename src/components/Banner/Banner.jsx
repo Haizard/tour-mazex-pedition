@@ -3,7 +3,8 @@ import TravelImg from "../../assets/camp1.jpg";
 import { MdFlight, MdOutlineLocalHotel } from "react-icons/md";
 import { IoIosWifi } from "react-icons/io";
 import { IoFastFoodSharp } from "react-icons/io5";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const amenities = [
   {
@@ -25,6 +26,8 @@ const amenities = [
 ];
 
 const Banner = () => {
+  const location = useLocation();
+
   return (
     <div className="bg-slate-900 py-24">
       <div className="container">
@@ -74,7 +77,7 @@ const Banner = () => {
               ))}
             </div>
             <Link
-              to="/packages"
+              to={buildTenantScopedPath("/packages", location.pathname)}
               onClick={() => window.scrollTo(0, 0)}
               className="inline-flex items-center gap-2 bg-primary text-white font-black px-8 py-4 rounded-full uppercase tracking-widest text-sm hover:opacity-90 transition cinematic-shadow"
             >

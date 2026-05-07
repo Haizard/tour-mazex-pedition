@@ -120,6 +120,7 @@ router.get("/bootstrap", async (req, res) => {
         slug: req.tenant.slug,
         subdomain: req.tenant.subdomain,
         demoDomain,
+        demoAccessEnabled: req.tenant.demoAccessEnabled !== false,
         customDomains: req.tenant.customDomains || [],
         requestedCustomDomains: req.tenant.requestedCustomDomains || [],
         features: req.tenant.features || {},

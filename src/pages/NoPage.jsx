@@ -1,7 +1,10 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { buildTenantScopedPath } from "../utils/tenantRoutes.js";
 
 const NoPage = () => {
+  const location = useLocation();
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
       {/* Background texture */}
@@ -24,7 +27,7 @@ const NoPage = () => {
           </p>
         </div>
         <Link
-          to="/"
+          to={buildTenantScopedPath("/", location.pathname)}
           className="inline-block bg-gradient-to-r from-primary to-[#00aeaf] text-white font-black px-10 py-4 rounded-full uppercase tracking-widest text-sm hover:opacity-90 transition shadow-2xl shadow-primary/20"
         >
           Return to Base Camp →

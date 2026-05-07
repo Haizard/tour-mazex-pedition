@@ -20,6 +20,17 @@ export const normalizeHostname = (value = "") =>
 export const isLocalHostname = (hostname = "") =>
   LOCAL_HOSTNAMES.has(normalizeHostname(hostname));
 
+export const getTenantRequestSource = (req) =>
+  (req.headers["x-tenant-source"] || "")
+    .toString()
+    .trim()
+    .toLowerCase();
+
+export const isDemoTenantRequest = (req) => getTenantRequestSource(req) === "demo";
+
+export const isDemoAccessAllowed = (tenant, req) =>
+  !isDemoTenantRequest(req) || tenant?.demoAccessEnabled !== false;
+
 export const resolveTenantLookup = (req) => {
   const requestedSlug = (req.headers["x-tenant-slug"] || req.query.tenant || "")
     .toString()

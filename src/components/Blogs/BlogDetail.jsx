@@ -24,6 +24,7 @@ import {
 } from "../../utils/seo";
 import { buildBlogSidebarData } from "../../utils/contentMatchers";
 import { useRouteData } from "../../utils/routeData.jsx";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const BlogDetail = () => {
   const { title: blogSlug } = useParams();
@@ -275,7 +276,7 @@ const BlogDetail = () => {
                 {categories.map(([cat, count]) => (
                   <Link
                     key={cat}
-                    to="/blogs"
+                    to={buildTenantScopedPath("/blogs", location.pathname)}
                     className="flex justify-between items-center group"
                   >
                     <span className="text-sm md:text-base font-bold text-gray-500 group-hover:text-primary transition-colors">
@@ -335,7 +336,7 @@ const BlogDetail = () => {
               </h2>
             </div>
             <Link
-              to="/packages"
+              to={buildTenantScopedPath("/packages", location.pathname)}
               className="mb-1 md:mb-2 text-gray-400 font-bold hover:text-primary uppercase text-[10px] md:text-xs tracking-widest"
             >
               View All Packages

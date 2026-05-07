@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useLocation, useParams, Link } from "react-router-dom";
 import { fetchBlogs, fetchTours } from "../services/api";
 import BlogCard from "../components/Blogs/BlogCard";
 import PackageCard from "../components/Blogs/PackageCard";
@@ -9,9 +9,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import LogoSlider from "../components/Home/LogoSlider";
 import SEO from "../components/UI/SEO";
 import { buildBreadcrumbSchema } from "../utils/seo";
+import { buildTenantScopedPath } from "../utils/tenantRoutes.js";
 
 const BlogCategory = () => {
   const { categoryId } = useParams();
+  const location = useLocation();
   const [blogs, setBlogs] = useState([]);
   const [matchingTours, setMatchingTours] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +138,7 @@ const BlogCategory = () => {
         ) : (
           <div className="text-center py-20">
             <h3 className="text-xl font-heading text-gray-400">No articles found in this category yet.</h3>
-            <Link to="/blogs" className="text-safari-green mt-4 inline-block underline font-bold">Back to all blogs</Link>
+            <Link to={buildTenantScopedPath("/blogs", location.pathname)} className="text-safari-green mt-4 inline-block underline font-bold">Back to all blogs</Link>
           </div>
         )}
       </div>
@@ -154,7 +156,7 @@ const BlogCategory = () => {
                 </h2>
               </div>
               <Link 
-                to="/packages" 
+                to={buildTenantScopedPath("/packages", location.pathname)} 
                 className="bg-white px-6 py-3 rounded-full border border-gray-200 font-bold uppercase text-[10px] tracking-widest hover:border-safari-green hover:text-safari-green transition-all shadow-sm"
               >
                 View All Packages

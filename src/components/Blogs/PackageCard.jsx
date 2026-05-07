@@ -1,19 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { IoLocationSharp, IoTimeOutline, IoPeopleOutline } from "react-icons/io5";
 import { motion } from "framer-motion";
 import Badge from "../UI/Badge";
 import Card from "../UI/Card";
-
-const slugifyTitle = (value = "") =>
-  value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+import { buildTenantScopedTourPath } from "../../utils/tenantRoutes.js";
 
 const PackageCard = (props) => {
+  const currentLocation = useLocation();
   const {
     image,
     title,
@@ -32,7 +25,7 @@ const PackageCard = (props) => {
 
   return (
     <Link
-      to={`/packages/${slugifyTitle(title)}`}
+      to={buildTenantScopedTourPath(props, currentLocation.pathname)}
       onClick={() => window.scrollTo(0, 0)}
       state={props}
       className="group block h-full"

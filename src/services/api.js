@@ -37,7 +37,7 @@ const getTenantHeaders = () => {
   const storedTenantSlug = window.localStorage.getItem("activeTenantSlug");
 
   if (demoTenantSlug) {
-    return { "x-tenant-slug": demoTenantSlug };
+    return { "x-tenant-slug": demoTenantSlug, "x-tenant-source": "demo" };
   }
 
   if (storedTenantSlug && LOCAL_HOSTNAMES.has(hostname)) {
@@ -295,6 +295,14 @@ export const updatePlatformTenantAdmin = (tenantId, data) =>
 export const markPlatformTenantDomainVerified = (tenantId, domain) =>
   API.post(
     `/platform-admin/tenants/${tenantId}/domains/${encodeURIComponent(domain)}/mark-verified`,
+    {},
+    {
+      headers: getPlatformAdminHeaders(),
+    }
+  );
+export const checkPlatformTenantDomainVerification = (tenantId, domain) =>
+  API.post(
+    `/platform-admin/tenants/${tenantId}/domains/${encodeURIComponent(domain)}/check`,
     {},
     {
       headers: getPlatformAdminHeaders(),

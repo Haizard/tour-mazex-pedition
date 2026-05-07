@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
 import { FaStar } from "react-icons/fa";
 import { useRouteData } from "../../utils/routeData.jsx";
+import { buildTenantScopedTourPath } from "../../utils/tenantRoutes.js";
 
 const badgeLabels = ["Best Seller", "Traveller Choice", "Our Choice"];
-
-const slugifyTitle = (value = "") =>
-  value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 
 const PopularTours = ({
   variant = "popular-grid",
@@ -31,6 +23,7 @@ const PopularTours = ({
     : [];
   const [tours, setTours] = useState(initialTours);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     setTours(initialTours);
@@ -50,7 +43,7 @@ const PopularTours = ({
   }, [limit]);
 
   const handleNavigate = (item) => {
-    navigate(`/packages/${slugifyTitle(item.title)}?tourId=${item._id}`, { state: item });
+    navigate(buildTenantScopedTourPath(item, location.pathname), { state: item });
     window.scrollTo(0, 0);
   };
 

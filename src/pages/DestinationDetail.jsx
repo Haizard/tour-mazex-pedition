@@ -24,6 +24,7 @@ import {
   matchDestinationTours,
 } from "../utils/contentMatchers";
 import { useRouteData } from "../utils/routeData.jsx";
+import { buildTenantScopedTourPath } from "../utils/tenantRoutes.js";
 
 const slugify = (text = "") =>
   text
@@ -271,7 +272,7 @@ const DestinationDetail = () => {
                     relatedTours.slice(0, 3).map((tour) => (
                       <Link
                         key={tour._id}
-                        to={`/packages/${slugify(tour.title)}?tourId=${tour._id}`}
+                        to={buildTenantScopedTourPath(tour, window.location.pathname)}
                         state={tour}
                         className="group flex gap-4"
                       >

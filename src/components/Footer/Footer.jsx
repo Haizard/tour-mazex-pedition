@@ -15,6 +15,7 @@ import FooterLogo from "../../assets/maz-logo.jpeg";
 import { fetchBlogs, fetchSiteSettings, fetchTours } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
 import { useRouteData } from "../../utils/routeData.jsx";
+import { buildTenantScopedPath, buildTenantScopedTourPath } from "../../utils/tenantRoutes.js";
 
 const LEGACY_LINKS = [
   { title: "Home", link: "/" },
@@ -78,6 +79,8 @@ const Footer = () => {
   const [settings, setSettings] = React.useState(sharedData.siteSettings || null);
   const [popularTours, setPopularTours] = React.useState([]);
   const [popularBlogs, setPopularBlogs] = React.useState([]);
+  const currentPathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
 
   React.useEffect(() => {
     setSettings(sharedData.siteSettings || null);
@@ -110,13 +113,13 @@ const Footer = () => {
         setPopularTours(
           tours.slice(0, 6).map((tour) => ({
             title: tour.title,
-            link: `/packages/${slugifyTitle(tour.title)}?tourId=${tour._id}`,
+            link: buildTenantScopedTourPath(tour, currentPathname),
           }))
         );
         setPopularBlogs(
           blogs.slice(0, 6).map((blog) => ({
             title: blog.title,
-            link: `/blogs/${slugifyTitle(blog.title)}`,
+            link: buildTenantScopedPath(`/blogs/${slugifyTitle(blog.title)}`, currentPathname),
           }))
         );
       } catch (error) {
@@ -150,12 +153,15 @@ const Footer = () => {
     : isPlatform
       ? PLATFORM_BLOGS
     : isLegacyTenant
-      ? [{ title: "Explore Travel Articles", link: "/blogs" }]
+      ? [{ title: "Explore Travel Articles", link: buildTenantScopedPath("/blogs", currentPathname) }]
       : [];
   const primaryLabel = footerConfig.primaryCtaLabel || (isPlatform ? "Explore Marketplace" : isLegacyTenant ? "Plan My Trip" : "");
   const primaryHref = footerConfig.primaryCtaHref || (isPlatform ? "/discover" : isLegacyTenant ? "/plan-my-trip" : "");
   const secondaryLabel = footerConfig.secondaryCtaLabel || (isPlatform ? "See Pricing" : isLegacyTenant ? "Articles" : "");
   const secondaryHref = footerConfig.secondaryCtaHref || (isPlatform ? "/pricing" : isLegacyTenant ? "/blogs" : "");
+  const scopedPrimaryHref = isPlatform ? primaryHref : buildTenantScopedPath(primaryHref, currentPathname);
+  const scopedSecondaryHref = isPlatform ? secondaryHref : buildTenantScopedPath(secondaryHref, currentPathname);
+  const scopedHomeHref = isPlatform ? "/" : buildTenantScopedPath("/", currentPathname);
   const socials = socialItems(settings || {});
   const hasVisibleContent =
     brandName ||
@@ -177,7 +183,7 @@ const Footer = () => {
       <div className="border-b border-white/10">
         <div className="container mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           {(settings?.logoUrl || isLegacyTenant || isPlatform) && (
-            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="shrink-0">
+            <Link to={scopedHomeHref} onClick={() => window.scrollTo(0, 0)} className="shrink-0">
               <img
                 src={settings?.logoUrl || FooterLogo}
                 alt={brandName || "Tenant logo"}
@@ -201,7 +207,7 @@ const Footer = () => {
             ))}
             {primaryLabel && primaryHref && (
               <Link
-                to={primaryHref}
+                to={scopedPrimaryHref}
                 onClick={() => window.scrollTo(0, 0)}
                 className="hidden rounded bg-safari-green px-5 py-2 font-oswald text-xs uppercase tracking-widest text-white transition hover:bg-green-800 sm:inline-block"
               >
@@ -278,7 +284,7 @@ const Footer = () => {
           <div className="flex flex-wrap gap-2">
             {primaryLabel && primaryHref && (
               <Link
-                to={primaryHref}
+                to={scopedPrimaryHref}
                 onClick={() => window.scrollTo(0, 0)}
                 className="rounded bg-safari-green px-4 py-2 font-oswald text-xs uppercase tracking-wider text-white transition hover:bg-green-800"
               >
@@ -287,7 +293,7 @@ const Footer = () => {
             )}
             {secondaryLabel && secondaryHref && (
               <Link
-                to={secondaryHref}
+                to={scopedSecondaryHref}
                 onClick={() => window.scrollTo(0, 0)}
                 className="rounded border border-green-400 px-4 py-2 font-oswald text-xs uppercase tracking-wider text-green-400 transition hover:bg-green-400 hover:text-black"
               >

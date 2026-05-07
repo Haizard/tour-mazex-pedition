@@ -17,6 +17,7 @@ import ResponsiveMenu from "./ResponsiveMenu";
 import { fetchMenuItems, fetchTours, fetchSiteSettings } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
 import { useRouteData } from "../../utils/routeData.jsx";
+import { buildTenantScopedPath, buildTenantScopedTourPath } from "../../utils/tenantRoutes.js";
 
 import { FRONTEND_MENU_DEFAULTS, MENU_IMAGE_BY_KEY } from "./defaultMenuItems";
 
@@ -116,7 +117,7 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
       ...item,
       children: matchedTours.slice(0, 12).map((tour, index) => ({
         label: tour.title,
-        link: `/packages/${slugifyTitle(tour.title)}?tourId=${tour._id}`,
+        link: buildTenantScopedTourPath(tour, typeof window !== "undefined" ? window.location.pathname : ""),
         sortOrder: index + 1,
       })),
     };
@@ -232,7 +233,7 @@ const Navbar = ({ handleOrderPopup }) => {
       return;
     }
 
-    navigate(href);
+    navigate(isPlatform ? href : buildTenantScopedPath(href, window.location.pathname));
     window.scrollTo(0, 0);
   };
 
@@ -300,7 +301,11 @@ const Navbar = ({ handleOrderPopup }) => {
         <div className={`container relative mx-auto flex items-center px-4 ${
           logoPlacement === "center" ? "justify-center gap-8" : "justify-between"
         }`}>
-          <Link to="/" className="flex items-center" onClick={() => window.scrollTo(0, 0)}>
+          <Link
+            to={isPlatform ? "/" : buildTenantScopedPath("/", window.location.pathname)}
+            className="flex items-center"
+            onClick={() => window.scrollTo(0, 0)}
+          >
             {(settings?.logoUrl || isLegacyTenant || isPlatform) ? (
               <img
                 src={settings?.logoUrl || Logo}

@@ -1,17 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
 import { useRouteData } from "../../utils/routeData.jsx";
-
-const slugifyTitle = (value = "") =>
-  value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+import { buildTenantScopedTourPath } from "../../utils/tenantRoutes.js";
 
 const badgeOptions = [
   { label: "Best Seller", icon: "STAR" },
@@ -36,6 +28,7 @@ const Trending = ({
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     setTours(initialTours);
@@ -68,7 +61,7 @@ const Trending = ({
   }, [tours]);
 
   const handleNavigate = (item) => {
-    navigate(`/packages/${slugifyTitle(item.title)}?tourId=${item._id}`, {
+    navigate(buildTenantScopedTourPath(item, location.pathname), {
       state: item,
     });
     window.scrollTo(0, 0);

@@ -1,6 +1,6 @@
 import Tenant from "../models/Tenant.js";
 import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
-import { resolveTenantLookup } from "../utils/tenantContext.js";
+import { isDemoAccessAllowed, resolveTenantLookup } from "../utils/tenantContext.js";
 
 export const tenantMiddleware = async (req, res, next) => {
   try {
@@ -38,6 +38,10 @@ export const tenantMiddleware = async (req, res, next) => {
 
     if (!tenant) {
       return res.status(404).json({ message: "Tenant not found for this request." });
+    }
+
+    if (!isDemoAccessAllowed(tenant, req)) {
+      return res.status(403).json({ message: "Demo access is disabled for this tenant." });
     }
 
     req.tenant = tenant;

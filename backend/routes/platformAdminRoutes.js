@@ -34,6 +34,10 @@ import {
   normalizeRequestedDomains,
   slugifyTenantValue,
 } from "../utils/domainProvisioning.js";
+import {
+  getPlatformDomainTargetHost,
+  verifyCustomDomainRecord,
+} from "../utils/domainDnsVerifier.js";
 
 const router = express.Router();
 
@@ -54,7 +58,7 @@ const normalizeFeatureOverrides = (value = {}) => {
 };
 
 const getPlatformDomainTarget = () =>
-  process.env.PLATFORM_DOMAIN_TARGET || "app.mazex-platform.example";
+  getPlatformDomainTargetHost(process.env) || "set PLATFORM_DOMAIN_TARGET";
 
 const createUniqueTenantIdentifiers = async (name, preferredSlug = "", preferredSubdomain = "") => {
   const baseSlug = slugifyTenantValue(preferredSlug || name) || "tenant";
@@ -272,6 +276,7 @@ router.get("/tenants", async (_req, res) => {
           ? tenant.demoDomain
           : buildDemoDomain(tenant.subdomain || tenant.slug),
         primaryDomain: tenant.customDomains?.[0] || "",
+        demoAccessEnabled: tenant.demoAccessEnabled !== false,
         adminCount: adminLookup[String(tenant._id)] || 0,
         admins: adminListLookup[String(tenant._id)] || [],
         pageConfigCount: pageLookup[String(tenant._id)] || 0,
@@ -675,6 +680,7 @@ router.post("/tenants", async (req, res) => {
       slug,
       subdomain,
       demoDomain: buildDemoDomain(subdomain),
+      demoAccessEnabled: req.body.demoAccessEnabled !== false,
       customDomains: [],
       requestedCustomDomains: normalizeRequestedDomains(req.body.requestedCustomDomains || []),
       status: req.body.status || "active",
@@ -819,6 +825,10 @@ router.put("/tenants/:tenantId", async (req, res) => {
       update.status = req.body.status;
     }
 
+    if (typeof req.body.demoAccessEnabled === "boolean") {
+      update.demoAccessEnabled = req.body.demoAccessEnabled;
+    }
+
     if (Array.isArray(req.body.customDomains)) {
       update.customDomains = req.body.customDomains
         .map((domain) => domain?.toString().trim().toLowerCase())
@@ -876,6 +886,31 @@ router.put("/tenants/:tenantId", async (req, res) => {
       new: true,
       runValidators: true,
     }).lean();
+
+    if (Array.isArray(update.customDomains) && update.customDomains.length > 0) {
+      const tenantDocument = await Tenant.findById(req.params.tenantId);
+
+      if (tenantDocument) {
+        const checkedRecords = await Promise.all(
+          (tenantDocument.customDomainRecords || []).map(async (record) => {
+            const rawRecord = record.toObject ? record.toObject() : record;
+            const verification = await verifyCustomDomainRecord(rawRecord, process.env);
+
+            return {
+              ...rawRecord,
+              status: verification.status,
+              verifiedAt: verification.verified ? verification.checkedAt : null,
+              lastCheckedAt: verification.checkedAt,
+              expectedTarget: verification.expectedTarget || rawRecord.expectedTarget || "",
+              errorMessage: verification.errorMessage || "",
+            };
+          })
+        );
+
+        tenantDocument.customDomainRecords = checkedRecords;
+        await tenantDocument.save();
+      }
+    }
 
     res.status(200).json({
       tenant: {
@@ -964,6 +999,63 @@ router.post("/tenants/:tenantId/domains/:domain/mark-verified", async (req, res)
           : buildDemoDomain(tenant.subdomain || tenant.slug),
         primaryDomain: tenant.customDomains?.[0] || "",
       },
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/tenants/:tenantId/domains/:domain/check", async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.tenantId);
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const normalizedDomain = req.params.domain.trim().toLowerCase();
+    const currentRecord = (tenant.customDomainRecords || []).find(
+      (record) => record.domain === normalizedDomain
+    );
+
+    if (!currentRecord) {
+      return res.status(404).json({ message: "Domain verification record not found." });
+    }
+
+    const verification = await verifyCustomDomainRecord(
+      currentRecord.toObject ? currentRecord.toObject() : currentRecord,
+      process.env
+    );
+
+    const nextRecords = (tenant.customDomainRecords || []).map((record) => {
+      const rawRecord = record.toObject ? record.toObject() : record;
+
+      if (rawRecord.domain !== normalizedDomain) {
+        return rawRecord;
+      }
+
+      return {
+        ...rawRecord,
+        status: verification.status,
+        verifiedAt: verification.verified ? verification.checkedAt : null,
+        lastCheckedAt: verification.checkedAt,
+        expectedTarget: verification.expectedTarget || rawRecord.expectedTarget || "",
+        errorMessage: verification.errorMessage || "",
+      };
+    });
+
+    tenant.customDomainRecords = nextRecords;
+    await tenant.save();
+
+    res.status(200).json({
+      tenant: {
+        ...tenant.toObject(),
+        demoDomain: tenant.demoDomain?.startsWith("http")
+          ? tenant.demoDomain
+          : buildDemoDomain(tenant.subdomain || tenant.slug),
+        primaryDomain: tenant.customDomains?.[0] || "",
+      },
+      verification,
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  checkPlatformTenantDomainVerification,
   createPlatformTenant,
   fetchPlatformSummary,
   fetchPlatformTenantMarketing,
   fetchPlatformTenantSupport,
   fetchPlatformTenants,
-  markPlatformTenantDomainVerified,
   renewPlatformTenantDomainService,
   updatePlatformTenant,
   updatePlatformTenantAdmin,
@@ -123,6 +123,7 @@ const createTenantFormState = (tenant) => ({
   adminPassword: "",
   customDomains: (tenant?.customDomains || []).join("\n"),
   requestedCustomDomains: (tenant?.requestedCustomDomains || []).join("\n"),
+  demoAccessEnabled: tenant?.demoAccessEnabled !== false,
   enableCustomDomains: Boolean(tenant?.features?.enableCustomDomains),
   enablePageBuilder: Boolean(tenant?.features?.enablePageBuilder),
   enableAiContent: tenant?.features?.enableAiContent !== false,
@@ -311,6 +312,7 @@ const PlatformAdminDashboard = () => {
         status: tenantForm.status,
         customDomains: tenantForm.customDomains.split("\n").map((domain) => domain.trim()).filter(Boolean),
         requestedCustomDomains: tenantForm.requestedCustomDomains.split("\n").map((domain) => domain.trim()).filter(Boolean),
+        demoAccessEnabled: tenantForm.demoAccessEnabled,
         features: {
           ...selectedTenant.features,
           enableCustomDomains: tenantForm.enableCustomDomains,
@@ -414,11 +416,16 @@ const PlatformAdminDashboard = () => {
     setError("");
     setNotice("");
     try {
-      await markPlatformTenantDomainVerified(selectedTenant._id, domain);
-      setNotice(`${domain} marked as verified.`);
+      const response = await checkPlatformTenantDomainVerification(selectedTenant._id, domain);
+      const verification = response.data?.verification;
+      setNotice(
+        verification?.verified
+          ? `${domain} is now verified and routed to the platform.`
+          : verification?.errorMessage || `${domain} still needs DNS changes before it can verify.`,
+      );
       await loadPlatformData(selectedTenant._id);
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Unable to mark the domain as verified.");
+      setError(requestError.response?.data?.message || "Unable to check the domain right now.");
     } finally {
       setVerifyingDomain("");
     }
@@ -504,7 +511,7 @@ const PlatformAdminDashboard = () => {
         <div className={panelClass}>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Tenant Snapshot</p>
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-xl bg-zinc-50 p-4"><p className="text-sm font-black">Demo URL</p><p className="mt-1 break-all text-sm font-medium text-zinc-500">{selectedTenant.demoDomain || "Pending"}</p></div>
+            <div className="rounded-xl bg-zinc-50 p-4"><p className="text-sm font-black">Demo URL</p><p className="mt-1 break-all text-sm font-medium text-zinc-500">{selectedTenant.demoDomain || "Pending"}</p><p className="mt-2 text-[11px] font-black uppercase tracking-widest text-zinc-400">{selectedTenant.demoAccessEnabled === false ? "Demo disabled" : "Demo active"}</p></div>
             <div className="rounded-xl bg-zinc-50 p-4"><p className="text-sm font-black">Login</p><p className="mt-1 text-sm font-medium text-zinc-500">{selectedTenant.admins?.[0]?.username || "Not set"}</p></div>
             <div className="rounded-xl bg-zinc-50 p-4"><p className="text-sm font-black">Custom Domains</p><p className="mt-1 text-sm font-medium text-zinc-500">{selectedTenant.customDomains?.join(", ") || "None yet"}</p></div>
             <div className="rounded-xl bg-zinc-50 p-4"><p className="text-sm font-black">Workload</p><p className="mt-1 text-sm font-medium text-zinc-500">{selectedTenant.openThreadCount ?? selectedTenant.metrics?.openThreads ?? 0} open threads, {selectedTenant.inquiryCount ?? selectedTenant.metrics?.inquiries ?? 0} inquiries</p></div>
@@ -523,6 +530,10 @@ const PlatformAdminDashboard = () => {
           <div><label className={labelClass}>Demo Subdomain</label><input className={inputClass} value={tenantForm.subdomain} onChange={(event) => setTenantForm((current) => ({ ...current, subdomain: event.target.value.toLowerCase() }))} /></div>
           <div><label className={labelClass}>Custom Domains</label><textarea rows={5} className={inputClass} value={tenantForm.customDomains} onChange={(event) => setTenantForm((current) => ({ ...current, customDomains: event.target.value }))} placeholder="One custom domain per line" /></div>
           <div><label className={labelClass}>Requested Domains</label><textarea rows={3} className={inputClass} value={tenantForm.requestedCustomDomains} onChange={(event) => setTenantForm((current) => ({ ...current, requestedCustomDomains: event.target.value }))} /></div>
+          <label className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 px-4 py-4 text-sm font-bold text-zinc-700">
+            Demo link stays active after launch
+            <input type="checkbox" checked={tenantForm.demoAccessEnabled} onChange={(event) => setTenantForm((current) => ({ ...current, demoAccessEnabled: event.target.checked }))} className="h-4 w-4 accent-zinc-950" />
+          </label>
           <button className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-black uppercase tracking-widest text-white disabled:opacity-50" disabled={saving}>{saving ? "Saving..." : "Save Domain Settings"}</button>
         </div>
       </div>
@@ -532,11 +543,11 @@ const PlatformAdminDashboard = () => {
           {(selectedTenant?.customDomainRecords || []).map((record) => (
             <div key={record.domain} className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
               <div className="flex items-start justify-between gap-4">
-                <div><p className="font-black">{record.domain}</p><p className="mt-2 text-xs font-semibold text-zinc-500">TXT host: {record.verificationHost}</p><p className="mt-1 break-all text-xs font-semibold text-zinc-500">Value: {record.verificationValue}</p><p className="mt-1 text-xs font-semibold text-zinc-500">Target: {record.expectedTarget}</p></div>
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700">{record.status}</span>
+                <div><p className="font-black">{record.domain}</p><p className="mt-2 text-xs font-semibold text-zinc-500">TXT host: {record.verificationHost}</p><p className="mt-1 break-all text-xs font-semibold text-zinc-500">Value: {record.verificationValue}</p><p className="mt-1 text-xs font-semibold text-zinc-500">Route target: {record.expectedTarget}</p>{record.lastCheckedAt ? <p className="mt-1 text-xs font-semibold text-zinc-400">Last checked: {new Date(record.lastCheckedAt).toLocaleString()}</p> : null}{record.errorMessage ? <p className="mt-2 text-xs font-semibold text-red-600">{record.errorMessage}</p> : null}</div>
+                <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${record.status === "verified" ? "bg-emerald-50 text-emerald-700" : record.status === "error" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{record.status}</span>
               </div>
-              <button type="button" disabled={verifyingDomain === record.domain || record.status === "verified"} onClick={() => handleMarkVerified(record.domain)} className="mt-4 rounded-xl border border-zinc-300 px-4 py-2 text-xs font-black uppercase tracking-widest disabled:opacity-40">
-                {verifyingDomain === record.domain ? "Verifying..." : record.status === "verified" ? "Verified" : "Mark Verified"}
+              <button type="button" disabled={verifyingDomain === record.domain} onClick={() => handleMarkVerified(record.domain)} className="mt-4 rounded-xl border border-zinc-300 px-4 py-2 text-xs font-black uppercase tracking-widest disabled:opacity-40">
+                {verifyingDomain === record.domain ? "Checking DNS..." : record.status === "verified" ? "Re-check DNS" : "Check DNS Now"}
               </button>
             </div>
           ))}

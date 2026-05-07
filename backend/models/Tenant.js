@@ -56,6 +56,7 @@ const tenantSchema = new mongoose.Schema(
     slug: { type: String, required: true, trim: true, unique: true },
     subdomain: { type: String, trim: true, sparse: true, unique: true },
     demoDomain: { type: String, trim: true, sparse: true, unique: true },
+    demoAccessEnabled: { type: Boolean, default: true },
     customDomains: {
       type: [String],
       default: [],

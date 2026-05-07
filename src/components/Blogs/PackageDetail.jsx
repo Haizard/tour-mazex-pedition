@@ -35,6 +35,7 @@ import {
 } from "../../utils/seo";
 import { buildPackageRelatedTours } from "../../utils/contentMatchers";
 import { useRouteData } from "../../utils/routeData.jsx";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const OrderPopup = React.lazy(() => import("../OrderPopup/OrderPopup"));
 
@@ -203,6 +204,7 @@ const PackageDetail = () => {
     (faq) => faq?.question?.trim() && faq?.answer?.trim(),
   );
   const canonicalPath = `/packages/${slugifyTitle(title)}`;
+  const allPackagesPath = buildTenantScopedPath("/packages", location.pathname);
   const canonicalUrl = resolveCanonicalUrl(tourData.seo?.canonicalUrl, canonicalPath);
   const pageSchema = [
     buildBreadcrumbSchema([
@@ -1121,7 +1123,7 @@ const PackageDetail = () => {
               </h2>
             </div>
             <Link
-              to="/packages"
+              to={allPackagesPath}
               className="mb-1 md:mb-2 text-gray-400 font-bold hover:text-primary uppercase text-[10px] md:text-xs tracking-widest"
             >
               All Packages

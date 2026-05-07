@@ -1,18 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { fetchTours } from "../../services/api";
 import { FaCalendarAlt } from "react-icons/fa";
 import { useRouteData } from "../../utils/routeData.jsx";
-
-const slugifyTitle = (value = "") =>
-  value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+import { buildTenantScopedPath, buildTenantScopedTourPath } from "../../utils/tenantRoutes.js";
 
 const GroupTours = ({
   variant = "default",
@@ -34,6 +26,7 @@ const GroupTours = ({
     : [];
   const [groupTours, setGroupTours] = useState(initialGroupTours);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     setGroupTours(initialGroupTours);
@@ -55,14 +48,14 @@ const GroupTours = ({
   }, [limit]);
 
   const handleItinerary = (item) => {
-    navigate(`/packages/${slugifyTitle(item.title)}?tourId=${item._id}`, {
+    navigate(buildTenantScopedTourPath(item, location.pathname), {
       state: item,
     });
     window.scrollTo(0, 0);
   };
 
   const handleBooking = () => {
-    navigate("/contact");
+    navigate(buildTenantScopedPath("/contact", location.pathname));
     window.scrollTo(0, 0);
   };
 
