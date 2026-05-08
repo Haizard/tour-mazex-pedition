@@ -7,7 +7,7 @@ import {
   buildMediaResponsePayload,
   getObjectStorageStrategy,
   resolveStoredMediaReadPlan,
-  uploadStoredMediaAsset,
+  uploadStoredMediaAssetWithFallback,
 } from "../utils/objectStorage.js";
 import { syncMongoDocumentToShadowStore } from "../utils/postgresShadowWrites.js";
 import {
@@ -53,12 +53,12 @@ router.post("/upload", async (req, res) => {
 
     const strategy = getObjectStorageStrategy();
     assertMediaUploadAllowed({ buffer, strategy });
-    const storedAsset = await uploadStoredMediaAsset({
+    const storedAsset = await uploadStoredMediaAssetWithFallback({
       filename,
       contentType,
       buffer,
       tenantId,
-      strategy,
+      primaryStrategy: strategy,
     });
 
     const mediaData = {

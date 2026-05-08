@@ -8,8 +8,10 @@ import {
   buildStoredMediaReadPlan,
   createObjectStorageClient,
   getObjectStorageStrategy,
+  isRetriableObjectStorageError,
   persistMediaAsset,
   resolveStoredMediaReadPlan,
+  uploadStoredMediaAssetWithFallback,
   uploadStoredMediaAsset,
 } from "../utils/objectStorage.js";
 
@@ -168,4 +170,40 @@ test("buildMediaResponsePayload exposes route-friendly media metadata", () => {
 
   assert.equal(payload.url, "/api/media/media-1");
   assert.equal(payload.storageProvider, "mongo-inline");
+});
+
+test("isRetriableObjectStorageError detects permanent redirect endpoint failures", () => {
+  assert.equal(
+    isRetriableObjectStorageError({ name: "PermanentRedirect", Code: "PermanentRedirect" }),
+    true
+  );
+  assert.equal(isRetriableObjectStorageError(new Error("random failure")), false);
+});
+
+test("uploadStoredMediaAssetWithFallback retries with mongo-inline when object storage throws a permanent redirect", async () => {
+  const asset = await uploadStoredMediaAssetWithFallback({
+    filename: "traveler.jpg",
+    contentType: "image/jpeg",
+    buffer: Buffer.from("hello"),
+    tenantId: "tenant-77",
+    primaryStrategy: getObjectStorageStrategy({
+      MEDIA_STORAGE_PROVIDER: "s3-compatible",
+      S3_BUCKET: "maz-expeditions-assets",
+      S3_ENDPOINT: "https://maz-expeditions-assets.s3.amazonaws.com",
+    }),
+    fallbackStrategy: getObjectStorageStrategy({
+      MEDIA_STORAGE_PROVIDER: "mongo-inline",
+    }),
+    s3Client: {
+      send: async () => {
+        const error = new Error("redirect");
+        error.name = "PermanentRedirect";
+        error.Code = "PermanentRedirect";
+        throw error;
+      },
+    },
+  });
+
+  assert.equal(asset.storageProvider, "mongo-inline");
+  assert.equal(Buffer.isBuffer(asset.inlineData), true);
 });

@@ -185,6 +185,45 @@ export const uploadStoredMediaAsset = async ({
   return asset;
 };
 
+export const isRetriableObjectStorageError = (error) => {
+  const code = String(error?.Code || error?.code || error?.name || "").trim();
+  return code === "PermanentRedirect";
+};
+
+export const uploadStoredMediaAssetWithFallback = async ({
+  filename,
+  contentType,
+  buffer,
+  tenantId,
+  primaryStrategy = getObjectStorageStrategy(),
+  fallbackStrategy = getObjectStorageStrategy({ MEDIA_STORAGE_PROVIDER: "mongo-inline" }),
+  s3Client = createObjectStorageClient(primaryStrategy),
+} = {}) => {
+  try {
+    return await uploadStoredMediaAsset({
+      filename,
+      contentType,
+      buffer,
+      tenantId,
+      strategy: primaryStrategy,
+      s3Client,
+    });
+  } catch (error) {
+    if (!isRetriableObjectStorageError(error)) {
+      throw error;
+    }
+
+    return uploadStoredMediaAsset({
+      filename,
+      contentType,
+      buffer,
+      tenantId,
+      strategy: fallbackStrategy,
+      s3Client: null,
+    });
+  }
+};
+
 export const buildMediaResponsePayload = (media = {}) => ({
   mediaId: media._id,
   url: media.publicUrl || `/api/media/${media._id}`,
