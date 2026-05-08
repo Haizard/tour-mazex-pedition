@@ -35,7 +35,7 @@ const PackageQuestionsPanel = ({
     setStatus("");
 
     try {
-      await createMarketplaceQuestion({
+      const response = await createMarketplaceQuestion({
         tenantId,
         tourId,
         sessionKey: getMarketplaceTravelerSessionKey(),
@@ -44,8 +44,13 @@ const PackageQuestionsPanel = ({
         questionBody: formData.questionBody,
       });
       setFormData(defaultForm);
-      setStatus("Your question was sent. It will appear once the operator's publication rules allow it.");
-      onSubmitted?.();
+      const createdQuestion = response.data || null;
+      setStatus(
+        createdQuestion?.status === "approved"
+          ? "Your question is now visible on this package."
+          : "Your question was sent and is now waiting for operator approval."
+      );
+      onSubmitted?.(createdQuestion);
     } catch (error) {
       setStatus(error?.response?.data?.message || "Unable to submit the question right now.");
     } finally {
@@ -160,4 +165,3 @@ const PackageQuestionsPanel = ({
 };
 
 export default PackageQuestionsPanel;
-

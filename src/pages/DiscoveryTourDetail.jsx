@@ -28,6 +28,7 @@ import {
   fetchMarketplaceReviews,
   fetchMarketplaceSavedTrips,
   fetchMarketplaceComparisons,
+  getMediaUrl,
   updateMarketplaceSavedTrips,
   updateMarketplaceComparisons,
 } from "../services/api";
@@ -50,6 +51,9 @@ const DiscoveryTourDetail = () => {
   const [reviewData, setReviewData] = useState({ summary: null, reviews: [] });
   const [photoData, setPhotoData] = useState([]);
   const [questionData, setQuestionData] = useState([]);
+  const [pendingReviewSubmissions, setPendingReviewSubmissions] = useState([]);
+  const [pendingPhotoSubmissions, setPendingPhotoSubmissions] = useState([]);
+  const [pendingQuestionSubmissions, setPendingQuestionSubmissions] = useState([]);
   const [savedTripIds, setSavedTripIds] = useState([]);
   const [comparisonTripIds, setComparisonTripIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +134,48 @@ const DiscoveryTourDetail = () => {
       setReviewData({ summary: null, reviews: [] });
       setPhotoData([]);
       setQuestionData([]);
+    }
+  };
+
+  const handleReviewSubmitted = (review) => {
+    if (review?.visibilityState === "public") {
+      reloadMarketplaceEngagement(tour);
+      return;
+    }
+
+    if (review) {
+      setPendingReviewSubmissions((current) => [
+        review,
+        ...current.filter((item) => item._id !== review._id && item.id !== review.id),
+      ]);
+    }
+  };
+
+  const handlePhotoSubmitted = (photo) => {
+    if (photo?.moderationStatus === "approved") {
+      reloadMarketplaceEngagement(tour);
+      return;
+    }
+
+    if (photo) {
+      setPendingPhotoSubmissions((current) => [
+        photo,
+        ...current.filter((item) => item._id !== photo._id && item.id !== photo.id),
+      ]);
+    }
+  };
+
+  const handleQuestionSubmitted = (question) => {
+    if (question?.status === "approved") {
+      reloadMarketplaceEngagement(tour);
+      return;
+    }
+
+    if (question) {
+      setPendingQuestionSubmissions((current) => [
+        question,
+        ...current.filter((item) => item._id !== question._id && item.id !== question.id),
+      ]);
     }
   };
 
@@ -572,29 +618,103 @@ const DiscoveryTourDetail = () => {
 
             <ReviewSummaryPanel summary={reviewData.summary || tour.marketplace} />
             <PublicReviewFeed reviews={reviewData.reviews || []} />
+            {pendingReviewSubmissions.length > 0 ? (
+              <section className="rounded-[36px] border border-[#d8c8ae] bg-[#fff8ec] p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                  Your Recent Review Submission
+                </p>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  Waiting for operator approval
+                </h2>
+                <div className="mt-5 space-y-4">
+                  {pendingReviewSubmissions.map((review, index) => (
+                    <div key={review._id || review.id || index} className="rounded-[28px] border border-[#eadab7] bg-white px-5 py-5">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+                        Pending review
+                      </p>
+                      <h3 className="mt-2 text-lg font-black uppercase tracking-tight text-slate-900">
+                        {review.headline || "Traveler review"}
+                      </h3>
+                      <p className="mt-2 text-sm font-medium leading-7 text-slate-600">
+                        {review.reviewBody}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
             {marketplaceControls.reviewsEnabled ? (
               <ReviewSubmissionForm
                 tenantId={tour.operator?.id || ""}
                 tourId={tour._id}
-                onSubmitted={() => reloadMarketplaceEngagement(tour)}
+                onSubmitted={handleReviewSubmitted}
               />
             ) : null}
 
             <TravelerPhotoGallery photos={photoData} />
+            {pendingPhotoSubmissions.length > 0 ? (
+              <section className="rounded-[36px] border border-[#d8c8ae] bg-[#fff8ec] p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                  Your Recent Photo Submission
+                </p>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  Waiting for operator approval
+                </h2>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {pendingPhotoSubmissions.map((photo, index) => (
+                    <div key={photo._id || photo.id || index} className="overflow-hidden rounded-[28px] border border-[#eadab7] bg-white">
+                      {photo.mediaUrl ? (
+                        <img src={getMediaUrl(photo.mediaUrl)} alt={photo.caption || "Pending traveler photo"} className="h-56 w-full object-cover" />
+                      ) : null}
+                      <div className="p-5">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+                          Pending photo
+                        </p>
+                        <p className="mt-2 text-sm font-medium leading-7 text-slate-600">
+                          {photo.caption || "Awaiting operator review before publication."}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
             {marketplaceControls.travelerPhotosEnabled ? (
               <TravelerPhotoSubmissionForm
                 tenantId={tour.operator?.id || ""}
                 tourId={tour._id}
-                onSubmitted={() => reloadMarketplaceEngagement(tour)}
+                onSubmitted={handlePhotoSubmitted}
               />
             ) : null}
 
+            {pendingQuestionSubmissions.length > 0 ? (
+              <section className="rounded-[36px] border border-[#d8c8ae] bg-[#fff8ec] p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                  Your Recent Question Submission
+                </p>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  Waiting for operator approval
+                </h2>
+                <div className="mt-5 space-y-4">
+                  {pendingQuestionSubmissions.map((question, index) => (
+                    <div key={question._id || question.id || index} className="rounded-[28px] border border-[#eadab7] bg-white px-5 py-5">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+                        Pending question
+                      </p>
+                      <h3 className="mt-2 text-lg font-black uppercase tracking-tight text-slate-900">
+                        {question.questionBody}
+                      </h3>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
             <PackageQuestionsPanel
               questions={questionData}
               tenantId={tour.operator?.id || ""}
               tourId={tour._id}
               communityEnabled={marketplaceControls.questionsEnabled}
-              onSubmitted={() => reloadMarketplaceEngagement(tour)}
+              onSubmitted={handleQuestionSubmitted}
             />
 
             {(Array.isArray(tour.faqs) && tour.faqs.length > 0) && (

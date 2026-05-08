@@ -36,7 +36,7 @@ const ReviewSubmissionForm = ({ tenantId = "", tourId = "", onSubmitted }) => {
     setStatus("");
 
     try {
-      await createMarketplaceReview({
+      const response = await createMarketplaceReview({
         tenantId,
         tourId,
         sessionKey: getMarketplaceTravelerSessionKey(),
@@ -55,8 +55,13 @@ const ReviewSubmissionForm = ({ tenantId = "", tourId = "", onSubmitted }) => {
           .slice(0, 5),
       });
       setFormData(defaultForm);
-      setStatus("Thanks. Your review was submitted and will follow the operator's moderation rules.");
-      onSubmitted?.();
+      const createdReview = response.data || null;
+      setStatus(
+        createdReview?.visibilityState === "public"
+          ? "Thanks. Your review is now live on this package."
+          : "Thanks. Your review was submitted and is now waiting for operator approval."
+      );
+      onSubmitted?.(createdReview);
     } catch (error) {
       setStatus(error?.response?.data?.message || "Unable to submit the review right now.");
     } finally {
@@ -217,4 +222,3 @@ const ReviewSubmissionForm = ({ tenantId = "", tourId = "", onSubmitted }) => {
 };
 
 export default ReviewSubmissionForm;
-

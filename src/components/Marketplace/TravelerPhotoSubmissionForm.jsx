@@ -43,7 +43,7 @@ const TravelerPhotoSubmissionForm = ({ tenantId = "", tourId = "", onSubmitted }
         throw new Error("Please provide a photo file or a media URL.");
       }
 
-      await createMarketplacePhoto({
+      const response = await createMarketplacePhoto({
         tenantId,
         tourId,
         sessionKey: getMarketplaceTravelerSessionKey(),
@@ -56,8 +56,13 @@ const TravelerPhotoSubmissionForm = ({ tenantId = "", tourId = "", onSubmitted }
 
       setFormData(defaultForm);
       setFile(null);
-      setStatus("Thanks. Your traveler photo was submitted for the marketplace gallery.");
-      onSubmitted?.();
+      const createdPhoto = response.data || null;
+      setStatus(
+        createdPhoto?.moderationStatus === "approved"
+          ? "Thanks. Your traveler photo is now visible in the package gallery."
+          : "Thanks. Your traveler photo was submitted and is now waiting for operator approval."
+      );
+      onSubmitted?.(createdPhoto);
     } catch (error) {
       setStatus(error?.response?.data?.message || error.message || "Unable to submit the photo right now.");
     } finally {
@@ -168,4 +173,3 @@ const TravelerPhotoSubmissionForm = ({ tenantId = "", tourId = "", onSubmitted }
 };
 
 export default TravelerPhotoSubmissionForm;
-
