@@ -4,10 +4,16 @@ import { FaSearch } from "react-icons/fa";
 
 import { motion } from "framer-motion";
 import {
+  answerMarketplaceQuestion,
   fetchInquiryQuotes,
+  fetchMarketplaceModerationQueue,
   fetchTours,
   createTour,
   updateTour,
+  updateMarketplacePhotoModeration,
+  updateMarketplaceQuestionModeration,
+  updateMarketplaceReviewModeration,
+  updateTenantMarketplaceSettings,
   deleteTour,
   regenerateTourDescription,
   fetchGallery,
@@ -78,6 +84,7 @@ import PartnerPortalManager from "../components/Admin/PartnerPortalManager";
 import PaymentAutomationManager from "../components/Admin/PaymentAutomationManager";
 import InfrastructureReadinessManager from "../components/Admin/InfrastructureReadinessManager";
 import DistributionManager from "../components/Admin/DistributionManager";
+import MarketplaceModerationManager from "../components/Admin/MarketplaceModerationManager";
 import MarketplaceVisibilityManager from "../components/Admin/MarketplaceVisibilityManager";
 import DynamicPricingManager from "../components/Admin/DynamicPricingManager";
 import TravelerAssistanceManager from "../components/Admin/TravelerAssistanceManager";
@@ -154,7 +161,7 @@ const AdminDashboard = () => {
   const recordTypeFromSearch = searchParams.get("recordType") || "";
   const recordIdFromSearch = searchParams.get("recordId") || "";
   const { logout } = useAdminAuth();
-  const { tenant } = useTenant();
+  const { tenant, refreshTenant } = useTenant();
   const [activeTab, setActiveTab] = useState(() => tabFromSearch || "packages");
   const [tours, setTours] = useState([]);
   const [gallery, setGallery] = useState([]);
@@ -166,6 +173,10 @@ const AdminDashboard = () => {
   const [faqs, setFaqs] = useState([]);
   const [taxonomies, setTaxonomies] = useState([]);
   const [visionaries, setVisionaries] = useState([]);
+  const [marketplaceSettings, setMarketplaceSettings] = useState(() => tenant?.marketplaceSettings || {});
+  const [marketplaceQueue, setMarketplaceQueue] = useState({ reviews: [], photos: [], questions: [] });
+  const [marketplaceQueueLoading, setMarketplaceQueueLoading] = useState(false);
+  const [marketplaceSettingsSaving, setMarketplaceSettingsSaving] = useState(false);
   const featureAccess = tenant?.access || {};
   const gatedTabAccess = {
     "social-accounts": featureAccess.socialAccounts,
@@ -229,6 +240,10 @@ const AdminDashboard = () => {
       setActiveTab("subscription");
     }
   }, [activeTab, gatedTabAccess]);
+
+  useEffect(() => {
+    setMarketplaceSettings(tenant?.marketplaceSettings || {});
+  }, [tenant?.marketplaceSettings]);
 
   // Form States
   const [tourFormData, setTourFormData] = useState(createDefaultTourFormData);
@@ -842,6 +857,87 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error(error);
       alert("Unable to update marketplace visibility right now.");
+    }
+  };
+
+  const loadMarketplaceModerationQueue = useCallback(async () => {
+    setMarketplaceQueueLoading(true);
+    try {
+      const response = await fetchMarketplaceModerationQueue();
+      setMarketplaceQueue(response.data || { reviews: [], photos: [], questions: [] });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setMarketplaceQueueLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "distribution") {
+      loadMarketplaceModerationQueue();
+    }
+  }, [activeTab, loadMarketplaceModerationQueue]);
+
+  const handleMarketplaceSettingChange = (field, value) => {
+    setMarketplaceSettings((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleSaveMarketplaceSettings = async () => {
+    setMarketplaceSettingsSaving(true);
+    try {
+      const response = await updateTenantMarketplaceSettings(marketplaceSettings);
+      setMarketplaceSettings(response.data?.marketplaceSettings || marketplaceSettings);
+      await refreshTenant?.();
+      await loadMarketplaceModerationQueue();
+      alert("Marketplace trust settings saved.");
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.message || "Unable to save marketplace settings right now.");
+    } finally {
+      setMarketplaceSettingsSaving(false);
+    }
+  };
+
+  const handleModerateMarketplaceReview = async (reviewId, payload) => {
+    try {
+      await updateMarketplaceReviewModeration(reviewId, payload);
+      await loadMarketplaceModerationQueue();
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.message || "Unable to update review moderation right now.");
+    }
+  };
+
+  const handleModerateMarketplacePhoto = async (photoId, payload) => {
+    try {
+      await updateMarketplacePhotoModeration(photoId, payload);
+      await loadMarketplaceModerationQueue();
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.message || "Unable to update photo moderation right now.");
+    }
+  };
+
+  const handleModerateMarketplaceQuestion = async (questionId, payload) => {
+    try {
+      await updateMarketplaceQuestionModeration(questionId, payload);
+      await loadMarketplaceModerationQueue();
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.message || "Unable to update question moderation right now.");
+    }
+  };
+
+  const handleAnswerMarketplaceQuestion = async (questionId, answerBody) => {
+    try {
+      await answerMarketplaceQuestion(questionId, {
+        answerBody,
+        authorType: "operator",
+      });
+      await loadMarketplaceModerationQueue();
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.message || "Unable to publish that answer right now.");
     }
   };
 
@@ -3734,6 +3830,19 @@ const AdminDashboard = () => {
               <MarketplaceVisibilityManager
                 tours={tours}
                 onToggle={handleMarketplaceVisibilityToggle}
+              />
+              <MarketplaceModerationManager
+                settings={marketplaceSettings}
+                onSettingsChange={handleMarketplaceSettingChange}
+                onSaveSettings={handleSaveMarketplaceSettings}
+                savingSettings={marketplaceSettingsSaving}
+                queue={marketplaceQueue}
+                toursById={Object.fromEntries(tours.map((tour) => [tour._id, tour]))}
+                onModerateReview={handleModerateMarketplaceReview}
+                onModeratePhoto={handleModerateMarketplacePhoto}
+                onModerateQuestion={handleModerateMarketplaceQuestion}
+                onAnswerQuestion={handleAnswerMarketplaceQuestion}
+                refreshing={marketplaceQueueLoading}
               />
             </div>
           )}

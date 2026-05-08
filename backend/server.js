@@ -44,6 +44,7 @@ import mediaRoutes from "./routes/mediaRoutes.js";
 import infrastructureRoutes from "./routes/infrastructureRoutes.js";
 import travelerPortalRoutes from "./routes/travelerPortalRoutes.js";
 import discoveryRoutes from "./routes/discoveryRoutes.js";
+import marketplaceEngagementRoutes from "./routes/marketplaceEngagementRoutes.js";
 import {
   applySecurityHeaders,
   attachRequestMetadata,
@@ -214,6 +215,7 @@ app.use("/api/marketing", marketingRoutes);
 app.use("/api/site-settings", siteSettingsRoutes);
 app.use("/api/social-accounts", socialAccountRoutes);
 app.use("/api/social-posts", socialPostRoutes);
+app.use("/api/marketplace", marketplaceEngagementRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/infrastructure", infrastructureRoutes);

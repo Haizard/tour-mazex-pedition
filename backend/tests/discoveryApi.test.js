@@ -3,8 +3,11 @@ import assert from "node:assert/strict";
 import express from "express";
 
 import discoveryRoutes from "../routes/discoveryRoutes.js";
+import MarketplaceQuestion from "../models/MarketplaceQuestion.js";
+import MarketplaceReview from "../models/MarketplaceReview.js";
 import TourPackage from "../models/TourPackage.js";
 import Tenant from "../models/Tenant.js";
+import TravelerPhotoSubmission from "../models/TravelerPhotoSubmission.js";
 
 const startTestServer = async (app) =>
   new Promise((resolve) => {
@@ -136,12 +139,18 @@ test("Discovery API - B2C Global Marketplace", async (t) => {
   const originalTourFindOne = TourPackage.findOne;
   const originalTourCount = TourPackage.countDocuments;
   const originalTenantFind = Tenant.find;
+  const originalReviewFind = MarketplaceReview.find;
+  const originalPhotoCount = TravelerPhotoSubmission.countDocuments;
+  const originalQuestionCount = MarketplaceQuestion.countDocuments;
 
   t.afterEach(() => {
     TourPackage.find = originalTourFind;
     TourPackage.findOne = originalTourFindOne;
     TourPackage.countDocuments = originalTourCount;
     Tenant.find = originalTenantFind;
+    MarketplaceReview.find = originalReviewFind;
+    TravelerPhotoSubmission.countDocuments = originalPhotoCount;
+    MarketplaceQuestion.countDocuments = originalQuestionCount;
   });
 
   const mockTours = [
@@ -194,6 +203,11 @@ test("Discovery API - B2C Global Marketplace", async (t) => {
   const installTourMocks = () => {
     TourPackage.find = (query = {}) => createChain(applyDiscoveryQuery(mockTours, query));
     TourPackage.countDocuments = async (query = {}) => applyDiscoveryQuery(mockTours, query).length;
+    MarketplaceReview.find = () => ({
+      lean: async () => [],
+    });
+    TravelerPhotoSubmission.countDocuments = async () => 0;
+    MarketplaceQuestion.countDocuments = async () => 0;
   };
 
   await t.test("should only return tours where isMarketplaceVisible is true", async () => {

@@ -14,6 +14,17 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
+import PackageQuestionsPanel from "../components/Marketplace/PackageQuestionsPanel";
+import PublicReviewFeed from "../components/Marketplace/PublicReviewFeed";
+import ReviewSubmissionForm from "../components/Marketplace/ReviewSubmissionForm";
+import ReviewSummaryPanel from "../components/Marketplace/ReviewSummaryPanel";
+import TravelerPhotoGallery from "../components/Marketplace/TravelerPhotoGallery";
+import TravelerPhotoSubmissionForm from "../components/Marketplace/TravelerPhotoSubmissionForm";
+import {
+  fetchMarketplacePhotos,
+  fetchMarketplaceQuestions,
+  fetchMarketplaceReviews,
+} from "../services/api";
 
 const getDiscoveryApiUrl = (path, params = null) => {
   const query = params ? `?${params.toString()}` : "";
@@ -29,6 +40,9 @@ const DiscoveryTourDetail = () => {
   const { id } = useParams();
   const [tour, setTour] = useState(null);
   const [relatedTours, setRelatedTours] = useState([]);
+  const [reviewData, setReviewData] = useState({ summary: null, reviews: [] });
+  const [photoData, setPhotoData] = useState([]);
+  const [questionData, setQuestionData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -83,6 +97,35 @@ const DiscoveryTourDetail = () => {
     };
 
     fetchRelatedTours();
+  }, [tour]);
+
+  const reloadMarketplaceEngagement = async (activeTour = tour) => {
+    if (!activeTour?._id) {
+      return;
+    }
+
+    try {
+      const [reviewsResponse, photosResponse, questionsResponse] = await Promise.all([
+        fetchMarketplaceReviews(activeTour._id, {
+          tenantId: activeTour.operator?.id || "",
+        }),
+        fetchMarketplacePhotos(activeTour._id),
+        fetchMarketplaceQuestions(activeTour._id),
+      ]);
+
+      setReviewData(reviewsResponse.data || { summary: null, reviews: [] });
+      setPhotoData(photosResponse.data || []);
+      setQuestionData(questionsResponse.data || []);
+    } catch (error) {
+      console.error("Marketplace engagement error:", error);
+      setReviewData({ summary: null, reviews: [] });
+      setPhotoData([]);
+      setQuestionData([]);
+    }
+  };
+
+  useEffect(() => {
+    reloadMarketplaceEngagement();
   }, [tour]);
 
   const itineraryStops = useMemo(() => {
@@ -432,6 +475,29 @@ const DiscoveryTourDetail = () => {
                 </div>
               </section>
             )}
+
+            <ReviewSummaryPanel summary={reviewData.summary || tour.marketplace} />
+            <PublicReviewFeed reviews={reviewData.reviews || []} />
+            <ReviewSubmissionForm
+              tenantId={tour.operator?.id || ""}
+              tourId={tour._id}
+              onSubmitted={() => reloadMarketplaceEngagement(tour)}
+            />
+
+            <TravelerPhotoGallery photos={photoData} />
+            <TravelerPhotoSubmissionForm
+              tenantId={tour.operator?.id || ""}
+              tourId={tour._id}
+              onSubmitted={() => reloadMarketplaceEngagement(tour)}
+            />
+
+            <PackageQuestionsPanel
+              questions={questionData}
+              tenantId={tour.operator?.id || ""}
+              tourId={tour._id}
+              communityEnabled={tour.operator?.marketplaceSettings?.allowCommunityQnA !== false}
+              onSubmitted={() => reloadMarketplaceEngagement(tour)}
+            />
 
             {(Array.isArray(tour.faqs) && tour.faqs.length > 0) && (
               <section className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">

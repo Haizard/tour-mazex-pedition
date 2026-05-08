@@ -69,6 +69,17 @@ const domainProviderSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const marketplaceSettingsSchema = new mongoose.Schema(
+  {
+    autoPublishVerifiedReviews: { type: Boolean, default: false },
+    autoPublishTravelerQuestions: { type: Boolean, default: false },
+    requirePhotoModeration: { type: Boolean, default: true },
+    includeInquiryFeedbackInRatings: { type: Boolean, default: false },
+    allowCommunityQnA: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
 const tenantSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -153,6 +164,16 @@ const tenantSchema = new mongoose.Schema(
         zoneId: "",
         accountId: "",
         nameserverMode: "external",
+      }),
+    },
+    marketplaceSettings: {
+      type: marketplaceSettingsSchema,
+      default: () => ({
+        autoPublishVerifiedReviews: false,
+        autoPublishTravelerQuestions: false,
+        requirePhotoModeration: true,
+        includeInquiryFeedbackInRatings: false,
+        allowCommunityQnA: true,
       }),
     },
   },

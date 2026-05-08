@@ -351,6 +351,8 @@ export const fetchTenantBootstrap = () =>
 export const fetchTenantSiteConfig = () => cachedGet("/tenant/site-config");
 export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", data);
 export const updateTenantDomainRequest = (data) => API.put("/tenant/domain-request", data);
+export const updateTenantMarketplaceSettings = (data) =>
+  API.put("/tenant/marketplace-settings", data);
 export const fetchPageConfig = (pageType = "home") =>
   cachedGet(`/page-config/${encodeURIComponent(pageType)}`);
 export const fetchPageConfigs = () => cachedGet("/page-config/list/all");
@@ -485,6 +487,28 @@ export const analyzeTourismLeadDiscoverySource = (data) =>
   API.post("/marketplace/lead-discovery/analyze", data);
 export const fetchTourismLeadDiscoveryCandidates = (params = {}) =>
   cachedGet("/marketplace/lead-discovery/candidates", { params });
+export const fetchMarketplaceReviews = (tourId, params = {}) =>
+  cachedGet(`/marketplace/tours/${tourId}/reviews`, { params });
+export const createMarketplaceReview = (payload) =>
+  API.post("/marketplace/reviews", payload);
+export const updateMarketplaceReviewModeration = (id, payload) =>
+  API.patch(`/marketplace/reviews/${id}`, payload);
+export const fetchMarketplacePhotos = (tourId) =>
+  cachedGet(`/marketplace/tours/${tourId}/photos`);
+export const createMarketplacePhoto = (payload) =>
+  API.post("/marketplace/photos", payload);
+export const updateMarketplacePhotoModeration = (id, payload) =>
+  API.patch(`/marketplace/photos/${id}`, payload);
+export const fetchMarketplaceQuestions = (tourId) =>
+  cachedGet(`/marketplace/tours/${tourId}/questions`);
+export const createMarketplaceQuestion = (payload) =>
+  API.post("/marketplace/questions", payload);
+export const answerMarketplaceQuestion = (questionId, payload) =>
+  API.post(`/marketplace/questions/${questionId}/answers`, payload);
+export const updateMarketplaceQuestionModeration = (id, payload) =>
+  API.patch(`/marketplace/questions/${id}`, payload);
+export const fetchMarketplaceModerationQueue = () =>
+  cachedGet("/marketplace/moderation");
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
 export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);

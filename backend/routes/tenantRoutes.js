@@ -22,6 +22,14 @@ const getFallbackSiteConfig = (tenant) =>
     ? DEFAULT_TENANT_SITE_CONFIG
     : EMPTY_TENANT_SITE_CONFIG;
 
+export const sanitizeMarketplaceSettings = (input = {}) => ({
+  autoPublishVerifiedReviews: input.autoPublishVerifiedReviews === true,
+  autoPublishTravelerQuestions: input.autoPublishTravelerQuestions === true,
+  requirePhotoModeration: input.requirePhotoModeration !== false,
+  includeInquiryFeedbackInRatings: input.includeInquiryFeedbackInRatings === true,
+  allowCommunityQnA: input.allowCommunityQnA !== false,
+});
+
 const sanitizeSiteConfigForTenant = (tenant, config) => {
   const fallbackConfig = getFallbackSiteConfig(tenant);
 
@@ -126,6 +134,7 @@ router.get("/bootstrap", async (req, res) => {
         features: req.tenant.features || {},
         subscription: req.tenant.subscription || null,
         domainService: req.tenant.domainService || null,
+        marketplaceSettings: sanitizeMarketplaceSettings(req.tenant.marketplaceSettings || {}),
         access: {
           socialAccounts: canAccessFeature(req.tenant.subscription, "social-accounts"),
           socialPosts: canAccessFeature(req.tenant.subscription, "social-posts"),
@@ -205,6 +214,22 @@ router.put("/domain-request", requireTenantAdmin, async (req, res) => {
         customDomains: tenant.customDomains || [],
         domainService: tenant.domainService || null,
       },
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.put("/marketplace-settings", requireTenantAdmin, async (req, res) => {
+  try {
+    const tenant = await Tenant.findByIdAndUpdate(
+      req.tenantId,
+      { marketplaceSettings: sanitizeMarketplaceSettings(req.body || {}) },
+      { new: true, runValidators: true }
+    ).lean();
+
+    res.status(200).json({
+      marketplaceSettings: sanitizeMarketplaceSettings(tenant?.marketplaceSettings || {}),
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

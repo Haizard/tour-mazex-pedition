@@ -1,6 +1,10 @@
 import express from "express";
+import MarketplaceQuestion from "../models/MarketplaceQuestion.js";
+import MarketplaceReview from "../models/MarketplaceReview.js";
 import TourPackage from "../models/TourPackage.js";
 import Tenant from "../models/Tenant.js";
+import TravelerPhotoSubmission from "../models/TravelerPhotoSubmission.js";
+import { buildMarketplaceReviewSummary } from "../utils/marketplaceReviewAggregation.js";
 
 const router = express.Router();
 
@@ -41,14 +45,54 @@ const toDiscoveryCard = (tour = {}) => ({
   tripAdvisorReviewCount: tour.tripAdvisorReviewCount ?? null,
 });
 
+export const toDiscoveryCardWithEngagement = (tour = {}, marketplace = {}) => ({
+  ...toDiscoveryCard(tour),
+  marketplace: {
+    averageRating: marketplace.averageRating ?? null,
+    reviewCount: marketplace.reviewCount ?? 0,
+    topSentimentTags: marketplace.topSentimentTags || [],
+    photoCount: marketplace.photoCount ?? 0,
+    questionCount: marketplace.questionCount ?? 0,
+  },
+});
+
 const toDiscoveryDetail = (tour = {}) => ({
   ...tour,
   operator: {
     id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
     name: tour.tenantId?.name || "Verified Operator",
     slug: tour.tenantId?.slug || "",
+    marketplaceSettings: tour.tenantId?.marketplaceSettings || null,
   },
 });
+
+const fetchMarketplaceSnapshot = async (tourId, options = {}) => {
+  const [reviews, photoCount, questionCount] = await Promise.all([
+    MarketplaceReview.find({
+      tourId,
+      visibilityState: "public",
+      moderationStatus: "approved",
+    }).lean(),
+    TravelerPhotoSubmission.countDocuments({
+      tourId,
+      moderationStatus: "approved",
+    }),
+    MarketplaceQuestion.countDocuments({
+      tourId,
+      status: "approved",
+    }),
+  ]);
+
+  const summary = buildMarketplaceReviewSummary(reviews, {
+    includeInquiryFeedbackInRatings: options.includeInquiryFeedbackInRatings === true,
+  });
+
+  return {
+    ...summary,
+    photoCount,
+    questionCount,
+  };
+};
 
 const buildDiscoveryQuery = async ({ q, location, minPrice, maxPrice, category, operator, duration }) => {
   const query = { isMarketplaceVisible: true };
@@ -146,8 +190,17 @@ router.get("/tours", async (req, res) => {
 
     const total = await TourPackage.countDocuments(query);
 
+    const toursWithMarketplace = await Promise.all(
+      tours.map(async (tour) =>
+        toDiscoveryCardWithEngagement(
+          tour,
+          await fetchMarketplaceSnapshot(tour._id)
+        )
+      )
+    );
+
     res.status(200).json({
-      tours: tours.map(toDiscoveryCard),
+      tours: toursWithMarketplace,
       pagination: {
         total,
         page: parsedPage,
@@ -169,14 +222,20 @@ router.get("/tours/:id", async (req, res) => {
       _id: req.params.id,
       isMarketplaceVisible: true,
     })
-      .populate("tenantId", "name slug")
+      .populate("tenantId", "name slug marketplaceSettings")
       .lean();
 
     if (!tour) {
       return res.status(404).json({ message: "Tour not found in marketplace." });
     }
 
-    res.status(200).json(toDiscoveryDetail(tour));
+    const marketplace = await fetchMarketplaceSnapshot(tour._id);
+
+    res.status(200).json({
+      ...toDiscoveryDetail(tour),
+      isMarketplaceVisible: tour.isMarketplaceVisible === true,
+      marketplace,
+    });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch tour details", error: error.message });
   }
