@@ -44,6 +44,9 @@ const tourPackageSchema = new mongoose.Schema({
   featured: { type: Boolean, default: false },
   isPubliclyDistributable: { type: Boolean, default: true },
   isMarketplaceVisible: { type: Boolean, default: false },
+  allowMarketplaceReviews: { type: Boolean, default: true },
+  allowTravelerPhotos: { type: Boolean, default: true },
+  allowMarketplaceQuestions: { type: Boolean, default: true },
   // Group Tour Fields
   isGroupTour: { type: Boolean, default: false },
   maxCapacity: { type: Number, default: 0 },

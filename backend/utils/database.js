@@ -59,7 +59,6 @@ const ensureLegacyFoundationReady = async () => {
     state.legacyFoundationPromise = ensureLegacyTenantFoundation()
       .then(() => {
         state.legacyFoundationReady = true;
-        console.log("Legacy tenant foundation ready");
       })
       .catch((error) => {
         state.legacyFoundationPromise = null;

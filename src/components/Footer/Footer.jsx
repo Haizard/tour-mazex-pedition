@@ -44,7 +44,6 @@ const PLATFORM_BLOGS = [
   { title: "For Operators", link: "/operators" },
   { title: "Affiliate Partners", link: "/partners" },
   { title: "Demo Tenant", link: "/demo/mazexpeditions" },
-  { title: "Platform Admin", link: "/platform/login" },
   { title: "Security", link: "/security" },
 ];
 
@@ -313,9 +312,9 @@ const Footer = () => {
                 : `Copyright ©${new Date().getFullYear()} ${brandName}`)}
           </p>
 
-          <Link to={isPlatform ? "/platform/login" : "/login"} className="opacity-5 transition-opacity hover:opacity-30">
+          <span className="inline-flex h-4 w-4 items-center justify-center opacity-0">
             <FaShieldAlt size={10} className="text-gray-400" />
-          </Link>
+          </span>
         </div>
       </div>
     </footer>

@@ -136,6 +136,9 @@ const createDefaultTourFormData = () => ({
   tripAdvisorReviewCount: "",
   isMarketplaceVisible: false,
   isPubliclyDistributable: true,
+  allowMarketplaceReviews: true,
+  allowTravelerPhotos: true,
+  allowMarketplaceQuestions: true,
   isGroupTour: false,
   maxCapacity: 12,
   currentBookings: 0,
@@ -1905,6 +1908,75 @@ const AdminDashboard = () => {
                         </span>
                       </label>
                     </div>
+                    <div className="mt-5 rounded-[24px] border border-white/80 bg-white p-5 shadow-sm">
+                      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                            Traveler Activity Permissions
+                          </p>
+                          <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                            Decide whether travelers can add reviews, share trip photos, or ask public questions
+                            on this package detail page.
+                          </p>
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                          Global moderation rules still apply
+                        </p>
+                      </div>
+                      <div className="mt-5 grid gap-4 lg:grid-cols-3">
+                        <label className="flex items-start gap-4 rounded-[20px] border border-slate-100 bg-slate-50 px-4 py-4">
+                          <input
+                            type="checkbox"
+                            name="allowMarketplaceReviews"
+                            checked={Boolean(tourFormData.allowMarketplaceReviews)}
+                            onChange={handleTourInputChange}
+                            className="mt-1 h-5 w-5 rounded accent-primary"
+                          />
+                          <span>
+                            <span className="block text-sm font-black uppercase tracking-wide text-slate-900">
+                              Allow Reviews
+                            </span>
+                            <span className="mt-1 block text-sm font-medium leading-6 text-slate-600">
+                              Travelers can submit verified package reviews.
+                            </span>
+                          </span>
+                        </label>
+                        <label className="flex items-start gap-4 rounded-[20px] border border-slate-100 bg-slate-50 px-4 py-4">
+                          <input
+                            type="checkbox"
+                            name="allowTravelerPhotos"
+                            checked={Boolean(tourFormData.allowTravelerPhotos)}
+                            onChange={handleTourInputChange}
+                            className="mt-1 h-5 w-5 rounded accent-primary"
+                          />
+                          <span>
+                            <span className="block text-sm font-black uppercase tracking-wide text-slate-900">
+                              Allow Shared Travel Moments
+                            </span>
+                            <span className="mt-1 block text-sm font-medium leading-6 text-slate-600">
+                              Travelers can upload trip photos to the marketplace gallery.
+                            </span>
+                          </span>
+                        </label>
+                        <label className="flex items-start gap-4 rounded-[20px] border border-slate-100 bg-slate-50 px-4 py-4">
+                          <input
+                            type="checkbox"
+                            name="allowMarketplaceQuestions"
+                            checked={Boolean(tourFormData.allowMarketplaceQuestions)}
+                            onChange={handleTourInputChange}
+                            className="mt-1 h-5 w-5 rounded accent-primary"
+                          />
+                          <span>
+                            <span className="block text-sm font-black uppercase tracking-wide text-slate-900">
+                              Allow Public Questions
+                            </span>
+                            <span className="mt-1 block text-sm font-medium leading-6 text-slate-600">
+                              Travelers can ask questions on the package page.
+                            </span>
+                          </span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
 
                   {/* FAQs */}
@@ -2127,6 +2199,12 @@ const AdminDashboard = () => {
                               isMarketplaceVisible: Boolean(t.isMarketplaceVisible),
                               isPubliclyDistributable:
                                 t.isPubliclyDistributable !== false,
+                              allowMarketplaceReviews:
+                                t.allowMarketplaceReviews !== false,
+                              allowTravelerPhotos:
+                                t.allowTravelerPhotos !== false,
+                              allowMarketplaceQuestions:
+                                t.allowMarketplaceQuestions !== false,
                               launchDate: t.launchDate || "",
                               isGroupTour: Boolean(t.isGroupTour),
                               maxCapacity: t.maxCapacity ?? 12,

@@ -102,7 +102,11 @@ const findOrCreateTravelerIdentity = (input) =>
 const loadTenantAndTour = async ({ tenantId, tourId }) => {
   const [tenant, tour] = await Promise.all([
     Tenant.findById(tenantId).lean(),
-    TourPackage.findById(tourId).select("_id tenantId isMarketplaceVisible").lean(),
+    TourPackage.findById(tourId)
+      .select(
+        "_id tenantId isMarketplaceVisible allowMarketplaceReviews allowTravelerPhotos allowMarketplaceQuestions"
+      )
+      .lean(),
   ]);
 
   if (!tenant) {
@@ -114,6 +118,30 @@ const loadTenantAndTour = async ({ tenantId, tourId }) => {
   }
 
   return { tenant, tour };
+};
+
+const assertMarketplaceActionAllowed = (tour = {}, action = "", tenant = {}) => {
+  if (tour.isMarketplaceVisible !== true) {
+    throw new Error("This package is not currently available on the marketplace.");
+  }
+
+  if (action === "reviews" && tour.allowMarketplaceReviews === false) {
+    throw new Error("Reviews are currently disabled for this package.");
+  }
+
+  if (action === "photos" && tour.allowTravelerPhotos === false) {
+    throw new Error("Traveler photo sharing is currently disabled for this package.");
+  }
+
+  if (action === "questions") {
+    if (tenant.marketplaceSettings?.allowCommunityQnA === false) {
+      throw new Error("Community questions are disabled for this operator.");
+    }
+
+    if (tour.allowMarketplaceQuestions === false) {
+      throw new Error("Public questions are currently disabled for this package.");
+    }
+  }
 };
 
 export const buildPublicReviewPayload = (review = {}) => ({
@@ -285,10 +313,11 @@ export const buildComparisonPayload = ({ comparisonSet = {}, tours = [] } = {}) 
 
 router.post("/reviews", async (req, res) => {
   try {
-    const { tenant } = await loadTenantAndTour({
+    const { tenant, tour } = await loadTenantAndTour({
       tenantId: req.body.tenantId,
       tourId: req.body.tourId,
     });
+    assertMarketplaceActionAllowed(tour, "reviews", tenant);
 
     const review = await createMarketplaceReviewRecord(req.body, {
       resolveIdentity: findOrCreateTravelerIdentity,
@@ -400,10 +429,11 @@ router.patch("/reviews/:id", requireTenantAdmin, async (req, res) => {
 
 router.post("/photos", async (req, res) => {
   try {
-    const { tenant } = await loadTenantAndTour({
+    const { tenant, tour } = await loadTenantAndTour({
       tenantId: req.body.tenantId,
       tourId: req.body.tourId,
     });
+    assertMarketplaceActionAllowed(tour, "photos", tenant);
     const identity = await findOrCreateTravelerIdentity({
       sessionKey: req.body.sessionKey,
       email: req.body.email,
@@ -464,13 +494,11 @@ router.patch("/photos/:id", requireTenantAdmin, async (req, res) => {
 
 router.post("/questions", async (req, res) => {
   try {
-    const { tenant } = await loadTenantAndTour({
+    const { tenant, tour } = await loadTenantAndTour({
       tenantId: req.body.tenantId,
       tourId: req.body.tourId,
     });
-    if (tenant.marketplaceSettings?.allowCommunityQnA === false) {
-      return res.status(403).json({ message: "Community questions are disabled for this operator." });
-    }
+    assertMarketplaceActionAllowed(tour, "questions", tenant);
 
     const identity = await findOrCreateTravelerIdentity({
       sessionKey: req.body.sessionKey,

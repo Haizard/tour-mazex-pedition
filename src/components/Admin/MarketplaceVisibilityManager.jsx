@@ -98,6 +98,7 @@ const MarketplaceVisibilityManager = ({ tours = [], onToggle }) => {
               <th className="pb-4">Price</th>
               <th className="pb-4">Discover Status</th>
               <th className="pb-4">Partner Status</th>
+              <th className="pb-4">Traveler Activity</th>
               <th className="pb-4">Actions</th>
             </tr>
           </thead>
@@ -122,6 +123,19 @@ const MarketplaceVisibilityManager = ({ tours = [], onToggle }) => {
                   <Badge variant={statusBadgeVariant(tour.isPubliclyDistributable !== false)}>
                     {tour.isPubliclyDistributable !== false ? "Enabled" : "Blocked"}
                   </Badge>
+                </td>
+                <td className="py-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant={statusBadgeVariant(tour.allowMarketplaceReviews !== false)}>
+                      Reviews
+                    </Badge>
+                    <Badge variant={statusBadgeVariant(tour.allowTravelerPhotos !== false)}>
+                      Photos
+                    </Badge>
+                    <Badge variant={statusBadgeVariant(tour.allowMarketplaceQuestions !== false)}>
+                      Q&A
+                    </Badge>
+                  </div>
                 </td>
                 <td className="py-4">
                   <div className="flex flex-wrap gap-2">
@@ -155,7 +169,7 @@ const MarketplaceVisibilityManager = ({ tours = [], onToggle }) => {
             ))}
             {filteredTours.length === 0 && (
               <tr>
-                <td colSpan="7" className="py-10 text-center text-sm font-medium text-slate-400">
+                <td colSpan="8" className="py-10 text-center text-sm font-medium text-slate-400">
                   No packages matched that search.
                 </td>
               </tr>

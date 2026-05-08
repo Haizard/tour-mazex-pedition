@@ -111,7 +111,7 @@ const Gallery = () => {
           <p className="mt-6 text-sm md:text-base text-[#efe1cf] max-w-3xl font-medium leading-relaxed">
             A curated visual story from our real adventures in Tanzania.
             Discover wildlife encounters, landscapes, and traveler experiences
-            uploaded directly from your gallery database.
+            uploaded directly into your live gallery.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">

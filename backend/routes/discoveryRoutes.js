@@ -58,6 +58,13 @@ export const toDiscoveryCardWithEngagement = (tour = {}, marketplace = {}) => ({
 
 const toDiscoveryDetail = (tour = {}) => ({
   ...tour,
+  marketplaceControls: {
+    reviewsEnabled: tour.allowMarketplaceReviews !== false,
+    travelerPhotosEnabled: tour.allowTravelerPhotos !== false,
+    questionsEnabled:
+      tour.allowMarketplaceQuestions !== false &&
+      tour.tenantId?.marketplaceSettings?.allowCommunityQnA !== false,
+  },
   operator: {
     id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
     name: tour.tenantId?.name || "Verified Operator",

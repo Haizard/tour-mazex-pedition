@@ -51,9 +51,7 @@ const AdminLogin = () => {
         credentials.username.trim().toLowerCase() === "platform-admin";
       setError(
         loginError.response?.data?.message ||
-          (isPlatformAttempt
-            ? "Invalid platform credentials. Try /platform/login."
-            : "Invalid credentials. Access denied.")
+          "Invalid credentials. Access denied."
       );
     } finally {
       setSubmitting(false);
@@ -91,8 +89,7 @@ const AdminLogin = () => {
               Sign In
             </h2>
             <p className="text-gray-500 text-sm mt-2 font-medium">
-              Enter tenant credentials here. Super admin credentials are routed
-              to the platform console automatically.
+              Enter your workspace credentials to access the tenant dashboard.
             </p>
           </div>
 
@@ -113,7 +110,7 @@ const AdminLogin = () => {
               value={credentials.username}
               onChange={handleChange}
               className="bg-white/5 border border-white/10 text-white p-4 rounded-2xl outline-none focus:border-primary/60 focus:bg-white/10 transition font-medium placeholder:text-gray-600"
-                placeholder="admin or platform-admin"
+                placeholder="Enter username"
                 required
               />
             </div>
@@ -139,14 +136,6 @@ const AdminLogin = () => {
               {submitting || loading || platformLoading ? "Authenticating..." : "Access Dashboard ->"}
             </button>
           </form>
-
-          <button
-            type="button"
-            onClick={() => navigate("/platform/login")}
-            className="w-full border border-white/10 text-gray-300 font-black py-4 rounded-2xl uppercase tracking-widest hover:bg-white/5 transition"
-          >
-            Open Super Admin Login
-          </button>
 
           <button
             onClick={() => navigate("/")}

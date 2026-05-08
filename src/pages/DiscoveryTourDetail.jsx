@@ -221,6 +221,15 @@ const DiscoveryTourDetail = () => {
     return images.slice(0, 4);
   }, [tour]);
 
+  const marketplaceControls = useMemo(
+    () => ({
+      reviewsEnabled: tour?.marketplaceControls?.reviewsEnabled !== false,
+      travelerPhotosEnabled: tour?.marketplaceControls?.travelerPhotosEnabled !== false,
+      questionsEnabled: tour?.marketplaceControls?.questionsEnabled !== false,
+    }),
+    [tour],
+  );
+
   const quickStats = useMemo(
     () => [
       {
@@ -411,6 +420,24 @@ const DiscoveryTourDetail = () => {
                         </p>
                       </div>
                     </div>
+
+                    <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
+                      <FaHeart className="mt-1 text-primary" />
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                          Traveler activity
+                        </p>
+                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                          {[
+                            marketplaceControls.reviewsEnabled ? "reviews" : null,
+                            marketplaceControls.travelerPhotosEnabled ? "shared travel moments" : null,
+                            marketplaceControls.questionsEnabled ? "public questions" : null,
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || "Marketplace community actions are currently turned off for this package."}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -545,24 +572,28 @@ const DiscoveryTourDetail = () => {
 
             <ReviewSummaryPanel summary={reviewData.summary || tour.marketplace} />
             <PublicReviewFeed reviews={reviewData.reviews || []} />
-            <ReviewSubmissionForm
-              tenantId={tour.operator?.id || ""}
-              tourId={tour._id}
-              onSubmitted={() => reloadMarketplaceEngagement(tour)}
-            />
+            {marketplaceControls.reviewsEnabled ? (
+              <ReviewSubmissionForm
+                tenantId={tour.operator?.id || ""}
+                tourId={tour._id}
+                onSubmitted={() => reloadMarketplaceEngagement(tour)}
+              />
+            ) : null}
 
             <TravelerPhotoGallery photos={photoData} />
-            <TravelerPhotoSubmissionForm
-              tenantId={tour.operator?.id || ""}
-              tourId={tour._id}
-              onSubmitted={() => reloadMarketplaceEngagement(tour)}
-            />
+            {marketplaceControls.travelerPhotosEnabled ? (
+              <TravelerPhotoSubmissionForm
+                tenantId={tour.operator?.id || ""}
+                tourId={tour._id}
+                onSubmitted={() => reloadMarketplaceEngagement(tour)}
+              />
+            ) : null}
 
             <PackageQuestionsPanel
               questions={questionData}
               tenantId={tour.operator?.id || ""}
               tourId={tour._id}
-              communityEnabled={tour.operator?.marketplaceSettings?.allowCommunityQnA !== false}
+              communityEnabled={marketplaceControls.questionsEnabled}
               onSubmitted={() => reloadMarketplaceEngagement(tour)}
             />
 

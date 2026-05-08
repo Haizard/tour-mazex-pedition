@@ -40,7 +40,7 @@ const lifecycle = [
 const platformStats = [
   ["Multi-tenant", "operator websites"],
   ["AI agents", "for sales and service"],
-  ["PostgreSQL + Mongo", "business truth foundation"],
+  ["Unified operations", "shared business foundation"],
   ["Marketplace", "commission-ready inventory"],
 ];
 
