@@ -139,6 +139,7 @@ const createDefaultTourFormData = () => ({
   allowMarketplaceReviews: true,
   allowTravelerPhotos: true,
   allowMarketplaceQuestions: true,
+  marketplaceAvailability: [{ date: "", status: "available", remainingSpots: "", note: "" }],
   isGroupTour: false,
   maxCapacity: 12,
   currentBookings: 0,
@@ -720,6 +721,30 @@ const AdminDashboard = () => {
       ...tourFormData,
       [e.target.name]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
     });
+  const handleAvailabilityEntryChange = (index, field, value) => {
+    const nextEntries = [...(tourFormData.marketplaceAvailability || [])];
+    nextEntries[index] = {
+      ...(nextEntries[index] || { date: "", status: "available", remainingSpots: "", note: "" }),
+      [field]: value,
+    };
+    setTourFormData({
+      ...tourFormData,
+      marketplaceAvailability: nextEntries,
+    });
+  };
+  const addAvailabilityEntry = () =>
+    setTourFormData({
+      ...tourFormData,
+      marketplaceAvailability: [
+        ...(tourFormData.marketplaceAvailability || []),
+        { date: "", status: "available", remainingSpots: "", note: "" },
+      ],
+    });
+  const removeAvailabilityEntry = (index) =>
+    setTourFormData({
+      ...tourFormData,
+      marketplaceAvailability: (tourFormData.marketplaceAvailability || []).filter((_, entryIndex) => entryIndex !== index),
+    });
   const handleBlogInputChange = (e) =>
     setBlogFormData({ ...blogFormData, [e.target.name]: e.target.value });
   const handleFaqInputChange = (e) =>
@@ -1008,6 +1033,17 @@ const AdminDashboard = () => {
       tripAdvisorReviewCount: tourFormData.tripAdvisorReviewCount
         ? Number(tourFormData.tripAdvisorReviewCount)
         : undefined,
+      marketplaceAvailability: (tourFormData.marketplaceAvailability || [])
+        .map((entry) => ({
+          date: entry.date,
+          status: entry.status || "available",
+          remainingSpots:
+            entry.remainingSpots === "" || entry.remainingSpots === null || typeof entry.remainingSpots === "undefined"
+              ? null
+              : Number(entry.remainingSpots),
+          note: entry.note || "",
+        }))
+        .filter((entry) => entry.date),
       seo: {
         title: tourFormData.seoTitle,
         description: tourFormData.seoDescription,
@@ -1622,6 +1658,86 @@ const AdminDashboard = () => {
                     )}
                   </div>
 
+                  <div className="rounded-[28px] border border-[#d9d3c2] bg-white p-6 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-primary">
+                          Marketplace Availability
+                        </p>
+                        <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-slate-900">
+                          Manage travel dates
+                        </h3>
+                        <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-600">
+                          Add departure dates or travel windows that should appear on the marketplace package detail page.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addAvailabilityEntry}
+                        className="rounded-full border border-slate-200 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition hover:border-primary hover:text-primary"
+                      >
+                        Add date
+                      </button>
+                    </div>
+                    <div className="mt-5 space-y-4">
+                      {(tourFormData.marketplaceAvailability || []).map((entry, index) => (
+                        <div key={`availability-${index}`} className="grid gap-4 rounded-[24px] border border-slate-100 bg-slate-50 p-4 md:grid-cols-[1.2fr_1fr_0.8fr_1.4fr_auto]">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Date</label>
+                            <input
+                              type="date"
+                              value={entry.date ? String(entry.date).split("T")[0] : ""}
+                              onChange={(e) => handleAvailabilityEntryChange(index, "date", e.target.value)}
+                              className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Status</label>
+                            <select
+                              value={entry.status || "available"}
+                              onChange={(e) => handleAvailabilityEntryChange(index, "status", e.target.value)}
+                              className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                            >
+                              <option value="available">Available</option>
+                              <option value="limited">Limited</option>
+                              <option value="on-request">On request</option>
+                              <option value="unavailable">Unavailable</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Spots left</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={entry.remainingSpots ?? ""}
+                              onChange={(e) => handleAvailabilityEntryChange(index, "remainingSpots", e.target.value)}
+                              className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Note</label>
+                            <input
+                              type="text"
+                              value={entry.note || ""}
+                              onChange={(e) => handleAvailabilityEntryChange(index, "note", e.target.value)}
+                              placeholder="Private departure, family-friendly, etc."
+                              className="w-full rounded-lg border-none bg-white p-2 text-xs font-medium shadow-sm focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <button
+                              type="button"
+                              onClick={() => removeAvailabilityEntry(index)}
+                              className="rounded-full border border-red-200 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-red-600"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-4">
                       <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
@@ -2205,6 +2321,16 @@ const AdminDashboard = () => {
                                 t.allowTravelerPhotos !== false,
                               allowMarketplaceQuestions:
                                 t.allowMarketplaceQuestions !== false,
+                              marketplaceAvailability:
+                                Array.isArray(t.marketplaceAvailability) && t.marketplaceAvailability.length > 0
+                                  ? t.marketplaceAvailability.map((entry) => ({
+                                      date: entry?.date || "",
+                                      status: entry?.status || "available",
+                                      remainingSpots:
+                                        typeof entry?.remainingSpots === "number" ? entry.remainingSpots : "",
+                                      note: entry?.note || "",
+                                    }))
+                                  : [{ date: "", status: "available", remainingSpots: "", note: "" }],
                               launchDate: t.launchDate || "",
                               isGroupTour: Boolean(t.isGroupTour),
                               maxCapacity: t.maxCapacity ?? 12,

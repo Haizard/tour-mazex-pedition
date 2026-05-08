@@ -33,11 +33,13 @@ const createInitialFormData = ({
   defaultReferralCode = "",
   defaultMessage = "",
   defaultDestinations = [],
+  defaultTravelWhen = "",
 } = {}) => ({
   ...initialFormData,
   referralCode: defaultReferralCode || "",
   message: defaultMessage || "",
   destinations: Array.isArray(defaultDestinations) ? defaultDestinations.filter(Boolean) : [],
+  travelWhen: defaultTravelWhen || "",
 });
 
 const destinationOptions = [
@@ -160,13 +162,14 @@ const PlanMyTripWizard = ({
   defaultReferralCode = "",
   defaultMessage = "",
   defaultDestinations = [],
+  defaultTravelWhen = "",
   operatorTenantId = "",
   operatorTenantSlug = "",
 }) => {
   const [showForm, setShowForm] = useState(!showIntro);
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState(
-    createInitialFormData({ defaultReferralCode, defaultMessage, defaultDestinations })
+    createInitialFormData({ defaultReferralCode, defaultMessage, defaultDestinations, defaultTravelWhen })
   );
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -274,7 +277,7 @@ const PlanMyTripWizard = ({
       });
       setSuccessAutomation(response.data?.automation || null);
       setSuccess(true);
-      setFormData(createInitialFormData({ defaultReferralCode, defaultMessage, defaultDestinations }));
+      setFormData(createInitialFormData({ defaultReferralCode, defaultMessage, defaultDestinations, defaultTravelWhen }));
       setCurrentStep(0);
 
       if (onSuccess) {

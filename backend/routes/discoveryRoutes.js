@@ -43,6 +43,18 @@ const toDiscoveryCard = (tour = {}) => ({
   },
   tripAdvisorRating: tour.tripAdvisorRating ?? null,
   tripAdvisorReviewCount: tour.tripAdvisorReviewCount ?? null,
+  marketplaceAvailability: Array.isArray(tour.marketplaceAvailability)
+    ? tour.marketplaceAvailability
+        .map((entry) => ({
+          date: entry?.date || null,
+          status: entry?.status || "available",
+          remainingSpots:
+            typeof entry?.remainingSpots === "number" ? entry.remainingSpots : null,
+          note: entry?.note || "",
+        }))
+        .sort((left, right) => new Date(left.date || 0) - new Date(right.date || 0))
+        .slice(0, 3)
+    : [],
 });
 
 export const toDiscoveryCardWithEngagement = (tour = {}, marketplace = {}) => ({
@@ -71,6 +83,17 @@ const toDiscoveryDetail = (tour = {}) => ({
     slug: tour.tenantId?.slug || "",
     marketplaceSettings: tour.tenantId?.marketplaceSettings || null,
   },
+  marketplaceAvailability: Array.isArray(tour.marketplaceAvailability)
+    ? tour.marketplaceAvailability
+        .map((entry) => ({
+          date: entry?.date || null,
+          status: entry?.status || "available",
+          remainingSpots:
+            typeof entry?.remainingSpots === "number" ? entry.remainingSpots : null,
+          note: entry?.note || "",
+        }))
+        .sort((left, right) => new Date(left.date || 0) - new Date(right.date || 0))
+    : [],
 });
 
 const fetchMarketplaceSnapshot = async (tourId, options = {}) => {

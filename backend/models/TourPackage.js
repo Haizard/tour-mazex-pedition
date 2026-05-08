@@ -6,6 +6,17 @@ const itinerarySchema = new mongoose.Schema({
   accommodation: { type: String }
 });
 
+const marketplaceAvailabilitySchema = new mongoose.Schema({
+  date: { type: Date, required: true },
+  status: {
+    type: String,
+    enum: ["available", "limited", "unavailable", "on-request"],
+    default: "available",
+  },
+  remainingSpots: { type: Number, default: null },
+  note: { type: String, default: "" },
+}, { _id: false });
+
 const tourPackageSchema = new mongoose.Schema({
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -47,6 +58,7 @@ const tourPackageSchema = new mongoose.Schema({
   allowMarketplaceReviews: { type: Boolean, default: true },
   allowTravelerPhotos: { type: Boolean, default: true },
   allowMarketplaceQuestions: { type: Boolean, default: true },
+  marketplaceAvailability: { type: [marketplaceAvailabilitySchema], default: [] },
   // Group Tour Fields
   isGroupTour: { type: Boolean, default: false },
   maxCapacity: { type: Number, default: 0 },

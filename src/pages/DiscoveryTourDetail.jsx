@@ -56,6 +56,7 @@ const DiscoveryTourDetail = () => {
   const [pendingQuestionSubmissions, setPendingQuestionSubmissions] = useState([]);
   const [savedTripIds, setSavedTripIds] = useState([]);
   const [comparisonTripIds, setComparisonTripIds] = useState([]);
+  const [selectedAvailabilityDate, setSelectedAvailabilityDate] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -267,6 +268,27 @@ const DiscoveryTourDetail = () => {
     return images.slice(0, 4);
   }, [tour]);
 
+  const availabilityEntries = useMemo(() => {
+    if (!Array.isArray(tour?.marketplaceAvailability)) {
+      return [];
+    }
+
+    return tour.marketplaceAvailability
+      .filter((entry) => entry?.date)
+      .map((entry) => ({
+        date: entry.date,
+        status: entry.status || "available",
+        remainingSpots:
+          typeof entry.remainingSpots === "number" ? entry.remainingSpots : null,
+        note: entry.note || "",
+      }))
+      .sort((left, right) => new Date(left.date) - new Date(right.date));
+  }, [tour]);
+
+  useEffect(() => {
+    setSelectedAvailabilityDate(availabilityEntries[0]?.date ? String(availabilityEntries[0].date).split("T")[0] : "");
+  }, [availabilityEntries]);
+
   const marketplaceControls = useMemo(
     () => ({
       reviewsEnabled: tour?.marketplaceControls?.reviewsEnabled !== false,
@@ -336,6 +358,18 @@ const DiscoveryTourDetail = () => {
       </div>
     );
   }
+
+  const selectedAvailabilityEntry =
+    availabilityEntries.find((entry) => String(entry.date).split("T")[0] === selectedAvailabilityDate) ||
+    availabilityEntries[0] ||
+    null;
+  const selectedAvailabilityLabel = selectedAvailabilityEntry?.date
+    ? new Date(selectedAvailabilityEntry.date).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "";
 
   return (
     <div className="min-h-screen bg-[#f6f1e8] px-4 pb-20 pt-32 md:px-6 md:pt-40">
@@ -616,6 +650,59 @@ const DiscoveryTourDetail = () => {
               </section>
             )}
 
+            {availabilityEntries.length > 0 ? (
+              <section className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+                  Availability Calendar
+                </p>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  Select a travel date
+                </h2>
+                <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
+                  Pick one of the currently published dates below. Your inquiry will carry the selected departure timing to the operator.
+                </p>
+                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {availabilityEntries.slice(0, 9).map((entry) => {
+                    const normalizedDate = String(entry.date).split("T")[0];
+                    const isActive = normalizedDate === selectedAvailabilityDate;
+                    return (
+                      <button
+                        key={`${normalizedDate}-${entry.status}`}
+                        type="button"
+                        onClick={() => setSelectedAvailabilityDate(normalizedDate)}
+                        className={`rounded-[28px] border px-5 py-5 text-left transition ${
+                          isActive
+                            ? "border-[#224433] bg-[#224433] text-white shadow-lg"
+                            : "border-slate-200 bg-slate-50 text-slate-900 hover:border-[#224433]"
+                        }`}
+                      >
+                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isActive ? "text-[#d9c79f]" : "text-[#8b7451]"}`}>
+                          {entry.status}
+                        </p>
+                        <p className="mt-3 text-lg font-black uppercase tracking-tight">
+                          {new Date(entry.date).toLocaleDateString(undefined, {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                        <p className={`mt-2 text-sm font-medium leading-6 ${isActive ? "text-white/80" : "text-slate-600"}`}>
+                          {typeof entry.remainingSpots === "number"
+                            ? `${entry.remainingSpots} spots noted`
+                            : "Availability confirmed on request"}
+                        </p>
+                        {entry.note ? (
+                          <p className={`mt-2 text-sm font-medium leading-6 ${isActive ? "text-white/80" : "text-slate-500"}`}>
+                            {entry.note}
+                          </p>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
             <ReviewSummaryPanel summary={reviewData.summary || tour.marketplace} />
             <PublicReviewFeed reviews={reviewData.reviews || []} />
             {pendingReviewSubmissions.length > 0 ? (
@@ -793,12 +880,14 @@ const DiscoveryTourDetail = () => {
               </div>
               <div className="p-1">
                 <PlanMyTripWizard
+                  key={selectedAvailabilityDate || "default-date"}
                   compact={true}
                   showIntro={false}
                   sourceChannel="global-marketplace"
                   campaignLabel={`tour_${tour._id}`}
                   defaultDestinations={[tour.title]}
-                  defaultMessage={`I'm interested in booking the "${tour.title}" operated by ${tour.operator?.name || "your partner"}.`}
+                  defaultTravelWhen={selectedAvailabilityLabel}
+                  defaultMessage={`I'm interested in booking the "${tour.title}" operated by ${tour.operator?.name || "your partner"}${selectedAvailabilityLabel ? ` for ${selectedAvailabilityLabel}` : ""}.`}
                   operatorTenantId={tour.operator?.id || ""}
                   operatorTenantSlug={tour.operator?.slug || ""}
                 />
