@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  FaHeart,
   FaArrowRight,
+  FaBalanceScale,
   FaCompass,
   FaMapMarkerAlt,
   FaMoneyBillWave,
@@ -9,6 +11,17 @@ import {
   FaSlidersH,
   FaStar,
 } from "react-icons/fa";
+import DiscoveryRegionMap from "../components/Marketplace/DiscoveryRegionMap";
+import SavedTripsRail from "../components/Marketplace/SavedTripsRail";
+import TripComparisonDrawer from "../components/Marketplace/TripComparisonDrawer";
+import {
+  fetchMarketplaceComparisons,
+  fetchMarketplaceMapRegions,
+  fetchMarketplaceSavedTrips,
+  updateMarketplaceComparisons,
+  updateMarketplaceSavedTrips,
+} from "../services/api";
+import { getMarketplaceTravelerSessionKey } from "../components/Marketplace/travelerSession";
 
 const createInitialFilters = () => ({
   q: "",
@@ -37,6 +50,9 @@ const getDiscoveryApiUrl = (path, params = null) => {
 const GlobalDiscovery = () => {
   const [tours, setTours] = useState([]);
   const [operators, setOperators] = useState([]);
+  const [regions, setRegions] = useState([]);
+  const [savedTrips, setSavedTrips] = useState([]);
+  const [comparisonTrips, setComparisonTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(createInitialFilters);
 
@@ -80,6 +96,40 @@ const GlobalDiscovery = () => {
     }
   }, [filters]);
 
+  const fetchSavedTrips = useCallback(async () => {
+    try {
+      const response = await fetchMarketplaceSavedTrips({
+        sessionKey: getMarketplaceTravelerSessionKey(),
+      });
+      setSavedTrips(response.data?.tours || []);
+    } catch (error) {
+      console.error("Saved trips error:", error);
+      setSavedTrips([]);
+    }
+  }, []);
+
+  const fetchComparisons = useCallback(async () => {
+    try {
+      const response = await fetchMarketplaceComparisons({
+        sessionKey: getMarketplaceTravelerSessionKey(),
+      });
+      setComparisonTrips(response.data?.tours || []);
+    } catch (error) {
+      console.error("Comparison error:", error);
+      setComparisonTrips([]);
+    }
+  }, []);
+
+  const fetchRegions = useCallback(async () => {
+    try {
+      const response = await fetchMarketplaceMapRegions();
+      setRegions(response.data?.regions || []);
+    } catch (error) {
+      console.error("Marketplace regions error:", error);
+      setRegions([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchOperators();
   }, [fetchOperators]);
@@ -88,12 +138,70 @@ const GlobalDiscovery = () => {
     fetchTours();
   }, [fetchTours]);
 
+  useEffect(() => {
+    fetchSavedTrips();
+    fetchComparisons();
+    fetchRegions();
+  }, [fetchComparisons, fetchRegions, fetchSavedTrips]);
+
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   const clearFilters = () => setFilters(createInitialFilters());
+
+  const saveIds = useMemo(() => new Set(savedTrips.map((trip) => trip._id)), [savedTrips]);
+  const comparisonIds = useMemo(() => new Set(comparisonTrips.map((trip) => trip._id)), [comparisonTrips]);
+
+  const syncSavedTrips = async (nextIds) => {
+    const response = await updateMarketplaceSavedTrips({
+      sessionKey: getMarketplaceTravelerSessionKey(),
+      selectedTourIds: nextIds,
+    });
+    setSavedTrips(response.data?.tours || []);
+  };
+
+  const syncComparisonTrips = async (nextIds) => {
+    const response = await updateMarketplaceComparisons({
+      sessionKey: getMarketplaceTravelerSessionKey(),
+      selectedTourIds: nextIds,
+    });
+    setComparisonTrips(response.data?.tours || []);
+  };
+
+  const toggleSavedTrip = async (tourId) => {
+    const nextIds = saveIds.has(tourId)
+      ? savedTrips.map((trip) => trip._id).filter((id) => id !== tourId)
+      : [...savedTrips.map((trip) => trip._id), tourId];
+
+    try {
+      await syncSavedTrips(nextIds);
+    } catch (error) {
+      console.error("Unable to update saved trips:", error);
+    }
+  };
+
+  const toggleComparisonTrip = async (tourId) => {
+    const currentIds = comparisonTrips.map((trip) => trip._id);
+    const nextIds = comparisonIds.has(tourId)
+      ? currentIds.filter((id) => id !== tourId)
+      : [...currentIds, tourId];
+
+    try {
+      await syncComparisonTrips(nextIds);
+    } catch (error) {
+      console.error("Unable to update comparison set:", error);
+    }
+  };
+
+  const handleSelectRegion = (regionLabel) => {
+    setFilters((current) => ({ ...current, location: regionLabel }));
+  };
+
+  const handleClearRegion = () => {
+    setFilters((current) => ({ ...current, location: "" }));
+  };
 
   const featuredTour = useMemo(
     () => tours.find((tour) => tour.featured) || tours[0] || null,
@@ -344,6 +452,24 @@ const GlobalDiscovery = () => {
           </aside>
 
           <div className="space-y-8">
+            <DiscoveryRegionMap
+              regions={regions}
+              activeRegion={filters.location}
+              onSelectRegion={handleSelectRegion}
+              onClearRegion={handleClearRegion}
+            />
+
+            <SavedTripsRail
+              trips={savedTrips}
+              onRemove={(tourId) => toggleSavedTrip(tourId)}
+            />
+
+            <TripComparisonDrawer
+              trips={comparisonTrips}
+              onRemove={(tourId) => toggleComparisonTrip(tourId)}
+              onClear={() => syncComparisonTrips([])}
+            />
+
             <div className="flex flex-col gap-4 rounded-[32px] border border-[#e2d2b7] bg-white px-6 py-5 shadow-[0_20px_60px_rgba(35,66,50,0.08)] md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
@@ -458,6 +584,40 @@ const GlobalDiscovery = () => {
                   <div className="mt-6 inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-primary">
                     Explore this tour <FaArrowRight />
                   </div>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        toggleSavedTrip(featuredTour._id);
+                      }}
+                      className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${
+                        saveIds.has(featuredTour._id)
+                          ? "bg-[#224433] text-white"
+                          : "border border-slate-200 text-slate-700"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <FaHeart /> {saveIds.has(featuredTour._id) ? "Saved" : "Save trip"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        toggleComparisonTrip(featuredTour._id);
+                      }}
+                      className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${
+                        comparisonIds.has(featuredTour._id)
+                          ? "bg-[#d9a441] text-[#224433]"
+                          : "border border-slate-200 text-slate-700"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <FaBalanceScale /> {comparisonIds.has(featuredTour._id) ? "Comparing" : "Add to compare"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </Link>
             )}
@@ -530,6 +690,41 @@ const GlobalDiscovery = () => {
                         <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-primary">
                           View trip <FaCompass />
                         </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            toggleSavedTrip(tour._id);
+                          }}
+                          className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${
+                            saveIds.has(tour._id)
+                              ? "bg-[#224433] text-white"
+                              : "border border-slate-200 text-slate-700"
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-2">
+                            <FaHeart /> {saveIds.has(tour._id) ? "Saved" : "Save"}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            toggleComparisonTrip(tour._id);
+                          }}
+                          className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${
+                            comparisonIds.has(tour._id)
+                              ? "bg-[#d9a441] text-[#224433]"
+                              : "border border-slate-200 text-slate-700"
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-2">
+                            <FaBalanceScale /> {comparisonIds.has(tour._id) ? "Comparing" : "Compare"}
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </Link>

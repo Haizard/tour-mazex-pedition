@@ -68,6 +68,31 @@ test("resolveMarketplaceTravelerIdentity upgrades guest to verified booking when
   assert.deepEqual(identity.linkedBookingIds, ["book_1"]);
 });
 
+test("resolveMarketplaceTravelerIdentity preserves an existing identity id when new identifiers are added", async () => {
+  const store = {
+    findOne: async () => ({
+      _id: "identity_1",
+      sessionKey: "sess_old",
+      email: "",
+      linkedBookingIds: [],
+      linkedInquiryIds: ["inq_1"],
+    }),
+    create: async (payload) => payload,
+  };
+
+  const identity = await resolveMarketplaceTravelerIdentity(
+    {
+      sessionKey: "sess_new",
+      email: "traveler@example.com",
+      inquiryId: "inq_1",
+    },
+    store
+  );
+
+  assert.equal(identity._id, "identity_1");
+  assert.equal(identity.email, "traveler@example.com");
+});
+
 test("resolveReviewModerationState respects tenant auto publish for booking reviews", () => {
   const result = resolveReviewModerationState({
     verificationType: "booking",

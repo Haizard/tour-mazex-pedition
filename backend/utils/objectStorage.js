@@ -7,13 +7,40 @@ const parseCsv = (value = "") =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const normalizeAwsEndpoint = ({ endpoint = "", bucket = "", region = "us-east-1" } = {}) => {
+  const rawEndpoint = String(endpoint || "").trim();
+  if (!rawEndpoint) {
+    return rawEndpoint;
+  }
+
+  try {
+    const parsed = new URL(rawEndpoint);
+    const hostname = parsed.hostname.toLowerCase();
+    const bucketPrefix = bucket ? `${String(bucket).toLowerCase()}.` : "";
+    const usesLegacyAwsHost =
+      hostname === "s3.amazonaws.com" || hostname === `${bucketPrefix}s3.amazonaws.com`;
+
+    if (usesLegacyAwsHost && region && region !== "us-east-1") {
+      return `${parsed.protocol}//s3.${region}.amazonaws.com`;
+    }
+  } catch (_error) {
+    return rawEndpoint;
+  }
+
+  return rawEndpoint;
+};
+
 export const getObjectStorageStrategy = (env = null) => {
   const runtimeEnv = env || globalThis.process?.env || {};
   const configuredProvider = String(runtimeEnv.MEDIA_STORAGE_PROVIDER || "mongo-inline").trim().toLowerCase();
   const allowedProviders = new Set(["mongo-inline", "s3-compatible"]);
   const provider = allowedProviders.has(configuredProvider) ? configuredProvider : "mongo-inline";
   const bucket = String(runtimeEnv.S3_BUCKET || "").trim();
-  const endpoint = String(runtimeEnv.S3_ENDPOINT || "").trim();
+  const endpoint = normalizeAwsEndpoint({
+    endpoint: runtimeEnv.S3_ENDPOINT,
+    bucket,
+    region: String(runtimeEnv.S3_REGION || "us-east-1").trim(),
+  });
   const publicBaseUrl = String(runtimeEnv.S3_PUBLIC_BASE_URL || "").trim();
   const region = String(runtimeEnv.S3_REGION || "us-east-1").trim();
   const accessKeyId = String(runtimeEnv.S3_ACCESS_KEY_ID || "").trim();

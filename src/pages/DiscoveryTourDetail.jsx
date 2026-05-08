@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   FaArrowLeft,
+  FaBalanceScale,
   FaCalendarCheck,
   FaCheckCircle,
   FaClock,
@@ -12,6 +13,7 @@ import {
   FaStar,
   FaSuitcaseRolling,
   FaUsers,
+  FaHeart,
 } from "react-icons/fa";
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import PackageQuestionsPanel from "../components/Marketplace/PackageQuestionsPanel";
@@ -24,7 +26,12 @@ import {
   fetchMarketplacePhotos,
   fetchMarketplaceQuestions,
   fetchMarketplaceReviews,
+  fetchMarketplaceSavedTrips,
+  fetchMarketplaceComparisons,
+  updateMarketplaceSavedTrips,
+  updateMarketplaceComparisons,
 } from "../services/api";
+import { getMarketplaceTravelerSessionKey } from "../components/Marketplace/travelerSession";
 
 const getDiscoveryApiUrl = (path, params = null) => {
   const query = params ? `?${params.toString()}` : "";
@@ -43,6 +50,8 @@ const DiscoveryTourDetail = () => {
   const [reviewData, setReviewData] = useState({ summary: null, reviews: [] });
   const [photoData, setPhotoData] = useState([]);
   const [questionData, setQuestionData] = useState([]);
+  const [savedTripIds, setSavedTripIds] = useState([]);
+  const [comparisonTripIds, setComparisonTripIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -127,6 +136,64 @@ const DiscoveryTourDetail = () => {
   useEffect(() => {
     reloadMarketplaceEngagement();
   }, [tour]);
+
+  useEffect(() => {
+    const loadShopState = async () => {
+      try {
+        const sessionKey = getMarketplaceTravelerSessionKey();
+        const [savedResponse, comparisonResponse] = await Promise.all([
+          fetchMarketplaceSavedTrips({ sessionKey }),
+          fetchMarketplaceComparisons({ sessionKey }),
+        ]);
+        setSavedTripIds((savedResponse.data?.tours || []).map((item) => item._id));
+        setComparisonTripIds((comparisonResponse.data?.tours || []).map((item) => item._id));
+      } catch (error) {
+        console.error("Marketplace traveler state error:", error);
+      }
+    };
+
+    loadShopState();
+  }, []);
+
+  const toggleSavedTrip = async () => {
+    if (!tour?._id) {
+      return;
+    }
+
+    const nextIds = savedTripIds.includes(tour._id)
+      ? savedTripIds.filter((id) => id !== tour._id)
+      : [...savedTripIds, tour._id];
+
+    try {
+      const response = await updateMarketplaceSavedTrips({
+        sessionKey: getMarketplaceTravelerSessionKey(),
+        selectedTourIds: nextIds,
+      });
+      setSavedTripIds((response.data?.tours || []).map((item) => item._id));
+    } catch (error) {
+      console.error("Saved trip toggle error:", error);
+    }
+  };
+
+  const toggleComparisonTrip = async () => {
+    if (!tour?._id) {
+      return;
+    }
+
+    const nextIds = comparisonTripIds.includes(tour._id)
+      ? comparisonTripIds.filter((id) => id !== tour._id)
+      : [...comparisonTripIds, tour._id];
+
+    try {
+      const response = await updateMarketplaceComparisons({
+        sessionKey: getMarketplaceTravelerSessionKey(),
+        selectedTourIds: nextIds,
+      });
+      setComparisonTripIds((response.data?.tours || []).map((item) => item._id));
+    } catch (error) {
+      console.error("Comparison toggle error:", error);
+    }
+  };
 
   const itineraryStops = useMemo(() => {
     if (!Array.isArray(tour?.itinerary)) {
@@ -599,6 +666,38 @@ const DiscoveryTourDetail = () => {
                 operator so pricing, availability, and trip details remain accurate.
               </p>
               <div className="mt-5 grid gap-3">
+                <button
+                  type="button"
+                  onClick={toggleSavedTrip}
+                  className={`rounded-2xl px-4 py-4 text-left transition ${
+                    savedTripIds.includes(tour._id)
+                      ? "bg-[#224433] text-white"
+                      : "bg-slate-50 text-slate-900 hover:bg-[#eef4ed]"
+                  }`}
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-current/70">
+                    Saved trips
+                  </p>
+                  <p className="mt-2 flex items-center gap-2 text-sm font-black uppercase tracking-wide">
+                    <FaHeart /> {savedTripIds.includes(tour._id) ? "Saved to shortlist" : "Save for later"}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleComparisonTrip}
+                  className={`rounded-2xl px-4 py-4 text-left transition ${
+                    comparisonTripIds.includes(tour._id)
+                      ? "bg-[#d9a441] text-[#224433]"
+                      : "bg-slate-50 text-slate-900 hover:bg-[#fff7e6]"
+                  }`}
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-current/70">
+                    Comparison set
+                  </p>
+                  <p className="mt-2 flex items-center gap-2 text-sm font-black uppercase tracking-wide">
+                    <FaBalanceScale /> {comparisonTripIds.includes(tour._id) ? "In compare set" : "Add to compare"}
+                  </p>
+                </button>
                 <div className="rounded-2xl bg-slate-50 px-4 py-4">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                     Marketplace status

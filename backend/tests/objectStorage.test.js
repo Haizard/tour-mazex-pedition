@@ -6,6 +6,7 @@ import {
   assertMediaUploadAllowed,
   buildMediaResponsePayload,
   buildStoredMediaReadPlan,
+  createObjectStorageClient,
   getObjectStorageStrategy,
   persistMediaAsset,
   resolveStoredMediaReadPlan,
@@ -53,6 +54,21 @@ test("persistMediaAsset prepares an object-storage key when s3-compatible storag
   assert.equal(asset.storageProvider, "s3-compatible");
   assert.equal(asset.storageBucket, "mazex-media");
   assert.equal(asset.publicUrl.startsWith("https://cdn.example.com/tenant-2/"), true);
+});
+
+test("createObjectStorageClient normalizes legacy AWS bucket endpoints to the configured regional endpoint", () => {
+  const strategy = getObjectStorageStrategy({
+    MEDIA_STORAGE_PROVIDER: "s3-compatible",
+    S3_BUCKET: "maz-expeditions-assets",
+    S3_ENDPOINT: "https://maz-expeditions-assets.s3.amazonaws.com",
+    S3_REGION: "eu-west-1",
+    S3_ACCESS_KEY_ID: "key",
+    S3_SECRET_ACCESS_KEY: "secret",
+  });
+
+  const client = createObjectStorageClient(strategy);
+  assert.equal(strategy.endpoint, "https://s3.eu-west-1.amazonaws.com");
+  assert.equal(Boolean(client), true);
 });
 
 test("assertMediaUploadAllowed only applies the inline size limit to mongo-inline storage", () => {

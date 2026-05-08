@@ -3,11 +3,14 @@ import express from "express";
 import MarketplaceAnswer from "../models/MarketplaceAnswer.js";
 import MarketplaceQuestion from "../models/MarketplaceQuestion.js";
 import MarketplaceReview from "../models/MarketplaceReview.js";
+import SavedTripList from "../models/SavedTripList.js";
 import Tenant from "../models/Tenant.js";
 import TourPackage from "../models/TourPackage.js";
+import TripComparisonSet from "../models/TripComparisonSet.js";
 import TravelerIdentity from "../models/TravelerIdentity.js";
 import TravelerPhotoSubmission from "../models/TravelerPhotoSubmission.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
+import { buildMarketplaceRegionSummaries } from "../utils/marketplaceRegionAggregation.js";
 import { buildMarketplaceReviewSummary } from "../utils/marketplaceReviewAggregation.js";
 import { resolveMarketplaceTravelerIdentity } from "../utils/marketplaceIdentity.js";
 import {
@@ -17,6 +20,59 @@ import {
 } from "../utils/marketplaceModeration.js";
 
 const router = express.Router();
+
+const normalizeUniqueTourIds = (selectedTourIds = [], maxItems = 24) =>
+  [...new Set((selectedTourIds || []).map((tourId) => String(tourId || "").trim()).filter(Boolean))].slice(
+    0,
+    maxItems
+  );
+
+const buildMarketplaceSelectableTour = (tour = {}) => ({
+  _id: String(tour._id || ""),
+  title: tour.title || "",
+  description: tour.description || "",
+  image: tour.image || "",
+  location: tour.location || "",
+  duration: tour.duration || "",
+  category: tour.category || "",
+  price: Number(tour.price || 0),
+  tourType: tour.tourType || "",
+  destinationsVisited: tour.destinationsVisited || [],
+  inclusions: (tour.inclusions || []).slice(0, 5),
+  operator: {
+    id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
+    name: tour.tenantId?.name || "Verified Operator",
+    slug: tour.tenantId?.slug || "",
+  },
+  marketplace: {
+    averageRating: tour.marketplace?.averageRating ?? null,
+    reviewCount: tour.marketplace?.reviewCount ?? 0,
+    topSentimentTags: tour.marketplace?.topSentimentTags || [],
+  },
+});
+
+const attachMarketplaceSummaries = async (tours = []) => {
+  const summaries = await Promise.all(
+    tours.map(async (tour) => {
+      const reviews = await MarketplaceReview.find({
+        tourId: tour._id,
+        visibilityState: "public",
+        moderationStatus: "approved",
+      }).lean();
+
+      return [
+        String(tour._id || ""),
+        buildMarketplaceReviewSummary(reviews),
+      ];
+    })
+  );
+
+  const summaryMap = new Map(summaries);
+  return tours.map((tour) => ({
+    ...tour,
+    marketplace: summaryMap.get(String(tour._id || "")) || null,
+  }));
+};
 
 const findOrCreateTravelerIdentity = (input) =>
   resolveMarketplaceTravelerIdentity(input, {
@@ -28,10 +84,12 @@ const findOrCreateTravelerIdentity = (input) =>
         ],
       }).lean(),
     create: async (data) => {
-      const match = {
-        ...(data.sessionKey ? { sessionKey: data.sessionKey } : {}),
-        ...(data.email ? { email: data.email } : {}),
-      };
+      const match = data._id
+        ? { _id: data._id }
+        : {
+            ...(data.sessionKey ? { sessionKey: data.sessionKey } : {}),
+            ...(data.email ? { email: data.email } : {}),
+          };
       const created = await TravelerIdentity.findOneAndUpdate(
         Object.keys(match).length ? match : { _id: data._id || undefined },
         { $set: data },
@@ -170,6 +228,59 @@ export const createMarketplaceReviewRecord = async (payload = {}, deps = {}) => 
     travelerType: payload.travelerType || "",
     ...moderation,
   });
+};
+
+export const createSavedTripListRecord = async (payload = {}, deps = {}) => {
+  const identity = await deps.resolveIdentity({
+    sessionKey: payload.sessionKey,
+    email: payload.email,
+  });
+
+  return deps.upsertList({
+    travelerIdentityId: identity?._id || null,
+    sessionKey: String(payload.sessionKey || "").trim(),
+    email: String(payload.email || "").trim().toLowerCase(),
+    selectedTourIds: normalizeUniqueTourIds(payload.selectedTourIds, 24),
+    notes: String(payload.notes || "").trim(),
+  });
+};
+
+export const createComparisonSetRecord = async (payload = {}, deps = {}) =>
+  deps.upsertSet({
+    sessionKey: String(payload.sessionKey || "").trim(),
+    email: String(payload.email || "").trim().toLowerCase(),
+    selectedTourIds: normalizeUniqueTourIds(payload.selectedTourIds, 4),
+  });
+
+export const buildSavedTripsPayload = ({ savedTripList = {}, tours = [] } = {}) => {
+  const toursById = new Map(
+    (tours || []).map((tour) => [String(tour._id || ""), buildMarketplaceSelectableTour(tour)])
+  );
+  const orderedTours = (savedTripList.selectedTourIds || [])
+    .map((tourId) => toursById.get(String(tourId || "")))
+    .filter(Boolean);
+
+  return {
+    count: orderedTours.length,
+    updatedAt: savedTripList.updatedAt || null,
+    notes: savedTripList.notes || "",
+    tours: orderedTours,
+  };
+};
+
+export const buildComparisonPayload = ({ comparisonSet = {}, tours = [] } = {}) => {
+  const toursById = new Map(
+    (tours || []).map((tour) => [String(tour._id || ""), buildMarketplaceSelectableTour(tour)])
+  );
+  const orderedTours = (comparisonSet.selectedTourIds || [])
+    .map((tourId) => toursById.get(String(tourId || "")))
+    .filter(Boolean);
+
+  return {
+    count: orderedTours.length,
+    updatedAt: comparisonSet.updatedAt || null,
+    tours: orderedTours,
+  };
 };
 
 router.post("/reviews", async (req, res) => {
@@ -380,6 +491,165 @@ router.post("/questions", async (req, res) => {
     res.status(201).json(question);
   } catch (error) {
     res.status(409).json({ message: error.message });
+  }
+});
+
+router.post("/saved-trips", async (req, res) => {
+  try {
+    const savedTripList = await createSavedTripListRecord(req.body, {
+      resolveIdentity: findOrCreateTravelerIdentity,
+      upsertList: async (data) => {
+        const match = data.travelerIdentityId
+          ? { travelerIdentityId: data.travelerIdentityId }
+          : { sessionKey: data.sessionKey || "__anonymous__", email: data.email || "" };
+        const record = await SavedTripList.findOneAndUpdate(
+          match,
+          { $set: data },
+          { new: true, upsert: true, setDefaultsOnInsert: true }
+        ).lean();
+        return record;
+      },
+    });
+
+    const tours = await TourPackage.find({
+      _id: { $in: savedTripList.selectedTourIds || [] },
+      isMarketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    res.status(200).json(
+      buildSavedTripsPayload({
+        savedTripList,
+        tours: await attachMarketplaceSummaries(tours),
+      })
+    );
+  } catch (error) {
+    res.status(409).json({ message: error.message });
+  }
+});
+
+router.get("/saved-trips", async (req, res) => {
+  try {
+    const sessionKey = String(req.query.sessionKey || "").trim();
+    const email = String(req.query.email || "").trim().toLowerCase();
+    if (!sessionKey && !email) {
+      return res.status(200).json({ count: 0, updatedAt: null, notes: "", tours: [] });
+    }
+
+    const savedTripList = await SavedTripList.findOne({
+      $or: [
+        ...(sessionKey ? [{ sessionKey }] : []),
+        ...(email ? [{ email }] : []),
+      ],
+    }).lean();
+
+    if (!savedTripList) {
+      return res.status(200).json({ count: 0, updatedAt: null, notes: "", tours: [] });
+    }
+
+    const tours = await TourPackage.find({
+      _id: { $in: savedTripList.selectedTourIds || [] },
+      isMarketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    res.status(200).json(
+      buildSavedTripsPayload({
+        savedTripList,
+        tours: await attachMarketplaceSummaries(tours),
+      })
+    );
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/comparisons", async (req, res) => {
+  try {
+    const comparisonSet = await createComparisonSetRecord(req.body, {
+      upsertSet: async (data) => {
+        const match = {
+          sessionKey: data.sessionKey || "__anonymous__",
+          email: data.email || "",
+        };
+        const record = await TripComparisonSet.findOneAndUpdate(
+          match,
+          { $set: data },
+          { new: true, upsert: true, setDefaultsOnInsert: true }
+        ).lean();
+        return record;
+      },
+    });
+
+    const tours = await TourPackage.find({
+      _id: { $in: comparisonSet.selectedTourIds || [] },
+      isMarketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    res.status(200).json(
+      buildComparisonPayload({
+        comparisonSet,
+        tours: await attachMarketplaceSummaries(tours),
+      })
+    );
+  } catch (error) {
+    res.status(409).json({ message: error.message });
+  }
+});
+
+router.get("/comparisons", async (req, res) => {
+  try {
+    const sessionKey = String(req.query.sessionKey || "").trim();
+    const email = String(req.query.email || "").trim().toLowerCase();
+    if (!sessionKey && !email) {
+      return res.status(200).json({ count: 0, updatedAt: null, tours: [] });
+    }
+
+    const comparisonSet = await TripComparisonSet.findOne({
+      $or: [
+        ...(sessionKey ? [{ sessionKey }] : []),
+        ...(email ? [{ email }] : []),
+      ],
+    }).lean();
+
+    if (!comparisonSet) {
+      return res.status(200).json({ count: 0, updatedAt: null, tours: [] });
+    }
+
+    const tours = await TourPackage.find({
+      _id: { $in: comparisonSet.selectedTourIds || [] },
+      isMarketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    res.status(200).json(
+      buildComparisonPayload({
+        comparisonSet,
+        tours: await attachMarketplaceSummaries(tours),
+      })
+    );
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/map/regions", async (_req, res) => {
+  try {
+    const tours = await TourPackage.find({ isMarketplaceVisible: true })
+      .populate("tenantId", "name slug")
+      .select("_id title location destinationsVisited price tenantId")
+      .lean();
+
+    res.status(200).json({
+      regions: buildMarketplaceRegionSummaries(tours),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
