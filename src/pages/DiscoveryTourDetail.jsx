@@ -44,6 +44,13 @@ const getDiscoveryApiUrl = (path, params = null) => {
   return `${path}${query}`;
 };
 
+const getAvailabilityTone = (status = "") => {
+  if (status === "available") return "bg-[#e1efe6] text-[#234232]";
+  if (status === "limited") return "bg-[#fff3d6] text-[#8a5a05]";
+  if (status === "unavailable") return "bg-[#fde7e7] text-[#a33b3b]";
+  return "bg-slate-100 text-slate-700";
+};
+
 const DiscoveryTourDetail = () => {
   const { id } = useParams();
   const [tour, setTour] = useState(null);
@@ -370,6 +377,22 @@ const DiscoveryTourDetail = () => {
         day: "numeric",
       })
     : "";
+  const selectedAvailabilitySummary = selectedAvailabilityEntry
+    ? typeof selectedAvailabilityEntry.remainingSpots === "number"
+      ? `${selectedAvailabilityEntry.remainingSpots} spots currently noted for this departure.`
+      : selectedAvailabilityEntry.status === "limited"
+        ? "This date is published with limited remaining availability."
+        : selectedAvailabilityEntry.status === "unavailable"
+          ? "This date is currently unavailable. Use the inquiry form to request the next opening."
+          : "This date is published and ready for operator confirmation."
+    : "Ask the operator for the next confirmed departure window.";
+  const inquiryDefaultMessage = `I'm interested in booking the "${tour.title}" operated by ${tour.operator?.name || "your partner"}${
+    selectedAvailabilityLabel ? ` for ${selectedAvailabilityLabel}` : ""
+  }.${
+    selectedAvailabilityEntry?.status ? ` The marketplace currently shows this departure as ${selectedAvailabilityEntry.status}.` : ""
+  }${
+    selectedAvailabilityEntry?.note ? ` Note shown on the package: ${selectedAvailabilityEntry.note}` : ""
+  } Please confirm availability and share the best next steps.`;
 
   return (
     <div className="min-h-screen bg-[#f6f1e8] px-4 pb-20 pt-32 md:px-6 md:pt-40">
@@ -877,6 +900,25 @@ const DiscoveryTourDetail = () => {
                 <p className="mt-3 text-sm font-medium leading-6 text-white/75">
                   Your request will be tied to {tour.operator?.name || "the operator"} who owns this package.
                 </p>
+                {selectedAvailabilityEntry ? (
+                  <div className="mt-5 rounded-[24px] border border-white/10 bg-white/10 p-4 backdrop-blur">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${getAvailabilityTone(
+                          selectedAvailabilityEntry.status
+                        )}`}
+                      >
+                        {selectedAvailabilityEntry.status}
+                      </span>
+                      <span className="text-[11px] font-black uppercase tracking-[0.18em] text-white">
+                        {selectedAvailabilityLabel}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm font-medium leading-6 text-white/80">
+                      {selectedAvailabilityEntry.note || selectedAvailabilitySummary}
+                    </p>
+                  </div>
+                ) : null}
               </div>
               <div className="p-1">
                 <PlanMyTripWizard
@@ -887,7 +929,7 @@ const DiscoveryTourDetail = () => {
                   campaignLabel={`tour_${tour._id}`}
                   defaultDestinations={[tour.title]}
                   defaultTravelWhen={selectedAvailabilityLabel}
-                  defaultMessage={`I'm interested in booking the "${tour.title}" operated by ${tour.operator?.name || "your partner"}${selectedAvailabilityLabel ? ` for ${selectedAvailabilityLabel}` : ""}.`}
+                  defaultMessage={inquiryDefaultMessage}
                   operatorTenantId={tour.operator?.id || ""}
                   operatorTenantSlug={tour.operator?.slug || ""}
                 />

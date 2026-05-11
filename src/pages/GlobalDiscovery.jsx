@@ -49,6 +49,26 @@ const getAvailabilityTone = (status = "") => {
   return "bg-slate-100 text-slate-700";
 };
 
+const getAvailabilityCopy = (entry = null) => {
+  if (!entry) {
+    return "Travel dates are confirmed on request.";
+  }
+
+  if (typeof entry.remainingSpots === "number") {
+    return `${entry.remainingSpots} spots currently noted for this departure.`;
+  }
+
+  if (entry.status === "unavailable") {
+    return "This published date is currently unavailable. Ask the operator for the next opening.";
+  }
+
+  if (entry.status === "limited") {
+    return "Published departure with limited availability remaining.";
+  }
+
+  return "Published departure date ready for traveler inquiries.";
+};
+
 const getDiscoveryApiUrl = (path, params = null) => {
   const query = params ? `?${params.toString()}` : "";
 
@@ -227,6 +247,8 @@ const GlobalDiscovery = () => {
 
     return tours.filter((tour) => tour._id !== featuredTour._id);
   }, [featuredTour, tours]);
+  const featuredAvailability = featuredTour?.marketplaceAvailability?.[0] || null;
+
   return (
     <div className="min-h-screen bg-[#f6f1e8] pt-32 text-slate-900 md:pt-40">
       <section className="relative overflow-hidden border-b border-[#d8c8ae] bg-[#234232] px-6 py-14 text-white md:py-16">
@@ -580,14 +602,36 @@ const GlobalDiscovery = () => {
                       </div>
                       <div className="rounded-[24px] bg-slate-50 px-4 py-4 sm:col-span-2 xl:col-span-1">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                          Trip shape
+                          {featuredAvailability ? "Next departure" : "Trip shape"}
                         </p>
-                        <p className="mt-2 text-base font-black uppercase tracking-tight text-slate-900">
-                          {featuredTour.duration || "Multi-day"}
-                        </p>
-                        <p className="mt-1 text-sm font-medium text-slate-500">
-                          {featuredTour.location || "East Africa"} • {featuredTour.category || "Curated"}
-                        </p>
+                        {featuredAvailability ? (
+                          <>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <span
+                                className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${getAvailabilityTone(
+                                  featuredAvailability.status
+                                )}`}
+                              >
+                                {featuredAvailability.status}
+                              </span>
+                              <span className="text-base font-black uppercase tracking-tight text-slate-900">
+                                {formatAvailabilityDate(featuredAvailability.date)}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm font-medium text-slate-500">
+                              {featuredAvailability.note || getAvailabilityCopy(featuredAvailability)}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="mt-2 text-base font-black uppercase tracking-tight text-slate-900">
+                              {featuredTour.duration || "Multi-day"}
+                            </p>
+                            <p className="mt-1 text-sm font-medium text-slate-500">
+                              {featuredTour.location || "East Africa"} • {featuredTour.category || "Curated"}
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
