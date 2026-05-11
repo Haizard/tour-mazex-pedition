@@ -51,6 +51,11 @@ const getAvailabilityTone = (status = "") => {
   return "bg-slate-100 text-slate-700";
 };
 
+const formatShortAvailabilityDate = (value = "") => {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+
 const DiscoveryTourDetail = () => {
   const { id } = useParams();
   const [tour, setTour] = useState(null);
@@ -724,7 +729,21 @@ const DiscoveryTourDetail = () => {
                   })}
                 </div>
               </section>
-            ) : null}
+            ) : (
+              <section className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+                  Availability Calendar
+                </p>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  Request the next departure window
+                </h2>
+                <div className="mt-5 rounded-[28px] bg-[#fbf8f1] p-5">
+                  <p className="text-sm font-medium leading-7 text-slate-600">
+                    This package does not have published marketplace dates yet. You can still send an inquiry from this page and the operator will reply with the next confirmed departure options.
+                  </p>
+                </div>
+              </section>
+            )}
 
             <ReviewSummaryPanel summary={reviewData.summary || tour.marketplace} />
             <PublicReviewFeed reviews={reviewData.reviews || []} />
@@ -879,6 +898,24 @@ const DiscoveryTourDetail = () => {
                         <h3 className="mt-2 text-lg font-black uppercase tracking-tight text-slate-900">
                           {relatedTour.title}
                         </h3>
+                        {relatedTour.marketplaceAvailability?.[0] ? (
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${getAvailabilityTone(
+                                relatedTour.marketplaceAvailability[0].status
+                              )}`}
+                            >
+                              {relatedTour.marketplaceAvailability[0].status}
+                            </span>
+                            <span className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
+                              {formatShortAvailabilityDate(relatedTour.marketplaceAvailability[0].date)}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
+                            Dates on request
+                          </p>
+                        )}
                         <p className="mt-2 text-sm font-medium text-slate-600">
                           {relatedTour.duration || "Multi-day"} - ${Number(relatedTour.price || 0).toLocaleString()}
                         </p>
@@ -986,6 +1023,19 @@ const DiscoveryTourDetail = () => {
                   </p>
                   <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">
                     {tour.isMarketplaceVisible ? "Visible and inquiry-ready" : "Visibility not confirmed"}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    Departure outlook
+                  </p>
+                  <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">
+                    {selectedAvailabilityEntry
+                      ? `${selectedAvailabilityEntry.status} for ${selectedAvailabilityLabel}`
+                      : "Request next available dates"}
+                  </p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
+                    {selectedAvailabilityEntry?.note || selectedAvailabilitySummary}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-4 py-4">

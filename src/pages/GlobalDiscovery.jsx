@@ -248,6 +248,10 @@ const GlobalDiscovery = () => {
     return tours.filter((tour) => tour._id !== featuredTour._id);
   }, [featuredTour, tours]);
   const featuredAvailability = featuredTour?.marketplaceAvailability?.[0] || null;
+  const toursWithPublishedDates = useMemo(
+    () => tours.filter((tour) => Array.isArray(tour.marketplaceAvailability) && tour.marketplaceAvailability.length > 0).length,
+    [tours],
+  );
 
   return (
     <div className="min-h-screen bg-[#f6f1e8] pt-32 text-slate-900 md:pt-40">
@@ -511,6 +515,11 @@ const GlobalDiscovery = () => {
                 <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
                   {loading ? "Scanning operators..." : `${tours.length} trips ready to compare`}
                 </h2>
+                {!loading ? (
+                  <p className="mt-2 text-sm font-medium text-slate-500">
+                    {toursWithPublishedDates} package{toursWithPublishedDates === 1 ? "" : "s"} currently show published departure dates.
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 {filters.operator && (
