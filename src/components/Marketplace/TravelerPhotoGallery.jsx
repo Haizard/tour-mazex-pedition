@@ -17,6 +17,30 @@ const TravelerPhotoGallery = ({ photos = [] }) => (
     </div>
 
     {photos.length > 0 ? (
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="rounded-[28px] bg-[#f8f5ee] p-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+            Community gallery
+          </p>
+          <p className="mt-2 text-3xl font-black uppercase tracking-tight text-slate-900">
+            {photos.length}
+          </p>
+          <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+            Approved traveler moments currently published for this package.
+          </p>
+        </div>
+        <div className="rounded-[28px] bg-[#f8f5ee] p-5 md:col-span-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+            Gallery note
+          </p>
+          <p className="mt-2 text-sm font-medium leading-7 text-slate-600">
+            Shared moments help future travelers understand camp atmosphere, wildlife sightings, and the real pace of the journey.
+          </p>
+        </div>
+      </div>
+    ) : null}
+
+    {photos.length > 0 ? (
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {photos.map((photo) => (
           <figure
@@ -45,4 +69,3 @@ const TravelerPhotoGallery = ({ photos = [] }) => (
 );
 
 export default TravelerPhotoGallery;
-

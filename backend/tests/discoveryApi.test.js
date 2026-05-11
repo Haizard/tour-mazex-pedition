@@ -272,6 +272,21 @@ test("Discovery API - B2C Global Marketplace", async (t) => {
     assert.equal(firstTour.marketplaceAvailability.length, 1);
     assert.equal(firstTour.marketplaceAvailability[0].status, "limited");
     assert.equal(firstTour.marketplaceAvailability[0].remainingSpots, 3);
+    assert.equal(firstTour.availabilitySummary.hasPublishedDates, true);
+    assert.equal(firstTour.availabilitySummary.nextBookableDate, "2026-06-12T00:00:00.000Z");
+  });
+
+  await t.test("should support availability and departure-month filters after availability summaries are computed", async () => {
+    installTourMocks();
+
+    const res = await fetch(
+      `${baseUrl}/api/discovery/tours?availability=bookable&departureMonth=2026-06`
+    );
+    const body = await res.json();
+
+    assert.equal(res.status, 200);
+    assert.equal(body.tours.length, 1);
+    assert.equal(body.tours[0]._id, "tour_global");
   });
 
   await t.test("should reject tours that are not marketplace visible in detail view", async () => {

@@ -29,6 +29,8 @@ const createInitialFilters = () => ({
   category: "",
   operator: "",
   duration: "",
+  availability: "",
+  departureMonth: "",
   minPrice: "",
   maxPrice: "",
   sort: "featured",
@@ -427,6 +429,39 @@ const GlobalDiscovery = () => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
                     <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Availability
+                    </span>
+                    <select
+                      name="availability"
+                      value={filters.availability}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="">Any availability</option>
+                      <option value="upcoming">Has upcoming dates</option>
+                      <option value="bookable">Bookable departures</option>
+                      <option value="instant">Instant-booking ready</option>
+                      <option value="request">Request next dates</option>
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Departure Month
+                    </span>
+                    <input
+                      type="month"
+                      name="departureMonth"
+                      value={filters.departureMonth}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
                       Minimum Price
                     </span>
                     <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -535,6 +570,16 @@ const GlobalDiscovery = () => {
                 {filters.maxPrice && (
                   <span className="rounded-full bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700">
                     Up to ${filters.maxPrice}
+                  </span>
+                )}
+                {filters.availability && (
+                  <span className="rounded-full bg-[#eef4ed] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#234232]">
+                    {filters.availability}
+                  </span>
+                )}
+                {filters.departureMonth && (
+                  <span className="rounded-full bg-[#fff7e6] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6b531f]">
+                    {filters.departureMonth}
                   </span>
                 )}
               </div>

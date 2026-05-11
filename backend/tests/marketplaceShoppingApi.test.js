@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildComparisonPayload,
   buildSavedTripsPayload,
+  buildInstantBookingIntent,
   createComparisonSetRecord,
   createSavedTripListRecord,
 } from "../routes/marketplaceEngagementRoutes.js";
@@ -45,6 +46,11 @@ test("buildSavedTripsPayload hydrates saved trips for the marketplace shortlist"
     savedTripList: {
       selectedTourIds: ["tour1", "tour2"],
       updatedAt: "2026-05-08T10:00:00.000Z",
+      reminders: {
+        enabled: true,
+        email: "traveler@example.com",
+        watchedTourIds: ["tour1"],
+      },
     },
     tours: [
       { _id: "tour1", title: "Safari Alpha" },
@@ -54,6 +60,8 @@ test("buildSavedTripsPayload hydrates saved trips for the marketplace shortlist"
 
   assert.equal(payload.count, 2);
   assert.equal(payload.tours[0].title, "Safari Alpha");
+  assert.equal(payload.reminders.enabled, true);
+  assert.equal(payload.reminders.email, "traveler@example.com");
 });
 
 test("buildComparisonPayload returns tours in saved comparison order", () => {
@@ -109,3 +117,23 @@ test("buildMarketplaceRegionSummaries groups tours into region cards with destin
   assert.ok(regions[0].destinations.includes("Moshi"));
 });
 
+test("buildInstantBookingIntent returns instant confirmation metadata when a date is eligible", () => {
+  const payload = buildInstantBookingIntent({
+    tour: {
+      _id: "tour_fast",
+      marketplaceAvailability: [
+        { date: "2026-07-18T00:00:00.000Z", status: "available", remainingSpots: 5 },
+      ],
+      marketplaceAvailabilitySettings: {
+        instantBookingEnabled: true,
+      },
+    },
+    travelDate: "2026-07-18",
+    travelers: 2,
+  });
+
+  assert.equal(payload.tourId, "tour_fast");
+  assert.equal(payload.travelers, 2);
+  assert.equal(payload.remainingSpots, 5);
+  assert.equal(payload.instantBookable, true);
+});

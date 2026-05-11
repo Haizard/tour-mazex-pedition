@@ -17,6 +17,34 @@ const marketplaceAvailabilitySchema = new mongoose.Schema({
   note: { type: String, default: "" },
 }, { _id: false });
 
+const marketplaceAvailabilitySettingsSchema = new mongoose.Schema({
+  mode: {
+    type: String,
+    enum: ["manual", "weekly-template"],
+    default: "manual",
+  },
+  autoGenerateFutureDates: { type: Boolean, default: false },
+  weeklyDepartureDays: {
+    type: [Number],
+    default: [],
+  },
+  monthsAhead: { type: Number, default: 3 },
+  bookingCutoffDays: { type: Number, default: 0 },
+  defaultRemainingSpots: { type: Number, default: null },
+  defaultGeneratedStatus: {
+    type: String,
+    enum: ["available", "limited", "unavailable", "on-request"],
+    default: "available",
+  },
+  generatedNote: { type: String, default: "" },
+  instantBookingEnabled: { type: Boolean, default: false },
+  inventoryRefreshMode: {
+    type: String,
+    enum: ["operator-managed", "rule-generated"],
+    default: "operator-managed",
+  },
+}, { _id: false });
+
 const tourPackageSchema = new mongoose.Schema({
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -59,6 +87,21 @@ const tourPackageSchema = new mongoose.Schema({
   allowTravelerPhotos: { type: Boolean, default: true },
   allowMarketplaceQuestions: { type: Boolean, default: true },
   marketplaceAvailability: { type: [marketplaceAvailabilitySchema], default: [] },
+  marketplaceAvailabilitySettings: {
+    type: marketplaceAvailabilitySettingsSchema,
+    default: () => ({
+      mode: "manual",
+      autoGenerateFutureDates: false,
+      weeklyDepartureDays: [],
+      monthsAhead: 3,
+      bookingCutoffDays: 0,
+      defaultRemainingSpots: null,
+      defaultGeneratedStatus: "available",
+      generatedNote: "",
+      instantBookingEnabled: false,
+      inventoryRefreshMode: "operator-managed",
+    }),
+  },
   // Group Tour Fields
   isGroupTour: { type: Boolean, default: false },
   maxCapacity: { type: Number, default: 0 },

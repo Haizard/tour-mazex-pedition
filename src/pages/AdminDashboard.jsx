@@ -140,6 +140,18 @@ const createDefaultTourFormData = () => ({
   allowTravelerPhotos: true,
   allowMarketplaceQuestions: true,
   marketplaceAvailability: [{ date: "", status: "available", remainingSpots: "", note: "" }],
+  marketplaceAvailabilitySettings: {
+    mode: "manual",
+    autoGenerateFutureDates: false,
+    weeklyDepartureDays: [],
+    monthsAhead: 3,
+    bookingCutoffDays: 0,
+    defaultRemainingSpots: "",
+    defaultGeneratedStatus: "available",
+    generatedNote: "",
+    instantBookingEnabled: false,
+    inventoryRefreshMode: "operator-managed",
+  },
   isGroupTour: false,
   maxCapacity: 12,
   currentBookings: 0,
@@ -732,6 +744,21 @@ const AdminDashboard = () => {
       marketplaceAvailability: nextEntries,
     });
   };
+  const handleAvailabilitySettingsChange = (field, value) =>
+    setTourFormData({
+      ...tourFormData,
+      marketplaceAvailabilitySettings: {
+        ...(tourFormData.marketplaceAvailabilitySettings || createDefaultTourFormData().marketplaceAvailabilitySettings),
+        [field]: value,
+      },
+    });
+  const toggleAvailabilityWeekday = (weekday) => {
+    const currentDays = tourFormData.marketplaceAvailabilitySettings?.weeklyDepartureDays || [];
+    const nextDays = currentDays.includes(weekday)
+      ? currentDays.filter((value) => value !== weekday)
+      : [...currentDays, weekday].sort((left, right) => left - right);
+    handleAvailabilitySettingsChange("weeklyDepartureDays", nextDays);
+  };
   const addAvailabilityEntry = () =>
     setTourFormData({
       ...tourFormData,
@@ -1044,6 +1071,23 @@ const AdminDashboard = () => {
           note: entry.note || "",
         }))
         .filter((entry) => entry.date),
+      marketplaceAvailabilitySettings: {
+        mode: tourFormData.marketplaceAvailabilitySettings?.mode || "manual",
+        autoGenerateFutureDates: tourFormData.marketplaceAvailabilitySettings?.autoGenerateFutureDates === true,
+        weeklyDepartureDays: tourFormData.marketplaceAvailabilitySettings?.weeklyDepartureDays || [],
+        monthsAhead: Number(tourFormData.marketplaceAvailabilitySettings?.monthsAhead || 3),
+        bookingCutoffDays: Number(tourFormData.marketplaceAvailabilitySettings?.bookingCutoffDays || 0),
+        defaultRemainingSpots:
+          tourFormData.marketplaceAvailabilitySettings?.defaultRemainingSpots === "" ||
+          tourFormData.marketplaceAvailabilitySettings?.defaultRemainingSpots === null ||
+          typeof tourFormData.marketplaceAvailabilitySettings?.defaultRemainingSpots === "undefined"
+            ? null
+            : Number(tourFormData.marketplaceAvailabilitySettings?.defaultRemainingSpots),
+        defaultGeneratedStatus: tourFormData.marketplaceAvailabilitySettings?.defaultGeneratedStatus || "available",
+        generatedNote: tourFormData.marketplaceAvailabilitySettings?.generatedNote || "",
+        instantBookingEnabled: tourFormData.marketplaceAvailabilitySettings?.instantBookingEnabled === true,
+        inventoryRefreshMode: tourFormData.marketplaceAvailabilitySettings?.inventoryRefreshMode || "operator-managed",
+      },
       seo: {
         title: tourFormData.seoTitle,
         description: tourFormData.seoDescription,
@@ -1680,6 +1724,151 @@ const AdminDashboard = () => {
                       </button>
                     </div>
                     <div className="mt-5 space-y-4">
+                      <div className="grid gap-4 rounded-[24px] border border-[#e5dcc7] bg-[#fbf8f1] p-4 lg:grid-cols-2">
+                        <div className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1">
+                              <label className="ml-1 text-[9px] font-black uppercase text-gray-400">Availability mode</label>
+                              <select
+                                value={tourFormData.marketplaceAvailabilitySettings?.mode || "manual"}
+                                onChange={(e) => handleAvailabilitySettingsChange("mode", e.target.value)}
+                                className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="manual">Manual dates only</option>
+                                <option value="weekly-template">Weekly template</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="ml-1 text-[9px] font-black uppercase text-gray-400">Inventory mode</label>
+                              <select
+                                value={tourFormData.marketplaceAvailabilitySettings?.inventoryRefreshMode || "operator-managed"}
+                                onChange={(e) => handleAvailabilitySettingsChange("inventoryRefreshMode", e.target.value)}
+                                className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="operator-managed">Operator managed</option>
+                                <option value="rule-generated">Rule generated</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="grid gap-4 md:grid-cols-3">
+                            <div className="space-y-1">
+                              <label className="ml-1 text-[9px] font-black uppercase text-gray-400">Months ahead</label>
+                              <input
+                                type="number"
+                                min="1"
+                                max="18"
+                                value={tourFormData.marketplaceAvailabilitySettings?.monthsAhead ?? 3}
+                                onChange={(e) => handleAvailabilitySettingsChange("monthsAhead", e.target.value)}
+                                className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="ml-1 text-[9px] font-black uppercase text-gray-400">Cutoff days</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="60"
+                                value={tourFormData.marketplaceAvailabilitySettings?.bookingCutoffDays ?? 0}
+                                onChange={(e) => handleAvailabilitySettingsChange("bookingCutoffDays", e.target.value)}
+                                className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="ml-1 text-[9px] font-black uppercase text-gray-400">Default spots</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={tourFormData.marketplaceAvailabilitySettings?.defaultRemainingSpots ?? ""}
+                                onChange={(e) => handleAvailabilitySettingsChange("defaultRemainingSpots", e.target.value)}
+                                className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1">
+                              <label className="ml-1 text-[9px] font-black uppercase text-gray-400">Generated status</label>
+                              <select
+                                value={tourFormData.marketplaceAvailabilitySettings?.defaultGeneratedStatus || "available"}
+                                onChange={(e) => handleAvailabilitySettingsChange("defaultGeneratedStatus", e.target.value)}
+                                className="w-full rounded-lg border-none bg-white p-2 text-xs font-bold shadow-sm focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="available">Available</option>
+                                <option value="limited">Limited</option>
+                                <option value="on-request">On request</option>
+                                <option value="unavailable">Unavailable</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="ml-1 text-[9px] font-black uppercase text-gray-400">Generated note</label>
+                              <input
+                                type="text"
+                                value={tourFormData.marketplaceAvailabilitySettings?.generatedNote || ""}
+                                onChange={(e) => handleAvailabilitySettingsChange("generatedNote", e.target.value)}
+                                placeholder="Shared group departure, ask about upgrades, etc."
+                                className="w-full rounded-lg border-none bg-white p-2 text-xs font-medium shadow-sm focus:ring-2 focus:ring-primary"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <label className="flex items-start gap-3 rounded-[20px] border border-slate-100 bg-white px-4 py-4">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(tourFormData.marketplaceAvailabilitySettings?.autoGenerateFutureDates)}
+                              onChange={(e) => handleAvailabilitySettingsChange("autoGenerateFutureDates", e.target.checked)}
+                              className="mt-1 h-5 w-5 rounded accent-primary"
+                            />
+                            <span>
+                              <span className="block text-sm font-black uppercase tracking-wide text-slate-900">
+                                Auto-generate future dates
+                              </span>
+                              <span className="mt-1 block text-sm font-medium leading-6 text-slate-600">
+                                Create departure dates from your weekly rule instead of entering every future date by hand.
+                              </span>
+                            </span>
+                          </label>
+                          <label className="flex items-start gap-3 rounded-[20px] border border-slate-100 bg-white px-4 py-4">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(tourFormData.marketplaceAvailabilitySettings?.instantBookingEnabled)}
+                              onChange={(e) => handleAvailabilitySettingsChange("instantBookingEnabled", e.target.checked)}
+                              className="mt-1 h-5 w-5 rounded accent-primary"
+                            />
+                            <span>
+                              <span className="block text-sm font-black uppercase tracking-wide text-slate-900">
+                                Instant booking ready
+                              </span>
+                              <span className="mt-1 block text-sm font-medium leading-6 text-slate-600">
+                                Eligible dates can show an instant-booking action when they pass the cutoff and still have inventory.
+                              </span>
+                            </span>
+                          </label>
+                          <div className="rounded-[20px] border border-slate-100 bg-white px-4 py-4">
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
+                              Weekly departure days
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, weekday) => {
+                                const active = (tourFormData.marketplaceAvailabilitySettings?.weeklyDepartureDays || []).includes(weekday);
+                                return (
+                                  <button
+                                    key={label}
+                                    type="button"
+                                    onClick={() => toggleAvailabilityWeekday(weekday)}
+                                    className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${
+                                      active
+                                        ? "bg-[#224433] text-white"
+                                        : "border border-slate-200 bg-slate-50 text-slate-600"
+                                    }`}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       {(tourFormData.marketplaceAvailability || []).map((entry, index) => (
                         <div key={`availability-${index}`} className="grid gap-4 rounded-[24px] border border-slate-100 bg-slate-50 p-4 md:grid-cols-[1.2fr_1fr_0.8fr_1.4fr_auto]">
                           <div className="space-y-1">
@@ -2331,6 +2520,25 @@ const AdminDashboard = () => {
                                       note: entry?.note || "",
                                     }))
                                   : [{ date: "", status: "available", remainingSpots: "", note: "" }],
+                              marketplaceAvailabilitySettings: {
+                                mode: t.marketplaceAvailabilitySettings?.mode || "manual",
+                                autoGenerateFutureDates:
+                                  t.marketplaceAvailabilitySettings?.autoGenerateFutureDates === true,
+                                weeklyDepartureDays: t.marketplaceAvailabilitySettings?.weeklyDepartureDays || [],
+                                monthsAhead: t.marketplaceAvailabilitySettings?.monthsAhead ?? 3,
+                                bookingCutoffDays: t.marketplaceAvailabilitySettings?.bookingCutoffDays ?? 0,
+                                defaultRemainingSpots:
+                                  typeof t.marketplaceAvailabilitySettings?.defaultRemainingSpots === "number"
+                                    ? t.marketplaceAvailabilitySettings.defaultRemainingSpots
+                                    : "",
+                                defaultGeneratedStatus:
+                                  t.marketplaceAvailabilitySettings?.defaultGeneratedStatus || "available",
+                                generatedNote: t.marketplaceAvailabilitySettings?.generatedNote || "",
+                                instantBookingEnabled:
+                                  t.marketplaceAvailabilitySettings?.instantBookingEnabled === true,
+                                inventoryRefreshMode:
+                                  t.marketplaceAvailabilitySettings?.inventoryRefreshMode || "operator-managed",
+                              },
                               launchDate: t.launchDate || "",
                               isGroupTour: Boolean(t.isGroupTour),
                               maxCapacity: t.maxCapacity ?? 12,

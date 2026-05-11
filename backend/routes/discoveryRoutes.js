@@ -4,6 +4,11 @@ import MarketplaceReview from "../models/MarketplaceReview.js";
 import TourPackage from "../models/TourPackage.js";
 import Tenant from "../models/Tenant.js";
 import TravelerPhotoSubmission from "../models/TravelerPhotoSubmission.js";
+import {
+  buildAvailabilitySummary,
+  matchesAvailabilityFilter,
+  matchesDepartureMonth,
+} from "../utils/marketplaceAvailability.js";
 import { buildMarketplaceReviewSummary } from "../utils/marketplaceReviewAggregation.js";
 
 const router = express.Router();
@@ -26,36 +31,53 @@ const buildDiscoverySort = (sort = "") => {
   return { featured: -1, createdAt: -1 };
 };
 
-const toDiscoveryCard = (tour = {}) => ({
-  _id: String(tour._id || ""),
-  title: tour.title || "",
-  description: tour.description || "",
-  image: tour.image || "",
-  location: tour.location || "",
-  duration: tour.duration || "",
-  category: tour.category || "",
-  price: Number(tour.price || 0),
-  featured: tour.featured === true,
-  operator: {
-    id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
-    name: tour.tenantId?.name || "Verified Operator",
-    slug: tour.tenantId?.slug || "",
-  },
-  tripAdvisorRating: tour.tripAdvisorRating ?? null,
-  tripAdvisorReviewCount: tour.tripAdvisorReviewCount ?? null,
-  marketplaceAvailability: Array.isArray(tour.marketplaceAvailability)
-    ? tour.marketplaceAvailability
-        .map((entry) => ({
-          date: entry?.date || null,
-          status: entry?.status || "available",
-          remainingSpots:
-            typeof entry?.remainingSpots === "number" ? entry.remainingSpots : null,
-          note: entry?.note || "",
-        }))
-        .sort((left, right) => new Date(left.date || 0) - new Date(right.date || 0))
-        .slice(0, 3)
-    : [],
-});
+const toDiscoveryCard = (tour = {}) => {
+  const availability = buildAvailabilitySummary(tour);
+  return {
+    _id: String(tour._id || ""),
+    title: tour.title || "",
+    description: tour.description || "",
+    image: tour.image || "",
+    location: tour.location || "",
+    duration: tour.duration || "",
+    category: tour.category || "",
+    price: Number(tour.price || 0),
+    featured: tour.featured === true,
+    operator: {
+      id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
+      name: tour.tenantId?.name || "Verified Operator",
+      slug: tour.tenantId?.slug || "",
+    },
+    tripAdvisorRating: tour.tripAdvisorRating ?? null,
+    tripAdvisorReviewCount: tour.tripAdvisorReviewCount ?? null,
+    marketplaceAvailability: availability.entries.slice(0, 6).map((entry) => ({
+      date: entry.date || null,
+      status: entry.status || "available",
+      remainingSpots: typeof entry.remainingSpots === "number" ? entry.remainingSpots : null,
+      note: entry.note || "",
+      bookable: entry.bookable === true,
+      instantBookable: entry.instantBookable === true,
+      source: entry.source || "manual",
+    })),
+    availabilitySummary: {
+      entries: availability.entries.map((entry) => ({
+        date: entry.date || null,
+        status: entry.status || "available",
+      })),
+      hasPublishedDates: availability.hasPublishedDates,
+      upcomingDatesCount: availability.upcomingDatesCount,
+      availableCount: availability.availableCount,
+      limitedCount: availability.limitedCount,
+      instantBookableCount: availability.instantBookableCount,
+      nextPublishedDate: availability.nextPublishedDate,
+      nextUpcomingDate: availability.nextUpcomingDate,
+      nextBookableDate: availability.nextBookableDate,
+      nextInstantBookableDate: availability.nextInstantBookableDate,
+      requestOnly: availability.requestOnly,
+      instantBookingEnabled: availability.instantBookingEnabled,
+    },
+  };
+};
 
 export const toDiscoveryCardWithEngagement = (tour = {}, marketplace = {}) => ({
   ...toDiscoveryCard(tour),
@@ -68,33 +90,53 @@ export const toDiscoveryCardWithEngagement = (tour = {}, marketplace = {}) => ({
   },
 });
 
-const toDiscoveryDetail = (tour = {}) => ({
-  ...tour,
-  marketplaceControls: {
-    reviewsEnabled: tour.allowMarketplaceReviews !== false,
-    travelerPhotosEnabled: tour.allowTravelerPhotos !== false,
-    questionsEnabled:
-      tour.allowMarketplaceQuestions !== false &&
-      tour.tenantId?.marketplaceSettings?.allowCommunityQnA !== false,
-  },
-  operator: {
-    id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
-    name: tour.tenantId?.name || "Verified Operator",
-    slug: tour.tenantId?.slug || "",
-    marketplaceSettings: tour.tenantId?.marketplaceSettings || null,
-  },
-  marketplaceAvailability: Array.isArray(tour.marketplaceAvailability)
-    ? tour.marketplaceAvailability
-        .map((entry) => ({
-          date: entry?.date || null,
-          status: entry?.status || "available",
-          remainingSpots:
-            typeof entry?.remainingSpots === "number" ? entry.remainingSpots : null,
-          note: entry?.note || "",
-        }))
-        .sort((left, right) => new Date(left.date || 0) - new Date(right.date || 0))
-    : [],
-});
+const toDiscoveryDetail = (tour = {}) => {
+  const availability = buildAvailabilitySummary(tour);
+  return {
+    ...tour,
+    marketplaceControls: {
+      reviewsEnabled: tour.allowMarketplaceReviews !== false,
+      travelerPhotosEnabled: tour.allowTravelerPhotos !== false,
+      questionsEnabled:
+        tour.allowMarketplaceQuestions !== false &&
+        tour.tenantId?.marketplaceSettings?.allowCommunityQnA !== false,
+    },
+    operator: {
+      id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
+      name: tour.tenantId?.name || "Verified Operator",
+      slug: tour.tenantId?.slug || "",
+      marketplaceSettings: tour.tenantId?.marketplaceSettings || null,
+    },
+    marketplaceAvailabilitySettings: tour.marketplaceAvailabilitySettings || null,
+    marketplaceAvailability: availability.entries.map((entry) => ({
+      date: entry.date || null,
+      status: entry.status || "available",
+      remainingSpots: typeof entry.remainingSpots === "number" ? entry.remainingSpots : null,
+      note: entry.note || "",
+      bookable: entry.bookable === true,
+      instantBookable: entry.instantBookable === true,
+      source: entry.source || "manual",
+      daysUntilDeparture: entry.daysUntilDeparture,
+    })),
+    availabilitySummary: {
+      entries: availability.entries.map((entry) => ({
+        date: entry.date || null,
+        status: entry.status || "available",
+      })),
+      hasPublishedDates: availability.hasPublishedDates,
+      upcomingDatesCount: availability.upcomingDatesCount,
+      availableCount: availability.availableCount,
+      limitedCount: availability.limitedCount,
+      instantBookableCount: availability.instantBookableCount,
+      nextPublishedDate: availability.nextPublishedDate,
+      nextUpcomingDate: availability.nextUpcomingDate,
+      nextBookableDate: availability.nextBookableDate,
+      nextInstantBookableDate: availability.nextInstantBookableDate,
+      requestOnly: availability.requestOnly,
+      instantBookingEnabled: availability.instantBookingEnabled,
+    },
+  };
+};
 
 const fetchMarketplaceSnapshot = async (tourId, options = {}) => {
   const [reviews, photoCount, questionCount] = await Promise.all([
@@ -192,6 +234,8 @@ router.get("/tours", async (req, res) => {
       category,
       operator,
       duration,
+      availability,
+      departureMonth,
       sort,
       limit = 20,
       page = 1,
@@ -209,16 +253,11 @@ router.get("/tours", async (req, res) => {
 
     const parsedLimit = Math.max(Number(limit) || 20, 1);
     const parsedPage = Math.max(Number(page) || 1, 1);
-    const skip = (parsedPage - 1) * parsedLimit;
 
     const tours = await TourPackage.find(query)
       .sort(buildDiscoverySort(sort))
       .populate("tenantId", "name slug")
-      .skip(skip)
-      .limit(parsedLimit)
       .lean();
-
-    const total = await TourPackage.countDocuments(query);
 
     const toursWithMarketplace = await Promise.all(
       tours.map(async (tour) =>
@@ -229,8 +268,23 @@ router.get("/tours", async (req, res) => {
       )
     );
 
+    const filteredTours = toursWithMarketplace.filter((tour) => {
+      if (!matchesAvailabilityFilter(tour.availabilitySummary || {}, String(availability || ""))) {
+        return false;
+      }
+
+      if (!matchesDepartureMonth(tour.availabilitySummary || {}, String(departureMonth || ""))) {
+        return false;
+      }
+
+      return true;
+    });
+    const total = filteredTours.length;
+    const skip = (parsedPage - 1) * parsedLimit;
+    const pagedTours = filteredTours.slice(skip, skip + parsedLimit);
+
     res.status(200).json({
-      tours: toursWithMarketplace,
+      tours: pagedTours,
       pagination: {
         total,
         page: parsedPage,

@@ -9,6 +9,10 @@ import TourPackage from "../models/TourPackage.js";
 import TripComparisonSet from "../models/TripComparisonSet.js";
 import TravelerIdentity from "../models/TravelerIdentity.js";
 import TravelerPhotoSubmission from "../models/TravelerPhotoSubmission.js";
+import {
+  buildAvailabilitySummary,
+  computeAvailabilityEntries,
+} from "../utils/marketplaceAvailability.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { buildMarketplaceRegionSummaries } from "../utils/marketplaceRegionAggregation.js";
 import { buildMarketplaceReviewSummary } from "../utils/marketplaceReviewAggregation.js";
@@ -27,28 +31,57 @@ const normalizeUniqueTourIds = (selectedTourIds = [], maxItems = 24) =>
     maxItems
   );
 
-const buildMarketplaceSelectableTour = (tour = {}) => ({
-  _id: String(tour._id || ""),
-  title: tour.title || "",
-  description: tour.description || "",
-  image: tour.image || "",
-  location: tour.location || "",
-  duration: tour.duration || "",
-  category: tour.category || "",
-  price: Number(tour.price || 0),
-  tourType: tour.tourType || "",
-  destinationsVisited: tour.destinationsVisited || [],
-  inclusions: (tour.inclusions || []).slice(0, 5),
-  operator: {
-    id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
-    name: tour.tenantId?.name || "Verified Operator",
-    slug: tour.tenantId?.slug || "",
-  },
-  marketplace: {
-    averageRating: tour.marketplace?.averageRating ?? null,
-    reviewCount: tour.marketplace?.reviewCount ?? 0,
-    topSentimentTags: tour.marketplace?.topSentimentTags || [],
-  },
+const buildMarketplaceSelectableTour = (tour = {}) => {
+  const availability = buildAvailabilitySummary(tour);
+
+  return {
+    _id: String(tour._id || ""),
+    title: tour.title || "",
+    description: tour.description || "",
+    image: tour.image || "",
+    location: tour.location || "",
+    duration: tour.duration || "",
+    category: tour.category || "",
+    price: Number(tour.price || 0),
+    tourType: tour.tourType || "",
+    destinationsVisited: tour.destinationsVisited || [],
+    inclusions: (tour.inclusions || []).slice(0, 5),
+    operator: {
+      id: tour.tenantId?._id ? String(tour.tenantId._id) : "",
+      name: tour.tenantId?.name || "Verified Operator",
+      slug: tour.tenantId?.slug || "",
+    },
+    marketplaceAvailability: availability.entries.slice(0, 6).map((entry) => ({
+      date: entry.date,
+      status: entry.status,
+      remainingSpots: entry.remainingSpots,
+      note: entry.note || "",
+      bookable: entry.bookable === true,
+      instantBookable: entry.instantBookable === true,
+    })),
+    availabilitySummary: {
+      hasPublishedDates: availability.hasPublishedDates,
+      upcomingDatesCount: availability.upcomingDatesCount,
+      nextBookableDate: availability.nextBookableDate,
+      nextInstantBookableDate: availability.nextInstantBookableDate,
+      requestOnly: availability.requestOnly,
+      instantBookingEnabled: availability.instantBookingEnabled,
+    },
+    marketplace: {
+      averageRating: tour.marketplace?.averageRating ?? null,
+      reviewCount: tour.marketplace?.reviewCount ?? 0,
+      topSentimentTags: tour.marketplace?.topSentimentTags || [],
+    },
+  };
+};
+
+const normalizeReminderPayload = (payload = {}) => ({
+  enabled: payload.enabled === true,
+  email: String(payload.email || "").trim().toLowerCase(),
+  watchedTourIds: normalizeUniqueTourIds(payload.watchedTourIds, 24),
+  notifyForNewDates: payload.notifyForNewDates !== false,
+  notifyForUnavailableDates: payload.notifyForUnavailableDates !== false,
+  lastRequestedAt: payload.enabled === true ? new Date() : null,
 });
 
 const attachMarketplaceSummaries = async (tours = []) => {
@@ -292,6 +325,7 @@ export const buildSavedTripsPayload = ({ savedTripList = {}, tours = [] } = {}) 
     count: orderedTours.length,
     updatedAt: savedTripList.updatedAt || null,
     notes: savedTripList.notes || "",
+    reminders: savedTripList.reminders || null,
     tours: orderedTours,
   };
 };
@@ -308,6 +342,29 @@ export const buildComparisonPayload = ({ comparisonSet = {}, tours = [] } = {}) 
     count: orderedTours.length,
     updatedAt: comparisonSet.updatedAt || null,
     tours: orderedTours,
+  };
+};
+
+export const buildInstantBookingIntent = ({ tour = {}, travelDate = "", travelers = 1 } = {}) => {
+  const entries = computeAvailabilityEntries(tour);
+  const selected = entries.find((entry) => String(entry.date || "").startsWith(String(travelDate || "")));
+
+  if (!selected) {
+    throw new Error("Selected travel date is not published for this package.");
+  }
+
+  if (selected.instantBookable !== true) {
+    throw new Error("This departure is not currently eligible for instant booking.");
+  }
+
+  return {
+    tourId: String(tour._id || ""),
+    travelDate: selected.date,
+    travelers: Math.max(Number(travelers || 1), 1),
+    status: "ready",
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    remainingSpots: selected.remainingSpots,
+    instantBookable: true,
   };
 };
 
@@ -594,6 +651,56 @@ router.get("/saved-trips", async (req, res) => {
   }
 });
 
+router.post("/saved-trips/reminders", async (req, res) => {
+  try {
+    const sessionKey = String(req.body.sessionKey || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    if (!sessionKey && !email) {
+      throw new Error("Session key or email is required to manage marketplace reminders.");
+    }
+
+    const reminders = normalizeReminderPayload({
+      ...req.body,
+      email: req.body.email || email,
+    });
+
+    const match = {
+      $or: [
+        ...(sessionKey ? [{ sessionKey }] : []),
+        ...(email ? [{ email }] : []),
+      ],
+    };
+
+    const savedTripList = await SavedTripList.findOneAndUpdate(
+      match,
+      {
+        $set: {
+          sessionKey,
+          email,
+          reminders,
+        },
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+
+    const tours = await TourPackage.find({
+      _id: { $in: savedTripList.selectedTourIds || [] },
+      isMarketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    res.status(200).json(
+      buildSavedTripsPayload({
+        savedTripList,
+        tours: await attachMarketplaceSummaries(tours),
+      })
+    );
+  } catch (error) {
+    res.status(409).json({ message: error.message });
+  }
+});
+
 router.post("/comparisons", async (req, res) => {
   try {
     const comparisonSet = await createComparisonSetRecord(req.body, {
@@ -678,6 +785,31 @@ router.get("/map/regions", async (_req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/instant-booking-intents", async (req, res) => {
+  try {
+    const tour = await TourPackage.findOne({
+      _id: req.body.tourId,
+      isMarketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    if (!tour) {
+      return res.status(404).json({ message: "Marketplace package not found." });
+    }
+
+    const intent = buildInstantBookingIntent({
+      tour,
+      travelDate: req.body.travelDate,
+      travelers: req.body.travelers,
+    });
+
+    res.status(200).json(intent);
+  } catch (error) {
+    res.status(409).json({ message: error.message });
   }
 });
 

@@ -81,7 +81,12 @@ const PackageQuestionsPanel = ({
               key={question.id}
               className="rounded-[28px] border border-slate-100 bg-slate-50 p-5"
             >
-              <h3 className="text-lg font-black uppercase tracking-tight text-slate-900">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8b7451]">
+                  {question.answerCount > 0 ? `${question.answerCount} answer${question.answerCount === 1 ? "" : "s"}` : "Waiting on reply"}
+                </span>
+              </div>
+              <h3 className="mt-3 text-lg font-black uppercase tracking-tight text-slate-900">
                 {question.questionBody}
               </h3>
               <div className="mt-4 space-y-3">

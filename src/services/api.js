@@ -513,12 +513,16 @@ export const fetchMarketplaceSavedTrips = (params = {}) =>
   cachedGet("/marketplace/saved-trips", { params });
 export const updateMarketplaceSavedTrips = (payload) =>
   API.post("/marketplace/saved-trips", payload);
+export const updateMarketplaceSavedTripReminders = (payload) =>
+  API.post("/marketplace/saved-trips/reminders", payload);
 export const fetchMarketplaceComparisons = (params = {}) =>
   cachedGet("/marketplace/comparisons", { params });
 export const updateMarketplaceComparisons = (payload) =>
   API.post("/marketplace/comparisons", payload);
 export const fetchMarketplaceMapRegions = () =>
   cachedGet("/marketplace/map/regions");
+export const createMarketplaceInstantBookingIntent = (payload) =>
+  API.post("/marketplace/instant-booking-intents", payload);
 export const createDynamicPricingRule = (data) => API.post("/dynamic-pricing", data);
 export const updateDynamicPricingRule = (id, data) => API.patch(`/dynamic-pricing/${id}`, data);
 export const deleteDynamicPricingRule = (id) => API.delete(`/dynamic-pricing/${id}`);

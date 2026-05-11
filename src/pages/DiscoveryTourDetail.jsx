@@ -8,6 +8,8 @@ import {
   FaClock,
   FaCompass,
   FaHeadset,
+  FaBell,
+  FaBolt,
   FaMapMarkerAlt,
   FaRoute,
   FaStar,
@@ -28,7 +30,9 @@ import {
   fetchMarketplaceReviews,
   fetchMarketplaceSavedTrips,
   fetchMarketplaceComparisons,
+  createMarketplaceInstantBookingIntent,
   getMediaUrl,
+  updateMarketplaceSavedTripReminders,
   updateMarketplaceSavedTrips,
   updateMarketplaceComparisons,
 } from "../services/api";
@@ -56,6 +60,12 @@ const formatShortAvailabilityDate = (value = "") => {
   return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
+const formatMonthInputValue = (value = "") => {
+  if (!value) return "";
+  const date = new Date(`${value}-01T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+};
+
 const DiscoveryTourDetail = () => {
   const { id } = useParams();
   const [tour, setTour] = useState(null);
@@ -69,6 +79,18 @@ const DiscoveryTourDetail = () => {
   const [savedTripIds, setSavedTripIds] = useState([]);
   const [comparisonTripIds, setComparisonTripIds] = useState([]);
   const [selectedAvailabilityDate, setSelectedAvailabilityDate] = useState("");
+  const [selectedAvailabilityMonth, setSelectedAvailabilityMonth] = useState("");
+  const [savedTripReminder, setSavedTripReminder] = useState({
+    enabled: false,
+    email: "",
+    notifyForNewDates: true,
+    notifyForUnavailableDates: true,
+  });
+  const [reminderStatus, setReminderStatus] = useState("");
+  const [reminderSaving, setReminderSaving] = useState(false);
+  const [instantBookingIntent, setInstantBookingIntent] = useState(null);
+  const [instantBookingStatus, setInstantBookingStatus] = useState("");
+  const [instantBookingLoading, setInstantBookingLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -206,6 +228,12 @@ const DiscoveryTourDetail = () => {
         ]);
         setSavedTripIds((savedResponse.data?.tours || []).map((item) => item._id));
         setComparisonTripIds((comparisonResponse.data?.tours || []).map((item) => item._id));
+        if (savedResponse.data?.reminders) {
+          setSavedTripReminder((current) => ({
+            ...current,
+            ...savedResponse.data.reminders,
+          }));
+        }
       } catch (error) {
         console.error("Marketplace traveler state error:", error);
       }
@@ -262,6 +290,11 @@ const DiscoveryTourDetail = () => {
     return tour.itinerary.filter((day) => Array.isArray(day.events) && day.events.length > 0);
   }, [tour]);
 
+  useEffect(() => {
+    setInstantBookingIntent(null);
+    setInstantBookingStatus("");
+  }, [selectedAvailabilityDate, tour?._id]);
+
   const galleryImages = useMemo(() => {
     const images = [];
 
@@ -296,10 +329,30 @@ const DiscoveryTourDetail = () => {
       }))
       .sort((left, right) => new Date(left.date) - new Date(right.date));
   }, [tour]);
+  const availabilityMonths = useMemo(() => {
+    const groups = new Map();
+    for (const entry of availabilityEntries) {
+      const date = new Date(entry.date);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          key,
+          label: date.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+          entries: [],
+        });
+      }
+      groups.get(key).entries.push(entry);
+    }
+    return [...groups.values()];
+  }, [availabilityEntries]);
 
   useEffect(() => {
     setSelectedAvailabilityDate(availabilityEntries[0]?.date ? String(availabilityEntries[0].date).split("T")[0] : "");
   }, [availabilityEntries]);
+  useEffect(() => {
+    const monthKey = selectedAvailabilityDate ? selectedAvailabilityDate.slice(0, 7) : availabilityMonths[0]?.entries?.[0]?.date?.slice(0, 7) || "";
+    setSelectedAvailabilityMonth(monthKey);
+  }, [availabilityMonths, selectedAvailabilityDate]);
 
   const marketplaceControls = useMemo(
     () => ({
@@ -382,6 +435,9 @@ const DiscoveryTourDetail = () => {
         day: "numeric",
       })
     : "";
+  const selectedMonthEntries = availabilityMonths.find((month) => month.entries.some((entry) => String(entry.date).startsWith(selectedAvailabilityMonth)))?.entries
+    || availabilityMonths[0]?.entries
+    || [];
   const selectedAvailabilitySummary = selectedAvailabilityEntry
     ? typeof selectedAvailabilityEntry.remainingSpots === "number"
       ? `${selectedAvailabilityEntry.remainingSpots} spots currently noted for this departure.`
@@ -391,6 +447,54 @@ const DiscoveryTourDetail = () => {
           ? "This date is currently unavailable. Use the inquiry form to request the next opening."
           : "This date is published and ready for operator confirmation."
     : "Ask the operator for the next confirmed departure window.";
+  const handleSaveReminder = async () => {
+    try {
+      setReminderSaving(true);
+      setReminderStatus("");
+      const response = await updateMarketplaceSavedTripReminders({
+        sessionKey: getMarketplaceTravelerSessionKey(),
+        email: savedTripReminder.email,
+        enabled: savedTripReminder.enabled,
+        watchedTourIds: [tour._id],
+        notifyForNewDates: savedTripReminder.notifyForNewDates,
+        notifyForUnavailableDates: savedTripReminder.notifyForUnavailableDates,
+      });
+      setSavedTripReminder((current) => ({
+        ...current,
+        ...(response.data?.reminders || {}),
+      }));
+      setReminderStatus(
+        savedTripReminder.enabled
+          ? "Marketplace date reminders are active for this package."
+          : "Marketplace date reminders have been turned off."
+      );
+    } catch (error) {
+      setReminderStatus(error?.response?.data?.message || "Unable to update reminders right now.");
+    } finally {
+      setReminderSaving(false);
+    }
+  };
+  const handleCreateInstantBookingIntent = async () => {
+    if (!selectedAvailabilityEntry) {
+      return;
+    }
+    try {
+      setInstantBookingLoading(true);
+      setInstantBookingStatus("");
+      const response = await createMarketplaceInstantBookingIntent({
+        tourId: tour._id,
+        travelDate: selectedAvailabilityDate,
+        travelers: 1,
+      });
+      setInstantBookingIntent(response.data || null);
+      setInstantBookingStatus("This date is ready for a fast operator confirmation window.");
+    } catch (error) {
+      setInstantBookingIntent(null);
+      setInstantBookingStatus(error?.response?.data?.message || "Instant booking is not available for this date.");
+    } finally {
+      setInstantBookingLoading(false);
+    }
+  };
   const inquiryDefaultMessage = `I'm interested in booking the "${tour.title}" operated by ${tour.operator?.name || "your partner"}${
     selectedAvailabilityLabel ? ` for ${selectedAvailabilityLabel}` : ""
   }.${
@@ -689,8 +793,52 @@ const DiscoveryTourDetail = () => {
                 <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
                   Pick one of the currently published dates below. Your inquiry will carry the selected departure timing to the operator.
                 </p>
-                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {availabilityEntries.slice(0, 9).map((entry) => {
+                {availabilityMonths.length > 1 ? (
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    {availabilityMonths.map((month) => {
+                      const monthValue = month.entries[0]?.date?.slice(0, 7) || month.key;
+                      const active = monthValue === selectedAvailabilityMonth;
+                      return (
+                        <button
+                          key={month.key}
+                          type="button"
+                          onClick={() => {
+                            setSelectedAvailabilityMonth(monthValue);
+                            setSelectedAvailabilityDate(String(month.entries[0]?.date || "").split("T")[0]);
+                          }}
+                          className={`rounded-full px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                            active
+                              ? "bg-[#224433] text-white shadow-lg"
+                              : "border border-[#d8c8ae] bg-[#fbf8f1] text-slate-700 hover:border-[#224433]"
+                          }`}
+                        >
+                          {month.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+                <div className="mt-6 rounded-[30px] border border-[#e8dcc7] bg-[#fbf8f1] p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+                        Browsing
+                      </p>
+                      <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-slate-900">
+                        {formatMonthInputValue(selectedAvailabilityMonth) || "Published departures"}
+                      </h3>
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-3 text-right">
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                        Upcoming dates
+                      </p>
+                      <p className="mt-2 text-lg font-black uppercase tracking-tight text-slate-900">
+                        {availabilityEntries.length}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {selectedMonthEntries.map((entry) => {
                     const normalizedDate = String(entry.date).split("T")[0];
                     const isActive = normalizedDate === selectedAvailabilityDate;
                     return (
@@ -719,6 +867,18 @@ const DiscoveryTourDetail = () => {
                             ? `${entry.remainingSpots} spots noted`
                             : "Availability confirmed on request"}
                         </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {entry.bookable ? (
+                            <span className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] ${isActive ? "bg-white/15 text-white" : "bg-[#eef4ed] text-[#224433]"}`}>
+                              Request-ready
+                            </span>
+                          ) : null}
+                          {entry.instantBookable ? (
+                            <span className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] ${isActive ? "bg-[#d9a441] text-[#224433]" : "bg-[#fff1cb] text-[#8a5a05]"}`}>
+                              Instant confirm
+                            </span>
+                          ) : null}
+                        </div>
                         {entry.note ? (
                           <p className={`mt-2 text-sm font-medium leading-6 ${isActive ? "text-white/80" : "text-slate-500"}`}>
                             {entry.note}
@@ -727,6 +887,7 @@ const DiscoveryTourDetail = () => {
                       </button>
                     );
                   })}
+                  </div>
                 </div>
               </section>
             ) : (
@@ -954,6 +1115,18 @@ const DiscoveryTourDetail = () => {
                     <p className="mt-3 text-sm font-medium leading-6 text-white/80">
                       {selectedAvailabilityEntry.note || selectedAvailabilitySummary}
                     </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {selectedAvailabilityEntry.bookable ? (
+                        <span className="rounded-full bg-white/15 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white">
+                          Inquiry-ready date
+                        </span>
+                      ) : null}
+                      {selectedAvailabilityEntry.instantBookable ? (
+                        <span className="rounded-full bg-[#d9a441] px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#224433]">
+                          Fast confirmation eligible
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
               </div>
@@ -1017,6 +1190,117 @@ const DiscoveryTourDetail = () => {
                     <FaBalanceScale /> {comparisonTripIds.includes(tour._id) ? "In compare set" : "Add to compare"}
                   </p>
                 </button>
+                <div className="rounded-2xl bg-[#f8f5ee] px-4 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+                    Date reminders
+                  </p>
+                  <label className="mt-3 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={savedTripReminder.enabled}
+                      onChange={(event) =>
+                        setSavedTripReminder((current) => ({
+                          ...current,
+                          enabled: event.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                    />
+                    <span className="flex items-center gap-2 font-black uppercase tracking-[0.14em] text-slate-900">
+                      <FaBell className="text-primary" /> Notify me about dates
+                    </span>
+                  </label>
+                  <input
+                    type="email"
+                    value={savedTripReminder.email}
+                    onChange={(event) =>
+                      setSavedTripReminder((current) => ({
+                        ...current,
+                        email: event.target.value,
+                      }))
+                    }
+                    placeholder="traveler@email.com"
+                    className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                  <div className="mt-3 grid gap-2">
+                    <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={savedTripReminder.notifyForNewDates}
+                        onChange={(event) =>
+                          setSavedTripReminder((current) => ({
+                            ...current,
+                            notifyForNewDates: event.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                      />
+                      Notify me when new departures are published
+                    </label>
+                    <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={savedTripReminder.notifyForUnavailableDates}
+                        onChange={(event) =>
+                          setSavedTripReminder((current) => ({
+                            ...current,
+                            notifyForUnavailableDates: event.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                      />
+                      Notify me when this trip loses published dates
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveReminder}
+                    disabled={reminderSaving || (savedTripReminder.enabled && !savedTripReminder.email)}
+                    className="mt-4 w-full rounded-2xl bg-[#224433] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#193124] disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {reminderSaving ? "Saving reminder..." : "Save reminder preferences"}
+                  </button>
+                  {reminderStatus ? (
+                    <p className="mt-3 text-sm font-medium leading-6 text-slate-600">{reminderStatus}</p>
+                  ) : null}
+                </div>
+                {selectedAvailabilityEntry?.instantBookable ? (
+                  <div className="rounded-2xl bg-[#eef4ed] px-4 py-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+                      Fast confirmation
+                    </p>
+                    <p className="mt-2 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
+                      <FaBolt className="text-[#d9a441]" /> This departure supports instant confirmation intent
+                    </p>
+                    <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+                      Create a short-lived booking intent so the operator can lock the date faster.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCreateInstantBookingIntent}
+                      disabled={instantBookingLoading}
+                      className="mt-4 w-full rounded-2xl bg-[#d9a441] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#224433] transition hover:bg-[#c89422] disabled:cursor-not-allowed disabled:bg-[#e8d39b]"
+                    >
+                      {instantBookingLoading ? "Preparing intent..." : "Create instant booking intent"}
+                    </button>
+                    {instantBookingStatus ? (
+                      <p className="mt-3 text-sm font-medium leading-6 text-slate-600">{instantBookingStatus}</p>
+                    ) : null}
+                    {instantBookingIntent ? (
+                      <div className="mt-4 rounded-2xl bg-white px-4 py-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                          Intent window
+                        </p>
+                        <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">
+                          Ready until {new Date(instantBookingIntent.expiresAt).toLocaleString()}
+                        </p>
+                        <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+                          Remaining spots noted: {instantBookingIntent.remainingSpots ?? "Operator confirmation required"}.
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="rounded-2xl bg-slate-50 px-4 py-4">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                     Marketplace status

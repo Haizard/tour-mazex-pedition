@@ -3,6 +3,10 @@ const ReviewSummaryPanel = ({ summary }) => {
   const averageRating = summary?.averageRating;
   const reviewCount = Number(summary?.reviewCount || 0);
   const topSentimentTags = summary?.topSentimentTags || [];
+  const sentimentHighlights = summary?.sentimentHighlights || [];
+  const verificationBreakdown = summary?.verificationBreakdown || {};
+  const travelerTypeBreakdown = summary?.travelerTypeBreakdown || [];
+  const travelMonthBreakdown = summary?.travelMonthBreakdown || [];
 
   return (
     <section className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_70px_rgba(35,66,50,0.08)] md:p-8">
@@ -49,11 +53,22 @@ const ReviewSummaryPanel = ({ summary }) => {
               </p>
             )}
           </div>
+          {sentimentHighlights.length > 0 ? (
+            <div className="mt-4 space-y-2">
+              {sentimentHighlights.slice(0, 3).map((tag) => (
+                <div key={tag.label} className="flex items-center justify-between text-sm font-medium text-slate-600">
+                  <span>{tag.label}</span>
+                  <span className="font-black text-slate-900">{tag.count}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <div className="mt-8 grid gap-3">
-        {[5, 4, 3, 2, 1].map((rating) => {
+      <div className="mt-8 grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-3">
+          {[5, 4, 3, 2, 1].map((rating) => {
           const count = Number(distribution[rating] || 0);
           const width = reviewCount > 0 ? `${Math.max((count / reviewCount) * 100, count ? 10 : 0)}%` : "0%";
 
@@ -71,11 +86,64 @@ const ReviewSummaryPanel = ({ summary }) => {
               <span className="text-right text-sm font-black text-slate-500">{count}</span>
             </div>
           );
-        })}
+          })}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+          <div className="rounded-[28px] bg-[#f8f5ee] p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+              Verification mix
+            </p>
+            <div className="mt-4 grid gap-3">
+              <div className="rounded-2xl bg-white px-4 py-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Verified bookings</p>
+                <p className="mt-2 text-lg font-black uppercase tracking-tight text-slate-900">
+                  {Number(verificationBreakdown.booking || 0)}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white px-4 py-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Verified inquiries</p>
+                <p className="mt-2 text-lg font-black uppercase tracking-tight text-slate-900">
+                  {Number(verificationBreakdown.inquiry || 0)}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-[28px] bg-[#f8f5ee] p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+              Traveler profile mix
+            </p>
+            <div className="mt-4 space-y-2">
+              {travelerTypeBreakdown.length > 0 ? travelerTypeBreakdown.slice(0, 4).map((item) => (
+                <div key={item.label} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-600">
+                  <span>{item.label}</span>
+                  <span className="font-black text-slate-900">{item.count}</span>
+                </div>
+              )) : (
+                <p className="text-sm font-medium text-slate-500">
+                  Traveler type mix will appear once reviews include profile detail.
+                </p>
+              )}
+            </div>
+            {travelMonthBreakdown.length > 0 ? (
+              <div className="mt-4 border-t border-[#eadfcb] pt-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  Common travel months
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {travelMonthBreakdown.slice(0, 4).map((item) => (
+                    <span key={item.label} className="rounded-full bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#224433]">
+                      {item.label} ({item.count})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
     </section>
   );
 };
 
 export default ReviewSummaryPanel;
-

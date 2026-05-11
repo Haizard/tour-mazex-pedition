@@ -45,6 +45,11 @@ const PublicReviewFeed = ({ reviews = [] }) => (
             <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
               {review.reviewBody || "No written review was added."}
             </p>
+            {review.submittedAt ? (
+              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                Published {new Date(review.submittedAt).toLocaleDateString()}
+              </p>
+            ) : null}
             {(review.sentimentTags || []).length > 0 ? (
               <div className="mt-4 flex flex-wrap gap-2">
                 {review.sentimentTags.map((tag) => (
@@ -72,4 +77,3 @@ const PublicReviewFeed = ({ reviews = [] }) => (
 );
 
 export default PublicReviewFeed;
-
