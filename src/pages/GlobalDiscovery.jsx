@@ -37,6 +37,18 @@ const createInitialFilters = () => ({
 const categoryOptions = ["Luxury", "Midrange", "Budget", "Family", "Honeymoon", "Adventure"];
 const durationOptions = ["1-3", "4-6", "7-10", "10+"];
 
+const formatAvailabilityDate = (value = "") => {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+
+const getAvailabilityTone = (status = "") => {
+  if (status === "available") return "bg-[#e1efe6] text-[#234232]";
+  if (status === "limited") return "bg-[#fff3d6] text-[#8a5a05]";
+  if (status === "unavailable") return "bg-[#fde7e7] text-[#a33b3b]";
+  return "bg-slate-100 text-slate-700";
+};
+
 const getDiscoveryApiUrl = (path, params = null) => {
   const query = params ? `?${params.toString()}` : "";
 
@@ -215,7 +227,6 @@ const GlobalDiscovery = () => {
 
     return tours.filter((tour) => tour._id !== featuredTour._id);
   }, [featuredTour, tours]);
-
   return (
     <div className="min-h-screen bg-[#f6f1e8] pt-32 text-slate-900 md:pt-40">
       <section className="relative overflow-hidden border-b border-[#d8c8ae] bg-[#234232] px-6 py-14 text-white md:py-16">
@@ -665,6 +676,24 @@ const GlobalDiscovery = () => {
                       <p className="mt-3 line-clamp-3 text-sm font-medium leading-6 text-slate-600">
                         {tour.description}
                       </p>
+
+                      {tour.marketplaceAvailability?.[0] ? (
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${getAvailabilityTone(
+                              tour.marketplaceAvailability[0].status
+                            )}`}
+                          >
+                            {tour.marketplaceAvailability[0].status}
+                          </span>
+                          <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                            {formatAvailabilityDate(tour.marketplaceAvailability[0].date)}
+                            {typeof tour.marketplaceAvailability[0].remainingSpots === "number"
+                              ? ` - ${tour.marketplaceAvailability[0].remainingSpots} spots`
+                              : ""}
+                          </span>
+                        </div>
+                      ) : null}
 
                       <div className="mt-5 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
                         <span className="rounded-full bg-slate-100 px-3 py-2">{tour.location}</span>

@@ -181,6 +181,14 @@ test("Discovery API - B2C Global Marketplace", async (t) => {
       tenantId: { _id: "tenant_1", name: "MAZ Partner", slug: "maz-partner" },
       createdAt: "2026-05-01T00:00:00.000Z",
       image: "https://example.com/safari.jpg",
+      marketplaceAvailability: [
+        {
+          date: "2026-06-12T00:00:00.000Z",
+          status: "limited",
+          remainingSpots: 3,
+          note: "Window seats almost full",
+        },
+      ],
     },
     {
       _id: "tour_trek",
@@ -261,6 +269,9 @@ test("Discovery API - B2C Global Marketplace", async (t) => {
     assert.equal(firstTour.tripAdvisorRating, 4.9);
     assert.equal(firstTour.tripAdvisorReviewCount, 132);
     assert.equal(firstTour.featured, true);
+    assert.equal(firstTour.marketplaceAvailability.length, 1);
+    assert.equal(firstTour.marketplaceAvailability[0].status, "limited");
+    assert.equal(firstTour.marketplaceAvailability[0].remainingSpots, 3);
   });
 
   await t.test("should reject tours that are not marketplace visible in detail view", async () => {
