@@ -1,5 +1,10 @@
 import { Link } from "react-router-dom";
 
+const formatAvailabilityDate = (value = "") => {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+
 const TripComparisonDrawer = ({ trips = [], onRemove, onClear }) => (
   <section className="rounded-[36px] border border-[#d8c8ae] bg-[#fbf8f1] p-6 shadow-[0_20px_60px_rgba(35,66,50,0.08)] md:p-8">
     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -33,6 +38,13 @@ const TripComparisonDrawer = ({ trips = [], onRemove, onClear }) => (
                   <div className="rounded-[24px] border border-slate-200 bg-white p-4">
                     <p className="text-sm font-black uppercase tracking-tight text-slate-900">{trip.title}</p>
                     <p className="mt-2 text-xs font-medium text-slate-500">{trip.operator?.name || "Verified Operator"}</p>
+                    <p className="mt-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8b7451]">
+                      {trip.marketplaceAvailability?.[0]
+                        ? `${trip.marketplaceAvailability[0].status} • ${formatAvailabilityDate(
+                            trip.marketplaceAvailability[0].date
+                          )}`
+                        : "Dates on request"}
+                    </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
                         to={`/discover/tour/${trip._id}`}
@@ -58,6 +70,19 @@ const TripComparisonDrawer = ({ trips = [], onRemove, onClear }) => (
               ["Starting price", (trip) => `$${Number(trip.price || 0).toLocaleString()}`],
               ["Duration", (trip) => trip.duration || "Multi-day"],
               ["Location", (trip) => trip.location || "East Africa"],
+              [
+                "Next departure",
+                (trip) =>
+                  trip.marketplaceAvailability?.[0]
+                    ? `${trip.marketplaceAvailability[0].status} - ${formatAvailabilityDate(
+                        trip.marketplaceAvailability[0].date
+                      )}${
+                        typeof trip.marketplaceAvailability[0].remainingSpots === "number"
+                          ? ` (${trip.marketplaceAvailability[0].remainingSpots} spots)`
+                          : ""
+                      }`
+                    : "Request next available dates",
+              ],
               ["Travel style", (trip) => trip.category || trip.tourType || "Curated journey"],
               [
                 "Review summary",
@@ -100,4 +125,3 @@ const TripComparisonDrawer = ({ trips = [], onRemove, onClear }) => (
 );
 
 export default TripComparisonDrawer;
-

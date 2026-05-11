@@ -1,5 +1,17 @@
 import { Link } from "react-router-dom";
 
+const formatAvailabilityDate = (value = "") => {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+
+const getAvailabilityTone = (status = "") => {
+  if (status === "available") return "bg-[#e1efe6] text-[#234232]";
+  if (status === "limited") return "bg-[#fff3d6] text-[#8a5a05]";
+  if (status === "unavailable") return "bg-[#fde7e7] text-[#a33b3b]";
+  return "bg-slate-100 text-slate-700";
+};
+
 const SavedTripsRail = ({ trips = [], onRemove }) => (
   <section className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_20px_60px_rgba(35,66,50,0.08)] md:p-8">
     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -28,6 +40,27 @@ const SavedTripsRail = ({ trips = [], onRemove }) => (
               <h3 className="mt-2 text-lg font-black uppercase tracking-tight text-slate-900">
                 {trip.title}
               </h3>
+              {trip.marketplaceAvailability?.[0] ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${getAvailabilityTone(
+                      trip.marketplaceAvailability[0].status
+                    )}`}
+                  >
+                    {trip.marketplaceAvailability[0].status}
+                  </span>
+                  <span className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
+                    {formatAvailabilityDate(trip.marketplaceAvailability[0].date)}
+                    {typeof trip.marketplaceAvailability[0].remainingSpots === "number"
+                      ? ` - ${trip.marketplaceAvailability[0].remainingSpots} spots`
+                      : ""}
+                  </span>
+                </div>
+              ) : (
+                <p className="mt-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
+                  Dates on request
+                </p>
+              )}
               <p className="mt-2 text-sm font-medium text-slate-500">
                 {trip.location || "East Africa"} • {trip.duration || "Multi-day"}
               </p>
@@ -61,4 +94,3 @@ const SavedTripsRail = ({ trips = [], onRemove }) => (
 );
 
 export default SavedTripsRail;
-
