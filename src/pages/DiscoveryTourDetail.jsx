@@ -463,11 +463,18 @@ const DiscoveryTourDetail = () => {
         ...current,
         ...(response.data?.reminders || {}),
       }));
-      setReminderStatus(
-        savedTripReminder.enabled
-          ? "Marketplace date reminders are active for this package."
-          : "Marketplace date reminders have been turned off."
-      );
+      const delivery = response.data?.reminderDelivery;
+      if (savedTripReminder.enabled) {
+        if (delivery?.delivered) {
+          setReminderStatus("Marketplace reminders are active, and we sent a confirmation email for this package.");
+        } else if (delivery?.reason) {
+          setReminderStatus(`Marketplace reminders were saved, but confirmation delivery is not ready yet: ${delivery.reason}`);
+        } else {
+          setReminderStatus("Marketplace date reminders are active for this package.");
+        }
+      } else {
+        setReminderStatus("Marketplace date reminders have been turned off.");
+      }
     } catch (error) {
       setReminderStatus(error?.response?.data?.message || "Unable to update reminders right now.");
     } finally {

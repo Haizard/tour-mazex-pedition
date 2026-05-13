@@ -62,7 +62,7 @@ const SavedTripsRail = ({ trips = [], onRemove }) => (
                 </p>
               )}
               <p className="mt-2 text-sm font-medium text-slate-500">
-                {trip.location || "East Africa"} • {trip.duration || "Multi-day"}
+                {[trip.location || "East Africa", trip.duration || "Multi-day"].join(" • ")}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link

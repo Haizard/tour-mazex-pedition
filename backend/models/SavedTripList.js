@@ -8,6 +8,23 @@ const reminderSchema = new mongoose.Schema(
     notifyForNewDates: { type: Boolean, default: true },
     notifyForUnavailableDates: { type: Boolean, default: true },
     lastRequestedAt: { type: Date, default: null },
+    lastConfirmationSentAt: { type: Date, default: null },
+    watchStates: {
+      type: [
+        new mongoose.Schema(
+          {
+            tourId: { type: mongoose.Schema.Types.ObjectId, ref: "TourPackage", required: true },
+            digest: { type: String, default: "" },
+            hasPublishedDates: { type: Boolean, default: false },
+            nextUpcomingDate: { type: Date, default: null },
+            upcomingDatesCount: { type: Number, default: 0 },
+            lastNotifiedAt: { type: Date, default: null },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
   },
   { _id: false }
 );
@@ -43,6 +60,8 @@ const savedTripListSchema = new mongoose.Schema(
         notifyForNewDates: true,
         notifyForUnavailableDates: true,
         lastRequestedAt: null,
+        lastConfirmationSentAt: null,
+        watchStates: [],
       }),
     },
   },

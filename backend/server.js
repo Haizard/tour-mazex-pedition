@@ -61,6 +61,7 @@ import { startShadowWriteReplayLoop } from "./utils/postgresShadowWrites.js";
 import { startPaymentWebhookProcessingLoop } from "./utils/paymentWebhookProcessor.js";
 import { startSocialPostProcessingLoop } from "./utils/socialPostProcessor.js";
 import { startEmailSyncProcessingLoop } from "./utils/emailSyncProcessor.js";
+import { startMarketplaceReminderProcessingLoop } from "./utils/marketplaceReminderNotifications.js";
 import { orchestrator } from "./utils/backgroundOrchestrator.js";
 
 const app = express();
@@ -252,6 +253,7 @@ if (!isVercelRuntime) {
   startPaymentWebhookProcessingLoop();
   startSocialPostProcessingLoop();
   startEmailSyncProcessingLoop();
+  startMarketplaceReminderProcessingLoop();
 
   app.listen(PORT, () => {
     console.log(`Server is listening on port: ${PORT}`);

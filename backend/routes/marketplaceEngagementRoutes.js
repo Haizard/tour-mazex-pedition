@@ -13,6 +13,11 @@ import {
   buildAvailabilitySummary,
   computeAvailabilityEntries,
 } from "../utils/marketplaceAvailability.js";
+import {
+  buildReminderWatchStatesForTours,
+  processMarketplaceReminderNotificationsNow,
+  sendMarketplaceReminderEmail,
+} from "../utils/marketplaceReminderNotifications.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { buildMarketplaceRegionSummaries } from "../utils/marketplaceRegionAggregation.js";
 import { buildMarketplaceReviewSummary } from "../utils/marketplaceReviewAggregation.js";
@@ -82,6 +87,8 @@ const normalizeReminderPayload = (payload = {}) => ({
   notifyForNewDates: payload.notifyForNewDates !== false,
   notifyForUnavailableDates: payload.notifyForUnavailableDates !== false,
   lastRequestedAt: payload.enabled === true ? new Date() : null,
+  lastConfirmationSentAt: payload.lastConfirmationSentAt || null,
+  watchStates: payload.watchStates || [],
 });
 
 const attachMarketplaceSummaries = async (tours = []) => {
@@ -677,27 +684,89 @@ router.post("/saved-trips/reminders", async (req, res) => {
         $set: {
           sessionKey,
           email,
-          reminders,
         },
       },
       { new: true, upsert: true, setDefaultsOnInsert: true }
-    ).lean();
+    );
 
     const tours = await TourPackage.find({
-      _id: { $in: savedTripList.selectedTourIds || [] },
+      _id: { $in: savedTripList.selectedTourIds || reminders.watchedTourIds || [] },
       isMarketplaceVisible: true,
     })
       .populate("tenantId", "name slug")
       .lean();
 
+    savedTripList.reminders = {
+      ...savedTripList.reminders?.toObject?.(),
+      ...reminders,
+      watchStates: reminders.enabled ? buildReminderWatchStatesForTours(tours) : [],
+      lastConfirmationSentAt: reminders.enabled
+        ? savedTripList.reminders?.lastConfirmationSentAt || null
+        : null,
+    };
+    await savedTripList.save();
+
+    let delivery = null;
+    if (reminders.enabled && reminders.email) {
+      try {
+        delivery = await sendMarketplaceReminderEmail({
+          to: reminders.email,
+          events: tours.length
+            ? tours.slice(0, 3).map((tour) => ({
+                type: "watch-started",
+                tour,
+                nextState: buildAvailabilitySummary(tour),
+              }))
+            : [],
+        });
+        if (delivery?.delivered) {
+          await SavedTripList.updateOne(
+            { _id: savedTripList._id },
+            { $set: { "reminders.lastConfirmationSentAt": new Date() } }
+          );
+        }
+      } catch (error) {
+        delivery = {
+          delivered: false,
+          skipped: false,
+          reason: error.message,
+        };
+      }
+    }
+
     res.status(200).json(
-      buildSavedTripsPayload({
-        savedTripList,
-        tours: await attachMarketplaceSummaries(tours),
-      })
+      {
+        ...buildSavedTripsPayload({
+          savedTripList: savedTripList.toObject(),
+          tours: await attachMarketplaceSummaries(tours),
+        }),
+        reminderDelivery: delivery,
+      }
     );
   } catch (error) {
     res.status(409).json({ message: error.message });
+  }
+});
+
+router.post("/reminders/process", async (req, res) => {
+  try {
+    const expectedSecret = String(process.env.MARKETPLACE_REMINDER_CRON_SECRET || "").trim();
+    const providedSecret = String(
+      req.headers["x-marketplace-reminder-secret"] || req.body.secret || req.query.secret || ""
+    ).trim();
+
+    if (expectedSecret && expectedSecret !== providedSecret) {
+      return res.status(403).json({ message: "Reminder processing secret is invalid." });
+    }
+
+    const summary = await processMarketplaceReminderNotificationsNow({
+      env: process.env,
+      limit: Math.max(Number(req.body.limit || req.query.limit || 25), 1),
+    });
+
+    res.status(200).json(summary);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
