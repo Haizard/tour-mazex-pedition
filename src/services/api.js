@@ -328,6 +328,15 @@ export const renewPlatformTenantDomainService = (tenantId, data) =>
     headers: getPlatformAdminHeaders(),
   });
 export const fetchEmailConnections = () => API.get("/email/connections");
+export const fetchEmailAudienceContacts = () => API.get("/email/audience-contacts");
+export const createEmailAudienceContact = (data) =>
+  API.post("/email/audience-contacts", data);
+export const importEmailAudienceContactsFromLeads = () =>
+  API.post("/email/audience-contacts/import-leads");
+export const updateEmailAudienceContact = (contactId, data) =>
+  API.patch(`/email/audience-contacts/${contactId}`, data);
+export const deleteEmailAudienceContact = (contactId) =>
+  API.delete(`/email/audience-contacts/${contactId}`);
 export const fetchEmailProviders = () => API.get("/email/providers");
 export const createEmailConnection = (data) => API.post("/email/connections", data);
 export const runEmailConnectionHealthCheck = (connectionId) =>

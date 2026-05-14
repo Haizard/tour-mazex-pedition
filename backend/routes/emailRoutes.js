@@ -1,10 +1,15 @@
 import express from "express";
 import ContactMessage from "../models/ContactMessage.js";
 import CustomInquiry from "../models/CustomInquiry.js";
+import EmailAudienceContact from "../models/EmailAudienceContact.js";
 import EmailProviderConnection from "../models/EmailProviderConnection.js";
 import EmailSyncJob from "../models/EmailSyncJob.js";
 import EmailThread from "../models/EmailThread.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
+import {
+  buildAudienceImportCandidates,
+  buildEmailAudienceContactPayload,
+} from "../utils/emailAudienceContacts.js";
 import {
   buildEmailConnectionPayload,
   buildConnectionHealthSnapshot,
@@ -57,6 +62,123 @@ router.get("/connections", requireTenantAdmin, async (req, res) => {
         encryptedApiKey: connection.encryptedApiKey ? "[stored]" : "",
       }))
     );
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/audience-contacts", requireTenantAdmin, async (req, res) => {
+  try {
+    const contacts = await EmailAudienceContact.find({ tenantId: req.tenantId })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
+
+    res.status(200).json(contacts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/audience-contacts", requireTenantAdmin, async (req, res) => {
+  try {
+    const payload = buildEmailAudienceContactPayload(req.body);
+    const contact = await EmailAudienceContact.findOneAndUpdate(
+      { tenantId: req.tenantId, email: payload.email },
+      {
+        $set: {
+          ...payload,
+        },
+        $setOnInsert: {
+          tenantId: req.tenantId,
+        },
+      },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(201).json(contact);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/audience-contacts/import-leads", requireTenantAdmin, async (req, res) => {
+  try {
+    const [inquiries, messages] = await Promise.all([
+      CustomInquiry.find({ tenantId: req.tenantId })
+        .select("_id firstName lastName name email phone sourceChannel contactPreference")
+        .lean(),
+      ContactMessage.find({ tenantId: req.tenantId })
+        .select("_id name email phone")
+        .lean(),
+    ]);
+
+    const candidates = buildAudienceImportCandidates({
+      inquiries,
+      contactMessages: messages,
+    });
+
+    let importedCount = 0;
+
+    for (const candidate of candidates) {
+      await EmailAudienceContact.findOneAndUpdate(
+        { tenantId: req.tenantId, email: candidate.email },
+        {
+          $set: candidate,
+          $setOnInsert: {
+            tenantId: req.tenantId,
+          },
+        },
+        { upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      );
+      importedCount += 1;
+    }
+
+    const contacts = await EmailAudienceContact.find({ tenantId: req.tenantId })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      importedCount,
+      contacts,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/audience-contacts/:contactId", requireTenantAdmin, async (req, res) => {
+  try {
+    const payload = buildEmailAudienceContactPayload(req.body);
+    const contact = await EmailAudienceContact.findOneAndUpdate(
+      { _id: req.params.contactId, tenantId: req.tenantId },
+      {
+        $set: payload,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!contact) {
+      return res.status(404).json({ message: "Audience contact not found." });
+    }
+
+    res.status(200).json(contact);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.delete("/audience-contacts/:contactId", requireTenantAdmin, async (req, res) => {
+  try {
+    const contact = await EmailAudienceContact.findOneAndDelete({
+      _id: req.params.contactId,
+      tenantId: req.tenantId,
+    });
+
+    if (!contact) {
+      return res.status(404).json({ message: "Audience contact not found." });
+    }
+
+    res.status(200).json({ message: "Audience contact deleted successfully." });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

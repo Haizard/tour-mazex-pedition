@@ -6,6 +6,7 @@ import Card from "../UI/Card";
 import {
   createCampaign,
   deleteCampaign,
+  fetchEmailAudienceContacts,
   fetchCampaigns,
   generateCampaignDraft,
 } from "../../services/api";
@@ -20,6 +21,7 @@ const CampaignManager = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [draft, setDraft] = useState(null);
+  const [audienceCount, setAudienceCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -30,6 +32,8 @@ const CampaignManager = () => {
     try {
       const response = await fetchCampaigns();
       setCampaigns(Array.isArray(response.data) ? response.data : []);
+      const audienceResponse = await fetchEmailAudienceContacts();
+      setAudienceCount(Array.isArray(audienceResponse.data) ? audienceResponse.data.length : 0);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load campaigns.");
     } finally {
@@ -102,7 +106,10 @@ const CampaignManager = () => {
             ready for your social, email, and WhatsApp workflow.
           </p>
         </div>
-        <Badge variant="primary">{campaigns.length} Campaigns</Badge>
+        <div className="flex gap-2">
+          <Badge variant="primary">{campaigns.length} Campaigns</Badge>
+          <Badge variant="secondary">{audienceCount} Audience Contacts</Badge>
+        </div>
       </div>
 
       {error && (
@@ -118,6 +125,11 @@ const CampaignManager = () => {
           </h3>
 
           <div className="space-y-4">
+            <div className="rounded-3xl border border-sky-200 bg-sky-50 px-5 py-4 text-sm font-medium leading-6 text-sky-800">
+              Email campaigns work best when the tenant first fills the email audience bucket in
+              the `Email Integrations` tab. That bucket is where campaign contacts, repeat outreach,
+              and future automations can draw their audience.
+            </div>
             <input
               type="text"
               value={form.title}
