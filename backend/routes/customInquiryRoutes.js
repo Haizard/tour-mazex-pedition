@@ -3,6 +3,7 @@ import process from "node:process";
 import CustomInquiry from '../models/CustomInquiry.js';
 import QuoteProposal from '../models/QuoteProposal.js';
 import SiteSettings from '../models/SiteSettings.js';
+import SocialAccount from "../models/SocialAccount.js";
 import Tenant from "../models/Tenant.js";
 import TourPackage from '../models/TourPackage.js';
 import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
@@ -54,7 +55,22 @@ const getTenantWhatsAppNumber = async (tenantId) => {
     }
 
     const settings = await SiteSettings.findOne({ tenantId }).select('whatsapp');
-    return settings?.whatsapp || '';
+    if (settings?.whatsapp) {
+        return settings.whatsapp;
+    }
+
+    const whatsappAccount = await SocialAccount.findOne({
+        tenantId,
+        provider: "whatsapp",
+    })
+        .sort({ lastVerifiedAt: -1, createdAt: -1 })
+        .select("phoneNumber metadata");
+
+    return (
+        whatsappAccount?.phoneNumber ||
+        whatsappAccount?.metadata?.verification?.displayPhoneNumber ||
+        ''
+    );
 };
 
 const resolveInquiryTenantContext = async (req, body = {}) => {

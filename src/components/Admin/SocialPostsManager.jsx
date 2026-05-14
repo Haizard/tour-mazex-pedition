@@ -140,7 +140,10 @@ const SocialPostsManager = () => {
       (account) => account.status === "active" && account.provider === "meta"
     );
     const activeMetaWithInstagram = activeMetaAccounts.filter((account) =>
-      Boolean(account.instagramBusinessAccountId)
+      Boolean(
+        account.instagramBusinessAccountId ||
+          account.metadata?.verification?.instagramBusinessAccountId
+      )
     );
     const activeWhatsAppAccounts = accounts.filter(
       (account) => account.status === "active" && account.provider === "whatsapp"

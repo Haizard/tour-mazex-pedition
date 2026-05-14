@@ -33,7 +33,10 @@ export const resolveSocialPublishingReadiness = ({
     }
 
     if (requestedPlatforms.includes("instagram")) {
-      return Boolean(account.instagramBusinessAccountId);
+      return Boolean(
+        account.instagramBusinessAccountId ||
+          account?.metadata?.verification?.instagramBusinessAccountId
+      );
     }
 
     return true;

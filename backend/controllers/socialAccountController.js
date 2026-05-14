@@ -4,6 +4,7 @@ import SocialPost from "../models/SocialPost.js";
 import {
   sendWhatsAppTextMessage,
   verifyMetaAccountConnection,
+  verifyWhatsAppAccountConnection,
 } from "../utils/metaGraphApi.js";
 import { resolveSocialPublishingReadiness } from "../utils/socialPublishingReadiness.js";
 import { publishSocialPostToPlatforms } from "../utils/socialAutomation.js";
@@ -94,13 +95,23 @@ export const verifySocialAccount = async (req, res) => {
 
     if (account.provider === "meta") {
       verification = await verifyMetaAccountConnection(account);
+      if (!account.instagramBusinessAccountId && verification.instagramBusinessAccountId) {
+        account.instagramBusinessAccountId = verification.instagramBusinessAccountId;
+      }
     } else {
-      verification = { ok: true, provider: "whatsapp" };
+      verification = await verifyWhatsAppAccountConnection(account);
+      if (!account.phoneNumber && verification.displayPhoneNumber) {
+        account.phoneNumber = verification.displayPhoneNumber;
+      }
     }
 
     account.status = "active";
     account.lastVerifiedAt = new Date();
     account.lastError = "";
+    account.metadata = {
+      ...(account.metadata || {}),
+      verification,
+    };
     await account.save();
 
     res.status(200).json({ account, verification });
