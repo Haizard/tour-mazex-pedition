@@ -5,6 +5,7 @@ import {
   sendWhatsAppTextMessage,
   verifyMetaAccountConnection,
 } from "../utils/metaGraphApi.js";
+import { resolveSocialPublishingReadiness } from "../utils/socialPublishingReadiness.js";
 import { publishSocialPostToPlatforms } from "../utils/socialAutomation.js";
 import { buildWhatsAppAutomationSnapshot } from "../utils/unifiedInbox.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
@@ -126,17 +127,20 @@ export const publishSocialPostLive = async (req, res) => {
       return res.status(404).json({ message: "Social post not found." });
     }
 
-    const metaAccount = await SocialAccount.findOne(
-      buildTenantFilter(req, { provider: "meta", status: "active" })
-    );
+    const accounts = await SocialAccount.find(buildTenantFilter(req)).lean();
+    const readiness = resolveSocialPublishingReadiness({
+      accounts,
+      platforms: socialPost.platforms || [],
+    });
 
-    if (!metaAccount) {
+    if (!readiness.ready || !readiness.account) {
       return res.status(400).json({
-        message: "Connect an active Meta account before publishing live.",
+        message: readiness.message || "Connect an active Meta account before publishing live.",
+        readiness,
       });
     }
 
-    const publishResult = await publishSocialPostToPlatforms(socialPost, metaAccount);
+    const publishResult = await publishSocialPostToPlatforms(socialPost, readiness.account);
 
     socialPost.status = "published";
     socialPost.publishResult = publishResult;

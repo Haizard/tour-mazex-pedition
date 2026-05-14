@@ -89,17 +89,17 @@ const SocialAccountsManager = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-primary text-[10px] font-black uppercase tracking-[0.3em] mb-2">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary">
             Channel Accounts
           </p>
-          <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
+          <h2 className="text-3xl font-black uppercase tracking-tighter text-gray-900">
             Tenant Social Connections
           </h2>
-          <p className="text-sm text-slate-500 font-medium mt-2 max-w-3xl">
-            Connect each tenant’s own Meta and WhatsApp Business credentials so
-            publishing and messaging run from the correct tenant-owned account.
+          <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
+            Connect each tenant's own Meta and WhatsApp Business credentials so publishing and
+            messaging run from the correct tenant-owned account.
           </p>
         </div>
         <Badge variant="primary">{accounts.length} Connected Accounts</Badge>
@@ -111,16 +111,16 @@ const SocialAccountsManager = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8">
-        <Card className="p-8 border-none shadow-xl">
-          <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 mb-6">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card className="border-none p-8 shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
             Connect Account
           </h3>
           <form onSubmit={handleSave} className="space-y-4">
             <select
               value={form.provider}
               onChange={(event) => setForm((current) => ({ ...current, provider: event.target.value }))}
-              className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
             >
               <option value="meta">Meta (Facebook / Instagram)</option>
               <option value="whatsapp">WhatsApp Business</option>
@@ -130,14 +130,14 @@ const SocialAccountsManager = () => {
               value={form.label}
               onChange={(event) => setForm((current) => ({ ...current, label: event.target.value }))}
               placeholder="Connection label"
-              className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
             />
             <textarea
               rows={3}
               value={form.accessToken}
               onChange={(event) => setForm((current) => ({ ...current, accessToken: event.target.value }))}
               placeholder="Long-lived access token"
-              className="w-full rounded-[24px] bg-slate-50 px-4 py-4 text-sm font-medium text-slate-900 border-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-[24px] border-none bg-slate-50 px-4 py-4 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary"
             />
             {form.provider === "meta" ? (
               <>
@@ -146,14 +146,19 @@ const SocialAccountsManager = () => {
                   value={form.pageId}
                   onChange={(event) => setForm((current) => ({ ...current, pageId: event.target.value }))}
                   placeholder="Facebook Page ID"
-                  className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
                 />
                 <input
                   type="text"
                   value={form.instagramBusinessAccountId}
-                  onChange={(event) => setForm((current) => ({ ...current, instagramBusinessAccountId: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      instagramBusinessAccountId: event.target.value,
+                    }))
+                  }
                   placeholder="Instagram Business Account ID"
-                  className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
                 />
               </>
             ) : (
@@ -161,23 +166,33 @@ const SocialAccountsManager = () => {
                 <input
                   type="text"
                   value={form.whatsappBusinessAccountId}
-                  onChange={(event) => setForm((current) => ({ ...current, whatsappBusinessAccountId: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      whatsappBusinessAccountId: event.target.value,
+                    }))
+                  }
                   placeholder="WhatsApp Business Account ID"
-                  className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
                 />
                 <input
                   type="text"
                   value={form.whatsappPhoneNumberId}
-                  onChange={(event) => setForm((current) => ({ ...current, whatsappPhoneNumberId: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      whatsappPhoneNumberId: event.target.value,
+                    }))
+                  }
                   placeholder="WhatsApp Phone Number ID"
-                  className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
                 />
                 <input
                   type="text"
                   value={form.phoneNumber}
                   onChange={(event) => setForm((current) => ({ ...current, phoneNumber: event.target.value }))}
                   placeholder="Display phone number"
-                  className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 border-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-2xl border-none bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary"
                 />
               </>
             )}
@@ -187,8 +202,8 @@ const SocialAccountsManager = () => {
           </form>
         </Card>
 
-        <Card className="p-8 border-none shadow-xl">
-          <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 mb-6">
+        <Card className="border-none p-8 shadow-xl">
+          <h3 className="mb-6 text-xl font-black uppercase tracking-tight text-slate-900">
             Existing Connections
           </h3>
           <div className="space-y-4">
@@ -206,11 +221,31 @@ const SocialAccountsManager = () => {
                       <p className="text-xs font-black uppercase tracking-wide text-slate-900">
                         {account.label}
                       </p>
-                      <div className="flex flex-wrap gap-2 mt-3">
+                      <div className="mt-3 flex flex-wrap gap-2">
                         <Badge variant="primary">{account.provider}</Badge>
                         <Badge variant={account.status === "active" ? "secondary" : "accent"}>
                           {account.status}
                         </Badge>
+                        <Badge variant="luxury">
+                          {account.provider === "meta"
+                            ? "Used for Facebook and Instagram publishing"
+                            : "Used for WhatsApp lead messaging"}
+                        </Badge>
+                      </div>
+                      <div className="mt-3 space-y-1 text-sm font-medium text-slate-500">
+                        {account.provider === "meta" ? (
+                          <>
+                            <p>Facebook Page ID: {account.pageId || "Missing"}</p>
+                            <p>
+                              Instagram Business ID: {account.instagramBusinessAccountId || "Missing"}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p>WhatsApp Business ID: {account.whatsappBusinessAccountId || "Missing"}</p>
+                            <p>Phone Number ID: {account.whatsappPhoneNumberId || "Missing"}</p>
+                          </>
+                        )}
                       </div>
                       {account.lastError && (
                         <p className="mt-3 text-sm font-medium text-red-600">{account.lastError}</p>

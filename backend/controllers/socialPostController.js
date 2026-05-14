@@ -6,6 +6,7 @@ import {
   buildSocialAutomationDashboard,
   publishSocialPostToPlatforms,
 } from "../utils/socialAutomation.js";
+import { resolveSocialPublishingReadiness } from "../utils/socialPublishingReadiness.js";
 import { generateSocialPostSuggestions } from "../utils/socialPostGeneration.js";
 import { storeGeneratedMediaAsset } from "../utils/generatedMediaStorage.js";
 import { getRedisClient } from "../utils/redisClient.js";
@@ -319,13 +320,18 @@ export const runScheduledSocialPosts = async (req, res) => {
       });
     }
 
-    const metaAccount = await SocialAccount.findOne(
-      buildTenantFilter(req, { provider: "meta", status: "active" })
-    );
+    const accounts = await SocialAccount.find(buildTenantFilter(req)).lean();
+    const readiness = resolveSocialPublishingReadiness({
+      accounts,
+      platforms: duePosts.flatMap((post) => post.platforms || []),
+    });
 
-    if (!metaAccount) {
+    if (!readiness.ready || !readiness.account) {
       return res.status(400).json({
-        message: "Connect an active Meta account before running the social automation queue.",
+        message:
+          readiness.message ||
+          "Connect an active Meta account before running the social automation queue.",
+        readiness,
       });
     }
 
@@ -376,7 +382,7 @@ export const runScheduledSocialPosts = async (req, res) => {
 
     for (const socialPost of duePosts) {
       try {
-        const publishResult = await publishSocialPostToPlatforms(socialPost, metaAccount);
+        const publishResult = await publishSocialPostToPlatforms(socialPost, readiness.account);
         socialPost.status = "published";
         socialPost.publishResult = publishResult;
         socialPost.lastError = "";

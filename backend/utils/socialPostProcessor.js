@@ -2,6 +2,7 @@ import SocialAccount from "../models/SocialAccount.js";
 import SocialPost from "../models/SocialPost.js";
 import { getRedisClient } from "./redisClient.js";
 import { publishSocialPostToPlatforms } from "./socialAutomation.js";
+import { resolveSocialPublishingReadiness } from "./socialPublishingReadiness.js";
 import {
   acquireSocialPostDispatchLock,
   dequeueSocialPostDispatchJob,
@@ -43,12 +44,16 @@ export const processQueuedSocialPostsNow = async ({
           _id: job.postId,
           tenantId: job.tenantId,
         }),
-      loadMetaAccount: async (job) =>
-        SocialAccount.findOne({
+      loadMetaAccount: async (job, socialPost) => {
+        const accounts = await SocialAccount.find({
           tenantId: job.tenantId,
-          provider: "meta",
-          status: "active",
-        }),
+        }).lean();
+        const readiness = resolveSocialPublishingReadiness({
+          accounts,
+          platforms: socialPost?.platforms || [],
+        });
+        return readiness.account || null;
+      },
       publishPost: async (socialPost, metaAccount) =>
         publishSocialPostToPlatforms(socialPost, metaAccount),
     });

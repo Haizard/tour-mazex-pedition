@@ -129,10 +129,36 @@ const SocialPostsManager = () => {
       scheduled: posts.filter((post) => post.status === "scheduled").length,
       drafts: posts.filter((post) => post.status === "draft").length,
       liveAccounts: accounts.filter((account) => account.status === "active").length,
+      liveMetaAccounts: accounts.filter((account) => account.status === "active" && account.provider === "meta").length,
+      liveWhatsAppAccounts: accounts.filter((account) => account.status === "active" && account.provider === "whatsapp").length,
       dueNow: automationSummary.stats?.dueNow || 0,
     }),
     [accounts, automationSummary.stats, posts]
   );
+  const publishingReadiness = useMemo(() => {
+    const activeMetaAccounts = accounts.filter(
+      (account) => account.status === "active" && account.provider === "meta"
+    );
+    const activeMetaWithInstagram = activeMetaAccounts.filter((account) =>
+      Boolean(account.instagramBusinessAccountId)
+    );
+    const activeWhatsAppAccounts = accounts.filter(
+      (account) => account.status === "active" && account.provider === "whatsapp"
+    );
+
+    return {
+      canPublishFacebook: activeMetaAccounts.length > 0,
+      canPublishInstagram: activeMetaWithInstagram.length > 0,
+      message:
+        activeMetaAccounts.length > 0
+          ? activeMetaWithInstagram.length > 0
+            ? "Facebook and Instagram publishing are ready from your active Meta connection."
+            : "Facebook is ready, but Instagram still needs a Meta connection with an Instagram Business Account ID."
+          : activeWhatsAppAccounts.length > 0
+            ? "WhatsApp is connected for lead messaging, but Facebook and Instagram publishing still need an active Meta account."
+            : "Connect and verify a Meta account before publishing Facebook or Instagram posts.",
+    };
+  }, [accounts]);
 
   const filteredPosts = useMemo(
     () => (selectedStatus === "all" ? posts : posts.filter((post) => post.status === selectedStatus)),
@@ -330,7 +356,19 @@ const SocialPostsManager = () => {
           <Badge variant="secondary">{stats.dueNow} Due Now</Badge>
           <Badge variant="accent">{stats.drafts} Drafts</Badge>
           <Badge variant="luxury">{stats.liveAccounts} Live Accounts</Badge>
+          <Badge variant="secondary">{stats.liveMetaAccounts} Meta Ready</Badge>
+          <Badge variant="secondary">{stats.liveWhatsAppAccounts} WhatsApp Ready</Badge>
         </div>
+      </div>
+
+      <div
+        className={`rounded-3xl border px-5 py-4 text-sm font-bold ${
+          publishingReadiness.canPublishFacebook
+            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+            : "border-amber-200 bg-amber-50 text-amber-800"
+        }`}
+      >
+        {publishingReadiness.message}
       </div>
 
       {error && (
@@ -430,7 +468,12 @@ const SocialPostsManager = () => {
                         event.stopPropagation();
                         handlePublishNow(post._id);
                       }}
-                      className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide text-emerald-600 hover:text-emerald-700"
+                      disabled={
+                        post.platforms?.includes("instagram")
+                          ? !publishingReadiness.canPublishInstagram
+                          : !publishingReadiness.canPublishFacebook
+                      }
+                      className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:text-slate-400"
                     >
                       Publish Now
                     </button>
@@ -649,7 +692,11 @@ const SocialPostsManager = () => {
               Run due scheduled posts for this tenant and confirm the queue is processing correctly.
             </p>
           </div>
-          <Button type="button" onClick={handleRunAutomation} disabled={runningAutomation || stats.dueNow === 0}>
+          <Button
+            type="button"
+            onClick={handleRunAutomation}
+            disabled={runningAutomation || stats.dueNow === 0 || !publishingReadiness.canPublishFacebook}
+          >
             {runningAutomation ? "Running..." : "Run Queue Now"}
           </Button>
         </div>
