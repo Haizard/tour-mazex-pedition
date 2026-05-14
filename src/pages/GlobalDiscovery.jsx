@@ -262,7 +262,7 @@ const GlobalDiscovery = () => {
         <div className="absolute -right-12 top-10 h-48 w-48 rounded-full bg-[#d9a441]/20 blur-3xl" />
         <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.3fr_0.9fr]">
+        <div className="relative mx-auto grid max-w-[1680px] gap-10 lg:grid-cols-[1.3fr_0.9fr] 2xl:max-w-[1820px]">
           <div>
             <p className="mb-4 text-[11px] font-black uppercase tracking-[0.35em] text-[#d9c79f]">
               MAZ Marketplace
@@ -314,8 +314,8 @@ const GlobalDiscovery = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="grid gap-8 xl:grid-cols-[320px_1fr]">
+      <section className="mx-auto max-w-[1680px] px-5 py-10 sm:px-6 xl:px-8 2xl:max-w-[1820px]">
+        <div className="grid gap-8 xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="space-y-6">
             <div className="rounded-[32px] border border-[#e2d2b7] bg-white p-6 shadow-[0_20px_60px_rgba(35,66,50,0.08)]">
               <div className="flex items-center gap-3">
@@ -526,6 +526,7 @@ const GlobalDiscovery = () => {
           <div className="space-y-8">
             <DiscoveryRegionMap
               regions={regions}
+              tours={tours}
               activeRegion={filters.location}
               onSelectRegion={handleSelectRegion}
               onClearRegion={handleClearRegion}
@@ -732,7 +733,7 @@ const GlobalDiscovery = () => {
             )}
 
             {loading ? (
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {[1, 2, 3, 4].map((item) => (
                   <div
                     key={item}
@@ -741,7 +742,7 @@ const GlobalDiscovery = () => {
                 ))}
               </div>
             ) : secondaryTours.length > 0 ? (
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {secondaryTours.map((tour) => (
                   <Link
                     key={tour._id}
