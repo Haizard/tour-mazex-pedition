@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import { toDiscoveryCardWithEngagement } from "../routes/discoveryRoutes.js";
 import {
+  buildMarketplaceOperationsSnapshot,
   buildPublicQuestionPayload,
   buildPublicReviewPayload,
   createMarketplaceReviewRecord,
@@ -121,4 +122,49 @@ test("toDiscoveryCardWithEngagement attaches marketplace summary fields", () => 
   assert.equal(payload.marketplace.averageRating, 4.8);
   assert.equal(payload.marketplace.reviewCount, 18);
   assert.equal(payload.marketplace.photoCount, 6);
+});
+
+test("buildMarketplaceOperationsSnapshot summarizes engagement and reminders by package", () => {
+  const snapshot = buildMarketplaceOperationsSnapshot({
+    tours: [
+      {
+        _id: "tour1",
+        title: "Migration Safari",
+        location: "Serengeti",
+        isMarketplaceVisible: true,
+        isPubliclyDistributable: true,
+        marketplaceAvailability: [{ date: "2026-06-10", status: "available", remainingSpots: 4 }],
+        marketplaceAvailabilitySettings: { instantBookingEnabled: true },
+      },
+    ],
+    reviews: [
+      { tourId: "tour1", moderationStatus: "approved", visibilityState: "public" },
+      { tourId: "tour1", moderationStatus: "pending", visibilityState: "private" },
+    ],
+    photos: [
+      { tourId: "tour1", moderationStatus: "approved" },
+      { tourId: "tour1", moderationStatus: "pending" },
+    ],
+    questions: [
+      { tourId: "tour1", status: "approved" },
+      { tourId: "tour1", status: "pending" },
+    ],
+    savedTripLists: [
+      {
+        selectedTourIds: ["tour1"],
+        reminders: {
+          enabled: true,
+          watchStates: [{ tourId: "tour1" }],
+        },
+      },
+    ],
+  });
+
+  assert.equal(snapshot.totals.liveCount, 1);
+  assert.equal(snapshot.totals.publicReviewCount, 1);
+  assert.equal(snapshot.totals.pendingPhotoCount, 1);
+  assert.equal(snapshot.totals.publicQuestionCount, 1);
+  assert.equal(snapshot.totals.savedTripCount, 1);
+  assert.equal(snapshot.totals.reminderWatcherCount, 1);
+  assert.equal(snapshot.packages[0].instantBookingEnabled, true);
 });

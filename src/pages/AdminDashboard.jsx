@@ -85,6 +85,7 @@ import PaymentAutomationManager from "../components/Admin/PaymentAutomationManag
 import InfrastructureReadinessManager from "../components/Admin/InfrastructureReadinessManager";
 import DistributionManager from "../components/Admin/DistributionManager";
 import MarketplaceModerationManager from "../components/Admin/MarketplaceModerationManager";
+import MarketplaceOperationsOverview from "../components/Admin/MarketplaceOperationsOverview";
 import MarketplaceVisibilityManager from "../components/Admin/MarketplaceVisibilityManager";
 import DynamicPricingManager from "../components/Admin/DynamicPricingManager";
 import TravelerAssistanceManager from "../components/Admin/TravelerAssistanceManager";
@@ -4239,6 +4240,7 @@ const AdminDashboard = () => {
           {activeTab === "distribution" && (
             <div className="space-y-8">
               <DistributionManager />
+              <MarketplaceOperationsOverview />
               <MarketplaceVisibilityManager
                 tours={tours}
                 onToggle={handleMarketplaceVisibilityToggle}

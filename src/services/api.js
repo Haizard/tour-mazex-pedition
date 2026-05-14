@@ -518,6 +518,8 @@ export const updateMarketplaceQuestionModeration = (id, payload) =>
   API.patch(`/marketplace/questions/${id}`, payload);
 export const fetchMarketplaceModerationQueue = () =>
   cachedGet("/marketplace/moderation");
+export const fetchMarketplaceOperationsSnapshot = () =>
+  cachedGet("/marketplace/operations");
 export const fetchMarketplaceSavedTrips = (params = {}) =>
   cachedGet("/marketplace/saved-trips", { params });
 export const updateMarketplaceSavedTrips = (payload) =>

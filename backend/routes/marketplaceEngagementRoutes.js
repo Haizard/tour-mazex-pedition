@@ -213,6 +213,152 @@ export const buildPublicQuestionPayload = (question = {}) => ({
     : [],
 });
 
+export const buildMarketplaceOperationsSnapshot = ({
+  tours = [],
+  reviews = [],
+  photos = [],
+  questions = [],
+  savedTripLists = [],
+} = {}) => {
+  const normalizedTours = (tours || []).map((tour) => {
+    const availability = buildAvailabilitySummary(tour);
+
+    return {
+      id: String(tour._id || ""),
+      title: tour.title || "",
+      location: tour.location || "",
+      category: tour.category || "",
+      isMarketplaceVisible: tour.isMarketplaceVisible === true,
+      isPubliclyDistributable: tour.isPubliclyDistributable !== false,
+      instantBookingEnabled: tour.marketplaceAvailabilitySettings?.instantBookingEnabled === true,
+      nextPublishedDate: availability.nextPublishedDate || null,
+      nextBookableDate: availability.nextBookableDate || null,
+      upcomingDatesCount: availability.upcomingDatesCount || 0,
+    };
+  });
+
+  const statsByTourId = new Map(
+    normalizedTours.map((tour) => [
+      tour.id,
+      {
+        reviewCount: 0,
+        publicReviewCount: 0,
+        pendingReviewCount: 0,
+        photoCount: 0,
+        publicPhotoCount: 0,
+        pendingPhotoCount: 0,
+        questionCount: 0,
+        publicQuestionCount: 0,
+        pendingQuestionCount: 0,
+        savedTripCount: 0,
+        reminderWatcherCount: 0,
+      },
+    ])
+  );
+
+  for (const review of reviews || []) {
+    const key = String(review.tourId || "");
+    const stats = statsByTourId.get(key);
+    if (!stats) continue;
+    stats.reviewCount += 1;
+    if (review.visibilityState === "public" && review.moderationStatus === "approved") {
+      stats.publicReviewCount += 1;
+    }
+    if (review.moderationStatus === "pending") {
+      stats.pendingReviewCount += 1;
+    }
+  }
+
+  for (const photo of photos || []) {
+    const key = String(photo.tourId || "");
+    const stats = statsByTourId.get(key);
+    if (!stats) continue;
+    stats.photoCount += 1;
+    if (photo.moderationStatus === "approved") {
+      stats.publicPhotoCount += 1;
+    }
+    if (photo.moderationStatus === "pending") {
+      stats.pendingPhotoCount += 1;
+    }
+  }
+
+  for (const question of questions || []) {
+    const key = String(question.tourId || "");
+    const stats = statsByTourId.get(key);
+    if (!stats) continue;
+    stats.questionCount += 1;
+    if (question.status === "approved") {
+      stats.publicQuestionCount += 1;
+    }
+    if (question.status === "pending") {
+      stats.pendingQuestionCount += 1;
+    }
+  }
+
+  for (const savedTripList of savedTripLists || []) {
+    const selectedIds = new Set(
+      (savedTripList.selectedTourIds || []).map((tourId) => String(tourId || "")).filter(Boolean)
+    );
+    const reminderIds = new Set(
+      (savedTripList.reminders?.watchStates || [])
+        .map((state) => String(state.tourId || ""))
+        .filter(Boolean)
+    );
+
+    for (const tourId of selectedIds) {
+      const stats = statsByTourId.get(tourId);
+      if (stats) {
+        stats.savedTripCount += 1;
+      }
+    }
+
+    if (savedTripList.reminders?.enabled === true) {
+      for (const tourId of reminderIds) {
+        const stats = statsByTourId.get(tourId);
+        if (stats) {
+          stats.reminderWatcherCount += 1;
+        }
+      }
+    }
+  }
+
+  const packages = normalizedTours
+    .map((tour) => ({
+      ...tour,
+      ...(statsByTourId.get(tour.id) || {}),
+    }))
+    .sort((left, right) => {
+      if (left.isMarketplaceVisible !== right.isMarketplaceVisible) {
+        return left.isMarketplaceVisible ? -1 : 1;
+      }
+      return (
+        (right.savedTripCount || 0) +
+        (right.reviewCount || 0) +
+        (right.questionCount || 0) -
+        ((left.savedTripCount || 0) + (left.reviewCount || 0) + (left.questionCount || 0))
+      );
+    });
+
+  return {
+    totals: {
+      packageCount: packages.length,
+      liveCount: packages.filter((item) => item.isMarketplaceVisible).length,
+      partnerReadyCount: packages.filter((item) => item.isPubliclyDistributable).length,
+      instantReadyCount: packages.filter((item) => item.instantBookingEnabled).length,
+      upcomingDepartureCount: packages.reduce((sum, item) => sum + Number(item.upcomingDatesCount || 0), 0),
+      publicReviewCount: packages.reduce((sum, item) => sum + Number(item.publicReviewCount || 0), 0),
+      pendingReviewCount: packages.reduce((sum, item) => sum + Number(item.pendingReviewCount || 0), 0),
+      publicPhotoCount: packages.reduce((sum, item) => sum + Number(item.publicPhotoCount || 0), 0),
+      pendingPhotoCount: packages.reduce((sum, item) => sum + Number(item.pendingPhotoCount || 0), 0),
+      publicQuestionCount: packages.reduce((sum, item) => sum + Number(item.publicQuestionCount || 0), 0),
+      pendingQuestionCount: packages.reduce((sum, item) => sum + Number(item.pendingQuestionCount || 0), 0),
+      savedTripCount: packages.reduce((sum, item) => sum + Number(item.savedTripCount || 0), 0),
+      reminderWatcherCount: packages.reduce((sum, item) => sum + Number(item.reminderWatcherCount || 0), 0),
+    },
+    packages,
+  };
+};
+
 const buildModerationQueuePayload = ({
   reviews = [],
   photos = [],
@@ -462,6 +608,47 @@ router.get("/moderation", requireTenantAdmin, async (req, res) => {
     );
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/operations", requireTenantAdmin, async (req, res) => {
+  try {
+    const tours = await TourPackage.find({ tenantId: req.tenantId })
+      .select(
+        "_id title location category isMarketplaceVisible isPubliclyDistributable marketplaceAvailability marketplaceAvailabilitySettings"
+      )
+      .lean();
+
+    const tourIds = tours.map((tour) => tour._id);
+
+    const [reviews, photos, questions, savedTripLists] = await Promise.all([
+      MarketplaceReview.find({ tenantId: req.tenantId }).select("tourId moderationStatus visibilityState").lean(),
+      TravelerPhotoSubmission.find({ tenantId: req.tenantId }).select("tourId moderationStatus").lean(),
+      MarketplaceQuestion.find({ tenantId: req.tenantId }).select("tourId status").lean(),
+      tourIds.length > 0
+        ? SavedTripList.find({
+            $or: [
+              { selectedTourIds: { $in: tourIds } },
+              { "reminders.watchStates.tourId": { $in: tourIds } },
+            ],
+          })
+            .select("selectedTourIds reminders")
+            .lean()
+        : Promise.resolve([]),
+    ]);
+
+    return res.json(
+      buildMarketplaceOperationsSnapshot({
+        tours,
+        reviews,
+        photos,
+        questions,
+        savedTripLists,
+      })
+    );
+  } catch (error) {
+    console.error("Marketplace operations error:", error);
+    return res.status(500).json({ message: "Unable to load marketplace operations right now." });
   }
 });
 
