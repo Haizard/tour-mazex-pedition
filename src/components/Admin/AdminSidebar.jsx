@@ -70,6 +70,7 @@ const groupedMenuItems = [
     items: [
       { id: "lead-inbox", label: "Lead Inbox", icon: <FaInbox />, accessKey: "leadInbox" },
       { id: "email-inbox", label: "Unified Inbox", icon: <FaEnvelopeOpenText />, accessKey: "unifiedInbox" },
+      { id: "email-foundation", label: "Email Integrations", icon: <FaEnvelopeOpenText />, accessKey: "unifiedInbox" },
       { id: "inquiries", label: "Inquiries", icon: <FaQuestionCircle /> },
       { id: "contact-messages", label: "Contact Messages", icon: <FaEnvelopeOpenText /> },
       { id: "bookings", label: "Bookings", icon: <FaCalendarCheck /> },
