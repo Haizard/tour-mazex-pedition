@@ -199,6 +199,50 @@ const SocialAccountsManager = () => {
     },
   ];
 
+  const providerWarnings = useMemo(() => {
+    const warnings = [];
+
+    for (const account of accounts) {
+      if (!account.lastError) {
+        continue;
+      }
+
+      if (account.lastError.includes("expired")) {
+        warnings.push({
+          id: `${account._id}-expired`,
+          tone: "border-amber-200 bg-amber-50 text-amber-800",
+          title: `${account.label}: token expired`,
+          body:
+            "Reconnect this account with a fresh token, then click Verify again before trying to publish or send.",
+        });
+        continue;
+      }
+
+      if (account.lastError.includes("pages_manage_posts")) {
+        warnings.push({
+          id: `${account._id}-pages-manage-posts`,
+          tone: "border-red-200 bg-red-50 text-red-800",
+          title: `${account.label}: Meta publishing permission missing`,
+          body:
+            "This Meta app/token cannot publish to Facebook Pages yet. The app needs the proper Page publishing access and the account must reconnect with a token that can manage the target Page.",
+        });
+        continue;
+      }
+
+      if (account.lastError.includes("allowed recipient list")) {
+        warnings.push({
+          id: `${account._id}-allowed-list`,
+          tone: "border-sky-200 bg-sky-50 text-sky-800",
+          title: `${account.label}: WhatsApp still in test mode`,
+          body:
+            "Only phone numbers in Meta's allowed recipient list can receive messages until this WhatsApp sender is moved to production.",
+        });
+      }
+    }
+
+    return warnings;
+  }, [accounts]);
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -232,6 +276,20 @@ const SocialAccountsManager = () => {
           }`}
         >
           {error || success}
+        </div>
+      )}
+
+      {providerWarnings.length > 0 && (
+        <div className="space-y-3">
+          {providerWarnings.map((warning) => (
+            <div
+              key={warning.id}
+              className={`rounded-3xl border px-5 py-4 text-sm font-semibold leading-6 ${warning.tone}`}
+            >
+              <p className="text-[11px] font-black uppercase tracking-[0.25em]">{warning.title}</p>
+              <p className="mt-2">{warning.body}</p>
+            </div>
+          ))}
         </div>
       )}
 

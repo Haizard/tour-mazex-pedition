@@ -21,11 +21,34 @@ const buildHelpfulMetaErrorMessage = (errorBody) => {
     (typeof parsedBody === "string" ? parsedBody : "") ||
     "Meta API request failed.";
 
+  const code = parsedBody?.error?.code;
+
   if (message.includes("publish_actions")) {
     return (
       "Meta rejected this publishing token because it relies on the deprecated publish_actions permission. " +
       "Reconnect the Meta account using a fresh Facebook Page publishing token or a user token that can manage the Page " +
       "so the platform can resolve a live Page access token before publishing."
+    );
+  }
+
+  if (message.includes("Session has expired")) {
+    return (
+      "The connected Meta access token has expired. Reconnect the Meta account with a fresh long-lived token, " +
+      "then verify the account again before publishing."
+    );
+  }
+
+  if (message.includes("pages_manage_posts")) {
+    return (
+      "Meta rejected live publishing because the connected app or token does not currently have pages_manage_posts access. " +
+      "Use a Meta app approved for Page publishing and reconnect with a token that can manage and publish to the target Facebook Page."
+    );
+  }
+
+  if (code === 131030 || message.includes("Recipient phone number not in allowed list")) {
+    return (
+      "WhatsApp Business is still in Meta test mode for this sender. Add the traveler's phone number to the allowed recipient list " +
+      "in your WhatsApp app settings, or move the WhatsApp sender to production before sending live lead messages."
     );
   }
 

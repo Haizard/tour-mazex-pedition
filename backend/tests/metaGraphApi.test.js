@@ -174,3 +174,47 @@ test("verifyWhatsAppAccountConnection validates the phone number id through Meta
     global.fetch = originalFetch;
   }
 });
+
+test("publishFacebookPost explains expired Meta tokens with a reconnect message", async () => {
+  const originalFetch = global.fetch;
+
+  global.fetch = async (url) => {
+    if (String(url).includes("/me/accounts")) {
+      return createJsonResponse({ data: [] });
+    }
+
+    if (String(url).includes("/page_987?")) {
+      return createJsonResponse(
+        {
+          error: {
+            message:
+              "Error validating access token: Session has expired on Thursday, 14-May-26 01:00:00 PDT. The current time is Thursday, 14-May-26 02:28:12 PDT.",
+            code: 190,
+          },
+        },
+        { ok: false, status: 400 }
+      );
+    }
+
+    throw new Error(`Unexpected fetch URL: ${url}`);
+  };
+
+  try {
+    await assert.rejects(
+      () =>
+        publishFacebookPost(
+          {
+            pageId: "page_987",
+            accessToken: "expired_token",
+          },
+          {
+            caption: "Fresh safari story",
+            imageUrls: ["https://example.com/story.jpg"],
+          }
+        ),
+      /fresh long-lived token/i
+    );
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

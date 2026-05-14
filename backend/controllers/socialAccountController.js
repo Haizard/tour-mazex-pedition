@@ -163,10 +163,24 @@ export const publishSocialPostLive = async (req, res) => {
     const socialPost = await SocialPost.findOne(
       buildTenantFilter(req, { _id: req.params.id })
     );
+    const accounts = await SocialAccount.find(buildTenantFilter(req, { provider: "meta" }))
+      .sort({ lastVerifiedAt: -1, createdAt: -1 });
     if (socialPost) {
       socialPost.status = "failed";
       socialPost.lastError = error.message;
       await socialPost.save();
+    }
+    const primaryMetaAccount = accounts[0];
+    if (primaryMetaAccount) {
+      primaryMetaAccount.lastError = error.message;
+      if (
+        error.message.includes("expired") ||
+        error.message.includes("pages_manage_posts") ||
+        error.message.includes("publish_actions")
+      ) {
+        primaryMetaAccount.status = "error";
+      }
+      await primaryMetaAccount.save();
     }
     res.status(400).json({ message: error.message });
   }
@@ -221,6 +235,20 @@ export const sendInquiryWhatsAppMessage = async (req, res) => {
       result,
     });
   } catch (error) {
+    const whatsappAccount = await SocialAccount.findOne(
+      buildTenantFilter(req, { provider: "whatsapp" })
+    ).sort({ lastVerifiedAt: -1, createdAt: -1 });
+
+    if (whatsappAccount) {
+      whatsappAccount.lastError = error.message;
+      if (
+        error.message.includes("allowed recipient list") ||
+        error.message.includes("expired")
+      ) {
+        whatsappAccount.status = "error";
+      }
+      await whatsappAccount.save();
+    }
     res.status(400).json({ message: error.message });
   }
 };
