@@ -9,6 +9,7 @@ import {
   parseAiVariantResponse,
 } from "../utils/pageBuilderAiVariants.js";
 import { buildImportedSectionFromSource } from "../utils/pageBuilderSourceImport.js";
+import { buildTemplatePageConfigPayload } from "../utils/pageBuilderTemplateApplication.js";
 import {
   getDefaultPageSlug,
   isPagePubliclyAccessible,
@@ -232,6 +233,36 @@ export const upsertPageConfig = async (req, res) => {
     res.status(200).json(page);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const applyPageBuilderTemplate = async (req, res) => {
+  try {
+    const payload = buildTemplatePageConfigPayload({
+      templateId: req.params.templateId || req.body.templateId,
+      tenant: req.tenant,
+    });
+
+    const page = await PageConfig.findOneAndUpdate(
+      buildTenantFilter(req, { pageType: payload.pageType }),
+      withTenantId(req, payload),
+      {
+        upsert: true,
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    await syncPageConfigKnowledgeEmbedding(page.toObject ? page.toObject() : page);
+
+    res.status(200).json({
+      page,
+      message: `${payload.templateSource.templateName} applied as a personalized draft.`,
+    });
+  } catch (error) {
+    res.status(error.message?.includes("not purchased") ? 403 : 400).json({
+      message: error.message || "Template could not be applied.",
+    });
   }
 };
 

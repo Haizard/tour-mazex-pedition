@@ -250,6 +250,12 @@ export const updatePlatformTenantPageConfig = (tenantId, pageType = "home", data
   API.put(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, data, {
     headers: getPlatformAdminHeaders(),
   });
+export const applyPlatformTenantPageBuilderTemplate = (tenantId, templateId) =>
+  API.post(
+    `/platform-admin/tenants/${tenantId}/page-config/templates/${encodeURIComponent(templateId)}/apply`,
+    {},
+    { headers: getPlatformAdminHeaders() }
+  );
 export const generatePlatformTenantPageBuilderVariants = (tenantId, pageType = "home", data) =>
   API.post(
     `/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}/ai-variants`,
@@ -371,6 +377,8 @@ export const resolvePageConfigBySlug = (slug) =>
   });
 export const updatePageConfig = (pageType = "home", data) =>
   API.put(`/page-config/${encodeURIComponent(pageType)}`, data);
+export const applyPageBuilderTemplate = (templateId) =>
+  API.post(`/page-config/templates/${encodeURIComponent(templateId)}/apply`, {});
 export const generatePageBuilderVariants = (pageType = "home", data) =>
   API.post(`/page-config/${encodeURIComponent(pageType)}/ai-variants`, data);
 export const importPageBuilderSource = (data) =>

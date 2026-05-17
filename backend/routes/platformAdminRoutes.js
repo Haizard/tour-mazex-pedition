@@ -20,6 +20,7 @@ import {
   getPageConfig,
   importPageBuilderSource,
   listPageConfigs,
+  applyPageBuilderTemplate,
   upsertPageConfig,
 } from "../controllers/pageConfigController.js";
 import { defaultMenuItems } from "../data/defaultMenuItems.js";
@@ -453,6 +454,12 @@ router.post(
   "/tenants/:tenantId/page-config/import-source",
   loadTenantForPlatformPageConfig,
   importPageBuilderSource
+);
+
+router.post(
+  "/tenants/:tenantId/page-config/templates/:templateId/apply",
+  loadTenantForPlatformPageConfig,
+  applyPageBuilderTemplate
 );
 
 router.get(

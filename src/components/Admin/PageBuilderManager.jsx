@@ -20,6 +20,8 @@ import {
   fetchPlatformTenantMenuItems,
   fetchPlatformTenantPageConfig,
   fetchPlatformTenantPageConfigs,
+  applyPageBuilderTemplate,
+  applyPlatformTenantPageBuilderTemplate,
   generatePlatformTenantPageBuilderVariants,
   generatePageBuilderVariants,
   getMediaUrl,
@@ -438,6 +440,7 @@ const PageBuilderManager = ({
   purchasedTemplates = [],
 } = {}) => {
   const canManageLayout = mode === "layout";
+  const canApplyTemplates = canManageLayout || mode === "content";
   const [pageConfig, setPageConfig] = React.useState({
     pageType: "home",
     slug: "/",
@@ -463,6 +466,7 @@ const PageBuilderManager = ({
   const [importName, setImportName] = React.useState("Imported Section");
   const [importSource, setImportSource] = React.useState("");
   const [importingSource, setImportingSource] = React.useState(false);
+  const [applyingTemplate, setApplyingTemplate] = React.useState("");
   const [selectedTemplateId, setSelectedTemplateId] = React.useState("safari-signature-home");
   const [newSectionType, setNewSectionType] = React.useState(
     Object.keys(sectionRegistry.metadata || {})[0] || "hero"
@@ -851,14 +855,22 @@ const PageBuilderManager = ({
     setMessage(`${variant.name || "Variant"} applied locally. Save the layout when ready.`);
   };
 
-  const applyTemplateToDraft = (template) => {
-    if (!canManageLayout) return;
+  const applyTemplateToDraft = async (template) => {
+    if (!canApplyTemplates) return;
 
     try {
-      const personalizedPage = buildPersonalizedTemplatePage(template, {
-        clientName: tenantName || pageConfig.title || "this operator",
-        accentSeed: `${tenantName || ""}-${template.id}`,
-      });
+      setApplyingTemplate(template.id);
+      setMessage("");
+      const response = tenantId
+        ? await applyPlatformTenantPageBuilderTemplate(tenantId, template.id)
+        : await applyPageBuilderTemplate(template.id);
+      const appliedPage = response.data?.page || null;
+      const personalizedPage =
+        appliedPage ||
+        buildPersonalizedTemplatePage(template, {
+          clientName: tenantName || pageConfig.title || "this operator",
+          accentSeed: `${tenantName || ""}-${template.id}`,
+        });
 
       setActivePageType(personalizedPage.pageType);
       setPageConfig((current) => ({
@@ -870,9 +882,11 @@ const PageBuilderManager = ({
       }));
       setSelectedSectionIndex(0);
       setActiveTool("section");
-      setMessage(`${template.name} applied as a personalized draft. Review it, then save the layout.`);
+      setMessage(response.data?.message || `${template.name} applied as a personalized draft.`);
     } catch (error) {
-      setMessage(error.message || "Template could not be applied.");
+      setMessage(error?.response?.data?.message || error.message || "Template could not be applied.");
+    } finally {
+      setApplyingTemplate("");
     }
   };
 
@@ -1145,7 +1159,7 @@ const PageBuilderManager = ({
       <p className="mt-2 text-sm font-medium text-slate-500">
         Choose a section type and preset, then add it to this tenant page.
       </p>
-      {canManageLayout ? (
+      {canApplyTemplates ? (
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_auto]">
           <select
             value={newSectionType}
@@ -1331,17 +1345,21 @@ const PageBuilderManager = ({
                   onClick={() => {
                     setSelectedTemplateId(template.id);
                     if (usable) {
-                      applyTemplateToDraft(template);
+                      void applyTemplateToDraft(template);
                     }
                   }}
-                  disabled={!usable}
+                  disabled={!usable || applyingTemplate === template.id}
                   className={`mt-5 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest ${
                     usable
                       ? "bg-slate-950 text-white"
                       : "bg-slate-200 text-slate-500"
                   }`}
                 >
-                  {usable ? "Use With Client Tweaks" : "Purchase Option Coming"}
+                  {applyingTemplate === template.id
+                    ? "Applying..."
+                    : usable
+                      ? "Use With Client Tweaks"
+                      : "Purchase Option Coming"}
                 </button>
               </article>
             );
@@ -1349,7 +1367,7 @@ const PageBuilderManager = ({
         </div>
       ) : (
         <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-500">
-          Template application is managed by the platform administrator.
+          Template application is available after a tenant is selected.
         </div>
       )}
     </div>

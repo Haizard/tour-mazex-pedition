@@ -4842,7 +4842,11 @@ const AdminDashboard = () => {
           */}
 
           {(activeTab === "page-builder" || activeTab === "page-content") && (
-            <PageBuilderManager mode="content" tenantName={tenant?.name || ""} />
+            <PageBuilderManager
+              mode="content"
+              tenantName={tenant?.name || ""}
+              purchasedTemplates={tenant?.purchasedTemplates || []}
+            />
           )}
 
           {activeTab === "reputation" && <ReputationGuardianManager />}
