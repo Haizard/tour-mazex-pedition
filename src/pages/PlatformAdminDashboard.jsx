@@ -191,6 +191,9 @@ const domainProviderHints = {
 };
 
 const templateEntitlementCatalog = getTemplateCatalog();
+const templateNameLookup = Object.fromEntries(
+  templateEntitlementCatalog.map((template) => [template.id, template.name])
+);
 
 const StatCard = ({ label, value }) => (
   <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -233,6 +236,23 @@ const PlatformAdminDashboard = () => {
   const selectedTenant = useMemo(
     () => tenants.find((tenant) => tenant._id === selectedTenantId) || null,
     [selectedTenantId, tenants]
+  );
+  const pendingTemplateRequests = useMemo(
+    () =>
+      tenants.flatMap((tenant) => {
+        const purchasedTemplates = new Set(tenant.purchasedTemplates || []);
+
+        return (tenant.requestedTemplates || [])
+          .filter((templateId) => !purchasedTemplates.has(templateId))
+          .map((templateId) => ({
+            tenantId: tenant._id,
+            tenantName: tenant.name,
+            tenantSlug: tenant.slug,
+            templateId,
+            templateName: templateNameLookup[templateId] || templateId,
+          }));
+      }),
+    [tenants]
   );
 
   const buildFeatureOverridesPayload = () => {
@@ -285,8 +305,10 @@ const PlatformAdminDashboard = () => {
 
   useEffect(() => {
     setTenantForm(createTenantFormState(selectedTenant));
-    setActiveSubscriptionTool("plans");
-  }, [selectedTenant]);
+    if (activeTenantPanel !== "subscription") {
+      setActiveSubscriptionTool("plans");
+    }
+  }, [activeTenantPanel, selectedTenant]);
 
   useEffect(() => {
     const loadSupportDetail = async () => {
@@ -551,6 +573,45 @@ const PlatformAdminDashboard = () => {
       )}
     </div>
   );
+
+  const renderTemplateRequestQueue = () => {
+    if (!pendingTemplateRequests.length) {
+      return null;
+    }
+
+    return (
+      <section className={panelClass}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Template Requests</p>
+            <h2 className="mt-2 text-2xl font-black text-zinc-950">Client template opt-ins</h2>
+          </div>
+          <span className="w-fit rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-800">
+            {pendingTemplateRequests.length} Pending
+          </span>
+        </div>
+        <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
+          {pendingTemplateRequests.map((request) => (
+            <button
+              key={`${request.tenantId}-${request.templateId}`}
+              type="button"
+              onClick={() => {
+                setActiveSubscriptionTool("templates");
+                openTenant(request.tenantId, "subscription");
+              }}
+              className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-left transition hover:border-zinc-950 hover:bg-white"
+            >
+              <p className="text-sm font-black text-zinc-950">{request.templateName}</p>
+              <p className="mt-1 text-xs font-semibold text-zinc-600">{request.tenantName}</p>
+              <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-amber-800">
+                Open template grants
+              </p>
+            </button>
+          ))}
+        </div>
+      </section>
+    );
+  };
 
   const renderCreateTenant = () => (
     <form onSubmit={handleCreateTenant} className={panelClass}>
@@ -1207,7 +1268,10 @@ const PlatformAdminDashboard = () => {
                   <p className="text-sm font-bold text-zinc-500">Loading tenants...</p>
                 </div>
               ) : (
-                renderTenantList()
+                <>
+                  {renderTemplateRequestQueue()}
+                  {renderTenantList()}
+                </>
               )}
             </div>
           )}

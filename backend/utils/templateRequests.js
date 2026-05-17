@@ -15,3 +15,17 @@ export const getTemplateRequestStatus = ({ templateId = "", tenant = {} } = {}) 
 
   return "available";
 };
+
+export const summarizeTemplateRequests = (tenants = []) =>
+  tenants.flatMap((tenant = {}) => {
+    const purchasedTemplates = new Set(tenant.purchasedTemplates || []);
+
+    return normalizeTemplateList(tenant.requestedTemplates || [])
+      .filter((templateId) => !purchasedTemplates.has(templateId))
+      .map((templateId) => ({
+        tenantId: tenant._id?.toString?.() || tenant.id?.toString?.() || "",
+        tenantName: tenant.name || "",
+        tenantSlug: tenant.slug || "",
+        templateId,
+      }));
+  });
