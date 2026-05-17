@@ -1,6 +1,12 @@
 import Tenant from "../models/Tenant.js";
 import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
-import { isDemoAccessAllowed, resolveTenantLookup } from "../utils/tenantContext.js";
+import {
+  getTenantRequestSource,
+  isDemoAccessAllowed,
+  isPlatformHostname,
+  normalizeHostname,
+  resolveTenantLookup,
+} from "../utils/tenantContext.js";
 
 export const shouldBypassTenantMiddleware = (req) => {
   const path = req.originalUrl || req.url || "";
@@ -9,6 +15,24 @@ export const shouldBypassTenantMiddleware = (req) => {
     path.startsWith("/api/platform-admin")
   );
 };
+
+const getHeaderHostname = (value = "") => normalizeHostname(value);
+
+const isPlatformRequestHint = (req, lookup = {}) => {
+  const originHost = getHeaderHostname(req.headers.origin);
+  const refererHost = getHeaderHostname(req.headers.referer);
+
+  return (
+    isPlatformHostname(lookup.hostname) ||
+    isPlatformHostname(originHost) ||
+    isPlatformHostname(refererHost)
+  );
+};
+
+export const shouldResolveMissingTenantAsPlatform = (req, lookup = {}) =>
+  ["GET", "HEAD", "OPTIONS"].includes(req.method || "GET") &&
+  getTenantRequestSource(req) !== "demo" &&
+  isPlatformRequestHint(req, lookup);
 
 export const tenantMiddleware = async (req, res, next) => {
   try {
@@ -46,6 +70,13 @@ export const tenantMiddleware = async (req, res, next) => {
 
     if (!tenant && lookup.allowLegacyFallback && lookup.slug !== LEGACY_TENANT_SLUG) {
       tenant = await Tenant.findOne({ slug: LEGACY_TENANT_SLUG, status: "active" }).lean();
+    }
+
+    if (!tenant && shouldResolveMissingTenantAsPlatform(req, lookup)) {
+      req.isPlatform = true;
+      req.tenant = null;
+      req.tenantId = null;
+      return next();
     }
 
     if (!tenant) {
