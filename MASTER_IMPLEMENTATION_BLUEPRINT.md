@@ -78,6 +78,7 @@ These are the strongest parts of the current system:
 
 - multi-tenant website and content engine
 - tenant admin CMS and super admin controls
+- page-builder template marketplace for tourism-ready site layouts, purchased template visibility, and tenant-specific template personalization before publishing
 - AI blog and tour content generation
 - SEO generation and publishing workflows
 - lead scoring and follow-up automation

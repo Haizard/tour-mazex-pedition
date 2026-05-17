@@ -176,6 +176,12 @@ const tenantSchema = new mongoose.Schema(
         allowCommunityQnA: true,
       }),
     },
+    purchasedTemplates: {
+      type: [String],
+      default: [],
+      set: (templates) =>
+        [...new Set((templates || []).map((template) => template.toString().trim()).filter(Boolean))],
+    },
   },
   { timestamps: true }
 );

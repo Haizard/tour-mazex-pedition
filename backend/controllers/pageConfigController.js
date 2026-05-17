@@ -185,6 +185,7 @@ export const upsertPageConfig = async (req, res) => {
       const payload = {
         ...currentPage,
         title: req.body.title || currentPage.title || "",
+        templateSource: currentPage.templateSource || {},
         seo: {
           ...(currentPage.seo || {}),
           ...(req.body.seo || {}),
@@ -212,6 +213,7 @@ export const upsertPageConfig = async (req, res) => {
       title: req.body.title || "",
       status: req.body.status || "published",
       seo: req.body.seo || {},
+      templateSource: req.body.templateSource || {},
       sections: normalizeSections(req.body.sections || []),
     };
 

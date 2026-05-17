@@ -34,6 +34,12 @@ const pageConfigSchema = new mongoose.Schema(
       description: { type: String, default: "" },
       keywords: { type: [String], default: [] },
     },
+    templateSource: {
+      templateId: { type: String, trim: true, default: "" },
+      templateName: { type: String, trim: true, default: "" },
+      personalizedFor: { type: String, trim: true, default: "" },
+      personalizationNote: { type: String, trim: true, default: "" },
+    },
     sections: { type: [pageSectionSchema], default: [] },
   },
   { timestamps: true }

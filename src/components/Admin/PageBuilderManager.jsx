@@ -30,6 +30,11 @@ import {
   updatePlatformTenantPageConfig,
 } from "../../services/api";
 import { legacyHomePage } from "../../pageBuilder/defaultPages";
+import {
+  buildPersonalizedTemplatePage,
+  isTemplateUsable,
+  resolveTemplateCatalogForTenant,
+} from "../../pageBuilder/templateMarketplace";
 import { sectionRegistry } from "../../sections/registry/sectionRegistry";
 import MediaUploadField from "../UI/MediaUploadField";
 
@@ -430,6 +435,7 @@ const PageBuilderManager = ({
   mode = "layout",
   tenantId = "",
   tenantName = "",
+  purchasedTemplates = [],
 } = {}) => {
   const canManageLayout = mode === "layout";
   const [pageConfig, setPageConfig] = React.useState({
@@ -457,6 +463,7 @@ const PageBuilderManager = ({
   const [importName, setImportName] = React.useState("Imported Section");
   const [importSource, setImportSource] = React.useState("");
   const [importingSource, setImportingSource] = React.useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = React.useState("safari-signature-home");
   const [newSectionType, setNewSectionType] = React.useState(
     Object.keys(sectionRegistry.metadata || {})[0] || "hero"
   );
@@ -474,6 +481,14 @@ const PageBuilderManager = ({
   );
   const canEditPageSlug = canManageLayout && isCustomPageType(activePageType);
   const canPublishPageToNavbar = canManageLayout && tenantId && canAppearInNavbar(pageSlug);
+  const templateCatalog = React.useMemo(
+    () => resolveTemplateCatalogForTenant({ purchasedTemplates }),
+    [purchasedTemplates]
+  );
+  const selectedTemplate = React.useMemo(
+    () => templateCatalog.find((template) => template.id === selectedTemplateId) || templateCatalog[0],
+    [selectedTemplateId, templateCatalog]
+  );
   const linkedNavbarItem = React.useMemo(
     () =>
       tenantMenuItems.find(
@@ -834,6 +849,31 @@ const PageBuilderManager = ({
     });
     setActiveTool("section");
     setMessage(`${variant.name || "Variant"} applied locally. Save the layout when ready.`);
+  };
+
+  const applyTemplateToDraft = (template) => {
+    if (!canManageLayout) return;
+
+    try {
+      const personalizedPage = buildPersonalizedTemplatePage(template, {
+        clientName: tenantName || pageConfig.title || "this operator",
+        accentSeed: `${tenantName || ""}-${template.id}`,
+      });
+
+      setActivePageType(personalizedPage.pageType);
+      setPageConfig((current) => ({
+        ...current,
+        ...personalizedPage,
+        slug: personalizedPage.slug,
+        status: "draft",
+        sections: normalizeSections(personalizedPage.sections),
+      }));
+      setSelectedSectionIndex(0);
+      setActiveTool("section");
+      setMessage(`${template.name} applied as a personalized draft. Review it, then save the layout.`);
+    } catch (error) {
+      setMessage(error.message || "Template could not be applied.");
+    }
   };
 
   const handleImportSource = async () => {
@@ -1227,6 +1267,94 @@ const PageBuilderManager = ({
     </div>
   );
 
+  const renderTemplateTool = () => (
+    <div className={EDITOR_PANEL_CLASS}>
+      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Template Marketplace</p>
+      <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Tourism Website UI Templates</h3>
+      <p className="mt-2 text-sm font-medium text-slate-500">
+        Browse ready-to-use tourism layouts already mapped to the page builder. Purchased and included templates can be applied as personalized drafts so client sites start strong without looking identical.
+      </p>
+
+      {canManageLayout ? (
+        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+          {templateCatalog.map((template) => {
+            const usable = isTemplateUsable(template);
+            const selected = selectedTemplate?.id === template.id;
+
+            return (
+              <article
+                key={template.id}
+                className={`rounded-2xl border bg-slate-50 p-5 transition ${
+                  selected ? "border-slate-950 shadow-sm" : "border-slate-200"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+                      {template.category}
+                    </p>
+                    <h4 className="mt-2 text-lg font-black text-slate-950">{template.name}</h4>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                      usable
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-amber-50 text-amber-800"
+                    }`}
+                  >
+                    {template.priceLabel}
+                  </span>
+                </div>
+                <p className="mt-3 min-h-[60px] text-sm font-semibold text-slate-500">
+                  {template.preview}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {(template.bestFor || []).map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-2 text-xs font-black text-slate-500">
+                  <div className="rounded-xl bg-white p-3">
+                    Page: <span className="text-slate-950">{template.pageType}</span>
+                  </div>
+                  <div className="rounded-xl bg-white p-3">
+                    Blocks: <span className="text-slate-950">{template.sections.length}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTemplateId(template.id);
+                    if (usable) {
+                      applyTemplateToDraft(template);
+                    }
+                  }}
+                  disabled={!usable}
+                  className={`mt-5 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest ${
+                    usable
+                      ? "bg-slate-950 text-white"
+                      : "bg-slate-200 text-slate-500"
+                  }`}
+                >
+                  {usable ? "Use With Client Tweaks" : "Purchase Option Coming"}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-500">
+          Template application is managed by the platform administrator.
+        </div>
+      )}
+    </div>
+  );
+
   const renderImportSourceTool = () => (
     <div className={EDITOR_PANEL_CLASS}>
       <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Import Code</p>
@@ -1517,6 +1645,7 @@ const PageBuilderManager = ({
             <div className="mt-4 grid grid-cols-1 gap-2">
               {[
                 ["settings", "Page Settings"],
+                ["templates", "Templates"],
                 ["add", "Add Section"],
                 ["ai", "AI Variants"],
                 ["import", "Import Code"],
@@ -1581,6 +1710,7 @@ const PageBuilderManager = ({
 
         <main className="min-w-0">
           {activeTool === "settings" && renderPageSettings()}
+          {activeTool === "templates" && renderTemplateTool()}
           {activeTool === "add" && renderAddSectionTool()}
           {activeTool === "ai" && renderAiVariantTool()}
           {activeTool === "import" && renderImportSourceTool()}

@@ -15,6 +15,7 @@ import {
 import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
 import NavigationManager from "../components/Admin/NavigationManager";
+import { getTemplateCatalog } from "../pageBuilder/templateMarketplace";
 
 const metricCards = [
   ["tenantCount", "Tenants"],
@@ -109,6 +110,7 @@ const subscriptionPlans = [
 const subscriptionTools = [
   ["plans", "Plan Studio", "Pricing, billing cadence, trial and renewal windows"],
   ["growth-suite", "Growth Suite", "Per-tenant access for social, leads, campaigns, and WhatsApp"],
+  ["templates", "Templates", "Purchased tourism website templates and page-builder access"],
   ["service", "Hosting Service", "Managed hosting, DNS, and annual renewal controls"],
 ];
 
@@ -141,6 +143,7 @@ const createTenantFormState = (tenant) => ({
   currentPeriodEndsAt: tenant?.subscription?.currentPeriodEndsAt ? new Date(tenant.subscription.currentPeriodEndsAt).toISOString().slice(0, 10) : "",
   manualOverride: tenant?.subscription?.manualOverride !== false,
   featureOverrides: tenant?.subscription?.featureOverrides || {},
+  purchasedTemplates: tenant?.purchasedTemplates || [],
   ...Object.fromEntries(
     growthSuiteFeatures.map(([key]) => [
       `feature_${key}`,
@@ -185,6 +188,8 @@ const domainProviderHints = {
   godaddy:
     "Best when you buy and manage the domain in your own GoDaddy account. Auto-DNS needs production GoDaddy API credentials for that account.",
 };
+
+const templateEntitlementCatalog = getTemplateCatalog();
 
 const StatCard = ({ label, value }) => (
   <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -370,6 +375,7 @@ const PlatformAdminDashboard = () => {
           accountId: tenantForm.domainAccountId,
           nameserverMode: tenantForm.domainNameserverMode,
         },
+        purchasedTemplates: tenantForm.purchasedTemplates || [],
       });
       if (tenantForm.adminUsername || tenantForm.adminPassword) {
         await updatePlatformTenantAdmin(selectedTenant._id, {
@@ -860,6 +866,67 @@ const PlatformAdminDashboard = () => {
           </div>
         )}
 
+        {activeSubscriptionTool === "templates" && (
+          <div className={panelClass}>
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Template Entitlements</p>
+                <h2 className="mt-2 text-2xl font-black text-zinc-950">Purchased website templates</h2>
+              </div>
+              <p className="max-w-xl text-sm font-medium text-zinc-500">
+                Grant purchased templates to this tenant. Included templates remain available automatically, while checked templates become usable in Page Studio and on the public template marketplace.
+              </p>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-3">
+              {templateEntitlementCatalog.map((template) => {
+                const included = template.purchaseStatus === "included";
+                const checked = included || tenantForm.purchasedTemplates.includes(template.id);
+
+                return (
+                  <label
+                    key={template.id}
+                    className={`flex cursor-pointer flex-col rounded-2xl border p-5 transition ${
+                      checked ? "border-emerald-300 bg-emerald-50/60" : "border-zinc-200 bg-white"
+                    }`}
+                  >
+                    <span className="flex items-start justify-between gap-4">
+                      <span>
+                        <span className="block text-sm font-black text-zinc-950">{template.name}</span>
+                        <span className="mt-1 block text-xs font-semibold leading-5 text-zinc-500">{template.preview}</span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={included}
+                        onChange={(event) =>
+                          setTenantForm((current) => {
+                            const currentTemplates = new Set(current.purchasedTemplates || []);
+                            if (event.target.checked) {
+                              currentTemplates.add(template.id);
+                            } else {
+                              currentTemplates.delete(template.id);
+                            }
+
+                            return {
+                              ...current,
+                              purchasedTemplates: [...currentTemplates],
+                            };
+                          })
+                        }
+                        className="mt-1 h-5 w-5 accent-emerald-600 disabled:opacity-50"
+                      />
+                    </span>
+                    <span className={`mt-4 w-fit rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${included ? "bg-zinc-950 text-white" : checked ? "bg-emerald-600 text-white" : "bg-zinc-100 text-zinc-700"}`}>
+                      {included ? "Included" : checked ? "Purchased" : template.priceLabel}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {activeSubscriptionTool === "service" && (
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.8fr]">
             <div className={panelClass}>
@@ -964,6 +1031,7 @@ const PlatformAdminDashboard = () => {
             mode="layout"
             tenantId={selectedTenant._id}
             tenantName={selectedTenant.name}
+            purchasedTemplates={selectedTenant.purchasedTemplates || []}
           />
         </div>
       );

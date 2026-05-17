@@ -49,6 +49,7 @@ Multi-tenant tourism platform for tour operators, combining website CMS, booking
 - More advanced operator-side availability workflows
 - Stronger conversion analytics around saved trips, reminders, and inquiries
 - Richer community and trust presentation where real traveler content grows
+- Template marketplace for ready-to-use tourism website UI, connected to the page builder with purchased-template status and tenant-specific personalization before use
 
 ### Social Automation Completed
 - Facebook and Instagram publishing support through Meta connections

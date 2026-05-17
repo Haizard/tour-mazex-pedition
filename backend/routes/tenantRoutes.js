@@ -135,6 +135,7 @@ router.get("/bootstrap", async (req, res) => {
         subscription: req.tenant.subscription || null,
         domainService: req.tenant.domainService || null,
         marketplaceSettings: sanitizeMarketplaceSettings(req.tenant.marketplaceSettings || {}),
+        purchasedTemplates: req.tenant.purchasedTemplates || [],
         access: {
           socialAccounts: canAccessFeature(req.tenant.subscription, "social-accounts"),
           socialPosts: canAccessFeature(req.tenant.subscription, "social-posts"),
