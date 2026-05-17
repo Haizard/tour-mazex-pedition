@@ -2,8 +2,20 @@ import Tenant from "../models/Tenant.js";
 import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
 import { isDemoAccessAllowed, resolveTenantLookup } from "../utils/tenantContext.js";
 
+export const shouldBypassTenantMiddleware = (req) => {
+  const path = req.originalUrl || req.url || "";
+  return (
+    path.startsWith("/api/platform-auth") ||
+    path.startsWith("/api/platform-admin")
+  );
+};
+
 export const tenantMiddleware = async (req, res, next) => {
   try {
+    if (shouldBypassTenantMiddleware(req)) {
+      return next();
+    }
+
     const lookup = resolveTenantLookup(req);
     let tenant = null;
 

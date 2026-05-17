@@ -239,6 +239,10 @@ export const createPlatformPageBuilderTemplate = (data) =>
   API.post("/platform-admin/page-builder-templates", data, {
     headers: getPlatformAdminHeaders(),
   });
+export const generatePlatformPageBuilderTemplateDraft = (data) =>
+  API.post("/platform-admin/page-builder-templates/ai-draft", data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const createPlatformTenant = (data) =>
   API.post("/platform-admin/tenants", data, {
     headers: getPlatformAdminHeaders(),

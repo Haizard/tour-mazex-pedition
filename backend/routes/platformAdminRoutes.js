@@ -49,6 +49,11 @@ import {
   normalizePlatformTemplatePayload,
   serializePlatformTemplate,
 } from "../utils/platformTemplateRegistry.js";
+import {
+  buildDeterministicTemplateDraft,
+  buildPlatformTemplateAiPrompt,
+  parseTemplateBuilderResponse,
+} from "../utils/platformTemplateAiBuilder.js";
 import { getTemplateCatalog } from "../../src/pageBuilder/templateMarketplace.js";
 
 const router = express.Router();
@@ -336,6 +341,47 @@ router.get("/page-builder-templates", async (_req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+const generateTemplateDraftWithProvider = async (prompt, requestBody = {}) => {
+  if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
+    return { draft: null, source: "deterministic-fallback" };
+  }
+
+  try {
+    const { GoogleGenAI } = await import("@google/genai");
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
+    });
+    const response = await ai.models.generateContent({
+      model: process.env.PAGE_BUILDER_AI_MODEL || "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    return { draft: parseTemplateBuilderResponse(response.text || ""), source: "ai" };
+  } catch (error) {
+    console.warn("Platform template AI builder fell back to deterministic draft:", error.message);
+    return {
+      draft: buildDeterministicTemplateDraft(requestBody),
+      source: "deterministic-fallback",
+    };
+  }
+};
+
+router.post("/page-builder-templates/ai-draft", async (req, res) => {
+  try {
+    const prompt = buildPlatformTemplateAiPrompt(req.body || {});
+    const generated = await generateTemplateDraftWithProvider(prompt, req.body || {});
+    const draft = generated.draft || buildDeterministicTemplateDraft(req.body || {});
+
+    res.status(200).json({
+      source: generated.source,
+      prompt,
+      template: draft,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 

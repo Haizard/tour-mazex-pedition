@@ -11,6 +11,7 @@ import {
   fetchPlatformPageBuilderTemplates,
   fetchPlatformTenantSupport,
   fetchPlatformTenants,
+  generatePlatformPageBuilderTemplateDraft,
   createPlatformPageBuilderTemplate,
   renewPlatformTenantDomainService,
   updatePlatformTenant,
@@ -207,6 +208,14 @@ const createTemplateFormState = () => ({
   ),
 });
 
+const createTemplateAiBuilderState = () => ({
+  concept: "Luxury migration safari",
+  audience: "premium safari planners",
+  destination: "Serengeti and Northern Tanzania",
+  style: "light, editorial, premium tourism UI",
+  offer: "tailor-made safari inquiry campaign",
+});
+
 const inputClass = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-950 outline-none focus:border-zinc-950";
 const panelClass = "rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm";
 const labelClass = "mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500";
@@ -252,6 +261,7 @@ const PlatformAdminDashboard = () => {
   const [tenantForm, setTenantForm] = useState(createTenantFormState());
   const [newTenantForm, setNewTenantForm] = useState(createNewTenantState());
   const [templateForm, setTemplateForm] = useState(createTemplateFormState());
+  const [templateAiBuilder, setTemplateAiBuilder] = useState(createTemplateAiBuilderState());
   const [adminTemplateCatalog, setAdminTemplateCatalog] = useState(templateEntitlementCatalog);
   const [supportDetail, setSupportDetail] = useState(null);
   const [marketingDetail, setMarketingDetail] = useState(null);
@@ -264,6 +274,7 @@ const PlatformAdminDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [creatingTenant, setCreatingTenant] = useState(false);
   const [creatingTemplate, setCreatingTemplate] = useState(false);
+  const [generatingTemplateDraft, setGeneratingTemplateDraft] = useState(false);
   const [renewingDomain, setRenewingDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState("");
   const [applyingDomain, setApplyingDomain] = useState("");
@@ -529,6 +540,38 @@ const PlatformAdminDashboard = () => {
     }
   };
 
+  const handleGenerateTemplateDraft = async () => {
+    setGeneratingTemplateDraft(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await generatePlatformPageBuilderTemplateDraft(templateAiBuilder);
+      const draft = response.data?.template || {};
+      setTemplateForm((current) => ({
+        ...current,
+        name: draft.name || current.name,
+        category: draft.category || current.category,
+        pageType: draft.pageType || current.pageType,
+        priceLabel: draft.priceLabel || current.priceLabel,
+        purchaseStatus: draft.purchaseStatus || current.purchaseStatus,
+        status: draft.status || current.status,
+        previewImage: draft.previewImage || current.previewImage,
+        preview: draft.preview || current.preview,
+        bestFor: Array.isArray(draft.bestFor) ? draft.bestFor.join("\n") : current.bestFor,
+        sectionsJson: JSON.stringify(draft.sections || [], null, 2),
+      }));
+      setNotice(
+        response.data?.source === "ai"
+          ? "AI template draft generated. Review and save it when ready."
+          : "Template draft generated from the fallback builder. Review and save it when ready."
+      );
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to generate a template draft.");
+    } finally {
+      setGeneratingTemplateDraft(false);
+    }
+  };
+
   const fillTemplateFromSelectedTenantHome = async () => {
     if (!selectedTenant) {
       setError("Select a tenant before capturing page-builder sections.");
@@ -762,6 +805,48 @@ const PlatformAdminDashboard = () => {
           <p className="max-w-2xl text-sm font-medium leading-6 text-zinc-500">
             Build reusable marketplace templates at the platform level. Published templates appear on the public template showcase and can be granted to tenants later.
           </p>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-black text-zinc-950">AI Template Builder</p>
+              <p className="mt-1 text-xs font-semibold leading-5 text-zinc-600">
+                Generate a reusable tourism template draft, then edit the fields below before publishing.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerateTemplateDraft}
+              disabled={generatingTemplateDraft}
+              className="rounded-xl bg-emerald-700 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"
+            >
+              {generatingTemplateDraft ? "Building Draft..." : "Generate Draft"}
+            </button>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div>
+              <label className={labelClass}>Concept</label>
+              <input className={inputClass} value={templateAiBuilder.concept} onChange={(event) => setTemplateAiBuilder((current) => ({ ...current, concept: event.target.value }))} placeholder="Luxury migration safari" />
+            </div>
+            <div>
+              <label className={labelClass}>Audience</label>
+              <input className={inputClass} value={templateAiBuilder.audience} onChange={(event) => setTemplateAiBuilder((current) => ({ ...current, audience: event.target.value }))} placeholder="Premium safari planners" />
+            </div>
+            <div>
+              <label className={labelClass}>Destination</label>
+              <input className={inputClass} value={templateAiBuilder.destination} onChange={(event) => setTemplateAiBuilder((current) => ({ ...current, destination: event.target.value }))} placeholder="Serengeti" />
+            </div>
+            <div>
+              <label className={labelClass}>Style</label>
+              <input className={inputClass} value={templateAiBuilder.style} onChange={(event) => setTemplateAiBuilder((current) => ({ ...current, style: event.target.value }))} placeholder="Light editorial" />
+            </div>
+            <div>
+              <label className={labelClass}>Offer</label>
+              <input className={inputClass} value={templateAiBuilder.offer} onChange={(event) => setTemplateAiBuilder((current) => ({ ...current, offer: event.target.value }))} placeholder="Tailor-made safari inquiries" />
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleCreateTemplate} className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
