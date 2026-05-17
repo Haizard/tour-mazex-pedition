@@ -24,6 +24,53 @@ export const isPlatformHostname = (hostname = "") => {
   );
 };
 
+export const shouldUsePlatformBootstrapFallback = (hostname = "", pathname = "") =>
+  isPlatformHostname(hostname) && !pathname.startsWith("/demo/");
+
+export const getPlatformBootstrapFallback = () => ({
+  isPlatform: true,
+  tenant: null,
+  theme: {
+    primaryColor: "#0d9488",
+    secondaryColor: "#eab308",
+    accentColor: "#f97316",
+    backgroundColor: "#ffffff",
+    surfaceColor: "#f8fafc",
+    textColor: "#1e293b",
+    headingColor: "#0f172a",
+    headingFont: "'Playfair Display', serif",
+    bodyFont: "'Montserrat', sans-serif",
+    borderRadius: "1rem",
+    cardRadius: "1.5rem",
+    buttonRadius: "9999px",
+    shadowStyle: "0 10px 30px rgba(15, 23, 42, 0.12)",
+    spacingScale: "1",
+  },
+  siteConfig: {
+    homepageConfig: {
+      pageType: "legacy-home",
+      sections: [],
+    },
+    navigationConfig: {
+      ctaLabel: "PLAN MY TRIP",
+      ctaHref: "/plan-my-trip",
+      aboutLabel: "About Us",
+      aboutHref: "/about",
+    },
+    footerConfig: {
+      brandName: "MAZ Expeditions Platform",
+      brandDescription: "Tourism operators, templates, and marketplace tools in one platform.",
+      primaryCtaLabel: "Explore Marketplace",
+      primaryCtaHref: "/discover",
+      secondaryCtaLabel: "See Pricing",
+      secondaryCtaHref: "/pricing",
+      copyrightLabel: "Copyright ©2025 MAZ Expeditions | All rights reserved",
+    },
+    enabledFeatures: ["legacy-ui", "ai-content", "dynamic-menu"],
+  },
+  siteSettings: null,
+});
+
 const API = axios.create({ baseURL: API_URL });
 const getRequestCache = createGetRequestCache({ ttlMs: 8000 });
 
@@ -381,10 +428,18 @@ export const createEmailThread = (data) => API.post("/email/threads", data);
 export const fetchUnifiedInboxItems = () => API.get("/unified-inbox");
 export const recordUnifiedInboxAgentAction = (data) =>
   API.post("/unified-inbox/agent-actions", data);
-export const fetchTenantBootstrap = () =>
-  API.get("/tenant/bootstrap", {
+export const fetchTenantBootstrap = () => {
+  if (
+    isBrowser &&
+    shouldUsePlatformBootstrapFallback(window.location.hostname, window.location.pathname)
+  ) {
+    return Promise.resolve({ data: getPlatformBootstrapFallback() });
+  }
+
+  return API.get("/tenant/bootstrap", {
     headers: getTenantHeaders(),
   });
+};
 export const fetchTenantSiteConfig = () => cachedGet("/tenant/site-config");
 export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", data);
 export const updateTenantDomainRequest = (data) => API.put("/tenant/domain-request", data);
