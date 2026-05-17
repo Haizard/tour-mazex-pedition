@@ -80,6 +80,57 @@ export const getPlatformBootstrapFallback = () => ({
   siteSettings: null,
 });
 
+const emptySiteSettings = {
+  facebook: "",
+  twitter: "",
+  instagram: "",
+  whatsapp: "",
+  youtube: "",
+  reddit: "",
+  logoUrl: "",
+};
+
+export const getPlatformPublicApiFallback = (url = "") => {
+  const path = String(url || "").split("?")[0];
+
+  if (
+    path === "/tours" ||
+    path === "/blogs" ||
+    path === "/menu-items" ||
+    path === "/taxonomies" ||
+    path === "/bookings/public-testimonials" ||
+    path === "/gallery" ||
+    path === "/home-content" ||
+    path === "/visionaries" ||
+    path === "/faqs"
+  ) {
+    return [];
+  }
+
+  if (path === "/site-settings") {
+    return emptySiteSettings;
+  }
+
+  if (path === "/page-config/home") {
+    return {
+      pageType: "home",
+      slug: "/",
+      title: "Home",
+      status: "published",
+      seo: {},
+      sections: [],
+      tenantId: null,
+    };
+  }
+
+  return undefined;
+};
+
+const shouldUsePlatformApiFallback = (url = "") =>
+  isBrowser &&
+  shouldUsePlatformBootstrapFallback(window.location.hostname, window.location.pathname) &&
+  getPlatformPublicApiFallback(url) !== undefined;
+
 const API = axios.create({ baseURL: API_URL });
 const getRequestCache = createGetRequestCache({ ttlMs: 8000 });
 
@@ -200,6 +251,9 @@ export const clearApiGetCache = () => {
 };
 
 const cachedGet = (url, config = {}, options = {}) =>
+  shouldUsePlatformApiFallback(url)
+    ? Promise.resolve({ data: getPlatformPublicApiFallback(url) })
+    :
   getRequestCache.get(
     buildGetCacheKey(url, config),
     () => API.get(url, config),
@@ -679,7 +733,9 @@ export const fetchPublicFeedback = (token) =>
 export const submitPublicFeedback = (token, data) =>
   API.post(`/bookings/public-feedback/${token}`, data);
 export const fetchPublicTestimonials = () =>
-  API.get("/bookings/public-testimonials");
+  shouldUsePlatformApiFallback("/bookings/public-testimonials")
+    ? Promise.resolve({ data: getPlatformPublicApiFallback("/bookings/public-testimonials") })
+    : API.get("/bookings/public-testimonials");
 export const fetchFeedbackReport = () =>
   API.get("/bookings/feedback-report");
 

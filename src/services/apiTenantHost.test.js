@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  getPlatformPublicApiFallback,
   getPlatformBootstrapFallback,
   isPlatformHostname,
   shouldUsePlatformBootstrapFallback,
@@ -50,4 +51,16 @@ test("getPlatformBootstrapFallback returns platform bootstrap shape", () => {
   assert.equal(fallback.tenant, null);
   assert.ok(fallback.theme);
   assert.ok(fallback.siteConfig);
+});
+
+test("getPlatformPublicApiFallback returns empty tenant collections for platform pages", () => {
+  assert.deepEqual(getPlatformPublicApiFallback("/tours"), []);
+  assert.deepEqual(getPlatformPublicApiFallback("/blogs"), []);
+  assert.deepEqual(getPlatformPublicApiFallback("/taxonomies?type=destination"), []);
+  assert.deepEqual(getPlatformPublicApiFallback("/bookings/public-testimonials"), []);
+});
+
+test("getPlatformPublicApiFallback returns platform-safe objects", () => {
+  assert.equal(getPlatformPublicApiFallback("/site-settings").facebook, "");
+  assert.equal(getPlatformPublicApiFallback("/page-config/home").tenantId, null);
 });
