@@ -22,6 +22,20 @@ test("shouldUsePlatformBootstrapFallback skips tenant bootstrap on platform page
   );
 });
 
+test("shouldUsePlatformBootstrapFallback skips tenant bootstrap on platform root", () => {
+  assert.equal(
+    shouldUsePlatformBootstrapFallback("custom-platform-host.example", "/"),
+    true,
+  );
+});
+
+test("shouldUsePlatformBootstrapFallback skips tenant bootstrap on platform marketplace pages", () => {
+  assert.equal(
+    shouldUsePlatformBootstrapFallback("custom-platform-host.example", "/discover"),
+    true,
+  );
+});
+
 test("shouldUsePlatformBootstrapFallback keeps demo pages tenant-backed", () => {
   assert.equal(
     shouldUsePlatformBootstrapFallback("mazexpeditions.vercel.app", "/demo/mazexpeditions"),

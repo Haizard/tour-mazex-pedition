@@ -25,7 +25,16 @@ export const isPlatformHostname = (hostname = "") => {
 };
 
 export const shouldUsePlatformBootstrapFallback = (hostname = "", pathname = "") =>
-  isPlatformHostname(hostname) && !pathname.startsWith("/demo/");
+  !pathname.startsWith("/demo/") &&
+  (
+    isPlatformHostname(hostname) ||
+    pathname === "/" ||
+    pathname.startsWith("/platform") ||
+    pathname.startsWith("/super-admin") ||
+    pathname.startsWith("/discover") ||
+    pathname.startsWith("/pricing") ||
+    pathname.startsWith("/templates")
+  );
 
 export const getPlatformBootstrapFallback = () => ({
   isPlatform: true,
@@ -438,6 +447,13 @@ export const fetchTenantBootstrap = () => {
 
   return API.get("/tenant/bootstrap", {
     headers: getTenantHeaders(),
+    validateStatus: (status) => status < 500,
+  }).then((response) => {
+    if (response.status === 404 && isBrowser && !window.location.pathname.startsWith("/demo/")) {
+      return { ...response, data: getPlatformBootstrapFallback() };
+    }
+
+    return response;
   });
 };
 export const fetchTenantSiteConfig = () => cachedGet("/tenant/site-config");
