@@ -13,12 +13,23 @@ export const normalizeHostname = (value = "") =>
     .toString()
     .trim()
     .toLowerCase()
+    .split(",")[0]
+    .trim()
     .replace(/^https?:\/\//, "")
     .replace(/\/.*$/, "")
     .replace(/:\d+$/, "");
 
 export const isLocalHostname = (hostname = "") =>
   LOCAL_HOSTNAMES.has(normalizeHostname(hostname));
+
+export const isPlatformHostname = (hostname = "") => {
+  const normalizedHostname = normalizeHostname(hostname);
+  return (
+    PLATFORM_DOMAINS.includes(normalizedHostname) ||
+    (normalizedHostname.endsWith(".vercel.app") &&
+      !LEGACY_TENANT_DOMAINS.includes(normalizedHostname))
+  );
+};
 
 export const getTenantRequestSource = (req) =>
   (req.headers["x-tenant-source"] || "")
@@ -55,7 +66,7 @@ export const resolveTenantLookup = (req) => {
     return { subdomain: explicitSubdomain, hostname, allowLegacyFallback: false };
   }
 
-  if (PLATFORM_DOMAINS.includes(hostname)) {
+  if (isPlatformHostname(hostname)) {
     return { isPlatform: true, hostname };
   }
 

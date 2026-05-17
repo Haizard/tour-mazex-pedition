@@ -15,6 +15,15 @@ const LEGACY_HOSTNAMES = new Set([
   "tourism-website-inky.vercel.app",
 ]);
 
+export const isPlatformHostname = (hostname = "") => {
+  const normalizedHostname = hostname.toString().trim().toLowerCase();
+  return (
+    PLATFORM_HOSTNAMES.has(normalizedHostname) ||
+    (normalizedHostname.endsWith(".vercel.app") &&
+      !LEGACY_HOSTNAMES.has(normalizedHostname))
+  );
+};
+
 const API = axios.create({ baseURL: API_URL });
 const getRequestCache = createGetRequestCache({ ttlMs: 8000 });
 
@@ -46,7 +55,7 @@ const getTenantHeaders = () => {
 
   // On the default production domains, trust hostname-based tenant resolution
   // instead of any stale localStorage override from local tenant testing.
-  if (storedTenantSlug && (LEGACY_HOSTNAMES.has(hostname) || PLATFORM_HOSTNAMES.has(hostname))) {
+  if (storedTenantSlug && (LEGACY_HOSTNAMES.has(hostname) || isPlatformHostname(hostname))) {
     window.localStorage.removeItem("activeTenantSlug");
   }
 

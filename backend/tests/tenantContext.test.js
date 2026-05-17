@@ -18,6 +18,43 @@ test("resolveTenantLookup treats mazexpeditions.vercel.app as platform host", ()
   assert.equal(lookup.hostname, "mazexpeditions.vercel.app");
 });
 
+test("resolveTenantLookup treats Vercel deployment hosts as platform hosts", () => {
+  const lookup = resolveTenantLookup({
+    headers: {
+      host: "tour-mazex-pedition-git-main-haizard.vercel.app",
+    },
+    query: {},
+  });
+
+  assert.equal(lookup.isPlatform, true);
+  assert.equal(lookup.hostname, "tour-mazex-pedition-git-main-haizard.vercel.app");
+});
+
+test("resolveTenantLookup keeps the legacy Vercel tenant host on the legacy tenant", () => {
+  const lookup = resolveTenantLookup({
+    headers: {
+      host: "tourism-website-inky.vercel.app",
+    },
+    query: {},
+  });
+
+  assert.equal(lookup.slug, "maz-expeditions");
+  assert.equal(lookup.allowLegacyFallback, true);
+});
+
+test("resolveTenantLookup uses the first forwarded host when proxies append a chain", () => {
+  const lookup = resolveTenantLookup({
+    headers: {
+      "x-forwarded-host": "mazexpeditions.com, tour-mazex-pedition.vercel.app",
+      host: "tour-mazex-pedition.vercel.app",
+    },
+    query: {},
+  });
+
+  assert.equal(lookup.slug, "maz-expeditions");
+  assert.equal(lookup.hostname, "mazexpeditions.com");
+});
+
 test("resolveTenantLookup maps legacy demo aliases back to the legacy tenant slug", () => {
   const lookup = resolveTenantLookup({
     headers: {
@@ -55,8 +92,8 @@ test("resolveTenantLookup only allows legacy fallback for default hosts", () => 
     resolveTenantLookup({
       headers: { host: "new-tenant.mazexpeditions.vercel.app" },
       query: {},
-    }).allowLegacyFallback,
-    false,
+    }).isPlatform,
+    true,
   );
 
   assert.equal(

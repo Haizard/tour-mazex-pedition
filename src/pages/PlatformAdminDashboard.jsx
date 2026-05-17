@@ -20,6 +20,7 @@ import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
 import NavigationManager from "../components/Admin/NavigationManager";
 import { getTemplateCatalog } from "../pageBuilder/templateMarketplace";
+import { platformPrimarySections } from "./platformAdminNavigation";
 
 const metricCards = [
   ["tenantCount", "Tenants"],
@@ -750,6 +751,86 @@ const PlatformAdminDashboard = () => {
     </form>
   );
 
+  const renderTemplateStudio = () => (
+    <div className="space-y-6">
+      <div className={panelClass}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Platform Template Studio</p>
+            <h2 className="mt-2 text-2xl font-black text-zinc-950">Create templates before tenant onboarding</h2>
+          </div>
+          <p className="max-w-2xl text-sm font-medium leading-6 text-zinc-500">
+            Build reusable marketplace templates at the platform level. Published templates appear on the public template showcase and can be granted to tenants later.
+          </p>
+        </div>
+
+        <form onSubmit={handleCreateTemplate} className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-black text-zinc-950">New marketplace template</p>
+              <p className="mt-1 text-xs font-semibold text-zinc-500">
+                Start from the default sections JSON, paste your own page-builder sections, or optionally capture the selected tenant homepage.
+              </p>
+            </div>
+            {selectedTenant && (
+              <button
+                type="button"
+                onClick={fillTemplateFromSelectedTenantHome}
+                className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-zinc-700"
+              >
+                Capture Tenant Home
+              </button>
+            )}
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div><label className={labelClass}>Template Name</label><input className={inputClass} value={templateForm.name} onChange={(event) => setTemplateForm((current) => ({ ...current, name: event.target.value }))} placeholder="Luxury Migration Campaign" required /></div>
+            <div><label className={labelClass}>Category</label><input className={inputClass} value={templateForm.category} onChange={(event) => setTemplateForm((current) => ({ ...current, category: event.target.value }))} placeholder="Safari Campaign" /></div>
+            <div><label className={labelClass}>Page Type</label><select className={inputClass} value={templateForm.pageType} onChange={(event) => setTemplateForm((current) => ({ ...current, pageType: event.target.value }))}><option value="home">Home</option><option value="landing">Landing</option><option value="tailor-made">Tailor Made</option><option value="contact">Contact</option></select></div>
+            <div><label className={labelClass}>Price Label</label><input className={inputClass} value={templateForm.priceLabel} onChange={(event) => setTemplateForm((current) => ({ ...current, priceLabel: event.target.value }))} placeholder="$149" /></div>
+            <div><label className={labelClass}>Purchase Status</label><select className={inputClass} value={templateForm.purchaseStatus} onChange={(event) => setTemplateForm((current) => ({ ...current, purchaseStatus: event.target.value }))}><option value="available">Available / Paid</option><option value="included">Included For All</option></select></div>
+            <div><label className={labelClass}>Publish State</label><select className={inputClass} value={templateForm.status} onChange={(event) => setTemplateForm((current) => ({ ...current, status: event.target.value }))}><option value="published">Published</option><option value="draft">Draft</option></select></div>
+            <div className="md:col-span-2"><label className={labelClass}>Preview Image URL</label><input className={inputClass} value={templateForm.previewImage} onChange={(event) => setTemplateForm((current) => ({ ...current, previewImage: event.target.value }))} placeholder="https://..." /></div>
+            <div className="md:col-span-2"><label className={labelClass}>Preview Copy</label><textarea className={inputClass} rows={3} value={templateForm.preview} onChange={(event) => setTemplateForm((current) => ({ ...current, preview: event.target.value }))} placeholder="Short marketplace description" /></div>
+            <div className="md:col-span-2"><label className={labelClass}>Best For</label><textarea className={inputClass} rows={3} value={templateForm.bestFor} onChange={(event) => setTemplateForm((current) => ({ ...current, bestFor: event.target.value }))} placeholder={"Luxury safari brands\nSeasonal campaigns"} /></div>
+            <div className="md:col-span-2 xl:col-span-4"><label className={labelClass}>Page Builder Sections JSON</label><textarea className={`${inputClass} font-mono text-xs`} rows={10} value={templateForm.sectionsJson} onChange={(event) => setTemplateForm((current) => ({ ...current, sectionsJson: event.target.value }))} required /></div>
+          </div>
+
+          <div className="mt-5 flex justify-end">
+            <button type="submit" disabled={creatingTemplate} className="rounded-xl bg-zinc-950 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50">
+              {creatingTemplate ? "Saving Template..." : "Create Template"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className={panelClass}>
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Template Catalog</p>
+        <h3 className="mt-2 text-xl font-black text-zinc-950">Built-in and platform-created templates</h3>
+        <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-3">
+          {adminTemplateCatalog.map((template) => (
+            <article key={template.id} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">{template.category}</p>
+                  <h4 className="mt-2 text-base font-black text-zinc-950">{template.name}</h4>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-600">
+                  {template.status || "published"}
+                </span>
+              </div>
+              <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-zinc-500">{template.preview}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="rounded-full bg-zinc-950 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">{template.priceLabel}</span>
+                <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-600">{template.pageType}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTenantOverview = () => {
     if (!selectedTenant) return <EmptyState title="No tenant selected" body="Choose a tenant from the overview to open the tenant workspace." />;
     return (
@@ -1038,58 +1119,11 @@ const PlatformAdminDashboard = () => {
           <div className={panelClass}>
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Template Studio</p>
-                <h2 className="mt-2 text-2xl font-black text-zinc-950">Create and grant website templates</h2>
-              </div>
-              <p className="max-w-xl text-sm font-medium text-zinc-500">
-                Create platform-owned templates from page-builder sections, then grant purchased access to this tenant.
-              </p>
-            </div>
-
-            <form onSubmit={handleCreateTemplate} className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-sm font-black text-zinc-950">New marketplace template</p>
-                  <p className="mt-1 text-xs font-semibold text-zinc-500">
-                    Paste page-builder sections JSON or capture the selected tenant homepage as a reusable template.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={fillTemplateFromSelectedTenantHome}
-                  className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-zinc-700"
-                >
-                  Capture Tenant Home
-                </button>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div><label className={labelClass}>Template Name</label><input className={inputClass} value={templateForm.name} onChange={(event) => setTemplateForm((current) => ({ ...current, name: event.target.value }))} placeholder="Luxury Migration Campaign" required /></div>
-                <div><label className={labelClass}>Category</label><input className={inputClass} value={templateForm.category} onChange={(event) => setTemplateForm((current) => ({ ...current, category: event.target.value }))} placeholder="Safari Campaign" /></div>
-                <div><label className={labelClass}>Page Type</label><select className={inputClass} value={templateForm.pageType} onChange={(event) => setTemplateForm((current) => ({ ...current, pageType: event.target.value }))}><option value="home">Home</option><option value="landing">Landing</option><option value="tailor-made">Tailor Made</option><option value="contact">Contact</option></select></div>
-                <div><label className={labelClass}>Price Label</label><input className={inputClass} value={templateForm.priceLabel} onChange={(event) => setTemplateForm((current) => ({ ...current, priceLabel: event.target.value }))} placeholder="$149" /></div>
-                <div><label className={labelClass}>Purchase Status</label><select className={inputClass} value={templateForm.purchaseStatus} onChange={(event) => setTemplateForm((current) => ({ ...current, purchaseStatus: event.target.value }))}><option value="available">Available / Paid</option><option value="included">Included For All</option></select></div>
-                <div><label className={labelClass}>Publish State</label><select className={inputClass} value={templateForm.status} onChange={(event) => setTemplateForm((current) => ({ ...current, status: event.target.value }))}><option value="published">Published</option><option value="draft">Draft</option></select></div>
-                <div className="md:col-span-2"><label className={labelClass}>Preview Image URL</label><input className={inputClass} value={templateForm.previewImage} onChange={(event) => setTemplateForm((current) => ({ ...current, previewImage: event.target.value }))} placeholder="https://..." /></div>
-                <div className="md:col-span-2"><label className={labelClass}>Preview Copy</label><textarea className={inputClass} rows={3} value={templateForm.preview} onChange={(event) => setTemplateForm((current) => ({ ...current, preview: event.target.value }))} placeholder="Short marketplace description" /></div>
-                <div className="md:col-span-2"><label className={labelClass}>Best For</label><textarea className={inputClass} rows={3} value={templateForm.bestFor} onChange={(event) => setTemplateForm((current) => ({ ...current, bestFor: event.target.value }))} placeholder={"Luxury safari brands\nSeasonal campaigns"} /></div>
-                <div className="md:col-span-2 xl:col-span-4"><label className={labelClass}>Page Builder Sections JSON</label><textarea className={`${inputClass} font-mono text-xs`} rows={10} value={templateForm.sectionsJson} onChange={(event) => setTemplateForm((current) => ({ ...current, sectionsJson: event.target.value }))} required /></div>
-              </div>
-
-              <div className="mt-5 flex justify-end">
-                <button type="submit" disabled={creatingTemplate} className="rounded-xl bg-zinc-950 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50">
-                  {creatingTemplate ? "Saving Template..." : "Create Template"}
-                </button>
-              </div>
-            </form>
-
-            <div className="mt-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-              <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Template Entitlements</p>
-                <h3 className="mt-2 text-xl font-black text-zinc-950">Purchased website templates</h3>
+                <h2 className="mt-2 text-2xl font-black text-zinc-950">Grant purchased website templates</h2>
               </div>
               <p className="max-w-xl text-sm font-medium text-zinc-500">
-                Included templates remain available automatically, while checked templates become usable in Page Studio and on the public template marketplace.
+                Control which platform-owned templates this tenant can use inside Page Studio and on the public template marketplace.
               </p>
             </div>
 
@@ -1292,6 +1326,33 @@ const PlatformAdminDashboard = () => {
     </button>
   );
 
+  const headerMeta = {
+    tenants: {
+      eyebrow: "Overview",
+      title: "Tenant Home",
+      description: "Monitor the platform, open tenants quickly, and keep every customer separated in a professional control plane.",
+    },
+    create: {
+      eyebrow: "Provisioning",
+      title: "Create Tenant",
+      description: "Provision a clean tenant with its own login, empty website content, demo route, and managed hosting billing.",
+    },
+    "template-studio": {
+      eyebrow: "Template Studio",
+      title: "Template Studio",
+      description: "Create reusable page-builder templates before any tenant is onboarded, then grant them later.",
+    },
+    tenant: {
+      eyebrow: "Tenant Detail",
+      title: selectedTenant?.name || "Tenant Workspace",
+      description: "Manage this tenant through focused workspaces for domains, credentials, subscriptions, page layout, marketing, and support.",
+    },
+  }[activeSection] || {
+    eyebrow: "Overview",
+    title: "Tenant Home",
+    description: "Monitor the platform, open tenants quickly, and keep every customer separated in a professional control plane.",
+  };
+
   return (
     <div className="min-h-screen bg-[#f6f7f9] text-zinc-950">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-zinc-200 bg-[#050505] p-4 text-white lg:flex lg:flex-col">
@@ -1302,8 +1363,7 @@ const PlatformAdminDashboard = () => {
         </div>
 
         <nav className="mt-5 space-y-2">
-          {renderPrimaryNavButton("tenants", "Tenant Home")}
-          {renderPrimaryNavButton("create", "Create Tenant")}
+          {platformPrimarySections.map(({ id, label }) => renderPrimaryNavButton(id, label))}
         </nav>
 
         <div className="mt-7 border-t border-white/10 pt-5">
@@ -1333,21 +1393,13 @@ const PlatformAdminDashboard = () => {
               <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-zinc-500">
-                    {activeSection === "tenant" ? "Tenant Detail" : activeSection === "create" ? "Provisioning" : "Overview"}
+                    {headerMeta.eyebrow}
                   </p>
                   <h1 className="mt-3 text-3xl font-black tracking-tight text-zinc-950 md:text-5xl">
-                    {activeSection === "tenant"
-                      ? selectedTenant?.name || "Tenant Workspace"
-                      : activeSection === "create"
-                        ? "Create Tenant"
-                        : "Tenant Home"}
+                    {headerMeta.title}
                   </h1>
                   <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-zinc-600 md:text-base">
-                    {activeSection === "tenant"
-                      ? "Manage this tenant through focused workspaces for domains, credentials, subscriptions, page layout, marketing, and support."
-                      : activeSection === "create"
-                        ? "Provision a clean tenant with its own login, empty website content, demo route, and managed hosting billing."
-                        : "Monitor the platform, open tenants quickly, and keep every customer separated in a professional control plane."}
+                    {headerMeta.description}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1376,10 +1428,7 @@ const PlatformAdminDashboard = () => {
           {notice && <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">{notice}</div>}
 
           <div className="mb-5 grid grid-cols-2 gap-2 lg:hidden">
-            {[
-              ["tenants", "Tenant Home"],
-              ["create", "Create Tenant"],
-            ].map(([id, label]) => (
+            {platformPrimarySections.map(({ id, label }) => (
               <button
                 key={id}
                 type="button"
@@ -1430,6 +1479,7 @@ const PlatformAdminDashboard = () => {
           )}
 
           {activeSection === "create" && renderCreateTenant()}
+          {activeSection === "template-studio" && renderTemplateStudio()}
           {activeSection === "tenant" && renderActiveTenantPanel()}
         </div>
       </main>
