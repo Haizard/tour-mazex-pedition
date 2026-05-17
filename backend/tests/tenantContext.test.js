@@ -18,6 +18,33 @@ test("resolveTenantLookup treats mazexpeditions.vercel.app as platform host", ()
   assert.equal(lookup.hostname, "mazexpeditions.vercel.app");
 });
 
+test("resolveTenantLookup ignores stale tenant slug headers on platform hosts", () => {
+  const lookup = resolveTenantLookup({
+    headers: {
+      host: "mazexpeditions.vercel.app",
+      "x-tenant-slug": "deleted-tenant",
+    },
+    query: {},
+  });
+
+  assert.equal(lookup.isPlatform, true);
+  assert.equal(lookup.slug, undefined);
+});
+
+test("resolveTenantLookup still allows demo tenant slug headers on platform hosts", () => {
+  const lookup = resolveTenantLookup({
+    headers: {
+      host: "mazexpeditions.vercel.app",
+      "x-tenant-slug": "mazexpeditions",
+      "x-tenant-source": "demo",
+    },
+    query: {},
+  });
+
+  assert.equal(lookup.slug, "maz-expeditions");
+  assert.equal(lookup.isPlatform, undefined);
+});
+
 test("resolveTenantLookup treats Vercel deployment hosts as platform hosts", () => {
   const lookup = resolveTenantLookup({
     headers: {
@@ -59,6 +86,7 @@ test("resolveTenantLookup maps legacy demo aliases back to the legacy tenant slu
   const lookup = resolveTenantLookup({
     headers: {
       "x-tenant-slug": "mazexpedtion",
+      "x-tenant-source": "demo",
       host: "mazexpeditions.vercel.app",
     },
     query: {},
@@ -84,8 +112,8 @@ test("resolveTenantLookup only allows legacy fallback for default hosts", () => 
         "x-tenant-slug": "new-tenant",
       },
       query: {},
-    }).allowLegacyFallback,
-    false,
+    }).isPlatform,
+    true,
   );
 
   assert.equal(

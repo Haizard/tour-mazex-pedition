@@ -57,6 +57,12 @@ export const resolveTenantLookup = (req) => {
   const hostname = normalizeHostname(
     req.headers["x-forwarded-host"] || req.headers.host || ""
   );
+  const isPlatformHost = isPlatformHostname(hostname);
+  const isDemoRequest = getTenantRequestSource(req) === "demo";
+
+  if (isPlatformHost && !isDemoRequest && !req.query.tenant) {
+    return { isPlatform: true, hostname };
+  }
 
   if (explicitSlug) {
     return { slug: explicitSlug, hostname, allowLegacyFallback: false };
@@ -66,7 +72,7 @@ export const resolveTenantLookup = (req) => {
     return { subdomain: explicitSubdomain, hostname, allowLegacyFallback: false };
   }
 
-  if (isPlatformHostname(hostname)) {
+  if (isPlatformHost) {
     return { isPlatform: true, hostname };
   }
 
