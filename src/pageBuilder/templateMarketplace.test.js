@@ -62,3 +62,14 @@ test("tenant entitlements mark available templates as purchased", () => {
   assert.equal(islandTemplate.priceLabel, "Purchased");
   assert.equal(isTemplateUsable(islandTemplate), true);
 });
+
+test("tenant requests mark available templates as requested", () => {
+  const catalog = resolveTemplateCatalogForTenant({
+    requestedTemplates: ["island-escape-landing"],
+  });
+  const islandTemplate = catalog.find((template) => template.id === "island-escape-landing");
+
+  assert.equal(islandTemplate.purchaseStatus, "requested");
+  assert.equal(islandTemplate.priceLabel, "Requested");
+  assert.equal(isTemplateUsable(islandTemplate), false);
+});

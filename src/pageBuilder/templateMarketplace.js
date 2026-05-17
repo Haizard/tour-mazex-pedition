@@ -210,17 +210,26 @@ export const isTemplateUsable = (template) =>
 
 export const resolveTemplateCatalogForTenant = (tenant = {}) => {
   const purchasedTemplates = new Set(tenant?.purchasedTemplates || []);
+  const requestedTemplates = new Set(tenant?.requestedTemplates || []);
 
   return getTemplateCatalog().map((template) => {
-    if (!purchasedTemplates.has(template.id)) {
-      return template;
+    if (purchasedTemplates.has(template.id)) {
+      return {
+        ...template,
+        purchaseStatus: "purchased",
+        priceLabel: "Purchased",
+      };
     }
 
-    return {
-      ...template,
-      purchaseStatus: "purchased",
-      priceLabel: "Purchased",
-    };
+    if (requestedTemplates.has(template.id) && template.purchaseStatus === "available") {
+      return {
+        ...template,
+        purchaseStatus: "requested",
+        priceLabel: "Requested",
+      };
+    }
+
+    return template;
   });
 };
 

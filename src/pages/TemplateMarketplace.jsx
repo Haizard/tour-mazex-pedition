@@ -1,13 +1,31 @@
 import React from "react";
 import { resolveTemplateCatalogForTenant, isTemplateUsable } from "../pageBuilder/templateMarketplace";
 import { useTenant } from "../context/TenantContext";
+import { requestTenantTemplate } from "../services/api";
 
 const TemplateMarketplace = () => {
-  const { tenant } = useTenant();
+  const { tenant, refreshTenant } = useTenant();
+  const [requestingTemplate, setRequestingTemplate] = React.useState("");
+  const [message, setMessage] = React.useState("");
   const templates = React.useMemo(
     () => resolveTemplateCatalogForTenant(tenant || {}),
     [tenant]
   );
+
+  const handleRequestTemplate = async (templateId) => {
+    setRequestingTemplate(templateId);
+    setMessage("");
+
+    try {
+      const response = await requestTenantTemplate(templateId);
+      await refreshTenant();
+      setMessage(response.data?.message || "Template request sent to the platform team.");
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to request this template.");
+    } finally {
+      setRequestingTemplate("");
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#f6f7f9] pt-24 text-slate-950">
@@ -23,6 +41,12 @@ const TemplateMarketplace = () => {
             Browse page-builder-ready layouts for safari, trekking, beach, and campaign websites. Purchased templates can be applied by the platform team with client-specific copy and styling tweaks.
           </p>
         </div>
+
+        {message && (
+          <div className="mt-8 rounded-lg border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-600">
+            {message}
+          </div>
+        )}
 
         <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-3">
           {templates.map((template) => {
@@ -81,6 +105,20 @@ const TemplateMarketplace = () => {
                     <p className="mt-1 text-sm text-slate-950">{template.sections.length}</p>
                   </div>
                 </div>
+                {!usable && (
+                  <button
+                    type="button"
+                    onClick={() => handleRequestTemplate(template.id)}
+                    disabled={template.purchaseStatus === "requested" || requestingTemplate === template.id}
+                    className="mt-5 w-full rounded-lg bg-slate-950 px-4 py-3 text-xs font-black uppercase tracking-widest text-white disabled:bg-slate-200 disabled:text-slate-500"
+                  >
+                    {requestingTemplate === template.id
+                      ? "Requesting..."
+                      : template.purchaseStatus === "requested"
+                        ? "Request Sent"
+                        : "Request This Template"}
+                  </button>
+                )}
               </article>
             );
           })}

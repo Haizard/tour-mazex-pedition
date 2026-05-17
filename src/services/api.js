@@ -368,6 +368,8 @@ export const updateTenantSiteConfig = (data) => API.put("/tenant/site-config", d
 export const updateTenantDomainRequest = (data) => API.put("/tenant/domain-request", data);
 export const updateTenantMarketplaceSettings = (data) =>
   API.put("/tenant/marketplace-settings", data);
+export const requestTenantTemplate = (templateId) =>
+  API.post(`/tenant/template-requests/${encodeURIComponent(templateId)}`, {});
 export const fetchPageConfig = (pageType = "home") =>
   cachedGet(`/page-config/${encodeURIComponent(pageType)}`);
 export const fetchPageConfigs = () => cachedGet("/page-config/list/all");

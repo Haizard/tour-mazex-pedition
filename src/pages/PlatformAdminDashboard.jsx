@@ -144,6 +144,7 @@ const createTenantFormState = (tenant) => ({
   manualOverride: tenant?.subscription?.manualOverride !== false,
   featureOverrides: tenant?.subscription?.featureOverrides || {},
   purchasedTemplates: tenant?.purchasedTemplates || [],
+  requestedTemplates: tenant?.requestedTemplates || [],
   ...Object.fromEntries(
     growthSuiteFeatures.map(([key]) => [
       `feature_${key}`,
@@ -882,6 +883,7 @@ const PlatformAdminDashboard = () => {
               {templateEntitlementCatalog.map((template) => {
                 const included = template.purchaseStatus === "included";
                 const checked = included || tenantForm.purchasedTemplates.includes(template.id);
+                const requested = tenantForm.requestedTemplates.includes(template.id);
 
                 return (
                   <label
@@ -918,7 +920,7 @@ const PlatformAdminDashboard = () => {
                       />
                     </span>
                     <span className={`mt-4 w-fit rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${included ? "bg-zinc-950 text-white" : checked ? "bg-emerald-600 text-white" : "bg-zinc-100 text-zinc-700"}`}>
-                      {included ? "Included" : checked ? "Purchased" : template.priceLabel}
+                      {included ? "Included" : checked ? "Purchased" : requested ? "Client Requested" : template.priceLabel}
                     </span>
                   </label>
                 );
@@ -1032,6 +1034,7 @@ const PlatformAdminDashboard = () => {
             tenantId={selectedTenant._id}
             tenantName={selectedTenant.name}
             purchasedTemplates={selectedTenant.purchasedTemplates || []}
+            requestedTemplates={selectedTenant.requestedTemplates || []}
           />
         </div>
       );

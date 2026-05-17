@@ -4846,6 +4846,8 @@ const AdminDashboard = () => {
               mode="content"
               tenantName={tenant?.name || ""}
               purchasedTemplates={tenant?.purchasedTemplates || []}
+              requestedTemplates={tenant?.requestedTemplates || []}
+              onTemplateRequested={refreshTenant}
             />
           )}
 

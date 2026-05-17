@@ -182,6 +182,12 @@ const tenantSchema = new mongoose.Schema(
       set: (templates) =>
         [...new Set((templates || []).map((template) => template.toString().trim()).filter(Boolean))],
     },
+    requestedTemplates: {
+      type: [String],
+      default: [],
+      set: (templates) =>
+        [...new Set((templates || []).map((template) => template.toString().trim()).filter(Boolean))],
+    },
   },
   { timestamps: true }
 );

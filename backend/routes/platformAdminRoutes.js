@@ -901,6 +901,9 @@ router.put("/tenants/:tenantId", async (req, res) => {
       update.purchasedTemplates = req.body.purchasedTemplates
         .map((templateId) => templateId?.toString().trim())
         .filter(Boolean);
+      update.requestedTemplates = (existingTenant.requestedTemplates || []).filter(
+        (templateId) => !update.purchasedTemplates.includes(templateId)
+      );
     }
 
     if (req.body.domainService && typeof req.body.domainService === "object") {

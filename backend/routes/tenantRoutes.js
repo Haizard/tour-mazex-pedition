@@ -14,6 +14,7 @@ import {
 } from "../utils/tenantDefaults.js";
 import { canAccessFeature, getPlanDefinition } from "../utils/subscriptionPlans.js";
 import { buildDemoDomain, normalizeRequestedDomains } from "../utils/domainProvisioning.js";
+import { buildRequestedTemplateList } from "../utils/templateRequests.js";
 
 const router = express.Router();
 
@@ -136,6 +137,7 @@ router.get("/bootstrap", async (req, res) => {
         domainService: req.tenant.domainService || null,
         marketplaceSettings: sanitizeMarketplaceSettings(req.tenant.marketplaceSettings || {}),
         purchasedTemplates: req.tenant.purchasedTemplates || [],
+        requestedTemplates: req.tenant.requestedTemplates || [],
         access: {
           socialAccounts: canAccessFeature(req.tenant.subscription, "social-accounts"),
           socialPosts: canAccessFeature(req.tenant.subscription, "social-posts"),
@@ -231,6 +233,37 @@ router.put("/marketplace-settings", requireTenantAdmin, async (req, res) => {
 
     res.status(200).json({
       marketplaceSettings: sanitizeMarketplaceSettings(tenant?.marketplaceSettings || {}),
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/template-requests/:templateId", requireTenantAdmin, async (req, res) => {
+  try {
+    const templateId = req.params.templateId?.toString().trim();
+
+    if (!templateId) {
+      return res.status(400).json({ message: "Template id is required." });
+    }
+
+    if ((req.tenant.purchasedTemplates || []).includes(templateId)) {
+      return res.status(200).json({
+        requestedTemplates: req.tenant.requestedTemplates || [],
+        message: "Template is already purchased for this tenant.",
+      });
+    }
+
+    const requestedTemplates = buildRequestedTemplateList(req.tenant.requestedTemplates || [], templateId);
+    const tenant = await Tenant.findByIdAndUpdate(
+      req.tenantId,
+      { requestedTemplates },
+      { new: true, runValidators: true }
+    ).lean();
+
+    res.status(200).json({
+      requestedTemplates: tenant?.requestedTemplates || [],
+      message: "Template request sent to the platform team.",
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

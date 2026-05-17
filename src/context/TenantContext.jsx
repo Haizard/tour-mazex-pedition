@@ -8,6 +8,7 @@ const defaultTenantContext = {
   theme: null,
   siteConfig: null,
   siteSettings: null,
+  refreshTenant: async () => defaultTenantContext,
   bootstrapError: "",
   loading: true,
 };

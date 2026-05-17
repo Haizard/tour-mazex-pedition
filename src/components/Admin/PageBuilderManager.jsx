@@ -30,6 +30,7 @@ import {
   updatePlatformTenantMenuItem,
   updatePageConfig,
   updatePlatformTenantPageConfig,
+  requestTenantTemplate,
 } from "../../services/api";
 import { legacyHomePage } from "../../pageBuilder/defaultPages";
 import {
@@ -438,6 +439,8 @@ const PageBuilderManager = ({
   tenantId = "",
   tenantName = "",
   purchasedTemplates = [],
+  requestedTemplates = [],
+  onTemplateRequested = null,
 } = {}) => {
   const canManageLayout = mode === "layout";
   const canApplyTemplates = canManageLayout || mode === "content";
@@ -467,6 +470,7 @@ const PageBuilderManager = ({
   const [importSource, setImportSource] = React.useState("");
   const [importingSource, setImportingSource] = React.useState(false);
   const [applyingTemplate, setApplyingTemplate] = React.useState("");
+  const [requestingTemplate, setRequestingTemplate] = React.useState("");
   const [selectedTemplateId, setSelectedTemplateId] = React.useState("safari-signature-home");
   const [newSectionType, setNewSectionType] = React.useState(
     Object.keys(sectionRegistry.metadata || {})[0] || "hero"
@@ -486,8 +490,8 @@ const PageBuilderManager = ({
   const canEditPageSlug = canManageLayout && isCustomPageType(activePageType);
   const canPublishPageToNavbar = canManageLayout && tenantId && canAppearInNavbar(pageSlug);
   const templateCatalog = React.useMemo(
-    () => resolveTemplateCatalogForTenant({ purchasedTemplates }),
-    [purchasedTemplates]
+    () => resolveTemplateCatalogForTenant({ purchasedTemplates, requestedTemplates }),
+    [purchasedTemplates, requestedTemplates]
   );
   const selectedTemplate = React.useMemo(
     () => templateCatalog.find((template) => template.id === selectedTemplateId) || templateCatalog[0],
@@ -890,6 +894,26 @@ const PageBuilderManager = ({
     }
   };
 
+  const requestTemplateAccess = async (template) => {
+    if (canManageLayout) {
+      setMessage("Grant this template from the platform subscription Templates panel before applying it.");
+      return;
+    }
+
+    setRequestingTemplate(template.id);
+    setMessage("");
+
+    try {
+      const response = await requestTenantTemplate(template.id);
+      await onTemplateRequested?.();
+      setMessage(response.data?.message || "Template request sent to the platform team.");
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to request this template.");
+    } finally {
+      setRequestingTemplate("");
+    }
+  };
+
   const handleImportSource = async () => {
     if (!canManageLayout) return;
     if (!importSource.trim()) {
@@ -1216,7 +1240,7 @@ const PageBuilderManager = ({
       <p className="mt-2 text-sm font-medium text-slate-500">
         Create polished classic variants from the current page-builder content, then apply one to the local draft.
       </p>
-      {canManageLayout ? (
+      {canApplyTemplates ? (
         <div className="mt-6 space-y-5">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_1fr_auto]">
             <select
@@ -1346,9 +1370,15 @@ const PageBuilderManager = ({
                     setSelectedTemplateId(template.id);
                     if (usable) {
                       void applyTemplateToDraft(template);
+                    } else {
+                      void requestTemplateAccess(template);
                     }
                   }}
-                  disabled={!usable || applyingTemplate === template.id}
+                  disabled={
+                    applyingTemplate === template.id ||
+                    requestingTemplate === template.id ||
+                    template.purchaseStatus === "requested"
+                  }
                   className={`mt-5 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest ${
                     usable
                       ? "bg-slate-950 text-white"
@@ -1357,9 +1387,15 @@ const PageBuilderManager = ({
                 >
                   {applyingTemplate === template.id
                     ? "Applying..."
+                    : requestingTemplate === template.id
+                      ? "Requesting..."
                     : usable
                       ? "Use With Client Tweaks"
-                      : "Purchase Option Coming"}
+                      : template.purchaseStatus === "requested"
+                        ? "Request Sent"
+                        : canManageLayout
+                          ? "Grant In Subscription"
+                          : "Request This Template"}
                 </button>
               </article>
             );
