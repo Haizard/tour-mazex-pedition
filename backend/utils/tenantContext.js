@@ -48,11 +48,11 @@ export const resolveTenantLookup = (req) => {
   );
 
   if (explicitSlug) {
-    return { slug: explicitSlug, hostname };
+    return { slug: explicitSlug, hostname, allowLegacyFallback: false };
   }
 
   if (explicitSubdomain) {
-    return { subdomain: explicitSubdomain, hostname };
+    return { subdomain: explicitSubdomain, hostname, allowLegacyFallback: false };
   }
 
   if (PLATFORM_DOMAINS.includes(hostname)) {
@@ -60,15 +60,15 @@ export const resolveTenantLookup = (req) => {
   }
 
   if (!hostname || isLocalHostname(hostname) || LEGACY_TENANT_DOMAINS.includes(hostname)) {
-    return { slug: LEGACY_TENANT_SLUG, hostname };
+    return { slug: LEGACY_TENANT_SLUG, hostname, allowLegacyFallback: true };
   }
 
   const hostnameParts = hostname.split(".");
   if (hostnameParts.length >= 3 && hostnameParts[0] !== "www") {
-    return { subdomain: hostnameParts[0], hostname };
+    return { subdomain: hostnameParts[0], hostname, allowLegacyFallback: false };
   }
 
-  return { customDomain: hostname, hostname };
+  return { customDomain: hostname, hostname, allowLegacyFallback: false };
 };
 
 export const buildTenantFilter = (req, extra = {}) => ({

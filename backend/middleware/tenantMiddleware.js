@@ -32,7 +32,7 @@ export const tenantMiddleware = async (req, res, next) => {
       }).lean();
     }
 
-    if (!tenant && lookup.slug !== LEGACY_TENANT_SLUG) {
+    if (!tenant && lookup.allowLegacyFallback && lookup.slug !== LEGACY_TENANT_SLUG) {
       tenant = await Tenant.findOne({ slug: LEGACY_TENANT_SLUG, status: "active" }).lean();
     }
 

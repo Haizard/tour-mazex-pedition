@@ -31,6 +31,43 @@ test("resolveTenantLookup maps legacy demo aliases back to the legacy tenant slu
   assert.equal(lookup.hostname, "mazexpeditions.vercel.app");
 });
 
+test("resolveTenantLookup only allows legacy fallback for default hosts", () => {
+  assert.equal(
+    resolveTenantLookup({
+      headers: { host: "mazexpeditions.com" },
+      query: {},
+    }).allowLegacyFallback,
+    true,
+  );
+
+  assert.equal(
+    resolveTenantLookup({
+      headers: {
+        host: "mazexpeditions.vercel.app",
+        "x-tenant-slug": "new-tenant",
+      },
+      query: {},
+    }).allowLegacyFallback,
+    false,
+  );
+
+  assert.equal(
+    resolveTenantLookup({
+      headers: { host: "new-tenant.mazexpeditions.vercel.app" },
+      query: {},
+    }).allowLegacyFallback,
+    false,
+  );
+
+  assert.equal(
+    resolveTenantLookup({
+      headers: { host: "newtenant.com" },
+      query: {},
+    }).allowLegacyFallback,
+    false,
+  );
+});
+
 test("isDemoAccessAllowed blocks demo API requests when the tenant has disabled demo access", () => {
   assert.equal(
     isDemoAccessAllowed(
