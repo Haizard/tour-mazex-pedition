@@ -10,6 +10,10 @@ export const templateCatalog = [
     pageType: "home",
     priceLabel: "Purchased",
     purchaseStatus: "purchased",
+    previewImage:
+      "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80",
+    featuredRank: 98,
+    releaseOrder: 3,
     preview: "A premium homepage for safari companies selling private and group itineraries.",
     bestFor: ["Luxury safari brands", "Private guide operators", "Tanzania and Kenya packages"],
     seo: {
@@ -91,6 +95,10 @@ export const templateCatalog = [
     pageType: "home",
     priceLabel: "Included",
     purchaseStatus: "included",
+    previewImage:
+      "https://images.unsplash.com/photo-1521150932951-303a95503ed3?auto=format&fit=crop&w=1200&q=80",
+    featuredRank: 88,
+    releaseOrder: 2,
     preview: "A route-led homepage for Kilimanjaro, mountain trekking, and adventure travel brands.",
     bestFor: ["Kilimanjaro operators", "Adventure companies", "Route comparison content"],
     seo: {
@@ -157,6 +165,10 @@ export const templateCatalog = [
     pageType: "landing",
     priceLabel: "$149",
     purchaseStatus: "available",
+    previewImage:
+      "https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80",
+    featuredRank: 74,
+    releaseOrder: 1,
     preview: "A conversion landing page for Zanzibar beach packages, honeymoons, and add-on escapes.",
     bestFor: ["Beach extensions", "Honeymoon offers", "Seasonal campaign pages"],
     seo: {

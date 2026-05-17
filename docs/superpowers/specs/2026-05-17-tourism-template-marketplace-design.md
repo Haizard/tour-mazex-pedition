@@ -27,7 +27,7 @@ The templates tool shows:
 - a clear action to use the template when allowed
 - a disabled purchase-ready action when not owned yet
 
-The public app also gets a template marketplace page so clients can inspect available tourism website templates outside the admin workflow.
+The public app also gets a template marketplace page so clients can inspect available tourism website templates outside the admin workflow. This page should use the light tour-platform theme and a visual showcase browser layout: search, filter, and sort controls remain sticky near the top, while each template is represented by a large website preview image with compact metadata and ownership status. The page should avoid the earlier admin-style card grid because clients need to browse templates as polished website products.
 
 ## Data Model
 
@@ -41,6 +41,9 @@ Each template includes:
 - `pageType`
 - `priceLabel`
 - `purchaseStatus`
+- `previewImage`
+- `featuredRank`
+- `releaseOrder`
 - `preview`
 - `bestFor`
 - `sections`
@@ -67,11 +70,12 @@ Add unit tests for the template registry and personalization helper:
 - purchased templates are usable
 - unavailable templates are blocked from apply
 - personalized templates preserve section validity and add client-specific differences
+- showcase search, filter, and sorting behavior returns the expected template set
 
 ## Future Phases
 
 - Persist purchased templates per tenant in backend models.
 - Add real checkout/fulfillment hooks.
-- Add image thumbnails and live preview rendering.
+- Add live preview rendering.
 - Add platform-admin template publishing controls.
 - Add AI-assisted deeper redesign after applying a base template.
