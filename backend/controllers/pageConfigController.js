@@ -238,7 +238,7 @@ export const upsertPageConfig = async (req, res) => {
 
 export const applyPageBuilderTemplate = async (req, res) => {
   try {
-    const payload = buildTemplatePageConfigPayload({
+    const payload = await buildTemplatePageConfigPayload({
       templateId: req.params.templateId || req.body.templateId,
       tenant: req.tenant,
     });

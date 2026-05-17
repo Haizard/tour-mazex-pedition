@@ -6,8 +6,8 @@ import {
   resolveTemplateForTenant,
 } from "../utils/pageBuilderTemplateApplication.js";
 
-test("resolveTemplateForTenant upgrades purchased tenant templates", () => {
-  const template = resolveTemplateForTenant({
+test("resolveTemplateForTenant upgrades purchased tenant templates", async () => {
+  const template = await resolveTemplateForTenant({
     templateId: "island-escape-landing",
     tenant: { purchasedTemplates: ["island-escape-landing"] },
   });
@@ -16,8 +16,8 @@ test("resolveTemplateForTenant upgrades purchased tenant templates", () => {
   assert.equal(template.purchaseStatus, "purchased");
 });
 
-test("buildTemplatePageConfigPayload creates a tenant-owned draft page", () => {
-  const payload = buildTemplatePageConfigPayload({
+test("buildTemplatePageConfigPayload creates a tenant-owned draft page", async () => {
+  const payload = await buildTemplatePageConfigPayload({
     templateId: "safari-signature-home",
     tenant: {
       _id: "64f0f0f0f0f0f0f0f0f0f0f0",
@@ -33,8 +33,8 @@ test("buildTemplatePageConfigPayload creates a tenant-owned draft page", () => {
   assert.match(payload.sections[0].contentConfig.description, /Kili Trails/);
 });
 
-test("buildTemplatePageConfigPayload blocks templates the tenant has not purchased", () => {
-  assert.throws(
+test("buildTemplatePageConfigPayload blocks templates the tenant has not purchased", async () => {
+  await assert.rejects(
     () =>
       buildTemplatePageConfigPayload({
         templateId: "island-escape-landing",
@@ -42,4 +42,41 @@ test("buildTemplatePageConfigPayload blocks templates the tenant has not purchas
       }),
     /not purchased/
   );
+});
+
+test("buildTemplatePageConfigPayload applies purchased platform-created templates", async () => {
+  const payload = await buildTemplatePageConfigPayload({
+    templateId: "luxury-migration-campaign",
+    tenant: {
+      _id: "64f0f0f0f0f0f0f0f0f0f0f0",
+      name: "Migration Experts",
+      purchasedTemplates: ["luxury-migration-campaign"],
+    },
+    customTemplates: [
+      {
+        id: "luxury-migration-campaign",
+        name: "Luxury Migration Campaign",
+        category: "Safari Campaign",
+        pageType: "landing",
+        priceLabel: "$299",
+        purchaseStatus: "available",
+        preview: "A seasonal wildebeest migration campaign page.",
+        bestFor: ["Migration offers"],
+        seo: {},
+        sections: [
+          {
+            type: "hero",
+            variant: "cinematic",
+            order: 1,
+            enabled: true,
+            contentConfig: { description: "Launch a premium campaign." },
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(payload.pageType, "landing");
+  assert.equal(payload.templateSource.templateId, "luxury-migration-campaign");
+  assert.match(payload.sections[0].contentConfig.description, /Migration Experts/);
 });

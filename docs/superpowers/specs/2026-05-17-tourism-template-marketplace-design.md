@@ -14,6 +14,8 @@ The first slice is intentionally product-ready but lightweight:
 - Purchased templates can be applied to a page builder draft.
 - Applying a template runs a deterministic personalization pass that changes copy, CTA language, accent colors, and template metadata for the selected tenant/client.
 - Non-purchased templates are visible but disabled from direct use, ready for a future checkout flow.
+- Platform admins can create new marketplace templates from page-builder section JSON without editing source code.
+- Platform-created templates are stored in the database, can be published or kept as drafts, and appear alongside built-in templates when published.
 
 ## User Experience
 
@@ -29,9 +31,11 @@ The templates tool shows:
 
 The public app also gets a template marketplace page so clients can inspect available tourism website templates outside the admin workflow. This page should use the light tour-platform theme and a visual showcase browser layout: search, filter, and sort controls remain sticky near the top, while each template is represented by a large website preview image with compact metadata and ownership status. The page should avoid the earlier admin-style card grid because clients need to browse templates as polished website products.
 
+The platform admin subscription Templates panel also includes Template Studio. Admins can create a new reusable template by entering marketplace metadata, adding preview imagery, defining price/status, and pasting page-builder sections JSON. A shortcut can capture the selected tenant homepage sections into the template form so the platform team can design with the normal page builder first, then package that design as a marketplace template.
+
 ## Data Model
 
-For this slice, templates are static page-builder-compatible objects in `src/pageBuilder/templateMarketplace.js`.
+For this slice, built-in templates are static page-builder-compatible objects in `src/pageBuilder/templateMarketplace.js`, while platform-created templates are persisted in MongoDB using `backend/models/PageBuilderTemplate.js`.
 
 Each template includes:
 
@@ -50,6 +54,8 @@ Each template includes:
 - `seo`
 
 The static model keeps the implementation independent from billing while giving the UI and page builder a stable integration point. A later phase can replace or enrich purchase state from backend tenant entitlements.
+
+Platform-created templates use the same shape as built-in templates and are merged by template `id`. Published templates are returned by the public template marketplace endpoint; draft templates remain visible only in platform admin list responses.
 
 ## Personalization Rules
 
@@ -71,11 +77,13 @@ Add unit tests for the template registry and personalization helper:
 - unavailable templates are blocked from apply
 - personalized templates preserve section validity and add client-specific differences
 - showcase search, filter, and sorting behavior returns the expected template set
+- platform-created template payloads normalize metadata, best-for lists, and section order
+- applying a purchased platform-created template creates the same personalized page-builder draft as a built-in template
 
 ## Future Phases
 
 - Persist purchased templates per tenant in backend models.
 - Add real checkout/fulfillment hooks.
 - Add live preview rendering.
-- Add platform-admin template publishing controls.
+- Add richer platform-admin template publishing controls such as edit, archive, and clone.
 - Add AI-assisted deeper redesign after applying a base template.

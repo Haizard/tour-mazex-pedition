@@ -212,7 +212,21 @@ export const templateCatalog = [
   },
 ];
 
-export const getTemplateCatalog = () => templateCatalog.map((template) => cloneValue(template));
+const mergeTemplateCatalog = (builtInTemplates = [], platformTemplates = []) => {
+  const merged = new Map();
+
+  builtInTemplates.forEach((template) => {
+    merged.set(template.id, template);
+  });
+  platformTemplates.forEach((template) => {
+    merged.set(template.id, template);
+  });
+
+  return Array.from(merged.values());
+};
+
+export const getTemplateCatalog = (platformTemplates = []) =>
+  mergeTemplateCatalog(templateCatalog, platformTemplates).map((template) => cloneValue(template));
 
 export const getTemplateById = (templateId) =>
   getTemplateCatalog().find((template) => template.id === templateId) || null;
@@ -220,11 +234,11 @@ export const getTemplateById = (templateId) =>
 export const isTemplateUsable = (template) =>
   ["purchased", "included"].includes(template?.purchaseStatus);
 
-export const resolveTemplateCatalogForTenant = (tenant = {}) => {
+export const resolveTemplateCatalogForTenant = (tenant = {}, platformTemplates = []) => {
   const purchasedTemplates = new Set(tenant?.purchasedTemplates || []);
   const requestedTemplates = new Set(tenant?.requestedTemplates || []);
 
-  return getTemplateCatalog().map((template) => {
+  return getTemplateCatalog(platformTemplates).map((template) => {
     if (purchasedTemplates.has(template.id)) {
       return {
         ...template,

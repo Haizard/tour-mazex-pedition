@@ -3,7 +3,7 @@ import { Eye, Layers3, Search, SlidersHorizontal, Sparkles } from "lucide-react"
 import { resolveTemplateCatalogForTenant, isTemplateUsable } from "../pageBuilder/templateMarketplace";
 import { getShowcaseFilters, resolveShowcaseTemplates } from "../pageBuilder/templateShowcase";
 import { useTenant } from "../context/TenantContext";
-import { requestTenantTemplate } from "../services/api";
+import { fetchTemplateMarketplace, requestTenantTemplate } from "../services/api";
 
 const SORT_OPTIONS = ["Recent", "Popular"];
 
@@ -28,9 +28,10 @@ const TemplateMarketplace = () => {
   const [query, setQuery] = React.useState("");
   const [activeFilter, setActiveFilter] = React.useState("All");
   const [sort, setSort] = React.useState("Recent");
+  const [marketplaceTemplates, setMarketplaceTemplates] = React.useState(null);
   const templates = React.useMemo(
-    () => resolveTemplateCatalogForTenant(tenant || {}),
-    [tenant]
+    () => marketplaceTemplates || resolveTemplateCatalogForTenant(tenant || {}),
+    [marketplaceTemplates, tenant]
   );
   const filters = React.useMemo(() => getShowcaseFilters(templates), [templates]);
   const visibleTemplates = React.useMemo(
@@ -52,6 +53,29 @@ const TemplateMarketplace = () => {
       setRequestingTemplate("");
     }
   };
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const loadTemplates = async () => {
+      try {
+        const response = await fetchTemplateMarketplace();
+        if (!cancelled && Array.isArray(response.data?.templates)) {
+          setMarketplaceTemplates(response.data.templates);
+        }
+      } catch (_error) {
+        if (!cancelled) {
+          setMarketplaceTemplates(null);
+        }
+      }
+    };
+
+    loadTemplates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#f4efe4] pt-24 text-[#2f2418]">

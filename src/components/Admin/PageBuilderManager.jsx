@@ -20,6 +20,7 @@ import {
   fetchPlatformTenantMenuItems,
   fetchPlatformTenantPageConfig,
   fetchPlatformTenantPageConfigs,
+  fetchTemplateMarketplace,
   applyPageBuilderTemplate,
   applyPlatformTenantPageBuilderTemplate,
   generatePlatformTenantPageBuilderVariants,
@@ -472,6 +473,7 @@ const PageBuilderManager = ({
   const [applyingTemplate, setApplyingTemplate] = React.useState("");
   const [requestingTemplate, setRequestingTemplate] = React.useState("");
   const [selectedTemplateId, setSelectedTemplateId] = React.useState("safari-signature-home");
+  const [marketplaceTemplates, setMarketplaceTemplates] = React.useState([]);
   const [newSectionType, setNewSectionType] = React.useState(
     Object.keys(sectionRegistry.metadata || {})[0] || "hero"
   );
@@ -490,8 +492,8 @@ const PageBuilderManager = ({
   const canEditPageSlug = canManageLayout && isCustomPageType(activePageType);
   const canPublishPageToNavbar = canManageLayout && tenantId && canAppearInNavbar(pageSlug);
   const templateCatalog = React.useMemo(
-    () => resolveTemplateCatalogForTenant({ purchasedTemplates, requestedTemplates }),
-    [purchasedTemplates, requestedTemplates]
+    () => resolveTemplateCatalogForTenant({ purchasedTemplates, requestedTemplates }, marketplaceTemplates),
+    [marketplaceTemplates, purchasedTemplates, requestedTemplates]
   );
   const selectedTemplate = React.useMemo(
     () => templateCatalog.find((template) => template.id === selectedTemplateId) || templateCatalog[0],
@@ -504,6 +506,29 @@ const PageBuilderManager = ({
       ) || null,
     [pageSlug, tenantMenuItems]
   );
+
+  React.useEffect(() => {
+    let active = true;
+
+    const loadTemplates = async () => {
+      try {
+        const response = await fetchTemplateMarketplace();
+        if (active && Array.isArray(response.data?.templates)) {
+          setMarketplaceTemplates(response.data.templates);
+        }
+      } catch (_error) {
+        if (active) {
+          setMarketplaceTemplates([]);
+        }
+      }
+    };
+
+    loadTemplates();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   React.useEffect(() => {
     let active = true;

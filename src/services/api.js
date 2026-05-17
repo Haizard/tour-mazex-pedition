@@ -221,6 +221,15 @@ export const fetchPlatformTenants = () =>
   cachedGet("/platform-admin/tenants", {
     headers: getPlatformAdminHeaders(),
   });
+export const fetchTemplateMarketplace = () => cachedGet("/page-builder-templates");
+export const fetchPlatformPageBuilderTemplates = () =>
+  cachedGet("/platform-admin/page-builder-templates", {
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformPageBuilderTemplate = (data) =>
+  API.post("/platform-admin/page-builder-templates", data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const createPlatformTenant = (data) =>
   API.post("/platform-admin/tenants", data, {
     headers: getPlatformAdminHeaders(),

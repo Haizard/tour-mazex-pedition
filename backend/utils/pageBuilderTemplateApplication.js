@@ -4,6 +4,8 @@ import {
   isTemplateUsable,
   resolveTemplateCatalogForTenant,
 } from "../../src/pageBuilder/templateMarketplace.js";
+import PageBuilderTemplate from "../models/PageBuilderTemplate.js";
+import { serializePlatformTemplate } from "./platformTemplateRegistry.js";
 
 const normalizeSections = (sections = []) =>
   [...sections]
@@ -14,10 +16,23 @@ const normalizeSections = (sections = []) =>
       order: index + 1,
     }));
 
-export const resolveTemplateForTenant = ({ templateId, tenant = {} } = {}) => {
-  const template =
-    resolveTemplateCatalogForTenant(tenant).find((candidate) => candidate.id === templateId) ||
+const findPlatformTemplate = async (templateId) => {
+  const template = await PageBuilderTemplate.findOne({ id: templateId, status: "published" }).lean();
+  return template ? serializePlatformTemplate(template) : null;
+};
+
+export const resolveTemplateForTenant = async ({ templateId, tenant = {}, customTemplates = null } = {}) => {
+  const platformTemplates = customTemplates || [];
+  let template =
+    resolveTemplateCatalogForTenant(tenant, platformTemplates).find((candidate) => candidate.id === templateId) ||
     getTemplateById(templateId);
+
+  if (!template && !customTemplates) {
+    const platformTemplate = await findPlatformTemplate(templateId);
+    template = platformTemplate
+      ? resolveTemplateCatalogForTenant(tenant, [platformTemplate]).find((candidate) => candidate.id === templateId)
+      : null;
+  }
 
   if (!template) {
     throw new Error("Template not found.");
@@ -30,8 +45,8 @@ export const resolveTemplateForTenant = ({ templateId, tenant = {} } = {}) => {
   return template;
 };
 
-export const buildTemplatePageConfigPayload = ({ templateId, tenant = {} } = {}) => {
-  const template = resolveTemplateForTenant({ templateId, tenant });
+export const buildTemplatePageConfigPayload = async ({ templateId, tenant = {}, customTemplates = null } = {}) => {
+  const template = await resolveTemplateForTenant({ templateId, tenant, customTemplates });
   const page = buildPersonalizedTemplatePage(template, {
     clientName: tenant.name || "this operator",
     accentSeed: `${tenant.slug || tenant.name || ""}-${template.id}`,

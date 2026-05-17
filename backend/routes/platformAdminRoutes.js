@@ -13,6 +13,7 @@ import TenantSiteConfig from "../models/TenantSiteConfig.js";
 import EmailProviderConnection from "../models/EmailProviderConnection.js";
 import EmailThread from "../models/EmailThread.js";
 import PageConfig from "../models/PageConfig.js";
+import PageBuilderTemplate from "../models/PageBuilderTemplate.js";
 import MenuItem from "../models/MenuItem.js";
 import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.js";
 import {
@@ -44,6 +45,11 @@ import {
   buildDomainSetupPlan,
   getDomainProviderCapabilities,
 } from "../utils/dnsProviderAdapters.js";
+import {
+  normalizePlatformTemplatePayload,
+  serializePlatformTemplate,
+} from "../utils/platformTemplateRegistry.js";
+import { getTemplateCatalog } from "../../src/pageBuilder/templateMarketplace.js";
 
 const router = express.Router();
 
@@ -315,6 +321,42 @@ router.get("/tenants", async (_req, res) => {
     );
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/page-builder-templates", async (_req, res) => {
+  try {
+    const platformTemplates = await PageBuilderTemplate.find()
+      .sort({ status: 1, releaseOrder: -1, createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      builtInTemplates: getTemplateCatalog(),
+      platformTemplates: platformTemplates.map(serializePlatformTemplate),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/page-builder-templates", async (req, res) => {
+  try {
+    const payload = normalizePlatformTemplatePayload(req.body || {});
+    const template = await PageBuilderTemplate.findOneAndUpdate(
+      { id: payload.id },
+      {
+        ...payload,
+        createdBy: req.platformAdmin?._id || null,
+      },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(201).json({
+      template: serializePlatformTemplate(template),
+      message: `${template.name} saved to the platform template marketplace.`,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 

@@ -1,13 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+/* eslint-disable react/prop-types, react-hooks/exhaustive-deps */
+import { useEffect, useMemo, useState } from "react";
 import {
   applyPlatformTenantManagedDns,
   checkPlatformTenantDomainVerification,
   createPlatformTenant,
   fetchPlatformSummary,
   fetchPlatformTenantDomainSetupPlan,
+  fetchPlatformTenantPageConfig,
   fetchPlatformTenantMarketing,
+  fetchPlatformPageBuilderTemplates,
   fetchPlatformTenantSupport,
   fetchPlatformTenants,
+  createPlatformPageBuilderTemplate,
   renewPlatformTenantDomainService,
   updatePlatformTenant,
   updatePlatformTenantAdmin,
@@ -169,6 +173,39 @@ const createNewTenantState = () => ({
   annualDomainPriceUsd: "50",
 });
 
+const createTemplateFormState = () => ({
+  name: "",
+  category: "Safari Campaign",
+  pageType: "landing",
+  priceLabel: "$149",
+  purchaseStatus: "available",
+  status: "published",
+  previewImage: "",
+  preview: "",
+  bestFor: "",
+  sectionsJson: JSON.stringify(
+    [
+      {
+        type: "hero",
+        variant: "cinematic",
+        order: 1,
+        enabled: true,
+        dataConfig: {},
+        contentConfig: {
+          eyebrow: "New Travel Campaign",
+          headlineScript: "Adventure",
+          description: "A platform-created template ready to personalize for a tourism client.",
+          primaryCtaLabel: "Start Planning",
+          primaryCtaHref: "/contact",
+        },
+        styleConfig: { spacingPreset: "spacious" },
+      },
+    ],
+    null,
+    2
+  ),
+});
+
 const inputClass = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-950 outline-none focus:border-zinc-950";
 const panelClass = "rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm";
 const labelClass = "mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500";
@@ -191,9 +228,6 @@ const domainProviderHints = {
 };
 
 const templateEntitlementCatalog = getTemplateCatalog();
-const templateNameLookup = Object.fromEntries(
-  templateEntitlementCatalog.map((template) => [template.id, template.name])
-);
 
 const StatCard = ({ label, value }) => (
   <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -216,6 +250,8 @@ const PlatformAdminDashboard = () => {
   const [selectedTenantId, setSelectedTenantId] = useState("");
   const [tenantForm, setTenantForm] = useState(createTenantFormState());
   const [newTenantForm, setNewTenantForm] = useState(createNewTenantState());
+  const [templateForm, setTemplateForm] = useState(createTemplateFormState());
+  const [adminTemplateCatalog, setAdminTemplateCatalog] = useState(templateEntitlementCatalog);
   const [supportDetail, setSupportDetail] = useState(null);
   const [marketingDetail, setMarketingDetail] = useState(null);
   const [supportLoading, setSupportLoading] = useState(false);
@@ -226,6 +262,7 @@ const PlatformAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creatingTenant, setCreatingTenant] = useState(false);
+  const [creatingTemplate, setCreatingTemplate] = useState(false);
   const [renewingDomain, setRenewingDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState("");
   const [applyingDomain, setApplyingDomain] = useState("");
@@ -236,6 +273,10 @@ const PlatformAdminDashboard = () => {
   const selectedTenant = useMemo(
     () => tenants.find((tenant) => tenant._id === selectedTenantId) || null,
     [selectedTenantId, tenants]
+  );
+  const adminTemplateNameLookup = useMemo(
+    () => Object.fromEntries(adminTemplateCatalog.map((template) => [template.id, template.name])),
+    [adminTemplateCatalog]
   );
   const pendingTemplateRequests = useMemo(
     () =>
@@ -249,10 +290,10 @@ const PlatformAdminDashboard = () => {
             tenantName: tenant.name,
             tenantSlug: tenant.slug,
             templateId,
-            templateName: templateNameLookup[templateId] || templateId,
+            templateName: adminTemplateNameLookup[templateId] || templateId,
           }));
       }),
-    [tenants]
+    [adminTemplateNameLookup, tenants]
   );
 
   const buildFeatureOverridesPayload = () => {
@@ -299,8 +340,24 @@ const PlatformAdminDashboard = () => {
     }
   };
 
+  const loadPlatformTemplates = async () => {
+    try {
+      const response = await fetchPlatformPageBuilderTemplates();
+      const builtInTemplates = response.data?.builtInTemplates || getTemplateCatalog();
+      const platformTemplates = response.data?.platformTemplates || [];
+      const mergedTemplates = new Map();
+
+      builtInTemplates.forEach((template) => mergedTemplates.set(template.id, template));
+      platformTemplates.forEach((template) => mergedTemplates.set(template.id, template));
+      setAdminTemplateCatalog(Array.from(mergedTemplates.values()));
+    } catch (_error) {
+      setAdminTemplateCatalog(getTemplateCatalog());
+    }
+  };
+
   useEffect(() => {
     loadPlatformData();
+    loadPlatformTemplates();
   }, []);
 
   useEffect(() => {
@@ -451,6 +508,55 @@ const PlatformAdminDashboard = () => {
       setError(requestError.response?.data?.message || "Unable to create the tenant right now.");
     } finally {
       setCreatingTenant(false);
+    }
+  };
+
+  const handleCreateTemplate = async (event) => {
+    event.preventDefault();
+    setCreatingTemplate(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await createPlatformPageBuilderTemplate(templateForm);
+      setNotice(response.data?.message || "Template saved to the platform marketplace.");
+      setTemplateForm(createTemplateFormState());
+      await loadPlatformTemplates();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to create this template.");
+    } finally {
+      setCreatingTemplate(false);
+    }
+  };
+
+  const fillTemplateFromSelectedTenantHome = async () => {
+    if (!selectedTenant) {
+      setError("Select a tenant before capturing page-builder sections.");
+      return;
+    }
+
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetchPlatformTenantPageConfig(selectedTenant._id, "home");
+      const page = response.data || {};
+      const sections = Array.isArray(page.sections) ? page.sections : [];
+
+      if (!sections.length) {
+        setError("The selected tenant homepage does not have page-builder sections yet.");
+        return;
+      }
+
+      setTemplateForm((current) => ({
+        ...current,
+        name: current.name || `${selectedTenant.name} Homepage Template`,
+        category: current.category || "Tour Operator Homepage",
+        pageType: page.pageType || "home",
+        preview: current.preview || `A homepage template captured from ${selectedTenant.name}.`,
+        sectionsJson: JSON.stringify(sections, null, 2),
+      }));
+      setNotice("Selected tenant homepage sections copied into Template Studio.");
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to load the tenant homepage sections.");
     }
   };
 
@@ -932,16 +1038,63 @@ const PlatformAdminDashboard = () => {
           <div className={panelClass}>
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Template Entitlements</p>
-                <h2 className="mt-2 text-2xl font-black text-zinc-950">Purchased website templates</h2>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Template Studio</p>
+                <h2 className="mt-2 text-2xl font-black text-zinc-950">Create and grant website templates</h2>
               </div>
               <p className="max-w-xl text-sm font-medium text-zinc-500">
-                Grant purchased templates to this tenant. Included templates remain available automatically, while checked templates become usable in Page Studio and on the public template marketplace.
+                Create platform-owned templates from page-builder sections, then grant purchased access to this tenant.
+              </p>
+            </div>
+
+            <form onSubmit={handleCreateTemplate} className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-black text-zinc-950">New marketplace template</p>
+                  <p className="mt-1 text-xs font-semibold text-zinc-500">
+                    Paste page-builder sections JSON or capture the selected tenant homepage as a reusable template.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fillTemplateFromSelectedTenantHome}
+                  className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-zinc-700"
+                >
+                  Capture Tenant Home
+                </button>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div><label className={labelClass}>Template Name</label><input className={inputClass} value={templateForm.name} onChange={(event) => setTemplateForm((current) => ({ ...current, name: event.target.value }))} placeholder="Luxury Migration Campaign" required /></div>
+                <div><label className={labelClass}>Category</label><input className={inputClass} value={templateForm.category} onChange={(event) => setTemplateForm((current) => ({ ...current, category: event.target.value }))} placeholder="Safari Campaign" /></div>
+                <div><label className={labelClass}>Page Type</label><select className={inputClass} value={templateForm.pageType} onChange={(event) => setTemplateForm((current) => ({ ...current, pageType: event.target.value }))}><option value="home">Home</option><option value="landing">Landing</option><option value="tailor-made">Tailor Made</option><option value="contact">Contact</option></select></div>
+                <div><label className={labelClass}>Price Label</label><input className={inputClass} value={templateForm.priceLabel} onChange={(event) => setTemplateForm((current) => ({ ...current, priceLabel: event.target.value }))} placeholder="$149" /></div>
+                <div><label className={labelClass}>Purchase Status</label><select className={inputClass} value={templateForm.purchaseStatus} onChange={(event) => setTemplateForm((current) => ({ ...current, purchaseStatus: event.target.value }))}><option value="available">Available / Paid</option><option value="included">Included For All</option></select></div>
+                <div><label className={labelClass}>Publish State</label><select className={inputClass} value={templateForm.status} onChange={(event) => setTemplateForm((current) => ({ ...current, status: event.target.value }))}><option value="published">Published</option><option value="draft">Draft</option></select></div>
+                <div className="md:col-span-2"><label className={labelClass}>Preview Image URL</label><input className={inputClass} value={templateForm.previewImage} onChange={(event) => setTemplateForm((current) => ({ ...current, previewImage: event.target.value }))} placeholder="https://..." /></div>
+                <div className="md:col-span-2"><label className={labelClass}>Preview Copy</label><textarea className={inputClass} rows={3} value={templateForm.preview} onChange={(event) => setTemplateForm((current) => ({ ...current, preview: event.target.value }))} placeholder="Short marketplace description" /></div>
+                <div className="md:col-span-2"><label className={labelClass}>Best For</label><textarea className={inputClass} rows={3} value={templateForm.bestFor} onChange={(event) => setTemplateForm((current) => ({ ...current, bestFor: event.target.value }))} placeholder={"Luxury safari brands\nSeasonal campaigns"} /></div>
+                <div className="md:col-span-2 xl:col-span-4"><label className={labelClass}>Page Builder Sections JSON</label><textarea className={`${inputClass} font-mono text-xs`} rows={10} value={templateForm.sectionsJson} onChange={(event) => setTemplateForm((current) => ({ ...current, sectionsJson: event.target.value }))} required /></div>
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <button type="submit" disabled={creatingTemplate} className="rounded-xl bg-zinc-950 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50">
+                  {creatingTemplate ? "Saving Template..." : "Create Template"}
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">Template Entitlements</p>
+                <h3 className="mt-2 text-xl font-black text-zinc-950">Purchased website templates</h3>
+              </div>
+              <p className="max-w-xl text-sm font-medium text-zinc-500">
+                Included templates remain available automatically, while checked templates become usable in Page Studio and on the public template marketplace.
               </p>
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-3">
-              {templateEntitlementCatalog.map((template) => {
+              {adminTemplateCatalog.map((template) => {
                 const included = template.purchaseStatus === "included";
                 const checked = included || tenantForm.purchasedTemplates.includes(template.id);
                 const requested = tenantForm.requestedTemplates.includes(template.id);
