@@ -5,6 +5,7 @@ export const LEGACY_TENANT_DEMO_SLUG = "mazexpeditions";
 export const LEGACY_TENANT_ROUTE_ALIASES = [
   LEGACY_TENANT_SLUG,
   LEGACY_TENANT_DEMO_SLUG,
+  "mazepro",
   "mazexpedtion",
   LEGACY_TENANT_SUBDOMAIN,
 ];

@@ -96,6 +96,20 @@ test("resolveTenantLookup maps legacy demo aliases back to the legacy tenant slu
   assert.equal(lookup.hostname, "mazexpeditions.vercel.app");
 });
 
+test("resolveTenantLookup maps mazepro demo alias back to the legacy tenant slug", () => {
+  const lookup = resolveTenantLookup({
+    headers: {
+      "x-tenant-slug": "mazepro",
+      "x-tenant-source": "demo",
+      host: "mazexpeditions.vercel.app",
+    },
+    query: {},
+  });
+
+  assert.equal(lookup.slug, "maz-expeditions");
+  assert.equal(lookup.hostname, "mazexpeditions.vercel.app");
+});
+
 test("resolveTenantLookup only allows legacy fallback for default hosts", () => {
   assert.equal(
     resolveTenantLookup({

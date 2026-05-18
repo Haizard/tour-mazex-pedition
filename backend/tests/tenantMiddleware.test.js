@@ -98,17 +98,18 @@ test("shouldResolveMissingTenantAsPlatform keeps demo requests tenant-backed", (
 
 test("tenantMiddleware resolves demo tenant requests by subdomain when slug lookup misses", async () => {
   const findOneCalls = [];
+  const demoSlug = "demopro";
 
   const TenantModule = await import("../models/Tenant.js");
   const originalTenantFindOne = TenantModule.default.findOne;
   TenantModule.default.findOne = (query) => {
     findOneCalls.push(query);
-    if (query.slug === "mazepro") {
+    if (query.slug === demoSlug) {
       return { lean: async () => null };
     }
 
-    if (query.subdomain === "mazepro") {
-      return { lean: async () => ({ _id: "tenant1", slug: "maze-pro", subdomain: "mazepro" }) };
+    if (query.subdomain === demoSlug) {
+      return { lean: async () => ({ _id: "tenant1", slug: "demo-pro", subdomain: demoSlug }) };
     }
 
     return { lean: async () => null };
@@ -119,7 +120,7 @@ test("tenantMiddleware resolves demo tenant requests by subdomain when slug look
     originalUrl: "/api/tours",
     headers: {
       host: "mazexpeditions.vercel.app",
-      "x-tenant-slug": "mazepro",
+      "x-tenant-slug": demoSlug,
       "x-tenant-source": "demo",
     },
     query: {},
@@ -146,33 +147,34 @@ test("tenantMiddleware resolves demo tenant requests by subdomain when slug look
   TenantModule.default.findOne = originalTenantFindOne;
 
   assert.equal(nextCalled, true);
-  assert.equal(req.tenant?.subdomain, "mazepro");
-  assert.deepEqual(findOneCalls[0], { slug: "mazepro", status: "active" });
-  assert.deepEqual(findOneCalls[1], { subdomain: "mazepro", status: "active" });
+  assert.equal(req.tenant?.subdomain, demoSlug);
+  assert.deepEqual(findOneCalls[0], { slug: demoSlug, status: "active" });
+  assert.deepEqual(findOneCalls[1], { subdomain: demoSlug, status: "active" });
 });
 
 test("tenantMiddleware resolves demo tenant requests by stored demoDomain when slug and subdomain changed", async () => {
   const findOneCalls = [];
+  const demoSlug = "demopro";
 
   const TenantModule = await import("../models/Tenant.js");
   const originalTenantFindOne = TenantModule.default.findOne;
   TenantModule.default.findOne = (query) => {
     findOneCalls.push(query);
-    if (query.slug === "mazepro") {
+    if (query.slug === demoSlug) {
       return { lean: async () => null };
     }
 
-    if (query.subdomain === "mazepro") {
+    if (query.subdomain === demoSlug) {
       return { lean: async () => null };
     }
 
-    if (query.demoDomain === "https://mazexpeditions.vercel.app/demo/mazepro") {
+    if (query.demoDomain === `https://mazexpeditions.vercel.app/demo/${demoSlug}`) {
       return {
         lean: async () => ({
           _id: "tenant2",
-          slug: "maze-pro",
-          subdomain: "maze-pro-live",
-          demoDomain: "https://mazexpeditions.vercel.app/demo/mazepro",
+          slug: "demo-pro",
+          subdomain: "demo-pro-live",
+          demoDomain: `https://mazexpeditions.vercel.app/demo/${demoSlug}`,
         }),
       };
     }
@@ -185,7 +187,7 @@ test("tenantMiddleware resolves demo tenant requests by stored demoDomain when s
     originalUrl: "/api/tours",
     headers: {
       host: "mazexpeditions.vercel.app",
-      "x-tenant-slug": "mazepro",
+      "x-tenant-slug": demoSlug,
       "x-tenant-source": "demo",
     },
     query: {},
@@ -212,11 +214,11 @@ test("tenantMiddleware resolves demo tenant requests by stored demoDomain when s
   TenantModule.default.findOne = originalTenantFindOne;
 
   assert.equal(nextCalled, true);
-  assert.equal(req.tenant?.demoDomain, "https://mazexpeditions.vercel.app/demo/mazepro");
-  assert.deepEqual(findOneCalls[0], { slug: "mazepro", status: "active" });
-  assert.deepEqual(findOneCalls[1], { subdomain: "mazepro", status: "active" });
+  assert.equal(req.tenant?.demoDomain, `https://mazexpeditions.vercel.app/demo/${demoSlug}`);
+  assert.deepEqual(findOneCalls[0], { slug: demoSlug, status: "active" });
+  assert.deepEqual(findOneCalls[1], { subdomain: demoSlug, status: "active" });
   assert.deepEqual(findOneCalls[2], {
-    demoDomain: "https://mazexpeditions.vercel.app/demo/mazepro",
+    demoDomain: `https://mazexpeditions.vercel.app/demo/${demoSlug}`,
     status: "active",
   });
 });
