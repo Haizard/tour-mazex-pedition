@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { fetchTaxonomies } from "../../services/api";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const defaultDestinations = [
   { name: "Kenya", slug: "kenya" },
@@ -28,6 +29,7 @@ const AfricanDestinations = ({
   quoteAuthor = defaultContent.quoteAuthor,
   backgroundImage = "",
 }) => {
+  const location = useLocation();
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,7 +92,7 @@ const AfricanDestinations = ({
                 transition={{ duration: 0.45, delay: index * 0.08 }}
               >
                 <Link
-                  to={`/packages?search=${dest.name}`}
+                  to={buildTenantScopedPath(`/packages?search=${encodeURIComponent(dest.name)}`, location.pathname)}
                   onClick={() => window.scrollTo(0, 0)}
                   className="group block rounded-[28px] border border-[#e7dcc8] bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-safari-green/40 hover:shadow-xl"
                 >
@@ -184,7 +186,7 @@ const AfricanDestinations = ({
                 transition={{ duration: 0.5, delay: 0.1 + index * 0.1 }}
               >
                 <Link
-                  to={`/packages?search=${dest.name}`}
+                  to={buildTenantScopedPath(`/packages?search=${encodeURIComponent(dest.name)}`, location.pathname)}
                   onClick={() => window.scrollTo(0, 0)}
                   className="relative block py-2 md:py-6 border-b border-gray-100 md:border-gray-200 group"
                 >

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { IoSend, IoClose, IoChatbubbleEllipses } from "react-icons/io5";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { sendChatMessage } from "../../services/api";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const CHAT_SESSION_STORAGE_KEY = "tourmazeChatSessionId";
 
@@ -35,6 +36,7 @@ const getVisitorProfile = () => {
 };
 
 const ChatBot = () => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [sessionId, setSessionId] = useState("");
@@ -171,7 +173,7 @@ const ChatBot = () => {
                         {msg.salesAssistant.quickActions?.map((action) => (
                           <Link
                             key={`${action.href}-${action.label}`}
-                            to={action.href}
+                            to={buildTenantScopedPath(action.href, location.pathname)}
                             onClick={() => setIsOpen(false)}
                             className="rounded-full bg-primary px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white"
                           >

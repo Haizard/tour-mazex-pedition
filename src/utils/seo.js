@@ -1,3 +1,5 @@
+import { buildTenantScopedPath } from "./tenantRoutes.js";
+
 const viteEnv =
   typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {};
 const processEnv =
@@ -17,6 +19,26 @@ export const slugifySeo = (value = "") =>
     .replace(/^-+|-+$/g, "");
 
 const isAbsoluteUrl = (value = "") => /^https?:\/\//i.test(value);
+
+const getRuntimeBaseUrl = () => {
+  if (typeof window === "undefined") {
+    return SITE_URL;
+  }
+
+  return window.location.origin || SITE_URL;
+};
+
+const getRuntimePathname = (currentPathname = "") => {
+  if (currentPathname) {
+    return currentPathname;
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.pathname || "/";
+  }
+
+  return "/";
+};
 
 const toIsoDate = (value) => {
   if (!value) return undefined;
@@ -47,28 +69,43 @@ const stripEmpty = (value) => {
   return value;
 };
 
-export const resolveCanonicalUrl = (canonicalUrl, fallbackPath = "") => {
+export const resolveCanonicalUrl = (canonicalUrl, fallbackPath = "", currentPathname = "") => {
   if (canonicalUrl && isAbsoluteUrl(canonicalUrl)) {
-    const parsed = new URL(canonicalUrl);
-    return new URL(parsed.pathname || "/", SITE_URL).toString();
+    return new URL(canonicalUrl).toString();
   }
 
   if (canonicalUrl) {
+    const normalizedCanonicalPath = canonicalUrl.startsWith("/")
+      ? canonicalUrl
+      : `/${canonicalUrl}`;
+    const scopedCanonicalPath =
+      typeof window !== "undefined"
+        ? buildTenantScopedPath(normalizedCanonicalPath, getRuntimePathname(currentPathname))
+        : normalizedCanonicalPath;
+
     return new URL(
-      canonicalUrl.startsWith("/") ? canonicalUrl : `/${canonicalUrl}`,
-      SITE_URL,
+      scopedCanonicalPath,
+      getRuntimeBaseUrl(),
     ).toString();
   }
 
   if (fallbackPath) {
+    const normalizedFallbackPath = fallbackPath.startsWith("/")
+      ? fallbackPath
+      : `/${fallbackPath}`;
+    const scopedFallbackPath =
+      typeof window !== "undefined"
+        ? buildTenantScopedPath(normalizedFallbackPath, getRuntimePathname(currentPathname))
+        : normalizedFallbackPath;
+
     return new URL(
-      fallbackPath.startsWith("/") ? fallbackPath : `/${fallbackPath}`,
-      SITE_URL,
+      scopedFallbackPath,
+      getRuntimeBaseUrl(),
     ).toString();
   }
 
   if (typeof window !== "undefined") {
-    return new URL(window.location.pathname || "/", SITE_URL).toString();
+    return new URL(window.location.pathname || "/", getRuntimeBaseUrl()).toString();
   }
 
   return SITE_URL;

@@ -271,7 +271,7 @@ const Navbar = ({ handleOrderPopup }) => {
               </select>
             )}
             {(navigationConfig.aboutLabel || isLegacyTenant || isPlatform) && (
-              <Link to={isPlatform ? "/discover" : navigationConfig.aboutHref || "/about"} className="hover:text-safari-gold transition-colors">
+              <Link to={isPlatform ? "/discover" : buildTenantScopedPath(navigationConfig.aboutHref || "/about", location.pathname)} className="hover:text-safari-gold transition-colors">
                 {isPlatform ? "Marketplace" : navigationConfig.aboutLabel || "About Us"}
               </Link>
             )}

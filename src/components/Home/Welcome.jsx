@@ -1,10 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import KiliImg from "../../assets/Kilimanjaro.jpg";
 import SafariImg from "../../assets/momentlion.jpg";
 import AboutImg from "../../assets/camp1.jpg";
 import FamilyImg from "../../assets/tembo.jpg";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const defaultCards = [
   {
@@ -57,9 +58,11 @@ const Welcome = ({
   closingHeading = "Experience the unmatched luxury of Africa's wilderness with MAZ Expeditions.",
   cards = defaultCards,
 }) => {
+  const location = useLocation();
   const mergedCards = defaultCards.map((card, index) => ({
     ...card,
     ...(cards?.[index] || {}),
+    href: buildTenantScopedPath(cards?.[index]?.href || card.href, location.pathname),
   }));
 
   if (variant === "editorial-mosaic") {

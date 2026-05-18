@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   buildTenantScopedBlogCategoryPath,
   buildTenantScopedBlogPath,
+  buildTenantScopedDestinationPath,
   buildTenantScopedPath,
   buildTenantScopedTourPath,
   getTenantBasePath,
@@ -27,6 +28,10 @@ test("buildTenantScopedPath keeps demo tenant routes scoped", () => {
   assert.equal(
     buildTenantScopedPath("https://example.com", "/demo/mazepro/packages"),
     "https://example.com",
+  );
+  assert.equal(
+    buildTenantScopedPath("/packages?type=Safari", "/demo/mazepro"),
+    "/demo/mazepro/packages?type=Safari",
   );
 });
 
@@ -59,5 +64,16 @@ test("buildTenantScopedBlogCategoryPath keeps tenant blog category links inside 
   assert.equal(
     buildTenantScopedBlogCategoryPath("safari", "/blogs"),
     "/blogs/category/safari",
+  );
+});
+
+test("buildTenantScopedDestinationPath keeps tenant destination links inside the demo site", () => {
+  assert.equal(
+    buildTenantScopedDestinationPath("serengeti", "/demo/mazepro"),
+    "/demo/mazepro/destinations/serengeti",
+  );
+  assert.equal(
+    buildTenantScopedDestinationPath("serengeti", "/destinations"),
+    "/destinations/serengeti",
   );
 });

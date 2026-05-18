@@ -59,10 +59,12 @@ const run = async () => {
   await ensureTenantPageLoads(`${tenantBasePath}/`, "Tenant home");
   await ensureTenantPageLoads(`${tenantBasePath}/blogs`, "Tenant blog listing");
   await ensureTenantPageLoads(`${tenantBasePath}/packages`, "Tenant package listing");
+  await ensureTenantPageLoads(`${tenantBasePath}/destinations`, "Tenant destinations listing");
   await ensureTenantPageLoads(`${tenantBasePath}/contact`, "Tenant contact");
 
   const blogs = await fetchJson(`${baseUrl}/api/blogs`, tenantHeaders);
   const tours = await fetchJson(`${baseUrl}/api/tours`, tenantHeaders);
+  const destinations = await fetchJson(`${baseUrl}/api/taxonomies?type=destination`, tenantHeaders);
 
   const firstBlog = Array.isArray(blogs) ? blogs[0] : null;
   const firstTour = Array.isArray(tours) ? tours[0] : null;
@@ -86,12 +88,22 @@ const run = async () => {
 
   const blogPath = `${tenantBasePath}/blogs/${slugify(firstBlog.title)}`;
   const packagePath = `${tenantBasePath}/packages/${slugify(firstTour.title)}`;
+  const blogCategoryPath = `${tenantBasePath}/blogs/category/safari`;
 
   await ensureTenantPageLoads(blogPath, "Tenant blog detail");
   await ensureTenantPageLoads(packagePath, "Tenant package detail");
+  await ensureTenantPageLoads(blogCategoryPath, "Tenant blog category");
+
+  const firstDestination = Array.isArray(destinations) ? destinations.find((item) => item?.slug) : null;
+  if (firstDestination?.slug) {
+    const destinationPath = `${tenantBasePath}/destinations/${firstDestination.slug}`;
+    await ensureTenantPageLoads(destinationPath, "Tenant destination detail");
+    console.log(`Verified: ${destinationPath}`);
+  }
 
   console.log("Tenant route smoke check passed.");
   console.log(`Verified: ${blogPath}`);
+  console.log(`Verified: ${blogCategoryPath}`);
   console.log(`Verified: ${packagePath}`);
 };
 

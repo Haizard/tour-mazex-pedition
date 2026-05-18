@@ -218,7 +218,7 @@ const BlogDetail = () => {
                       ),
                       a: ({ node, ...props }) => (
                         <Link
-                          to={props.href}
+                          to={buildTenantScopedPath(props.href, location.pathname)}
                           className="text-primary font-black hover:underline decoration-2"
                           {...props}
                         >

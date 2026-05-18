@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,7 +24,10 @@ import {
   matchDestinationTours,
 } from "../utils/contentMatchers";
 import { useRouteData } from "../utils/routeData.jsx";
-import { buildTenantScopedTourPath } from "../utils/tenantRoutes.js";
+import {
+  buildTenantScopedPath,
+  buildTenantScopedTourPath,
+} from "../utils/tenantRoutes.js";
 
 const slugify = (text = "") =>
   text
@@ -49,6 +52,7 @@ Assign a destination tag to the correct blog article and destination tours in th
 
 const DestinationDetail = () => {
   const { destinationSlug } = useParams();
+  const location = useLocation();
   const destination = getDestinationBySlug(destinationSlug);
   const routeData = useRouteData();
   const [blog, setBlog] = useState(routeData.destinationDetail?.blog || null);
@@ -192,7 +196,7 @@ const DestinationDetail = () => {
                       <li className="mb-2 ml-4 list-disc font-medium text-gray-700" {...props} />
                     ),
                     a: ({ node, href, children, ...props }) => (
-                      <Link to={href} className="font-black text-primary hover:underline" {...props}>
+                      <Link to={buildTenantScopedPath(href, location.pathname)} className="font-black text-primary hover:underline" {...props}>
                         {children}
                       </Link>
                     ),
@@ -272,7 +276,7 @@ const DestinationDetail = () => {
                     relatedTours.slice(0, 3).map((tour) => (
                       <Link
                         key={tour._id}
-                        to={buildTenantScopedTourPath(tour, window.location.pathname)}
+                        to={buildTenantScopedTourPath(tour, location.pathname)}
                         state={tour}
                         className="group flex gap-4"
                       >

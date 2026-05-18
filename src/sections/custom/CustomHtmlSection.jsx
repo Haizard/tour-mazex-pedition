@@ -1,6 +1,8 @@
 /* eslint-disable react/prop-types */
 import React from "react";
+import { useLocation } from "react-router-dom";
 import { getMediaUrl } from "../../services/api";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const escapeHtml = (value = "") =>
   String(value ?? "")
@@ -41,9 +43,17 @@ const CustomHtmlSection = ({
   scopeClass = "",
   ...content
 }) => {
+  const location = useLocation();
+  const scopedContent = React.useMemo(
+    () => ({
+      ...content,
+      ctaHref: buildTenantScopedPath(content.ctaHref || "", location.pathname),
+    }),
+    [content, location.pathname],
+  );
   const renderedHtml = React.useMemo(
-    () => sanitizeHtml(applyTemplateVariables(htmlTemplate, content)),
-    [content, htmlTemplate]
+    () => sanitizeHtml(applyTemplateVariables(htmlTemplate, scopedContent)),
+    [htmlTemplate, scopedContent]
   );
 
   return (

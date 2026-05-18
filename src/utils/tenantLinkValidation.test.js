@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  collectTenantPageConfigLinkEntries,
   normalizeTenantLinkInput,
   validateTenantManagedLink,
   validateTenantManagedLinks,
+  validateTenantPageConfigLinks,
 } from "./tenantLinkValidation.js";
 
 test("normalizeTenantLinkInput trims tenant link values", () => {
@@ -46,4 +48,81 @@ test("validateTenantManagedLinks returns all validation failures", () => {
       "About link should not include /demo/... paths. Use a tenant-relative path like /blogs instead.",
     ],
   );
+});
+
+test("collectTenantPageConfigLinkEntries finds page-builder CTA links", () => {
+  const pageConfig = {
+    sections: [
+      {
+        type: "hero",
+        variant: "default",
+        contentConfig: {
+          primaryCtaHref: "/contact",
+          secondaryCtaHref: "blogs",
+        },
+      },
+      {
+        type: "customHtml",
+        variant: "default",
+        contentConfig: {
+          ctaHref: "/demo/mazepro/packages",
+        },
+      },
+    ],
+  };
+  const sectionRegistry = {
+    getEditorSchema(type) {
+      if (type === "hero") {
+        return [
+          { group: "contentConfig", path: "primaryCtaHref", type: "text", placeholder: "Primary CTA link" },
+          { group: "contentConfig", path: "secondaryCtaHref", type: "text", placeholder: "Secondary CTA link" },
+        ];
+      }
+
+      if (type === "customHtml") {
+        return [
+          { group: "contentConfig", path: "ctaHref", type: "text", placeholder: "CTA link" },
+        ];
+      }
+
+      return [];
+    },
+    getStyleSchema() {
+      return [];
+    },
+  };
+
+  assert.deepEqual(collectTenantPageConfigLinkEntries(pageConfig, sectionRegistry), [
+    { label: "Section 1 (hero) Primary CTA link", value: "/contact" },
+    { label: "Section 1 (hero) Secondary CTA link", value: "blogs" },
+    { label: "Section 2 (customHtml) CTA link", value: "/demo/mazepro/packages" },
+  ]);
+});
+
+test("validateTenantPageConfigLinks rejects invalid page-builder links", () => {
+  const pageConfig = {
+    sections: [
+      {
+        type: "hero",
+        variant: "default",
+        contentConfig: {
+          primaryCtaHref: "contact",
+        },
+      },
+    ],
+  };
+  const sectionRegistry = {
+    getEditorSchema() {
+      return [
+        { group: "contentConfig", path: "primaryCtaHref", type: "text", placeholder: "Primary CTA link" },
+      ];
+    },
+    getStyleSchema() {
+      return [];
+    },
+  };
+
+  assert.deepEqual(validateTenantPageConfigLinks(pageConfig, sectionRegistry), [
+    "Section 1 (hero) Primary CTA link should start with / for internal pages, or use a full external URL.",
+  ]);
 });

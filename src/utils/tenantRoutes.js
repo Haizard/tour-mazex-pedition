@@ -44,6 +44,11 @@ export const buildTenantScopedPath = (path = "", pathname = "") => {
     : `${tenantBasePath}${normalizedPath}`;
 };
 
+export const buildTenantScopedDestinationPath = (slug = "", pathname = "") => {
+  const normalizedSlug = slug.toString().trim().replace(/^\/+|\/+$/g, "");
+  return buildTenantScopedPath(`/destinations/${normalizedSlug}`, pathname);
+};
+
 export const buildTenantScopedTourPath = (tour = {}, pathname = "") => {
   const slug = slugifyTitle(tour.title || "");
   const path = `/packages/${slug}`;

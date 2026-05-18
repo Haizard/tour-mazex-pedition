@@ -41,6 +41,7 @@ import {
 } from "../../pageBuilder/templateMarketplace";
 import { sectionRegistry } from "../../sections/registry/sectionRegistry";
 import MediaUploadField from "../UI/MediaUploadField";
+import { validateTenantPageConfigLinks } from "../../utils/tenantLinkValidation.js";
 
 
 const getSectionLabel = (type) =>
@@ -775,6 +776,12 @@ const PageBuilderManager = ({
         slug: resolvedSlug,
         sections: normalizeSections(pageConfig.sections),
       };
+
+      const validationErrors = validateTenantPageConfigLinks(payload, sectionRegistry);
+      if (validationErrors.length > 0) {
+        setMessage(validationErrors.join(" "));
+        return;
+      }
 
       const response = tenantId
         ? await updatePlatformTenantPageConfig(tenantId, activePageType, payload)

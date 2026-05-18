@@ -56,6 +56,8 @@ Multi-tenant tourism platform for tour operators, combining website CMS, booking
 - Tenant blog detail and category navigation regression coverage
 - Demo-tenant path safety so already-scoped `/demo/...` links are preserved
 - Public-page auth session checks no longer spam admin session requests
+- Page-builder and custom CTA links are validated before save so platform/demo URLs are blocked
+- Tenant SEO canonicals now stay scoped to demo tenants and tenant custom domains
 
 ### Social Automation Completed
 - Facebook and Instagram publishing support through Meta connections
@@ -100,6 +102,7 @@ Common commands:
 npm run build
 node --test backend/tests/marketplaceEngagementApi.test.js
 npm run smoke:tenant-routes -- https://mazexpeditions.vercel.app mazepro
+node --test src/utils/tenantRoutes.test.js src/utils/tenantLinkValidation.test.js src/utils/seo.test.js
 ```
 
 ## Tenant Mode QA Checklist
