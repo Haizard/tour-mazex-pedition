@@ -1,6 +1,7 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FaCalendarAlt, FaEye } from "react-icons/fa";
+import { buildTenantScopedBlogPath } from "../../utils/tenantRoutes.js";
 
 const BlogCard = ({
   image,
@@ -11,6 +12,7 @@ const BlogCard = ({
   category,
   views,
 }) => {
+  const location = useLocation();
   const slug = title
     ?.toString()
     .toLowerCase()
@@ -29,7 +31,7 @@ const BlogCard = ({
   return (
     <article className="group h-full">
       <Link
-        to={`/blogs/${slug}`}
+        to={buildTenantScopedBlogPath(slug, location.pathname)}
         onClick={() => window.scrollTo(0, 0)}
         state={{ image, date, title, content, author, category, views }}
         className="flex flex-col h-full bg-white rounded-xl md:rounded-[20px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-safari-green transition-all duration-300 hover:-translate-y-1 relative"

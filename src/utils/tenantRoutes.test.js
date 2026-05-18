@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  buildTenantScopedBlogCategoryPath,
+  buildTenantScopedBlogPath,
   buildTenantScopedPath,
   buildTenantScopedTourPath,
   getTenantBasePath,
@@ -27,5 +29,27 @@ test("buildTenantScopedTourPath includes the tenant prefix and tour id", () => {
       "/demo/mazepro",
     ),
     "/demo/mazepro/packages/umbwe-route-mount-kilimanjaro?tourId=69cbc45d4b9aa4c7fe679549",
+  );
+});
+
+test("buildTenantScopedBlogPath keeps tenant blog detail links inside the demo site", () => {
+  assert.equal(
+    buildTenantScopedBlogPath("youth-empowerment-project", "/demo/mazepro/blogs"),
+    "/demo/mazepro/blogs/youth-empowerment-project",
+  );
+  assert.equal(
+    buildTenantScopedBlogPath("youth-empowerment-project", "/blogs"),
+    "/blogs/youth-empowerment-project",
+  );
+});
+
+test("buildTenantScopedBlogCategoryPath keeps tenant blog category links inside the demo site", () => {
+  assert.equal(
+    buildTenantScopedBlogCategoryPath("safari", "/demo/mazepro/blogs"),
+    "/demo/mazepro/blogs/category/safari",
+  );
+  assert.equal(
+    buildTenantScopedBlogCategoryPath("safari", "/blogs"),
+    "/blogs/category/safari",
   );
 });

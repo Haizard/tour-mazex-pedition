@@ -31,3 +31,13 @@ export const buildTenantScopedTourPath = (tour = {}, pathname = "") => {
   const query = tour._id ? `?tourId=${encodeURIComponent(tour._id)}` : "";
   return `${buildTenantScopedPath(path, pathname)}${query}`;
 };
+
+export const buildTenantScopedBlogPath = (slug = "", pathname = "") => {
+  const normalizedSlug = slug.toString().trim().replace(/^\/+|\/+$/g, "");
+  return buildTenantScopedPath(`/blogs/${normalizedSlug}`, pathname);
+};
+
+export const buildTenantScopedBlogCategoryPath = (categoryId = "", pathname = "") => {
+  const normalizedCategoryId = categoryId.toString().trim().replace(/^\/+|\/+$/g, "");
+  return buildTenantScopedPath(`/blogs/category/${normalizedCategoryId}`, pathname);
+};

@@ -24,7 +24,7 @@ import {
 } from "../../utils/seo";
 import { buildBlogSidebarData } from "../../utils/contentMatchers";
 import { useRouteData } from "../../utils/routeData.jsx";
-import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
+import { buildTenantScopedBlogPath, buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const BlogDetail = () => {
   const { title: blogSlug } = useParams();
@@ -300,7 +300,7 @@ const BlogDetail = () => {
                   .map((b) => (
                     <Link
                       key={b._id}
-                      to={`/blogs/${slugifySeo(b.title)}`}
+                      to={buildTenantScopedBlogPath(slugifySeo(b.title), location.pathname)}
                       state={b}
                       className="flex gap-4 group"
                     >

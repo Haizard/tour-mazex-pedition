@@ -1,9 +1,13 @@
 import React from "react";
 import BlogCard from "./BlogCard";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { fetchBlogs } from "../../services/api";
 import { FaSearch } from "react-icons/fa";
 import { useRouteData } from "../../utils/routeData.jsx";
+import {
+  buildTenantScopedBlogCategoryPath,
+  buildTenantScopedBlogPath,
+} from "../../utils/tenantRoutes.js";
 
 const slugifyTitle = (value = "") =>
   value
@@ -78,6 +82,7 @@ const BlogsComp = ({
   sectionDescription = "",
   groupLabels = {},
 }) => {
+  const location = useLocation();
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
   const initialBlogs = Array.isArray(sharedData.blogs) ? sharedData.blogs : [];
@@ -167,7 +172,7 @@ const BlogsComp = ({
                       {limitedBlogs.map((item) => (
                         <Link
                           key={item._id}
-                          to={`/blogs/${slugifyTitle(item.title)}`}
+                          to={buildTenantScopedBlogPath(slugifyTitle(item.title), location.pathname)}
                           state={item}
                           className="grid gap-5 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:border-safari-green/40 hover:shadow-xl md:grid-cols-[260px_minmax(0,1fr)] md:p-5"
                         >
@@ -207,7 +212,7 @@ const BlogsComp = ({
 
                   <div className="mt-10 flex justify-center">
                     <Link
-                      to={`/blogs/category/${group.key}`}
+                      to={buildTenantScopedBlogCategoryPath(group.key, location.pathname)}
                       className="rounded-md bg-[#2a5d24] px-6 py-3 text-sm font-bold text-white transition-colors duration-300 hover:bg-[#1f471b]"
                     >
                       {group.cta}

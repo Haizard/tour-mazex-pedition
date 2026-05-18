@@ -3,12 +3,18 @@ import BlogsComp from "../components/Blogs/BlogsComp";
 import Testimonial from "../components/Testimonial/Testimonial";
 import TripCTA from "../components/Home/TripCTA";
 import LogoSlider from "../components/Home/LogoSlider";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FaChevronRight } from "react-icons/fa";
 import SEO from "../components/UI/SEO";
 import { buildBreadcrumbSchema } from "../utils/seo";
+import {
+  buildTenantScopedBlogCategoryPath,
+  buildTenantScopedPath,
+} from "../utils/tenantRoutes.js";
 
 const Blogs = () => {
+  const location = useLocation();
+
   return (
     <div className="min-h-screen bg-white">
       <SEO
@@ -53,7 +59,7 @@ const Blogs = () => {
                   ].map((cat) => (
                     <Link
                       key={cat.id}
-                      to={`/blogs/category/${cat.id}`}
+                      to={buildTenantScopedBlogCategoryPath(cat.id, location.pathname)}
                       className="group flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-safari-green transition-all duration-300"
                     >
                       <span className="font-heading font-medium text-gray-700 group-hover:text-white transition-colors">
@@ -72,7 +78,7 @@ const Blogs = () => {
                   <p className="text-white/70 text-sm mb-6 leading-relaxed">
                     Custom itineraries inspired by 10+ years of expertise.
                   </p>
-                  <Link to="/contact" className="inline-block bg-safari-green px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-green-800 transition-colors">
+                  <Link to={buildTenantScopedPath("/contact", location.pathname)} className="inline-block bg-safari-green px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-green-800 transition-colors">
                     Plan Now
                   </Link>
                 </div>
