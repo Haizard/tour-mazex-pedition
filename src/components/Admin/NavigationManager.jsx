@@ -20,6 +20,7 @@ import {
   updateTenantSiteConfig,
 } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
+import { validateTenantManagedLinks } from "../../utils/tenantLinkValidation.js";
 
 const initialMenuForm = {
   label: "",
@@ -140,6 +141,16 @@ const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } =
         children,
       };
 
+      const validationErrors = validateTenantManagedLinks([
+        { label: "Menu link", value: payload.link },
+        ...children.map((child) => ({ label: `Child link for ${child.label}`, value: child.link })),
+      ]);
+
+      if (validationErrors.length > 0) {
+        alert(validationErrors.join("\n"));
+        return;
+      }
+
       if (editingMenuId) {
         if (isPlatformMode) {
           await updatePlatformTenantMenuItem(tenantId, editingMenuId, payload);
@@ -168,6 +179,18 @@ const NavigationManager = ({ mode = "tenant", tenantId = "", tenantName = "" } =
     e.preventDefault();
     setLoading(true);
     try {
+      const validationErrors = validateTenantManagedLinks([
+        { label: "Primary CTA link", value: siteConfigFormData.navigationConfig.ctaHref },
+        { label: "About link", value: siteConfigFormData.navigationConfig.aboutHref },
+        { label: "Footer primary CTA link", value: siteConfigFormData.footerConfig.primaryCtaHref },
+        { label: "Footer secondary CTA link", value: siteConfigFormData.footerConfig.secondaryCtaHref },
+      ]);
+
+      if (validationErrors.length > 0) {
+        alert(validationErrors.join("\n"));
+        return;
+      }
+
       if (isPlatformMode) {
         await updatePlatformTenantSiteConfig(tenantId, siteConfigFormData);
       } else {

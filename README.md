@@ -99,6 +99,7 @@ Common commands:
 ```bash
 npm run build
 node --test backend/tests/marketplaceEngagementApi.test.js
+npm run smoke:tenant-routes -- https://mazexpeditions.vercel.app mazepro
 ```
 
 ## Tenant Mode QA Checklist

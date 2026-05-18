@@ -7,6 +7,7 @@ import { fetchSiteSettings, fetchTenantSiteConfig, updateSiteSettings, updateTen
 import { useTenant } from "../../context/TenantContext";
 import MediaUploadField from "../UI/MediaUploadField";
 import { useAdminAuth } from "../../context/AdminAuthContext";
+import { validateTenantManagedLinks } from "../../utils/tenantLinkValidation.js";
 
 
 const SiteSettings = () => {
@@ -149,6 +150,18 @@ const SiteSettings = () => {
     e.preventDefault();
     setConfigLoading(true);
     try {
+      const validationErrors = validateTenantManagedLinks([
+        { label: "Primary CTA link", value: siteConfigFormData.navigationConfig.ctaHref },
+        { label: "About link", value: siteConfigFormData.navigationConfig.aboutHref },
+        { label: "Footer primary CTA link", value: siteConfigFormData.footerConfig.primaryCtaHref },
+        { label: "Footer secondary CTA link", value: siteConfigFormData.footerConfig.secondaryCtaHref },
+      ]);
+
+      if (validationErrors.length > 0) {
+        alert(validationErrors.join("\n"));
+        return;
+      }
+
       await updateTenantSiteConfig(siteConfigFormData);
       await refreshTenant?.();
       alert("Navigation and footer updated successfully!");
