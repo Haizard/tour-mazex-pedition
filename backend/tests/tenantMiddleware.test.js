@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   shouldBypassTenantMiddleware,
   shouldResolveMissingTenantAsPlatform,
+  tenantMiddleware,
 } from "../middleware/tenantMiddleware.js";
 
 test("shouldBypassTenantMiddleware skips platform authentication routes", () => {
@@ -93,4 +94,59 @@ test("shouldResolveMissingTenantAsPlatform keeps demo requests tenant-backed", (
     ),
     false,
   );
+});
+
+test("tenantMiddleware resolves demo tenant requests by subdomain when slug lookup misses", async () => {
+  const findOneCalls = [];
+
+  const TenantModule = await import("../models/Tenant.js");
+  const originalTenantFindOne = TenantModule.default.findOne;
+  TenantModule.default.findOne = (query) => {
+    findOneCalls.push(query);
+    if (query.slug === "mazepro") {
+      return { lean: async () => null };
+    }
+
+    if (query.subdomain === "mazepro") {
+      return { lean: async () => ({ _id: "tenant1", slug: "maze-pro", subdomain: "mazepro" }) };
+    }
+
+    return { lean: async () => null };
+  };
+
+  const req = {
+    method: "GET",
+    originalUrl: "/api/tours",
+    headers: {
+      host: "mazexpeditions.vercel.app",
+      "x-tenant-slug": "mazepro",
+      "x-tenant-source": "demo",
+    },
+    query: {},
+  };
+
+  const res = {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.body = payload;
+      return this;
+    },
+  };
+
+  let nextCalled = false;
+  await tenantMiddleware(req, res, () => {
+    nextCalled = true;
+  });
+
+  TenantModule.default.findOne = originalTenantFindOne;
+
+  assert.equal(nextCalled, true);
+  assert.equal(req.tenant?.subdomain, "mazepro");
+  assert.deepEqual(findOneCalls[0], { slug: "mazepro", status: "active" });
+  assert.deepEqual(findOneCalls[1], { subdomain: "mazepro", status: "active" });
 });

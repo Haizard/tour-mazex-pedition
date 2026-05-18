@@ -54,6 +54,13 @@ export const tenantMiddleware = async (req, res, next) => {
       tenant = await Tenant.findOne({ slug: lookup.slug, status: "active" }).lean();
     }
 
+    if (!tenant && lookup.slug && getTenantRequestSource(req) === "demo") {
+      tenant = await Tenant.findOne({
+        subdomain: lookup.slug,
+        status: "active",
+      }).lean();
+    }
+
     if (!tenant && lookup.subdomain) {
       tenant = await Tenant.findOne({
         subdomain: lookup.subdomain,

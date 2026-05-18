@@ -153,7 +153,11 @@ const getTenantHeaders = () => {
   const storedTenantSlug = window.localStorage.getItem("activeTenantSlug");
 
   if (demoTenantSlug) {
-    return { "x-tenant-slug": demoTenantSlug, "x-tenant-source": "demo" };
+    return {
+      "x-tenant-slug": demoTenantSlug,
+      "x-tenant-subdomain": demoTenantSlug,
+      "x-tenant-source": "demo",
+    };
   }
 
   if (storedTenantSlug && LOCAL_HOSTNAMES.has(hostname)) {

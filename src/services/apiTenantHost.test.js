@@ -44,6 +44,13 @@ test("shouldUsePlatformBootstrapFallback keeps demo pages tenant-backed", () => 
   );
 });
 
+test("platform fallback never claims demo pages are platform pages even on platform hostnames", () => {
+  assert.equal(
+    shouldUsePlatformBootstrapFallback("mazexpeditions.vercel.app", "/demo/mazepro"),
+    false,
+  );
+});
+
 test("getPlatformBootstrapFallback returns platform bootstrap shape", () => {
   const fallback = getPlatformBootstrapFallback();
 
