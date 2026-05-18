@@ -1,8 +1,9 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import Hero from "../../components/Hero/Hero";
 import { getMediaUrl } from "../../services/api";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 import KiliImg from "../../assets/Kilimanjaro.jpg";
 import SafariImg from "../../assets/momentlion.jpg";
 import CampImg from "../../assets/camp1.jpg";
@@ -26,6 +27,7 @@ const CinematicHeroSection = ({
   imageSlides,
   videoUrl,
 }) => {
+  const location = useLocation();
   const safeSlides =
     Array.isArray(imageSlides) && imageSlides.filter(Boolean).length > 0
       ? imageSlides.filter(Boolean)
@@ -43,6 +45,15 @@ const CinematicHeroSection = ({
 
     return () => window.clearInterval(interval);
   }, [safeSlides, variant]);
+
+  const scopedPrimaryHref = buildTenantScopedPath(
+    primaryCtaHref || "/plan-my-trip",
+    location.pathname,
+  );
+  const scopedSecondaryHref = buildTenantScopedPath(
+    secondaryCtaHref || "/packages",
+    location.pathname,
+  );
 
   if (variant === "image-slideshow") {
     return (
@@ -97,13 +108,13 @@ const CinematicHeroSection = ({
               className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center"
             >
               <Link
-                to={primaryCtaHref || "/plan-my-trip"}
+                to={scopedPrimaryHref}
                 className="inline-flex items-center justify-center rounded-2xl bg-safari-gold px-8 py-4 font-oswald text-sm uppercase tracking-[0.2em] text-slate-950 shadow-2xl shadow-black/20 transition hover:bg-white"
               >
                 {primaryCtaLabel || "Start Planning"}
               </Link>
               <Link
-                to={secondaryCtaHref || "/packages"}
+                to={scopedSecondaryHref}
                 className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/8 px-8 py-4 font-oswald text-sm uppercase tracking-[0.2em] text-white transition hover:border-safari-gold hover:text-safari-gold"
               >
                 {secondaryCtaLabel || "Explore Packages"}
@@ -171,13 +182,13 @@ const CinematicHeroSection = ({
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
                 <Link
-                  to={primaryCtaHref || "/plan-my-trip"}
+                  to={scopedPrimaryHref}
                   className="inline-flex items-center justify-center rounded-2xl bg-safari-gold px-8 py-4 font-oswald text-sm uppercase tracking-[0.2em] text-slate-950 shadow-2xl shadow-black/20 transition hover:bg-white"
                 >
                   {primaryCtaLabel || "Start Planning"}
                 </Link>
                 <Link
-                  to={secondaryCtaHref || "/packages"}
+                  to={scopedSecondaryHref}
                   className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/8 px-8 py-4 font-oswald text-sm uppercase tracking-[0.2em] text-white transition hover:border-safari-gold hover:text-safari-gold"
                 >
                   {secondaryCtaLabel || "Explore Packages"}

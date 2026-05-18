@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const ResponsiveMenu = ({
   showMenu,
@@ -23,6 +24,8 @@ const ResponsiveMenu = ({
   brandName = "",
 }) => {
   const navigate = useNavigate();
+  const currentPathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
   const [openSubmenu, setOpenSubmenu] = React.useState(null);
   const mobileCopyright =
     footerConfig.mobileCopyrightLabel ||
@@ -36,6 +39,8 @@ const ResponsiveMenu = ({
     setOpenSubmenu(openSubmenu === id ? null : id);
   };
 
+  const scopeMenuLink = (link = "") => buildTenantScopedPath(link, currentPathname);
+
   const handlePrimaryCta = () => {
     const href = navigationConfig.ctaHref || "";
     if (!href) {
@@ -45,7 +50,7 @@ const ResponsiveMenu = ({
     if (href === "popup") {
       handleOrderPopup();
     } else {
-      navigate(href);
+      navigate(scopeMenuLink(href));
       window.scrollTo(0, 0);
     }
     setShowMenu(false);
@@ -81,7 +86,7 @@ const ResponsiveMenu = ({
                 >
                   <div className="flex items-center justify-between">
                     <Link
-                      to={data.link}
+                      to={scopeMenuLink(data.link)}
                       onClick={() => !hasChildren && setShowMenu(false)}
                       className="flex-1 text-white transition-colors hover:text-safari-gold"
                     >
@@ -108,7 +113,7 @@ const ResponsiveMenu = ({
                         {(data.children || []).map((child) => (
                           <li key={`${child.label}-${child.link}`}>
                             <Link
-                              to={child.link}
+                              to={scopeMenuLink(child.link)}
                               onClick={() => setShowMenu(false)}
                               className="block border-l-2 border-transparent px-4 py-3 text-sm font-bold uppercase tracking-wider text-white/80 transition-all hover:border-safari-gold hover:text-safari-gold sm:text-base"
                             >

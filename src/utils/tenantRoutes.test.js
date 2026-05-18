@@ -20,6 +20,14 @@ test("buildTenantScopedPath keeps demo tenant routes scoped", () => {
   );
   assert.equal(buildTenantScopedPath("/packages", "/packages"), "/packages");
   assert.equal(buildTenantScopedPath("/", "/demo/mazepro/packages"), "/demo/mazepro");
+  assert.equal(
+    buildTenantScopedPath("/demo/mazepro/blogs", "/demo/mazepro/packages"),
+    "/demo/mazepro/blogs",
+  );
+  assert.equal(
+    buildTenantScopedPath("https://example.com", "/demo/mazepro/packages"),
+    "https://example.com",
+  );
 });
 
 test("buildTenantScopedTourPath includes the tenant prefix and tour id", () => {

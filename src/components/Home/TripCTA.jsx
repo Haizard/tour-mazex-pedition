@@ -1,6 +1,7 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const TripCTA = ({
   variant = "trip-cta",
@@ -14,6 +15,10 @@ const TripCTA = ({
   accentLabel = "",
   backgroundImage = "https://images.unsplash.com/photo-1547970810-dc1eac37d174?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
 }) => {
+  const location = useLocation();
+  const scopedPrimaryHref = buildTenantScopedPath(primaryHref, location.pathname);
+  const scopedSecondaryHref = buildTenantScopedPath(secondaryHref, location.pathname);
+
   if (variant === "split-invite") {
     return (
       <section className="py-14 md:py-24">
@@ -37,14 +42,14 @@ const TripCTA = ({
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  to={primaryHref}
+                  to={scopedPrimaryHref}
                   onClick={() => window.scrollTo(0, 0)}
                   className="rounded-2xl bg-slate-950 px-6 py-4 font-oswald text-sm uppercase tracking-[0.18em] text-white transition hover:bg-slate-800"
                 >
                   {primaryLabel}
                 </Link>
                 <Link
-                  to={secondaryHref}
+                  to={scopedSecondaryHref}
                   onClick={() => window.scrollTo(0, 0)}
                   className="rounded-2xl bg-safari-green px-6 py-4 font-oswald text-sm uppercase tracking-[0.18em] text-white transition hover:bg-green-800"
                 >
@@ -111,14 +116,14 @@ const TripCTA = ({
 
             <div className="flex flex-wrap gap-2 md:gap-4">
               <Link
-                to={primaryHref}
+                to={scopedPrimaryHref}
                 onClick={() => window.scrollTo(0, 0)}
                 className="font-oswald uppercase tracking-wider text-[10px] md:text-sm bg-safari-green text-white px-4 md:px-8 py-2 md:py-3.5 rounded-md hover:bg-green-800 transition-colors duration-300"
               >
                 {primaryLabel}
               </Link>
               <Link
-                to={secondaryHref}
+                to={scopedSecondaryHref}
                 onClick={() => window.scrollTo(0, 0)}
                 className="font-oswald uppercase tracking-wider text-[10px] md:text-sm bg-safari-green text-white px-4 md:px-8 py-2 md:py-3.5 rounded-md hover:bg-green-800 transition-colors duration-300"
               >

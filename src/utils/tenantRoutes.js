@@ -13,10 +13,29 @@ export const getTenantBasePath = (pathname = "") => {
 };
 
 export const buildTenantScopedPath = (path = "", pathname = "") => {
+  const rawPath = path.toString().trim();
+  if (!rawPath) {
+    return "/";
+  }
+
+  if (
+    /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(rawPath) ||
+    rawPath.startsWith("#")
+  ) {
+    return rawPath;
+  }
+
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const tenantBasePath = getTenantBasePath(pathname);
 
   if (!tenantBasePath) {
+    return normalizedPath;
+  }
+
+  if (
+    normalizedPath === tenantBasePath ||
+    normalizedPath.startsWith(`${tenantBasePath}/`)
+  ) {
     return normalizedPath;
   }
 

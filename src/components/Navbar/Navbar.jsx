@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Logo from "../../assets/maz-logo.jpeg";
 
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaCaretDown,
   FaFacebookF,
@@ -118,6 +118,7 @@ const buildMenuWithLiveTours = (menuItems, tours) =>
 // eslint-disable-next-line react/prop-types
 const Navbar = ({ handleOrderPopup }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { siteConfig, tenant, loading, isPlatform } = useTenant();
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
@@ -225,9 +226,12 @@ const Navbar = ({ handleOrderPopup }) => {
       return;
     }
 
-    navigate(isPlatform ? href : buildTenantScopedPath(href, window.location.pathname));
+    navigate(isPlatform ? href : buildTenantScopedPath(href, location.pathname));
     window.scrollTo(0, 0);
   };
+
+  const scopeMenuLink = (link = "") =>
+    isPlatform ? link : buildTenantScopedPath(link, location.pathname);
 
   const toggleMenu = () => setShowMenu(!showMenu);
 
@@ -294,7 +298,7 @@ const Navbar = ({ handleOrderPopup }) => {
           logoPlacement === "center" ? "justify-center gap-8" : "justify-between"
         }`}>
           <Link
-            to={isPlatform ? "/" : buildTenantScopedPath("/", window.location.pathname)}
+            to={isPlatform ? "/" : buildTenantScopedPath("/", location.pathname)}
             className="flex items-center"
             onClick={() => window.scrollTo(0, 0)}
           >
@@ -325,7 +329,7 @@ const Navbar = ({ handleOrderPopup }) => {
                   onMouseLeave={() => setActiveMenu(null)}
                 >
                   <NavLink
-                    to={item.link}
+                    to={scopeMenuLink(item.link)}
                     className={({ isActive }) =>
                       `flex items-center gap-1 text-[13px] xl:text-[14px] font-bold uppercase tracking-wider transition-all duration-300 ${
                         isActive
@@ -361,7 +365,7 @@ const Navbar = ({ handleOrderPopup }) => {
                               {(item.children || []).map((child) => (
                                 <Link
                                   key={`${child.label}-${child.link}`}
-                                  to={child.link}
+                                  to={scopeMenuLink(child.link)}
                                   className="text-[13px] xl:text-[14px] font-bold uppercase tracking-wider hover:text-safari-green hover:pl-2 transition-all duration-300"
                                 >
                                   {child.label}
@@ -386,7 +390,7 @@ const Navbar = ({ handleOrderPopup }) => {
                             {(item.children || []).map((child) => (
                               <Link
                                 key={`${child.label}-${child.link}`}
-                                to={child.link}
+                                to={scopeMenuLink(child.link)}
                                 className="text-[13px] xl:text-[14px] font-bold uppercase tracking-wider hover:text-safari-green transition-all"
                               >
                                 {child.label}

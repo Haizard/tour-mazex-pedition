@@ -1,7 +1,8 @@
 import React from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getMediaUrl } from "../../services/api";
+import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 const MainVideo = "/videos/main.mp4";
 
 const Hero = ({
@@ -15,9 +16,12 @@ const Hero = ({
   videoUrl = "",
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const scopedPrimaryHref = buildTenantScopedPath(primaryCtaHref, location.pathname);
+  const scopedSecondaryHref = buildTenantScopedPath(secondaryCtaHref, location.pathname);
 
   const handleStartPlanning = () => {
-    navigate(primaryCtaHref);
+    navigate(scopedPrimaryHref);
     window.scrollTo(0, 0);
   };
 
@@ -85,7 +89,7 @@ const Hero = ({
               <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
             </button>
             
-            <Link to={secondaryCtaHref} className="text-white/80 font-oswald text-sm uppercase tracking-widest hover:text-safari-gold transition-colors underline underline-offset-8 decoration-white/20 hover:decoration-safari-gold">
+            <Link to={scopedSecondaryHref} className="text-white/80 font-oswald text-sm uppercase tracking-widest hover:text-safari-gold transition-colors underline underline-offset-8 decoration-white/20 hover:decoration-safari-gold">
               {secondaryCtaLabel}
             </Link>
           </motion.div>

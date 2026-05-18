@@ -80,6 +80,8 @@ const Footer = () => {
   const [popularBlogs, setPopularBlogs] = React.useState([]);
   const currentPathname =
     typeof window !== "undefined" ? window.location.pathname : "";
+  const scopeTenantLink = (link = "") =>
+    isPlatform ? link : buildTenantScopedPath(link, currentPathname);
 
   React.useEffect(() => {
     setSettings(sharedData.siteSettings || null);
@@ -161,6 +163,9 @@ const Footer = () => {
   const scopedPrimaryHref = isPlatform ? primaryHref : buildTenantScopedPath(primaryHref, currentPathname);
   const scopedSecondaryHref = isPlatform ? secondaryHref : buildTenantScopedPath(secondaryHref, currentPathname);
   const scopedHomeHref = isPlatform ? "/" : buildTenantScopedPath("/", currentPathname);
+  const scopedLinks = links.map((item) => ({ ...item, link: scopeTenantLink(item.link) }));
+  const scopedTours = tours.map((item) => ({ ...item, link: scopeTenantLink(item.link) }));
+  const scopedBlogs = blogs.map((item) => ({ ...item, link: scopeTenantLink(item.link) }));
   const socials = socialItems(settings || {});
   const hasVisibleContent =
     brandName ||
@@ -243,9 +248,9 @@ const Footer = () => {
 
         <div className="grid grid-cols-2 gap-8 md:col-span-5 lg:grid-cols-3">
           {[
-            { title: "Links", items: links },
-            { title: "Tours", items: tours },
-            { title: "Blogs", items: blogs },
+            { title: "Links", items: scopedLinks },
+            { title: "Tours", items: scopedTours },
+            { title: "Blogs", items: scopedBlogs },
           ].map((group) => (
             group.items.length > 0 && (
               <div key={group.title}>
