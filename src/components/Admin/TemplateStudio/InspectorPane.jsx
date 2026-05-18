@@ -56,8 +56,10 @@ export default function InspectorPane({
         {selectedTab === "binding" ? (
           <BindingInspector
             section={section}
+            bindings={section.bindings || []}
             suggestions={bindingSuggestions}
             onRequestSuggestions={onRequestBindingSuggestions}
+            onChangeBindings={(bindings) => handlePatch({ bindings })}
           />
         ) : selectedTab === "content" ? (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">

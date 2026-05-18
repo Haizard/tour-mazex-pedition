@@ -247,6 +247,9 @@ export default function TemplateStudioShell({
           selectedLibrarySection={selectedLibrarySection}
           onSelectSection={(sectionId) => dispatch({ type: "select-section", sectionId })}
           onInsertSection={handleInsertSection}
+          onReorderSection={(sectionId, toIndex) =>
+            dispatch({ type: "reorder-section", sectionId, toIndex })
+          }
           onSectionAction={handleSectionAction}
         />
         <InspectorPane

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 
+import { createDropTargets, resolveReorderDropIndex } from "./canvasDnd.js";
 import { createStudioPageDraft } from "./studioTypes.js";
 import CanvasSectionCard from "./CanvasSectionCard.jsx";
 import { createStudioCanvasState } from "./studioReducers.js";
@@ -23,6 +24,7 @@ export default function CanvasPane({
   selectedLibrarySection,
   onSelectSection,
   onInsertSection,
+  onReorderSection,
   onSectionAction,
 }) {
   const pageDraft = createStudioPageDraft(page);
@@ -32,6 +34,77 @@ export default function CanvasPane({
   );
 
   const sections = canvasState.sections;
+  const dropTargets = useMemo(() => createDropTargets(sections), [sections]);
+  const [draggedSectionId, setDraggedSectionId] = React.useState(null);
+  const [activeDropTargetId, setActiveDropTargetId] = React.useState(null);
+
+  const clearDragState = React.useCallback(() => {
+    setDraggedSectionId(null);
+    setActiveDropTargetId(null);
+  }, []);
+
+  const handleDrop = (target) => {
+    if (!draggedSectionId) {
+      return;
+    }
+
+    const toIndex = resolveReorderDropIndex({
+      sections,
+      draggedSectionId,
+      rawTargetIndex: target.toIndex,
+    });
+
+    if (toIndex != null) {
+      onReorderSection?.(draggedSectionId, toIndex);
+    }
+
+    clearDragState();
+  };
+
+  const renderDropZone = (target, label = "Drop section here") => {
+    const isActive = activeDropTargetId === target.id;
+
+    return (
+      <div
+        key={target.id}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setActiveDropTargetId(target.id);
+        }}
+        onDragLeave={() => {
+          if (activeDropTargetId === target.id) {
+            setActiveDropTargetId(null);
+          }
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          handleDrop(target);
+        }}
+      >
+        {draggedSectionId ? (
+          <div
+            className={`rounded-2xl border-2 border-dashed px-4 py-3 text-sm font-semibold transition ${
+              isActive
+                ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                : "border-slate-300 bg-slate-50 text-slate-400"
+            }`}
+          >
+            {isActive ? "Release to reorder section" : label}
+          </div>
+        ) : (
+          <InsertButton
+            label="Insert section here"
+            onClick={() =>
+              onInsertSection?.({
+                position: target.position,
+                targetSectionId: target.targetSectionId,
+              })
+            }
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-[#eef2f7]" data-testid="template-studio-canvas">
@@ -66,16 +139,18 @@ export default function CanvasPane({
 
             {sections.map((section, index) => (
               <div key={section.id} className="space-y-3">
-                <InsertButton
-                  label="Insert section here"
-                  onClick={() =>
-                    onInsertSection?.({
-                      position: "above",
-                      targetSectionId: section.id,
-                    })
-                  }
-                />
-                <div onClick={() => onSelectSection?.(section.id)} onKeyDown={undefined} role="presentation">
+                {renderDropZone(dropTargets[index], "Drop section before this block")}
+                <div
+                  draggable
+                  onDragStart={() => {
+                    setDraggedSectionId(section.id);
+                    onSelectSection?.(section.id);
+                  }}
+                  onDragEnd={clearDragState}
+                  onClick={() => onSelectSection?.(section.id)}
+                  onKeyDown={undefined}
+                  role="presentation"
+                >
                   <CanvasSectionCard
                     section={section}
                     isSelected={canvasState.selectedSectionId === section.id}
@@ -85,21 +160,10 @@ export default function CanvasPane({
               </div>
             ))}
 
-            {sections.length ? (
-              <InsertButton
-                label="Insert section at end"
-                onClick={() =>
-                  onInsertSection?.({
-                    position: "below",
-                    targetSectionId: sections[sections.length - 1].id,
-                  })
-                }
-              />
-            ) : null}
+            {sections.length ? renderDropZone(dropTargets[dropTargets.length - 1], "Drop section at end") : null}
           </div>
         </div>
       </div>
     </main>
   );
 }
-
