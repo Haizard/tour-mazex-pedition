@@ -9,6 +9,7 @@ const pageSectionSchema = new mongoose.Schema(
     dataConfig: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     styleConfig: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     contentConfig: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    studioMeta: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
   },
   { _id: true }
 );
@@ -40,6 +41,13 @@ const pageConfigSchema = new mongoose.Schema(
       personalizedFor: { type: String, trim: true, default: "" },
       personalizationNote: { type: String, trim: true, default: "" },
     },
+    templateStudio: {
+      pageId: { type: String, trim: true, default: "" },
+      sourceType: { type: String, trim: true, default: "" },
+      layoutShell: { type: String, trim: true, default: "" },
+      themeTokens: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+      sourceMeta: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    },
     sections: { type: [pageSectionSchema], default: [] },
   },
   { timestamps: true }
@@ -48,5 +56,5 @@ const pageConfigSchema = new mongoose.Schema(
 pageConfigSchema.index({ tenantId: 1, pageType: 1 }, { unique: true });
 pageConfigSchema.index({ tenantId: 1, slug: 1 }, { unique: true });
 
-const PageConfig = mongoose.model("PageConfig", pageConfigSchema);
+const PageConfig = mongoose.models.PageConfig || mongoose.model("PageConfig", pageConfigSchema);
 export default PageConfig;

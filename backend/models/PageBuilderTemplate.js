@@ -27,6 +27,13 @@ const pageBuilderTemplateSchema = new mongoose.Schema(
       description: { type: String, default: "" },
       keywords: { type: [String], default: [] },
     },
+    templateSource: {
+      mode: { type: String, trim: true, default: "" },
+      importJobId: { type: String, trim: true, default: "" },
+      sourceUrl: { type: String, trim: true, default: "" },
+      sourceLabel: { type: String, trim: true, default: "" },
+    },
+    themeTokens: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     sections: {
       type: [mongoose.Schema.Types.Mixed],
       default: [],
@@ -36,5 +43,7 @@ const pageBuilderTemplateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const PageBuilderTemplate = mongoose.model("PageBuilderTemplate", pageBuilderTemplateSchema);
+const PageBuilderTemplate =
+  mongoose.models.PageBuilderTemplate ||
+  mongoose.model("PageBuilderTemplate", pageBuilderTemplateSchema);
 export default PageBuilderTemplate;

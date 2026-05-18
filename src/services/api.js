@@ -357,6 +357,10 @@ export const generatePlatformPageBuilderTemplateDraft = (data) =>
   API.post("/platform-admin/page-builder-templates/ai-draft", data, {
     headers: getPlatformAdminHeaders(),
   });
+export const createPlatformPageBuilderTemplateFromStudio = (data) =>
+  API.post("/platform-admin/page-builder-templates/import", data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const createPlatformTenant = (data) =>
   API.post("/platform-admin/tenants", data, {
     headers: getPlatformAdminHeaders(),
@@ -374,6 +378,10 @@ export const fetchPlatformTenantPageConfig = (tenantId, pageType = "home") =>
   cachedGet(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, {
     headers: getPlatformAdminHeaders(),
   });
+export const fetchPlatformTenantTemplateStudioPage = (tenantId, pageType = "home") =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/page-config/studio/${encodeURIComponent(pageType)}`, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchPlatformTenantPageConfigs = (tenantId) =>
   cachedGet(`/platform-admin/tenants/${tenantId}/page-configs`, {
     headers: getPlatformAdminHeaders(),
@@ -386,6 +394,14 @@ export const updatePlatformTenantPageConfig = (tenantId, pageType = "home", data
   API.put(`/platform-admin/tenants/${tenantId}/page-config/${encodeURIComponent(pageType)}`, data, {
     headers: getPlatformAdminHeaders(),
   });
+export const updatePlatformTenantTemplateStudioPage = (tenantId, pageType = "home", studioPage) =>
+  API.put(
+    `/platform-admin/tenants/${tenantId}/page-config/studio/${encodeURIComponent(pageType)}`,
+    { studioPage },
+    {
+      headers: getPlatformAdminHeaders(),
+    }
+  );
 export const applyPlatformTenantPageBuilderTemplate = (tenantId, templateId) =>
   API.post(
     `/platform-admin/tenants/${tenantId}/page-config/templates/${encodeURIComponent(templateId)}/apply`,
@@ -400,6 +416,14 @@ export const generatePlatformTenantPageBuilderVariants = (tenantId, pageType = "
   );
 export const importPlatformTenantPageBuilderSource = (tenantId, data) =>
   API.post(`/platform-admin/tenants/${tenantId}/page-config/import-source`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const importPlatformTenantTemplateStudioSource = (tenantId, data) =>
+  API.post(`/platform-admin/tenants/${tenantId}/page-config/studio/import`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const requestPlatformTenantTemplateStudioBindingSuggestions = (tenantId, data) =>
+  API.post(`/platform-admin/tenants/${tenantId}/page-config/studio/binding-suggestions`, data, {
     headers: getPlatformAdminHeaders(),
   });
 export const fetchPlatformTenantSiteConfig = (tenantId) =>
@@ -524,18 +548,38 @@ export const requestTenantTemplate = (templateId) =>
 export const fetchPageConfig = (pageType = "home") =>
   cachedGet(`/page-config/${encodeURIComponent(pageType)}`);
 export const fetchPageConfigs = () => cachedGet("/page-config/list/all");
+export const fetchTemplateStudioPage = (pageType = "home") =>
+  cachedGet(`/page-config/studio/${encodeURIComponent(pageType)}`, {
+    headers: getAuthHeadersForUrl("/page-config/studio"),
+  });
 export const resolvePageConfigBySlug = (slug) =>
   cachedGet("/page-config/resolve/by-slug", {
     params: { slug },
   });
 export const updatePageConfig = (pageType = "home", data) =>
   API.put(`/page-config/${encodeURIComponent(pageType)}`, data);
+export const updateTemplateStudioPage = (pageType = "home", studioPage) =>
+  API.put(
+    `/page-config/studio/${encodeURIComponent(pageType)}`,
+    { studioPage },
+    {
+      headers: getAuthHeadersForUrl("/page-config/studio"),
+    }
+  );
 export const applyPageBuilderTemplate = (templateId) =>
   API.post(`/page-config/templates/${encodeURIComponent(templateId)}/apply`, {});
 export const generatePageBuilderVariants = (pageType = "home", data) =>
   API.post(`/page-config/${encodeURIComponent(pageType)}/ai-variants`, data);
 export const importPageBuilderSource = (data) =>
   API.post("/page-config/import-source", data);
+export const importTemplateStudioSource = (data) =>
+  API.post("/page-config/studio/import", data, {
+    headers: getAuthHeadersForUrl("/page-config/studio/import"),
+  });
+export const requestTemplateStudioBindingSuggestions = (data) =>
+  API.post("/page-config/studio/binding-suggestions", data, {
+    headers: getAuthHeadersForUrl("/page-config/studio/binding-suggestions"),
+  });
 export const fetchTenantTheme = () => cachedGet("/tenant/bootstrap"); // Bootstrap contains theme
 export const updateTenantTheme = (data) => API.put("/tenant/theme", data);
 

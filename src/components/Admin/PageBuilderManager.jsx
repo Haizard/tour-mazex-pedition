@@ -27,10 +27,16 @@ import {
   generatePageBuilderVariants,
   getMediaUrl,
   importPlatformTenantPageBuilderSource,
+  importPlatformTenantTemplateStudioSource,
   importPageBuilderSource,
+  importTemplateStudioSource,
+  requestPlatformTenantTemplateStudioBindingSuggestions,
+  requestTemplateStudioBindingSuggestions,
   updatePlatformTenantMenuItem,
   updatePageConfig,
   updatePlatformTenantPageConfig,
+  updatePlatformTenantTemplateStudioPage,
+  updateTemplateStudioPage,
   requestTenantTemplate,
 } from "../../services/api";
 import { legacyHomePage } from "../../pageBuilder/defaultPages";
@@ -41,6 +47,8 @@ import {
 } from "../../pageBuilder/templateMarketplace";
 import { sectionRegistry } from "../../sections/registry/sectionRegistry";
 import MediaUploadField from "../UI/MediaUploadField";
+import TemplateStudioShell from "./TemplateStudio/TemplateStudioShell.jsx";
+import { pageConfigToStudioPage } from "./TemplateStudio/studioTypes.js";
 import { validateTenantPageConfigLinks } from "../../utils/tenantLinkValidation.js";
 
 
@@ -473,6 +481,7 @@ const PageBuilderManager = ({
   const [importingSource, setImportingSource] = React.useState(false);
   const [applyingTemplate, setApplyingTemplate] = React.useState("");
   const [requestingTemplate, setRequestingTemplate] = React.useState("");
+  const [useTemplateStudio, setUseTemplateStudio] = React.useState(canManageLayout);
   const [selectedTemplateId, setSelectedTemplateId] = React.useState("safari-signature-home");
   const [marketplaceTemplates, setMarketplaceTemplates] = React.useState([]);
   const [newSectionType, setNewSectionType] = React.useState(
@@ -506,6 +515,23 @@ const PageBuilderManager = ({
         (item) => normalizePageSlug(item.link || "/") === pageSlug
       ) || null,
     [pageSlug, tenantMenuItems]
+  );
+  const studioPage = React.useMemo(
+    () => pageConfigToStudioPage(pageConfig, activePageType),
+    [activePageType, pageConfig]
+  );
+  const studioLibrarySections = React.useMemo(
+    () =>
+      Object.entries(sectionRegistry.metadata || {}).map(([type, metadata]) => ({
+        id: `library-${type}`,
+        type,
+        label: metadata.label || type,
+        sourceType: "reusable",
+        summary:
+          metadata.description ||
+          `Reusable ${metadata.label || type} section that can be inserted anywhere on the page canvas.`,
+      })),
+    []
   );
 
   React.useEffect(() => {
@@ -991,6 +1017,78 @@ const PageBuilderManager = ({
       setMessage(error?.response?.data?.message || error.message || "Failed to import pasted source.");
     } finally {
       setImportingSource(false);
+    }
+  };
+
+  const handleSaveStudioPage = async (nextStudioPage) => {
+    if (!canManageLayout) return;
+    setSaving(true);
+    setMessage("");
+
+    try {
+      const response = tenantId
+        ? await updatePlatformTenantTemplateStudioPage(tenantId, activePageType, nextStudioPage)
+        : await updateTemplateStudioPage(activePageType, nextStudioPage);
+      const savedPage = response.data?.page || response.data || {};
+
+      setPageConfig((current) => ({
+        ...current,
+        ...savedPage,
+        sections: normalizeSections(savedPage.sections || current.sections),
+      }));
+      setMessage(`${activePageMeta.label} saved in Template Studio.`);
+    } catch (error) {
+      console.error("Failed to save Template Studio page:", error);
+      setMessage(error?.response?.data?.message || "Failed to save Template Studio page.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImportStudioSource = async (payload) => {
+    if (!canManageLayout) return null;
+    setImportingSource(true);
+    setMessage("");
+
+    try {
+      const response = tenantId
+        ? await importPlatformTenantTemplateStudioSource(tenantId, payload)
+        : await importTemplateStudioSource(payload);
+      setMessage("Import analyzed and added to the studio workspace.");
+      return response.data;
+    } catch (error) {
+      console.error("Failed to analyze template import:", error);
+      setMessage(error?.response?.data?.message || "Failed to analyze template import.");
+      return null;
+    } finally {
+      setImportingSource(false);
+    }
+  };
+
+  const handleRequestStudioBindings = async (section) => {
+    if (!canManageLayout) return { suggestions: [] };
+
+    try {
+      const response = tenantId
+        ? await requestPlatformTenantTemplateStudioBindingSuggestions(tenantId, { section })
+        : await requestTemplateStudioBindingSuggestions({ section });
+      return response.data;
+    } catch (error) {
+      console.error("Failed to load binding suggestions:", error);
+      setMessage(error?.response?.data?.message || "Failed to load binding suggestions.");
+      return { suggestions: section?.bindings || [] };
+    }
+  };
+
+  const handleTemplateStudioTopBarAction = (actionId) => {
+    if (actionId === "ai-create") {
+      setMessage(
+        "AI section creation will plug into the new studio flow next. For now, use Add Section and Import to compose the page."
+      );
+    }
+
+    if (actionId === "preview") {
+      setMessage("Save the studio page to preview it through the live tenant renderer.");
     }
   };
 
@@ -1618,6 +1716,44 @@ const PageBuilderManager = ({
     );
   };
 
+  if (canManageLayout && useTemplateStudio) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Template Studio</p>
+            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950">
+              Advanced import, bind, and canvas editing workspace
+            </h2>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Build pages with imported templates, reusable sections, and CMS-connected blocks in a cleaner studio flow.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setUseTemplateStudio(false)}
+            className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+          >
+            Open Classic Builder
+          </button>
+        </div>
+
+        <TemplateStudioShell
+          studioPage={studioPage}
+          selectedSection={studioPage.sections[selectedSectionIndex] || null}
+          librarySections={studioLibrarySections}
+          importing={importingSource}
+          saving={saving}
+          message={message}
+          onSaveStudioPage={handleSaveStudioPage}
+          onImportStudioSource={handleImportStudioSource}
+          onRequestBindingSuggestions={handleRequestStudioBindings}
+          onTopBarAction={handleTemplateStudioTopBarAction}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in rounded-[32px] border border-slate-200 bg-slate-100/70 p-3 shadow-sm">
       <div className="rounded-[28px] border border-slate-200 bg-white px-5 py-4">
@@ -1633,15 +1769,26 @@ const PageBuilderManager = ({
                 : "Edit only the text and images inside sections prepared by the platform administrator."}
             </p>
           </div>
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-2xl px-6 py-3 shadow-lg shadow-primary/20 inline-flex items-center justify-center gap-3"
-          >
-            <FaSave />
-            {saving ? "Saving..." : canManageLayout ? "Save Layout" : "Save Content"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            {canManageLayout ? (
+              <button
+                type="button"
+                onClick={() => setUseTemplateStudio(true)}
+                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Switch To Template Studio
+              </button>
+            ) : null}
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="rounded-2xl px-6 py-3 shadow-lg shadow-primary/20 inline-flex items-center justify-center gap-3"
+            >
+              <FaSave />
+              {saving ? "Saving..." : canManageLayout ? "Save Layout" : "Save Content"}
+            </Button>
+          </div>
         </div>
       </div>
 

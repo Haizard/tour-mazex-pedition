@@ -77,6 +77,13 @@ export const normalizePlatformTemplatePayload = (payload = {}) => {
       description: payload.seo?.description?.toString().trim() || "",
       keywords: normalizeList(payload.seo?.keywords || payload.keywords),
     },
+    templateSource: payload.templateSource && typeof payload.templateSource === "object"
+      ? payload.templateSource
+      : {},
+    themeTokens:
+      payload.themeTokens && typeof payload.themeTokens === "object"
+        ? payload.themeTokens
+        : {},
     sections,
   };
 };
@@ -98,6 +105,8 @@ export const serializePlatformTemplate = (template = {}) => {
     featuredRank: raw.featuredRank || 50,
     releaseOrder: raw.releaseOrder || 100,
     seo: raw.seo || {},
+    templateSource: raw.templateSource || {},
+    themeTokens: raw.themeTokens || {},
     sections: raw.sections || [],
     source: "platform",
     createdAt: raw.createdAt || null,

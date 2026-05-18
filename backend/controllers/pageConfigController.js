@@ -10,6 +10,12 @@ import {
 } from "../utils/pageBuilderAiVariants.js";
 import { buildImportedSectionFromSource } from "../utils/pageBuilderSourceImport.js";
 import { buildTemplatePageConfigPayload } from "../utils/pageBuilderTemplateApplication.js";
+import { suggestBindingsForPage, suggestBindingsForSection } from "../utils/templateStudioBindingSuggestions.js";
+import { createTemplateStudioImportDraft } from "../utils/templateStudioImportPipeline.js";
+import {
+  buildPageConfigFromStudioPage,
+  buildStudioPageFromPageConfig,
+} from "../utils/templateStudioPagePersistence.js";
 import {
   getDefaultPageSlug,
   isPagePubliclyAccessible,
@@ -266,6 +272,59 @@ export const applyPageBuilderTemplate = async (req, res) => {
   }
 };
 
+export const getTemplateStudioPage = async (req, res) => {
+  try {
+    const pageType = req.params.pageType || "home";
+    const page = await PageConfig.findOne(buildTenantFilter(req, { pageType })).lean();
+
+    if (!page) {
+      return res.status(200).json(
+        buildStudioPageFromPageConfig(createEmptyPageConfig(req, pageType))
+      );
+    }
+
+    return res.status(200).json(buildStudioPageFromPageConfig(page));
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const upsertTemplateStudioPage = async (req, res) => {
+  try {
+    if (!canManagePageBuilderLayout(req)) {
+      return res.status(403).json({ message: "Only platform administrators can manage template studio pages." });
+    }
+
+    const pageType = req.params.pageType || req.body.pageType || "home";
+    const payload = buildPageConfigFromStudioPage({
+      studioPage: {
+        ...(req.body.studioPage || req.body || {}),
+        pageType,
+      },
+      tenantId: req.tenantId,
+    });
+
+    const page = await PageConfig.findOneAndUpdate(
+      buildTenantFilter(req, { pageType }),
+      withTenantId(req, payload),
+      {
+        upsert: true,
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    await syncPageConfigKnowledgeEmbedding(page.toObject ? page.toObject() : page);
+
+    return res.status(200).json({
+      page,
+      studioPage: buildStudioPageFromPageConfig(page.toObject ? page.toObject() : page),
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
 const canManagePageBuilderLayout = (req) => Boolean(req.platformAdmin);
 
 const generateAiVariantsWithProvider = async ({ prompt, baseSections }) => {
@@ -355,6 +414,52 @@ export const importPageBuilderSource = async (req, res) => {
     });
 
     return res.status(200).json({ section });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+export const importTemplateStudioSource = async (req, res) => {
+  try {
+    if (!canManagePageBuilderLayout(req)) {
+      return res.status(403).json({ message: "Only platform administrators can import template studio sources." });
+    }
+
+    const sourceCode = req.body.sourceCode?.toString() || "";
+    const referenceImageUrl = req.body.referenceImageUrl?.toString() || "";
+
+    if (!sourceCode.trim() && !referenceImageUrl.trim()) {
+      return res.status(400).json({ message: "Source code or a reference image is required." });
+    }
+
+    const draft = createTemplateStudioImportDraft({
+      sourceType: req.body.sourceType || "html-css-page",
+      sourceCode,
+      name: req.body.name || "Imported Template",
+      referenceImageUrl,
+    });
+
+    return res.status(200).json(draft);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+export const getTemplateStudioBindingSuggestions = async (req, res) => {
+  try {
+    if (!canManagePageBuilderLayout(req)) {
+      return res.status(403).json({ message: "Only platform administrators can request binding suggestions." });
+    }
+
+    if (req.body.section) {
+      return res.status(200).json({
+        suggestions: suggestBindingsForSection(req.body.section),
+      });
+    }
+
+    return res.status(200).json({
+      suggestionsBySection: suggestBindingsForPage(req.body.sections || []),
+    });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }

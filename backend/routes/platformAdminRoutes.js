@@ -19,9 +19,13 @@ import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.
 import {
   generatePageBuilderAiVariants,
   getPageConfig,
+  getTemplateStudioBindingSuggestions,
+  getTemplateStudioPage,
   importPageBuilderSource,
+  importTemplateStudioSource,
   listPageConfigs,
   applyPageBuilderTemplate,
+  upsertTemplateStudioPage,
   upsertPageConfig,
 } from "../controllers/pageConfigController.js";
 import { defaultMenuItems } from "../data/defaultMenuItems.js";
@@ -49,6 +53,7 @@ import {
   normalizePlatformTemplatePayload,
   serializePlatformTemplate,
 } from "../utils/platformTemplateRegistry.js";
+import { buildStudioTemplatePayload } from "../utils/templateStudioTemplatePublishing.js";
 import {
   buildDeterministicTemplateDraft,
   buildPlatformTemplateAiPrompt,
@@ -385,6 +390,34 @@ router.post("/page-builder-templates/ai-draft", async (req, res) => {
   }
 });
 
+router.post("/page-builder-templates/import", async (req, res) => {
+  try {
+    const studioPayload = buildStudioTemplatePayload({
+      studioPage: req.body.studioPage || {},
+      templateMeta: req.body.templateMeta || {},
+    });
+    const payload = normalizePlatformTemplatePayload(studioPayload);
+
+    const template = await PageBuilderTemplate.findOneAndUpdate(
+      { id: payload.id },
+      {
+        ...payload,
+        templateSource: studioPayload.templateSource || {},
+        themeTokens: studioPayload.themeTokens || {},
+        createdBy: req.platformAdmin?._id || null,
+      },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(201).json({
+      template: serializePlatformTemplate(template),
+      message: `${template.name} imported into the platform template marketplace.`,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 router.post("/page-builder-templates", async (req, res) => {
   try {
     const payload = normalizePlatformTemplatePayload(req.body || {});
@@ -550,6 +583,26 @@ router.post(
   applyPageBuilderTemplate
 );
 
+router.get(
+  "/tenants/:tenantId/page-config/studio/:pageType",
+  loadTenantForPlatformPageConfig,
+  getTemplateStudioPage
+);
+router.put(
+  "/tenants/:tenantId/page-config/studio/:pageType",
+  loadTenantForPlatformPageConfig,
+  upsertTemplateStudioPage
+);
+router.post(
+  "/tenants/:tenantId/page-config/studio/import",
+  loadTenantForPlatformPageConfig,
+  importTemplateStudioSource
+);
+router.post(
+  "/tenants/:tenantId/page-config/studio/binding-suggestions",
+  loadTenantForPlatformPageConfig,
+  getTemplateStudioBindingSuggestions
+);
 router.get(
   "/tenants/:tenantId/page-configs",
   loadTenantForPlatformPageConfig,
