@@ -1,4 +1,5 @@
 import Tenant from "../models/Tenant.js";
+import { buildDemoDomain } from "../utils/domainProvisioning.js";
 import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
 import {
   getTenantRequestSource,
@@ -61,9 +62,23 @@ export const tenantMiddleware = async (req, res, next) => {
       }).lean();
     }
 
+    if (!tenant && lookup.slug && getTenantRequestSource(req) === "demo") {
+      tenant = await Tenant.findOne({
+        demoDomain: buildDemoDomain(lookup.slug),
+        status: "active",
+      }).lean();
+    }
+
     if (!tenant && lookup.subdomain) {
       tenant = await Tenant.findOne({
         subdomain: lookup.subdomain,
+        status: "active",
+      }).lean();
+    }
+
+    if (!tenant && lookup.subdomain && getTenantRequestSource(req) === "demo") {
+      tenant = await Tenant.findOne({
+        demoDomain: buildDemoDomain(lookup.subdomain),
         status: "active",
       }).lean();
     }
