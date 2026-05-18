@@ -21,11 +21,15 @@ import {
   fetchPlatformTenantPageConfig,
   fetchPlatformTenantPageConfigs,
   fetchTemplateMarketplace,
+  fetchPlatformTenantTemplateStudioReusableSections,
+  fetchTemplateStudioReusableSections,
   applyPageBuilderTemplate,
   applyPlatformTenantPageBuilderTemplate,
   generatePlatformTenantPageBuilderVariants,
   generatePageBuilderVariants,
   getMediaUrl,
+  createPlatformTenantTemplateStudioReusableSection,
+  createTemplateStudioReusableSection,
   importPlatformTenantPageBuilderSource,
   importPlatformTenantTemplateStudioSource,
   importPageBuilderSource,
@@ -482,6 +486,8 @@ const PageBuilderManager = ({
   const [applyingTemplate, setApplyingTemplate] = React.useState("");
   const [requestingTemplate, setRequestingTemplate] = React.useState("");
   const [useTemplateStudio, setUseTemplateStudio] = React.useState(canManageLayout);
+  const [studioReusableSections, setStudioReusableSections] = React.useState([]);
+  const [loadingStudioReusableSections, setLoadingStudioReusableSections] = React.useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = React.useState("safari-signature-home");
   const [marketplaceTemplates, setMarketplaceTemplates] = React.useState([]);
   const [newSectionType, setNewSectionType] = React.useState(
@@ -522,7 +528,9 @@ const PageBuilderManager = ({
   );
   const studioLibrarySections = React.useMemo(
     () =>
-      Object.entries(sectionRegistry.metadata || {}).map(([type, metadata]) => ({
+      [
+        ...studioReusableSections,
+        ...Object.entries(sectionRegistry.metadata || {}).map(([type, metadata]) => ({
         id: `library-${type}`,
         type,
         label: metadata.label || type,
@@ -530,9 +538,48 @@ const PageBuilderManager = ({
         summary:
           metadata.description ||
           `Reusable ${metadata.label || type} section that can be inserted anywhere on the page canvas.`,
-      })),
-    []
+        })),
+      ],
+    [studioReusableSections]
   );
+
+  React.useEffect(() => {
+    if (!canManageLayout || !useTemplateStudio) {
+      return undefined;
+    }
+
+    let active = true;
+
+    const loadStudioReusableSections = async () => {
+      setLoadingStudioReusableSections(true);
+
+      try {
+        const response = tenantId
+          ? await fetchPlatformTenantTemplateStudioReusableSections(tenantId)
+          : await fetchTemplateStudioReusableSections();
+        if (active) {
+          setStudioReusableSections(response.data?.sections || []);
+        }
+      } catch (error) {
+        console.error("Failed to load Template Studio reusable sections:", error);
+        if (active) {
+          setMessage((current) =>
+            current || error?.response?.data?.message || "Failed to load reusable studio sections."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoadingStudioReusableSections(false);
+        }
+      }
+    };
+
+    loadStudioReusableSections();
+
+    return () => {
+      active = false;
+    };
+  }, [canManageLayout, tenantId, useTemplateStudio]);
 
   React.useEffect(() => {
     let active = true;
@@ -1062,6 +1109,37 @@ const PageBuilderManager = ({
       return null;
     } finally {
       setImportingSource(false);
+    }
+  };
+
+  const handleSaveReusableStudioSection = async (section) => {
+    if (!canManageLayout || !section?.type) return;
+
+    setSaving(true);
+    setMessage("");
+
+    try {
+      const payload = {
+        section,
+        name: section.label || getSectionLabel(section.type),
+        category: activePageMeta.label,
+        scope: tenantId ? "tenant" : "platform",
+      };
+      const response = tenantId
+        ? await createPlatformTenantTemplateStudioReusableSection(tenantId, payload)
+        : await createTemplateStudioReusableSection(payload);
+      const savedSection = response.data?.section;
+
+      if (savedSection) {
+        setStudioReusableSections((current) => [savedSection, ...current]);
+      }
+
+      setMessage(`${section.label || getSectionLabel(section.type)} saved to the reusable studio library.`);
+    } catch (error) {
+      console.error("Failed to save reusable studio section:", error);
+      setMessage(error?.response?.data?.message || "Failed to save reusable studio section.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1743,9 +1821,13 @@ const PageBuilderManager = ({
           selectedSection={studioPage.sections[selectedSectionIndex] || null}
           librarySections={studioLibrarySections}
           importing={importingSource}
-          saving={saving}
-          message={message}
+          saving={saving || loadingStudioReusableSections}
+          message={
+            message ||
+            (loadingStudioReusableSections ? "Refreshing reusable studio library..." : "")
+          }
           onSaveStudioPage={handleSaveStudioPage}
+          onSaveReusableSection={handleSaveReusableStudioSection}
           onImportStudioSource={handleImportStudioSource}
           onRequestBindingSuggestions={handleRequestStudioBindings}
           onTopBarAction={handleTemplateStudioTopBarAction}

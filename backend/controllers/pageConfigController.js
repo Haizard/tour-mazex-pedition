@@ -1,5 +1,6 @@
 import process from "node:process";
 import PageConfig from "../models/PageConfig.js";
+import ReusableSectionTemplate from "../models/ReusableSectionTemplate.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
 import { HOME_PAGE_DEFAULT } from "../utils/pageBuilderDefaults.js";
@@ -16,6 +17,10 @@ import {
   buildPageConfigFromStudioPage,
   buildStudioPageFromPageConfig,
 } from "../utils/templateStudioPagePersistence.js";
+import {
+  normalizeReusableSectionTemplatePayload,
+  serializeReusableSectionTemplate,
+} from "../utils/templateStudioReusableSections.js";
 import {
   getDefaultPageSlug,
   isPagePubliclyAccessible,
@@ -327,6 +332,17 @@ export const upsertTemplateStudioPage = async (req, res) => {
 
 const canManagePageBuilderLayout = (req) => Boolean(req.platformAdmin);
 
+const buildReusableSectionLibraryFilter = (req) => {
+  const tenantIds = [null];
+  if (req.tenantId) {
+    tenantIds.push(req.tenantId);
+  }
+
+  return {
+    tenantId: { $in: tenantIds },
+  };
+};
+
 const generateAiVariantsWithProvider = async ({ prompt, baseSections }) => {
   if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
     return [];
@@ -460,6 +476,76 @@ export const getTemplateStudioBindingSuggestions = async (req, res) => {
     return res.status(200).json({
       suggestionsBySection: suggestBindingsForPage(req.body.sections || []),
     });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+export const listTemplateStudioReusableSections = async (req, res) => {
+  try {
+    if (!canManagePageBuilderLayout(req)) {
+      return res.status(403).json({ message: "Only platform administrators can load reusable studio sections." });
+    }
+
+    const templates = await ReusableSectionTemplate.find(buildReusableSectionLibraryFilter(req))
+      .sort({ tenantId: -1, updatedAt: -1, createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      sections: templates.map((template) => serializeReusableSectionTemplate(template)),
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const createTemplateStudioReusableSection = async (req, res) => {
+  try {
+    if (!canManagePageBuilderLayout(req)) {
+      return res.status(403).json({ message: "Only platform administrators can save reusable studio sections." });
+    }
+
+    if (!req.body.section?.type) {
+      return res.status(400).json({ message: "A studio section is required." });
+    }
+
+    const payload = normalizeReusableSectionTemplatePayload({
+      tenantId: req.tenantId,
+      scope: req.body.scope,
+      section: req.body.section,
+      name: req.body.name,
+      category: req.body.category,
+      previewImage: req.body.previewImage,
+      tags: req.body.tags,
+    });
+
+    const template = await ReusableSectionTemplate.create(payload);
+
+    return res.status(201).json({
+      section: serializeReusableSectionTemplate(template.toObject ? template.toObject() : template),
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteTemplateStudioReusableSection = async (req, res) => {
+  try {
+    if (!canManagePageBuilderLayout(req)) {
+      return res.status(403).json({ message: "Only platform administrators can delete reusable studio sections." });
+    }
+
+    const query = {
+      _id: req.params.sectionId,
+      ...buildReusableSectionLibraryFilter(req),
+    };
+    const deleted = await ReusableSectionTemplate.findOneAndDelete(query).lean();
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Reusable section not found." });
+    }
+
+    return res.status(200).json({ message: "Reusable section removed." });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }

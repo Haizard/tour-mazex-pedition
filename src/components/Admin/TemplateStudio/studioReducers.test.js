@@ -161,3 +161,32 @@ test("toggles section visibility in place", () => {
 
   assert.equal(visibleAgain.sections[1].isHidden, false);
 });
+
+test("updates section content and style fields without dropping prior data", () => {
+  const state = createStudioCanvasState({
+    sections: [
+      makeSection("hero", {
+        content: { title: "Old title" },
+        styles: { accentColor: "#0f766e" },
+      }),
+    ],
+  });
+
+  const nextState = reduce(state, {
+    type: "update-section",
+    sectionId: "hero",
+    patch: {
+      label: "Updated Hero",
+      content: { body: "New summary" },
+      styles: { backgroundColor: "#f8fafc" },
+      customCss: ".hero { padding: 72px; }",
+    },
+  });
+
+  assert.equal(nextState.sections[0].label, "Updated Hero");
+  assert.equal(nextState.sections[0].content.title, "Old title");
+  assert.equal(nextState.sections[0].content.body, "New summary");
+  assert.equal(nextState.sections[0].styles.accentColor, "#0f766e");
+  assert.equal(nextState.sections[0].styles.backgroundColor, "#f8fafc");
+  assert.equal(nextState.sections[0].customCss, ".hero { padding: 72px; }");
+});

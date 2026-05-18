@@ -1,11 +1,14 @@
 import express from "express";
 import {
   generatePageBuilderAiVariants,
+  createTemplateStudioReusableSection,
+  deleteTemplateStudioReusableSection,
   getPageConfig,
   getTemplateStudioBindingSuggestions,
   getTemplateStudioPage,
   importPageBuilderSource,
   importTemplateStudioSource,
+  listTemplateStudioReusableSections,
   listPageConfigs,
   applyPageBuilderTemplate,
   resolvePageConfigBySlug,
@@ -18,6 +21,9 @@ const router = express.Router();
 
 router.get("/list/all", listPageConfigs);
 router.get("/resolve/by-slug", resolvePageConfigBySlug);
+router.get("/studio/reusable-sections", requireTenantAdmin, listTemplateStudioReusableSections);
+router.post("/studio/reusable-sections", requireTenantAdmin, createTemplateStudioReusableSection);
+router.delete("/studio/reusable-sections/:sectionId", requireTenantAdmin, deleteTemplateStudioReusableSection);
 router.get("/studio/:pageType", requireTenantAdmin, getTemplateStudioPage);
 router.put("/studio/:pageType", requireTenantAdmin, upsertTemplateStudioPage);
 router.post("/studio/import", requireTenantAdmin, importTemplateStudioSource);

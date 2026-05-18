@@ -9,8 +9,13 @@ export default function InspectorPane({
   bindingSuggestions = [],
   onRequestBindingSuggestions,
   onSelectTab,
+  onUpdateSection,
 }) {
   const section = createStudioSectionDraft(selectedSection);
+  const content = section.content || {};
+  const styles = section.styles || {};
+
+  const handlePatch = (patch) => onUpdateSection?.(section.id, patch);
 
   return (
     <aside
@@ -54,6 +59,81 @@ export default function InspectorPane({
             suggestions={bindingSuggestions}
             onRequestSuggestions={onRequestBindingSuggestions}
           />
+        ) : selectedTab === "content" ? (
+          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Section Label</span>
+              <input
+                type="text"
+                value={section.label || ""}
+                onChange={(event) => handlePatch({ label: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Headline</span>
+              <input
+                type="text"
+                value={content.title || ""}
+                onChange={(event) => handlePatch({ content: { title: event.target.value } })}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Body / Summary</span>
+              <textarea
+                rows={6}
+                value={content.body || content.description || section.summary || ""}
+                onChange={(event) =>
+                  handlePatch({
+                    summary: event.target.value,
+                    content: {
+                      body: event.target.value,
+                    },
+                  })
+                }
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              />
+            </label>
+          </div>
+        ) : selectedTab === "style" ? (
+          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Accent Color</span>
+              <input
+                type="text"
+                value={styles.accentColor || ""}
+                onChange={(event) => handlePatch({ styles: { accentColor: event.target.value } })}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                placeholder="#0f766e"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Custom CSS</span>
+              <textarea
+                rows={8}
+                value={section.customCss || ""}
+                onChange={(event) => handlePatch({ customCss: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900"
+                placeholder=".section { padding-block: 72px; }"
+              />
+            </label>
+          </div>
+        ) : selectedTab === "advanced" ? (
+          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="rounded-xl bg-white px-3 py-3">
+              <span className="font-semibold text-slate-800">Source type:</span> {section.sourceType}
+            </div>
+            <div className="rounded-xl bg-white px-3 py-3">
+              <span className="font-semibold text-slate-800">Section id:</span> {section.id}
+            </div>
+          </div>
+        ) : selectedTab === "responsive" ? (
+          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            <p>
+              Responsive overrides will expand here. This section already supports shared canvas ordering and saved reusable variants.
+            </p>
+          </div>
         ) : (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div>

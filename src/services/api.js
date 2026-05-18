@@ -426,6 +426,18 @@ export const requestPlatformTenantTemplateStudioBindingSuggestions = (tenantId, 
   API.post(`/platform-admin/tenants/${tenantId}/page-config/studio/binding-suggestions`, data, {
     headers: getPlatformAdminHeaders(),
   });
+export const fetchPlatformTenantTemplateStudioReusableSections = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/page-config/studio/reusable-sections`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformTenantTemplateStudioReusableSection = (tenantId, data) =>
+  API.post(`/platform-admin/tenants/${tenantId}/page-config/studio/reusable-sections`, data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const deletePlatformTenantTemplateStudioReusableSection = (tenantId, sectionId) =>
+  API.delete(`/platform-admin/tenants/${tenantId}/page-config/studio/reusable-sections/${encodeURIComponent(sectionId)}`, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchPlatformTenantSiteConfig = (tenantId) =>
   cachedGet(`/platform-admin/tenants/${tenantId}/site-config`, {
     headers: getPlatformAdminHeaders(),
@@ -579,6 +591,18 @@ export const importTemplateStudioSource = (data) =>
 export const requestTemplateStudioBindingSuggestions = (data) =>
   API.post("/page-config/studio/binding-suggestions", data, {
     headers: getAuthHeadersForUrl("/page-config/studio/binding-suggestions"),
+  });
+export const fetchTemplateStudioReusableSections = () =>
+  cachedGet("/page-config/studio/reusable-sections", {
+    headers: getAuthHeadersForUrl("/page-config/studio/reusable-sections"),
+  });
+export const createTemplateStudioReusableSection = (data) =>
+  API.post("/page-config/studio/reusable-sections", data, {
+    headers: getAuthHeadersForUrl("/page-config/studio/reusable-sections"),
+  });
+export const deleteTemplateStudioReusableSection = (sectionId) =>
+  API.delete(`/page-config/studio/reusable-sections/${encodeURIComponent(sectionId)}`, {
+    headers: getAuthHeadersForUrl("/page-config/studio/reusable-sections"),
   });
 export const fetchTenantTheme = () => cachedGet("/tenant/bootstrap"); // Bootstrap contains theme
 export const updateTenantTheme = (data) => API.put("/tenant/theme", data);

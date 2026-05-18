@@ -35,6 +35,7 @@ export default function TemplateStudioShell({
   saving = false,
   message = "",
   onSaveStudioPage,
+  onSaveReusableSection,
   onImportStudioSource,
   onRequestBindingSuggestions,
   onTopBarAction,
@@ -119,6 +120,10 @@ export default function TemplateStudioShell({
     }
     if (actionId === "duplicate") {
       dispatch({ type: "duplicate-section", sectionId: section.id });
+      return;
+    }
+    if (actionId === "save-reusable") {
+      onSaveReusableSection?.(section);
       return;
     }
     if (actionId === "delete") {
@@ -250,6 +255,7 @@ export default function TemplateStudioShell({
           bindingSuggestions={bindingSuggestionsBySection[selectedCanvasSection.id] || selectedCanvasSection.bindings || []}
           onRequestBindingSuggestions={handleRequestBindings}
           onSelectTab={setInspectorTab}
+          onUpdateSection={(sectionId, patch) => dispatch({ type: "update-section", sectionId, patch })}
         />
       </div>
     </section>

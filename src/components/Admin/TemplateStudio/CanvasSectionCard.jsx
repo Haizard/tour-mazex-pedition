@@ -46,6 +46,9 @@ export default function CanvasSectionCard({ section, isSelected = false, onActio
           <button type="button" className={buttonClassName} onClick={() => onAction?.("duplicate", section)}>
             Duplicate
           </button>
+          <button type="button" className={buttonClassName} onClick={() => onAction?.("save-reusable", section)}>
+            Save reusable
+          </button>
           <button type="button" className={buttonClassName} onClick={() => onAction?.("toggle-visibility", section)}>
             {section.isHidden ? "Show" : "Hide"}
           </button>
@@ -61,4 +64,3 @@ export default function CanvasSectionCard({ section, isSelected = false, onActio
     </section>
   );
 }
-

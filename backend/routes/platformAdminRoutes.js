@@ -18,11 +18,14 @@ import MenuItem from "../models/MenuItem.js";
 import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.js";
 import {
   generatePageBuilderAiVariants,
+  createTemplateStudioReusableSection,
+  deleteTemplateStudioReusableSection,
   getPageConfig,
   getTemplateStudioBindingSuggestions,
   getTemplateStudioPage,
   importPageBuilderSource,
   importTemplateStudioSource,
+  listTemplateStudioReusableSections,
   listPageConfigs,
   applyPageBuilderTemplate,
   upsertTemplateStudioPage,
@@ -583,6 +586,21 @@ router.post(
   applyPageBuilderTemplate
 );
 
+router.get(
+  "/tenants/:tenantId/page-config/studio/reusable-sections",
+  loadTenantForPlatformPageConfig,
+  listTemplateStudioReusableSections
+);
+router.post(
+  "/tenants/:tenantId/page-config/studio/reusable-sections",
+  loadTenantForPlatformPageConfig,
+  createTemplateStudioReusableSection
+);
+router.delete(
+  "/tenants/:tenantId/page-config/studio/reusable-sections/:sectionId",
+  loadTenantForPlatformPageConfig,
+  deleteTemplateStudioReusableSection
+);
 router.get(
   "/tenants/:tenantId/page-config/studio/:pageType",
   loadTenantForPlatformPageConfig,

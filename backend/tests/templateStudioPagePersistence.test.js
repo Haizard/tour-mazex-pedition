@@ -61,3 +61,18 @@ test("buildPageConfigFromStudioPage converts a canvas page back into PageConfig 
   assert.equal(payload.sections[0].contentConfig.title, "Catch the migration");
   assert.equal(payload.templateStudio.themeTokens.accentColor, "#b45309");
 });
+
+test("buildPageConfigFromStudioPage accepts pageName from the studio shell when title is absent", () => {
+  const payload = buildPageConfigFromStudioPage({
+    studioPage: {
+      pageType: "about",
+      slug: "/about",
+      pageName: "About Us",
+      status: "published",
+      sections: [],
+    },
+    tenantId: "64f0f0f0f0f0f0f0f0f0f0f0",
+  });
+
+  assert.equal(payload.title, "About Us");
+});

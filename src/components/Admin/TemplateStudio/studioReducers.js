@@ -171,6 +171,28 @@ function toggleSectionVisibility(state, action) {
   return replaceSections(state, sections);
 }
 
+function updateSection(state, action) {
+  const sections = state.sections.map((section) =>
+    section.id === action.sectionId
+      ? createStudioSectionNode({
+          ...section,
+          ...(action.patch || {}),
+          content: {
+            ...(section.content || {}),
+            ...(action.patch?.content || {}),
+          },
+          styles: {
+            ...(section.styles || {}),
+            ...(action.patch?.styles || {}),
+          },
+          bindings: action.patch?.bindings || section.bindings || [],
+        })
+      : section
+  );
+
+  return replaceSections(state, sections);
+}
+
 export function studioCanvasReducer(state, action) {
   switch (action.type) {
     case "hydrate-canvas":
@@ -190,6 +212,8 @@ export function studioCanvasReducer(state, action) {
       return deleteSection(state, action);
     case "toggle-section-visibility":
       return toggleSectionVisibility(state, action);
+    case "update-section":
+      return updateSection(state, action);
     case "select-section":
       return replaceSections(state, state.sections, action.sectionId);
     default:

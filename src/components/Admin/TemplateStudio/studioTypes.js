@@ -75,11 +75,13 @@ export function createStudioSectionDraft(overrides = {}) {
 }
 
 export function createStudioPageDraft(overrides = {}) {
+  const resolvedTitle = overrides.pageName || overrides.title || "Untitled Page";
   return {
     id: overrides.id || "page-draft",
-    pageName: overrides.pageName || "Untitled Page",
+    pageName: resolvedTitle,
+    title: resolvedTitle,
     pageType: overrides.pageType || "custom",
-    status: overrides.status || "Draft",
+    status: overrides.status || "draft",
     sections: overrides.sections || [],
     ...overrides,
   };
@@ -89,6 +91,7 @@ export function pageConfigToStudioPage(pageConfig = {}, pageType = "home") {
   return createStudioPageDraft({
     id: pageConfig.templateStudio?.pageId || pageConfig._id || `${pageType}-page`,
     pageName: pageConfig.title || pageType,
+    title: pageConfig.title || pageType,
     pageType: pageConfig.pageType || pageType,
     slug: pageConfig.slug || "/",
     status: pageConfig.status || "draft",
