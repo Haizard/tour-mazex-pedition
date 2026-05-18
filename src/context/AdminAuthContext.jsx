@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { fetchAdminSession, loginAdmin } from "../services/api";
+import { shouldRefreshAdminSessionOnPath } from "../utils/authSessionScope.js";
 
 const ADMIN_TOKEN_KEY = "adminAuthToken";
 const isBrowser = typeof window !== "undefined";
@@ -67,10 +68,17 @@ export const AdminAuthProvider = ({ children }) => {
   // On mount (client-only), rehydrate auth state from localStorage.
   useEffect(() => {
     const storedToken = readStoredToken();
-    if (storedToken) {
+    const currentPathname =
+      typeof window !== "undefined" ? window.location.pathname : "";
+    if (storedToken && shouldRefreshAdminSessionOnPath(currentPathname)) {
       setToken(storedToken);
       setLoading(true);
       refreshSession();
+      return;
+    }
+
+    if (storedToken) {
+      setToken(storedToken);
     }
   }, []);
 

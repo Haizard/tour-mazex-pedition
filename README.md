@@ -51,6 +51,12 @@ Multi-tenant tourism platform for tour operators, combining website CMS, booking
 - Richer community and trust presentation where real traveler content grows
 - Template marketplace for ready-to-use tourism website UI, connected to the page builder with purchased-template status and tenant-specific personalization before use
 
+### Tenant Routing Hardening Completed
+- Central tenant path scoping for shared nav, footer, hero, and CTA components
+- Tenant blog detail and category navigation regression coverage
+- Demo-tenant path safety so already-scoped `/demo/...` links are preserved
+- Public-page auth session checks no longer spam admin session requests
+
 ### Social Automation Completed
 - Facebook and Instagram publishing support through Meta connections
 - WhatsApp Business connection and outbound lead messaging foundations
@@ -94,3 +100,16 @@ Common commands:
 npm run build
 node --test backend/tests/marketplaceEngagementApi.test.js
 ```
+
+## Tenant Mode QA Checklist
+
+Run this whenever tenant-facing navigation, page-builder CTAs, or route helpers change:
+
+- Open a demo tenant homepage like `/demo/<tenant>`
+- Click `Blog`, open a blog detail page, and return to the blog list
+- Click `Packages`, open a package detail page, and return to the package list
+- Click `Contact`, `Plan My Trip`, `Gallery`, and `Destinations`
+- Check desktop navbar links and mobile menu links
+- Check footer links and homepage CTA buttons
+- Confirm the browser stays inside the tenant path instead of jumping to platform root
+- Confirm public tenant pages do not spam `/api/auth/me` or `/api/platform-auth/me`

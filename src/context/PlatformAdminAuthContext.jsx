@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { fetchPlatformAdminSession, loginPlatformAdmin } from "../services/api";
+import { shouldRefreshPlatformAdminSessionOnPath } from "../utils/authSessionScope.js";
 
 const PLATFORM_ADMIN_TOKEN_KEY = "platformAdminAuthToken";
 const isBrowser = typeof window !== "undefined";
@@ -69,10 +70,17 @@ export const PlatformAdminAuthProvider = ({ children }) => {
   // On mount (client-only), rehydrate auth state from localStorage.
   useEffect(() => {
     const storedToken = readStoredToken();
-    if (storedToken) {
+    const currentPathname =
+      typeof window !== "undefined" ? window.location.pathname : "";
+    if (storedToken && shouldRefreshPlatformAdminSessionOnPath(currentPathname)) {
       setToken(storedToken);
       setLoading(true);
       refreshSession();
+      return;
+    }
+
+    if (storedToken) {
+      setToken(storedToken);
     }
   }, []);
 
