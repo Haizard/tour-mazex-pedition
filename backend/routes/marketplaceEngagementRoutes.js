@@ -1,6 +1,7 @@
 import express from "express";
 
 import MarketplaceAnswer from "../models/MarketplaceAnswer.js";
+import CustomInquiry from "../models/CustomInquiry.js";
 import MarketplaceQuestion from "../models/MarketplaceQuestion.js";
 import MarketplaceReview from "../models/MarketplaceReview.js";
 import SavedTripList from "../models/SavedTripList.js";
@@ -379,6 +380,7 @@ export const buildMarketplaceOperationsSnapshot = ({
   photos = [],
   questions = [],
   savedTripLists = [],
+  inquiries = [],
 } = {}) => {
   const normalizedTours = (tours || []).map((tour) => {
     const availability = buildAvailabilitySummary(tour);
@@ -412,6 +414,9 @@ export const buildMarketplaceOperationsSnapshot = ({
         pendingQuestionCount: 0,
         savedTripCount: 0,
         reminderWatcherCount: 0,
+        marketplaceInquiryCount: 0,
+        marketplaceQualifiedCount: 0,
+        marketplaceBookedCount: 0,
       },
     ])
   );
@@ -482,6 +487,29 @@ export const buildMarketplaceOperationsSnapshot = ({
     }
   }
 
+  for (const inquiry of inquiries || []) {
+    const sourceChannel = String(inquiry.sourceChannel || "").trim().toLowerCase();
+    if (sourceChannel !== "global-marketplace") {
+      continue;
+    }
+
+    const campaignLabel = String(inquiry.campaignLabel || "").trim();
+    const matchedTourId = campaignLabel.startsWith("tour_") ? campaignLabel.slice(5) : "";
+    const stats = statsByTourId.get(String(matchedTourId || ""));
+    if (!stats) continue;
+
+    stats.marketplaceInquiryCount += 1;
+    if (String(inquiry.leadStage || "").toLowerCase() === "qualified") {
+      stats.marketplaceQualifiedCount += 1;
+    }
+    if (
+      String(inquiry.leadStage || "").toLowerCase() === "booked" ||
+      String(inquiry.status || "").toLowerCase() === "booked"
+    ) {
+      stats.marketplaceBookedCount += 1;
+    }
+  }
+
   const packages = normalizedTours
     .map((tour) => ({
       ...tour,
@@ -514,6 +542,9 @@ export const buildMarketplaceOperationsSnapshot = ({
       pendingQuestionCount: packages.reduce((sum, item) => sum + Number(item.pendingQuestionCount || 0), 0),
       savedTripCount: packages.reduce((sum, item) => sum + Number(item.savedTripCount || 0), 0),
       reminderWatcherCount: packages.reduce((sum, item) => sum + Number(item.reminderWatcherCount || 0), 0),
+      marketplaceInquiryCount: packages.reduce((sum, item) => sum + Number(item.marketplaceInquiryCount || 0), 0),
+      marketplaceQualifiedCount: packages.reduce((sum, item) => sum + Number(item.marketplaceQualifiedCount || 0), 0),
+      marketplaceBookedCount: packages.reduce((sum, item) => sum + Number(item.marketplaceBookedCount || 0), 0),
     },
     packages,
   };
@@ -781,10 +812,13 @@ router.get("/operations", requireTenantAdmin, async (req, res) => {
 
     const tourIds = tours.map((tour) => tour._id);
 
-    const [reviews, photos, questions, savedTripLists] = await Promise.all([
+    const [reviews, photos, questions, inquiries, savedTripLists] = await Promise.all([
       MarketplaceReview.find({ tenantId: req.tenantId }).select("tourId moderationStatus visibilityState").lean(),
       TravelerPhotoSubmission.find({ tenantId: req.tenantId }).select("tourId moderationStatus").lean(),
       MarketplaceQuestion.find({ tenantId: req.tenantId }).select("tourId status").lean(),
+      CustomInquiry.find({ tenantId: req.tenantId, sourceChannel: "global-marketplace" })
+        .select("campaignLabel sourceChannel leadStage status")
+        .lean(),
       tourIds.length > 0
         ? SavedTripList.find({
             $or: [
@@ -803,6 +837,7 @@ router.get("/operations", requireTenantAdmin, async (req, res) => {
         reviews,
         photos,
         questions,
+        inquiries,
         savedTripLists,
       })
     );

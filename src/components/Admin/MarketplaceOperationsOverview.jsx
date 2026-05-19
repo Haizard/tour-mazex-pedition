@@ -28,6 +28,13 @@ const statCards = (totals = {}) => [
     tone: "bg-[#e1efe6] text-[#234232]",
   },
   {
+    label: "Marketplace Inquiries",
+    value: totals.marketplaceInquiryCount || 0,
+    hint: `${totals.marketplaceBookedCount || 0} booked / ${totals.marketplaceQualifiedCount || 0} qualified`,
+    icon: FaBolt,
+    tone: "bg-[#e7eefc] text-[#1e3a68]",
+  },
+  {
     label: "Community Queue",
     value:
       Number(totals.pendingReviewCount || 0) +
@@ -88,6 +95,7 @@ const MarketplaceOperationsOverview = () => {
           <Badge variant="primary">{totals.packageCount || 0} Packages</Badge>
           <Badge variant="accent">{totals.publicPhotoCount || 0} Public Moments</Badge>
           <Badge variant="secondary">{totals.publicQuestionCount || 0} Public Questions</Badge>
+          <Badge variant="accent">{totals.marketplaceInquiryCount || 0} Marketplace Leads</Badge>
         </div>
       </div>
 
@@ -97,7 +105,7 @@ const MarketplaceOperationsOverview = () => {
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 lg:grid-cols-5">
         {statCards(totals).map((item) => {
           const Icon = item.icon;
           return (
@@ -123,20 +131,21 @@ const MarketplaceOperationsOverview = () => {
               <th className="pb-4">Travel Moments</th>
               <th className="pb-4">Questions</th>
               <th className="pb-4">Saved Trips</th>
+              <th className="pb-4">Conversion</th>
               <th className="pb-4">Instant</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
             {loading ? (
               <tr>
-                <td colSpan="7" className="py-10 text-center text-slate-400">
+                <td colSpan="8" className="py-10 text-center text-slate-400">
                   Loading marketplace operations...
                 </td>
               </tr>
             ) : null}
             {!loading && packages.length === 0 ? (
               <tr>
-                <td colSpan="7" className="py-10 text-center text-slate-400">
+                <td colSpan="8" className="py-10 text-center text-slate-400">
                   No packages are available to summarize yet.
                 </td>
               </tr>
@@ -177,6 +186,12 @@ const MarketplaceOperationsOverview = () => {
                   <td className="py-4">
                     <p className="font-bold text-slate-900">{item.savedTripCount || 0}</p>
                     <p className="mt-1 text-xs text-slate-500">{item.reminderWatcherCount || 0} watchers</p>
+                  </td>
+                  <td className="py-4">
+                    <p className="font-bold text-slate-900">{item.marketplaceInquiryCount || 0}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {item.marketplaceBookedCount || 0} booked / {item.marketplaceQualifiedCount || 0} qualified
+                    </p>
                   </td>
                   <td className="py-4">
                     <Badge variant={item.instantBookingEnabled ? "primary" : "secondary"}>

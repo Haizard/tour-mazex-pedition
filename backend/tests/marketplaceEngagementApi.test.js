@@ -158,6 +158,22 @@ test("buildMarketplaceOperationsSnapshot summarizes engagement and reminders by 
         },
       },
     ],
+    inquiries: [
+      {
+        _id: "inq1",
+        campaignLabel: "tour_tour1",
+        sourceChannel: "global-marketplace",
+        leadStage: "qualified",
+        status: "Contacted",
+      },
+      {
+        _id: "inq2",
+        campaignLabel: "tour_tour1",
+        sourceChannel: "global-marketplace",
+        leadStage: "booked",
+        status: "Booked",
+      },
+    ],
   });
 
   assert.equal(snapshot.totals.liveCount, 1);
@@ -166,5 +182,9 @@ test("buildMarketplaceOperationsSnapshot summarizes engagement and reminders by 
   assert.equal(snapshot.totals.publicQuestionCount, 1);
   assert.equal(snapshot.totals.savedTripCount, 1);
   assert.equal(snapshot.totals.reminderWatcherCount, 1);
+  assert.equal(snapshot.totals.marketplaceInquiryCount, 2);
+  assert.equal(snapshot.totals.marketplaceBookedCount, 1);
   assert.equal(snapshot.packages[0].instantBookingEnabled, true);
+  assert.equal(snapshot.packages[0].marketplaceInquiryCount, 2);
+  assert.equal(snapshot.packages[0].marketplaceBookedCount, 1);
 });
