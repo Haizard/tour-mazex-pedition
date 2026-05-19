@@ -90,6 +90,7 @@ export default function TemplateStudioShell({
   const [bindingSuggestionsBySection, setBindingSuggestionsBySection] = React.useState({});
   const [viewport, setViewport] = React.useState("desktop");
   const [selectedSnapshotId, setSelectedSnapshotId] = React.useState("");
+  const [comparisonSnapshotId, setComparisonSnapshotId] = React.useState("");
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
 
   const canvasState = historyState.present;
@@ -115,6 +116,7 @@ export default function TemplateStudioShell({
   React.useEffect(() => {
     setPageDraft(initialPage);
     setSelectedSnapshotId("");
+    setComparisonSnapshotId("");
     setIsPreviewOpen(false);
   }, [initialPage]);
 
@@ -215,12 +217,14 @@ export default function TemplateStudioShell({
       snapshots: prependSnapshot(current.snapshots || [], snapshot),
     }));
     setSelectedSnapshotId(snapshot.id);
+    setComparisonSnapshotId("");
   }, [canvasState.sections, pageDraft.pageName, selectedCanvasSection?.label, viewport]);
 
   const handleSnapshotChange = React.useCallback(
     (snapshotId) => {
       if (!snapshotId) {
         setSelectedSnapshotId("");
+        setComparisonSnapshotId("");
         return;
       }
 
@@ -257,6 +261,7 @@ export default function TemplateStudioShell({
       snapshots: deleteSnapshot(current.snapshots || [], snapshotId),
     }));
     setSelectedSnapshotId((current) => (current === snapshotId ? "" : current));
+    setComparisonSnapshotId((current) => (current === snapshotId ? "" : current));
   }, []);
 
   const handleTopBarAction = async (actionId) => {
@@ -400,13 +405,15 @@ export default function TemplateStudioShell({
             ) : sidebarGroup === "versions" ? (
               <VersionManagerPane
                 pageName={pageDraft.pageName}
-                snapshots={pageDraft.snapshots || []}
-                selectedSnapshotId={selectedSnapshotId}
-                onCreateSnapshot={handleSaveSnapshot}
-                onRestoreSnapshot={handleSnapshotChange}
-                onRenameSnapshot={handleRenameSnapshot}
-                onDeleteSnapshot={handleDeleteSnapshot}
-              />
+              snapshots={pageDraft.snapshots || []}
+              selectedSnapshotId={selectedSnapshotId}
+              comparisonSnapshotId={comparisonSnapshotId}
+              onCreateSnapshot={handleSaveSnapshot}
+              onRestoreSnapshot={handleSnapshotChange}
+              onRenameSnapshot={handleRenameSnapshot}
+              onDeleteSnapshot={handleDeleteSnapshot}
+              onSelectComparisonSnapshot={setComparisonSnapshotId}
+            />
             ) : (
               <LibraryPane
                 sections={mergedLibrarySections}

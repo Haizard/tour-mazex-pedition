@@ -1,14 +1,28 @@
 import React from "react";
+import { compareSnapshots } from "./snapshotDiffUtils.js";
 
 export default function VersionManagerPane({
   pageName = "Untitled Page",
   snapshots = [],
   selectedSnapshotId = "",
+  comparisonSnapshotId = "",
   onCreateSnapshot,
   onRestoreSnapshot,
   onRenameSnapshot,
   onDeleteSnapshot,
+  onSelectComparisonSnapshot,
 }) {
+  const selectedSnapshot = snapshots.find((snapshot) => snapshot.id === selectedSnapshotId) || null;
+  const comparisonSnapshot =
+    snapshots.find((snapshot) => snapshot.id === comparisonSnapshotId) || null;
+  const diff =
+    selectedSnapshot && comparisonSnapshot
+      ? compareSnapshots({
+          leftSnapshot: comparisonSnapshot,
+          rightSnapshot: selectedSnapshot,
+        })
+      : null;
+
   return (
     <aside
       className="flex h-full min-h-0 w-full max-w-[21rem] flex-col border-r border-slate-200 bg-white"
@@ -31,6 +45,76 @@ export default function VersionManagerPane({
         </button>
       </div>
       <div className="flex-1 overflow-auto px-4 py-4">
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Compare Snapshots
+          </p>
+          <div className="mt-3 grid gap-3">
+            <label className="block">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                Base Snapshot
+              </span>
+              <select
+                value={comparisonSnapshotId}
+                onChange={(event) => onSelectComparisonSnapshot?.(event.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              >
+                <option value="">Choose a base version</option>
+                {snapshots
+                  .filter((snapshot) => snapshot.id !== selectedSnapshotId)
+                  .map((snapshot) => (
+                    <option key={snapshot.id} value={snapshot.id}>
+                      {snapshot.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            {diff ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-slate-600">
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                    + {diff.summary.added} added
+                  </span>
+                  <span className="rounded-full bg-rose-50 px-2.5 py-1 text-rose-700">
+                    - {diff.summary.removed} removed
+                  </span>
+                  <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">
+                    ~ {diff.summary.changed} changed
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {diff.rows
+                    .filter((row) => row.changeType !== "unchanged")
+                    .map((row) => (
+                      <div
+                        key={row.sectionId}
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-semibold text-slate-900">{row.label}</span>
+                          <span
+                            className={`rounded-full px-2 py-1 font-semibold uppercase tracking-wide ${
+                              row.changeType === "added"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : row.changeType === "removed"
+                                  ? "bg-rose-100 text-rose-700"
+                                  : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {row.changeType}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-xs text-slate-500">
+                Pick a base snapshot to see what changed compared with the active one.
+              </div>
+            )}
+          </div>
+        </div>
         {snapshots.length ? (
           <div className="space-y-3">
             {snapshots.map((snapshot) => {
