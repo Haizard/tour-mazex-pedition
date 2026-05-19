@@ -62,6 +62,20 @@ export const INSPECTOR_TABS = [
   { id: "responsive", label: "Responsive" },
 ];
 
+export const DEFAULT_STUDIO_THEME_TOKENS = {
+  canvasBackground: "#eef2f7",
+  contentWidth: "1600px",
+  sectionBackground: "#ffffff",
+  textColor: "#0f172a",
+  accentColor: "#0f766e",
+  radius: "24px",
+  paddingY: "40px",
+  gap: "16px",
+  fontFamily: "inherit",
+  headlineSize: "1.5rem",
+  bodySize: "0.95rem",
+};
+
 export function createStudioSectionDraft(overrides = {}) {
   return {
     id: overrides.id || "section-draft",
@@ -84,6 +98,10 @@ export function createStudioPageDraft(overrides = {}) {
     status: overrides.status || "draft",
     sections: overrides.sections || [],
     snapshots: overrides.snapshots || [],
+    themeTokens: {
+      ...DEFAULT_STUDIO_THEME_TOKENS,
+      ...(overrides.themeTokens || {}),
+    },
     ...overrides,
   };
 }
@@ -96,7 +114,10 @@ export function pageConfigToStudioPage(pageConfig = {}, pageType = "home") {
     pageType: pageConfig.pageType || pageType,
     slug: pageConfig.slug || "/",
     status: pageConfig.status || "draft",
-    themeTokens: pageConfig.templateStudio?.themeTokens || {},
+    themeTokens: {
+      ...DEFAULT_STUDIO_THEME_TOKENS,
+      ...(pageConfig.templateStudio?.themeTokens || {}),
+    },
     snapshots: pageConfig.templateStudio?.snapshots || [],
     sourceSummary: {
       sourceType: pageConfig.templateStudio?.sourceType || "",

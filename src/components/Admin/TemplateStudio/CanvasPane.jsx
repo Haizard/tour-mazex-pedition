@@ -21,6 +21,7 @@ export default function CanvasPane({
   page,
   state,
   viewport = "desktop",
+  themeTokens = {},
   selectedSectionId,
   selectedLibrarySection,
   onSelectSection,
@@ -35,12 +36,13 @@ export default function CanvasPane({
   );
 
   const sections = canvasState.sections;
-  const canvasWidthClass =
+  const resolvedContentWidth = themeTokens.contentWidth || "1600px";
+  const canvasFrameClass =
     viewport === "mobile"
-      ? "max-w-md"
+      ? "mx-auto w-full max-w-md"
       : viewport === "tablet"
-        ? "max-w-3xl"
-        : "max-w-5xl";
+        ? "mx-auto w-full max-w-5xl"
+        : "mx-auto w-full";
   const dropTargets = useMemo(() => createDropTargets(sections), [sections]);
   const [draggedSectionId, setDraggedSectionId] = React.useState(null);
   const [activeDropTargetId, setActiveDropTargetId] = React.useState(null);
@@ -114,23 +116,34 @@ export default function CanvasPane({
   };
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-[#eef2f7]" data-testid="template-studio-canvas">
+    <main
+      className="flex min-h-0 flex-1 flex-col"
+      data-testid="template-studio-canvas"
+      style={{
+        background:
+          themeTokens.canvasBackground ||
+          "radial-gradient(circle at top, rgba(15,23,42,0.12), rgba(226,232,240,0.78) 28%, #eef2f7 72%)",
+      }}
+    >
       <div className="flex-1 overflow-auto p-6">
-        <div className={`mx-auto flex min-h-[42rem] w-full ${canvasWidthClass} flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.12)]`}>
-          <div className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
+        <div
+          className={`flex min-h-[42rem] ${canvasFrameClass} flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.14)]`}
+          style={viewport === "desktop" ? { maxWidth: resolvedContentWidth } : undefined}
+        >
+          <div className="flex items-center justify-between rounded-[1.4rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-[10px] font-black uppercase tracking-[0.26em] text-slate-500">
                 Page Canvas
               </p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-900">{pageDraft.pageName}</h2>
+              <h2 className="mt-1 text-xl font-black tracking-tight text-slate-900">{pageDraft.pageName}</h2>
             </div>
             <div className="flex items-center gap-3">
               {selectedLibrarySection ? (
-                <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-cyan-700">
                   Ready to insert: {selectedLibrarySection.label}
                 </span>
               ) : null}
-              <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-emerald-700">
                 {pageDraft.status}
               </div>
             </div>
@@ -162,6 +175,7 @@ export default function CanvasPane({
                     section={section}
                     viewport={viewport}
                     isSelected={canvasState.selectedSectionId === section.id}
+                    themeTokens={themeTokens}
                     onAction={(actionId) => onSectionAction?.(actionId, section, index)}
                   />
                 </div>

@@ -34,3 +34,34 @@ test("buildPreviewPageModel prepares page metadata and styled sections for previ
   assert.equal(preview.sections[0].presentation.containerStyle.backgroundColor, "#fffaf5");
   assert.equal(preview.theme.canvasBackground, "#f8fafc");
 });
+
+test("buildPreviewPageModel creates CMS-aware preview data and applies page theme token fallbacks", () => {
+  const preview = buildPreviewPageModel({
+    page: {
+      pageName: "Tours",
+      sections: [
+        {
+          id: "tour-grid",
+          label: "Featured Tours",
+          type: "featuredPackages",
+          bindings: [
+            {
+              sourceKey: "tourPackages",
+              bindingType: "dynamic-collection",
+              fieldPath: "items",
+            },
+          ],
+        },
+      ],
+      themeTokens: {
+        accentColor: "#8b5cf6",
+        sectionBackground: "#f5f3ff",
+      },
+    },
+  });
+
+  assert.equal(preview.sections[0].previewData.kind, "collection");
+  assert.equal(preview.sections[0].previewData.items.length, 3);
+  assert.equal(preview.sections[0].presentation.badgeStyle.color, "#8b5cf6");
+  assert.equal(preview.sections[0].presentation.containerStyle.backgroundColor, "#f5f3ff");
+});

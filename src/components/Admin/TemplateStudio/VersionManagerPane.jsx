@@ -25,7 +25,7 @@ export default function VersionManagerPane({
 
   return (
     <aside
-      className="flex h-full min-h-0 w-full max-w-[21rem] flex-col border-r border-slate-200 bg-white"
+      className="flex h-full min-h-0 w-full shrink-0 md:basis-[21rem] xl:basis-[23rem] 2xl:basis-[27rem] flex-col border-r border-slate-200 bg-white"
       data-testid="template-studio-versions"
     >
       <div className="border-b border-slate-200 px-5 py-5">

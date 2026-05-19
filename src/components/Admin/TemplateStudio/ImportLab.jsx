@@ -25,7 +25,7 @@ export default function ImportLab({
 
   return (
     <section
-      className="flex h-full min-h-0 w-full max-w-[24rem] flex-col border-r border-slate-200 bg-white"
+      className="flex h-full min-h-0 w-full shrink-0 md:basis-[22rem] xl:basis-[24rem] 2xl:basis-[28rem] flex-col border-r border-slate-200 bg-white"
       data-testid="template-studio-import-lab"
     >
       <div className="border-b border-slate-200 px-5 py-5">
@@ -134,4 +134,3 @@ export default function ImportLab({
     </section>
   );
 }
-

@@ -1824,21 +1824,21 @@ const PageBuilderManager = ({
 
   if (canManageLayout && useTemplateStudio) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+      <div className="w-full max-w-none space-y-4">
+        <div className="flex items-center justify-between gap-3 rounded-[1.8rem] border border-slate-900/60 bg-[#08090d] px-5 py-4 text-white shadow-[0_24px_60px_rgba(2,6,23,0.45)]">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Template Studio</p>
-            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Template Studio</p>
+            <h2 className="mt-2 text-xl font-black tracking-tight text-white">
               Advanced import, bind, and canvas editing workspace
             </h2>
-            <p className="mt-2 text-sm font-medium text-slate-500">
+            <p className="mt-2 text-sm font-medium text-slate-400">
               Build pages with imported templates, reusable sections, and CMS-connected blocks in a cleaner studio flow.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setUseTemplateStudio(false)}
-            className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
           >
             Open Classic Builder
           </button>
@@ -1866,15 +1866,15 @@ const PageBuilderManager = ({
   }
 
   return (
-    <div className="animate-fade-in rounded-[32px] border border-slate-200 bg-slate-100/70 p-3 shadow-sm">
-      <div className="rounded-[28px] border border-slate-200 bg-white px-5 py-4">
+    <div className="animate-fade-in w-full max-w-none rounded-[32px] border border-slate-900/60 bg-[#05070b] p-3 shadow-[0_28px_70px_rgba(2,6,23,0.5)]">
+      <div className="rounded-[28px] border border-white/10 bg-[#08090d] px-5 py-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Page Studio</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Page Studio</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-white md:text-3xl">
               {activePageMeta.label} Builder
             </h2>
-            <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
+            <p className="mt-2 max-w-3xl text-sm font-medium text-slate-400">
               {canManageLayout
                 ? `Design section structure, visibility, variants, and SEO${tenantName ? ` for ${tenantName}` : ""}.`
                 : "Edit only the text and images inside sections prepared by the platform administrator."}
@@ -1885,7 +1885,7 @@ const PageBuilderManager = ({
               <button
                 type="button"
                 onClick={() => setUseTemplateStudio(true)}
-                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
               >
                 Switch To Template Studio
               </button>
@@ -1909,7 +1909,7 @@ const PageBuilderManager = ({
         </div>
       )}
 
-      <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[290px_minmax(0,1fr)]">
+      <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="rounded-[28px] border border-slate-200 bg-[#0b0b0f] p-3 text-white xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between gap-3">

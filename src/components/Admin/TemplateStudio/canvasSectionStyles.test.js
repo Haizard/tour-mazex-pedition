@@ -51,3 +51,23 @@ test("buildCanvasSectionStyle produces visible inline styling hooks", () => {
   assert.equal(presentation.headlineStyle.fontSize, "2rem");
   assert.match(String(presentation.containerStyle.boxShadow), /0 0 0 2px/);
 });
+
+test("resolveSectionStyleTokens falls back to page theme tokens when section styles are missing", () => {
+  const tokens = resolveSectionStyleTokens(
+    {},
+    "desktop",
+    {
+      accentColor: "#7c3aed",
+      sectionBackground: "#faf5ff",
+      textColor: "#1f1135",
+      radius: "30px",
+      headlineSize: "2.4rem",
+    }
+  );
+
+  assert.equal(tokens.accentColor, "#7c3aed");
+  assert.equal(tokens.backgroundColor, "#faf5ff");
+  assert.equal(tokens.textColor, "#1f1135");
+  assert.equal(tokens.radius, "30px");
+  assert.equal(tokens.headlineSize, "2.4rem");
+});

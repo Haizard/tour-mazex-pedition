@@ -5,6 +5,7 @@ export default function CanvasSectionCard({
   section,
   viewport = "desktop",
   isSelected = false,
+  themeTokens,
   onAction,
 }) {
   const buttonClassName =
@@ -15,7 +16,7 @@ export default function CanvasSectionCard({
     : isSelected
       ? "border-emerald-300 bg-emerald-50/70 shadow-sm"
       : "border-slate-200 bg-white";
-  const presentation = buildCanvasSectionStyle(section, viewport, isSelected);
+  const presentation = buildCanvasSectionStyle(section, viewport, isSelected, themeTokens);
 
   return (
     <section
@@ -27,13 +28,13 @@ export default function CanvasSectionCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p
-              className="text-xs font-semibold uppercase tracking-[0.2em]"
+              className="text-[10px] font-black uppercase tracking-[0.22em]"
               style={presentation.eyebrowStyle}
             >
               {section.type}
             </p>
             <span
-              className="rounded-full border px-2.5 py-1 text-[11px] font-medium"
+              className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
               style={presentation.badgeStyle}
             >
               {section.sourceType}
@@ -44,28 +45,28 @@ export default function CanvasSectionCard({
               </span>
             ) : null}
           </div>
-          <h3 className="mt-2 font-semibold" style={presentation.headlineStyle}>
+          <h3 className="mt-2 font-black tracking-tight" style={presentation.headlineStyle}>
             {section.content?.title || section.label}
           </h3>
-          <p className="mt-2 max-w-2xl" style={presentation.bodyStyle}>
+          <p className="mt-2 max-w-2xl leading-6" style={presentation.bodyStyle}>
             {section.description ?? section.summary}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <span
-              className="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+              className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
               style={presentation.badgeStyle}
             >
               {presentation.tokens.columns} col layout
             </span>
             <span
-              className="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+              className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
               style={presentation.badgeStyle}
             >
               {viewport}
             </span>
             {section.styles?.maxWidth ? (
               <span
-                className="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+                className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
                 style={presentation.badgeStyle}
               >
                 max {section.styles.maxWidth}
@@ -74,10 +75,7 @@ export default function CanvasSectionCard({
           </div>
         </div>
 
-        <div
-          className="flex flex-wrap justify-end gap-2 pt-1"
-          style={presentation.actionsStyle}
-        >
+        <div className="flex max-w-[12rem] flex-wrap justify-end gap-2 pt-1" style={presentation.actionsStyle}>
           <button type="button" className={buttonClassName} onClick={() => onAction?.("move-up", section)}>
             Move up
           </button>

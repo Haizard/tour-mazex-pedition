@@ -355,7 +355,7 @@ export default function TemplateStudioShell({
 
   return (
     <section
-      className="flex min-h-[calc(100vh-8rem)] flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100 shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
+      className="flex min-h-[calc(100vh-8rem)] w-full max-w-none flex-col overflow-hidden rounded-[2rem] border border-slate-900/60 bg-[#05070b] shadow-[0_32px_90px_rgba(2,6,23,0.55)]"
       data-testid="template-studio-shell"
     >
       <StudioTopBar
@@ -374,7 +374,7 @@ export default function TemplateStudioShell({
         onSnapshotChange={handleSnapshotChange}
       />
       {message ? (
-        <div className="border-b border-slate-200 bg-emerald-50 px-6 py-3 text-sm font-medium text-emerald-800">
+        <div className="border-b border-white/10 bg-emerald-400/10 px-6 py-3 text-sm font-medium text-emerald-200">
           {message}
         </div>
       ) : null}
@@ -441,6 +441,7 @@ export default function TemplateStudioShell({
               page={{ ...pageDraft, sections: canvasState.sections }}
               state={canvasState}
               viewport={viewport}
+              themeTokens={pageDraft.themeTokens || {}}
               selectedSectionId={canvasState.selectedSectionId}
               selectedLibrarySection={selectedLibrarySection}
               onSelectSection={(sectionId) =>
@@ -455,6 +456,7 @@ export default function TemplateStudioShell({
             <InspectorPane
               selectedSection={selectedCanvasSection}
               selectedTab={inspectorTab}
+              pageThemeTokens={pageDraft.themeTokens || {}}
               bindingSuggestions={
                 bindingSuggestionsBySection[selectedCanvasSection.id] ||
                 selectedCanvasSection.bindings ||
@@ -462,6 +464,12 @@ export default function TemplateStudioShell({
               }
               onRequestBindingSuggestions={handleRequestBindings}
               onSelectTab={setInspectorTab}
+              onUpdatePageTheme={(themeTokens) =>
+                setPageDraft((current) => ({
+                  ...current,
+                  themeTokens,
+                }))
+              }
               onUpdateSection={(sectionId, patch) =>
                 dispatchCanvas({ type: "update-section", sectionId, patch })
               }

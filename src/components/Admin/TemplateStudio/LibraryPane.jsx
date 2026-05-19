@@ -7,25 +7,25 @@ function LibraryCard({ section, isActive, onSelect, onDelete }) {
 
   return (
     <div
-      className={`w-full rounded-2xl border px-4 py-4 transition ${
+      className={`w-full rounded-[1.4rem] border px-4 py-4 transition ${
         isActive
-          ? "border-sky-300 bg-sky-50 shadow-sm"
+          ? "border-cyan-300 bg-cyan-50 shadow-[0_12px_30px_rgba(14,165,233,0.12)]"
           : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
       }`}
     >
       <button type="button" className="w-full text-left" onClick={() => onSelect?.(section)}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">
               {section.type}
             </p>
-            <h3 className="mt-2 text-sm font-semibold text-slate-900">{section.label}</h3>
+            <h3 className="mt-2 text-sm font-black text-slate-900">{section.label}</h3>
           </div>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">
             {section.sourceType}
           </span>
         </div>
-        <p className="mt-2 text-sm text-slate-600">{section.summary}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{section.summary}</p>
       </button>
       <div className="mt-3 flex items-center justify-between gap-2">
         <div className="flex flex-wrap gap-2">
@@ -67,23 +67,23 @@ export default function LibraryPane({
 
   return (
     <aside
-      className="flex h-full min-h-0 w-full max-w-[20rem] flex-col border-r border-slate-200 bg-white"
+      className="flex h-full min-h-0 w-full shrink-0 md:basis-[20rem] xl:basis-[22rem] 2xl:basis-[25rem] flex-col border-r border-white/10 bg-[#f8fafc]"
       data-testid="template-studio-library"
     >
       <div className="border-b border-slate-200 px-5 py-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500">
           Section Library
         </p>
-        <h2 className="mt-2 text-lg font-semibold text-slate-900">Reusable building blocks</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="mt-2 text-lg font-black tracking-tight text-slate-900">Reusable building blocks</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
           Pick an imported, AI, or reusable section and place it anywhere on the canvas.
         </p>
         {selectedCanvasSection ? (
-          <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+          <div className="mt-4 rounded-[1.35rem] border border-cyan-200 bg-cyan-50 px-4 py-3 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">
               Selected Canvas Section
             </p>
-            <p className="mt-1 text-sm font-semibold text-sky-900">{selectedCanvasSection.label}</p>
+            <p className="mt-1 text-sm font-black text-cyan-950">{selectedCanvasSection.label}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"

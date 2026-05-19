@@ -5,6 +5,7 @@ import { buildPreviewPageModel } from "./previewUtils.js";
 function PreviewSection({ section }) {
   const title = section.content?.title || section.label;
   const body = section.content?.body || section.content?.description || section.summary || "";
+  const previewData = section.previewData;
 
   return (
     <section
@@ -35,6 +36,51 @@ function PreviewSection({ section }) {
           {body}
         </p>
       ) : null}
+      {previewData?.kind === "collection" ? (
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          {previewData.items.map((item) => (
+            <article
+              key={`${section.id}-${item.title}`}
+              className="rounded-[1.5rem] border border-slate-200/80 bg-white/70 px-4 py-4 shadow-sm"
+            >
+              <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+              <p className="mt-2 text-sm text-slate-600">{item.meta}</p>
+            </article>
+          ))}
+        </div>
+      ) : null}
+      {previewData?.kind === "contact" ? (
+        <div className="mt-6 flex flex-wrap gap-3">
+          {Object.values(previewData.data).map((value) => (
+            <span
+              key={`${section.id}-${value}`}
+              className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-medium text-slate-700"
+            >
+              {value}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {previewData?.kind === "form" ? (
+        <div className="mt-6 rounded-[1.5rem] border border-slate-200/80 bg-white/70 p-5 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-2">
+            {previewData.data.fields.map((field) => (
+              <div
+                key={`${section.id}-${field}`}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500"
+              >
+                {field}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="mt-4 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+          >
+            {previewData.data.cta}
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -46,6 +92,14 @@ export default function PreviewPane({
   onPublish,
 }) {
   const preview = buildPreviewPageModel({ page, viewport });
+  const contentFrameClass =
+    viewport === "desktop"
+      ? "w-full"
+      : "mx-auto w-full";
+  const contentFrameStyle =
+    viewport === "desktop"
+      ? undefined
+      : { maxWidth: preview.theme.contentWidth };
 
   return (
     <section
@@ -88,10 +142,7 @@ export default function PreviewPane({
         className="flex-1 overflow-auto px-6 py-6"
         style={{ backgroundColor: preview.theme.canvasBackground }}
       >
-        <div
-          className="mx-auto flex flex-col gap-6"
-          style={{ maxWidth: preview.theme.contentWidth }}
-        >
+        <div className={`${contentFrameClass} flex flex-col gap-6`} style={contentFrameStyle}>
           {preview.sections.length ? (
             preview.sections.map((section) => (
               <PreviewSection key={section.id} section={section} />

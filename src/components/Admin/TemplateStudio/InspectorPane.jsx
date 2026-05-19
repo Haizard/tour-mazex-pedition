@@ -13,9 +13,11 @@ const RESPONSIVE_BREAKPOINTS = [
 export default function InspectorPane({
   selectedTab = "content",
   selectedSection,
+  pageThemeTokens = {},
   bindingSuggestions = [],
   onRequestBindingSuggestions,
   onSelectTab,
+  onUpdatePageTheme,
   onUpdateSection,
 }) {
   const section = createStudioSectionDraft(selectedSection);
@@ -41,19 +43,24 @@ export default function InspectorPane({
     }
     handlePatch({ styles: preset.styles });
   };
+  const handleThemeTokenPatch = (patch) =>
+    onUpdatePageTheme?.({
+      ...pageThemeTokens,
+      ...patch,
+    });
 
   return (
     <aside
-      className="flex h-full min-h-0 w-full max-w-[21rem] flex-col border-l border-slate-200 bg-white"
+      className="flex h-full min-h-0 w-full shrink-0 md:basis-[21rem] xl:basis-[23rem] 2xl:basis-[27rem] flex-col border-l border-white/10 bg-[#f8fafc]"
       data-testid="template-studio-inspector"
     >
       <div className="border-b border-slate-200 px-5 py-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500">
           Inspector
         </p>
-        <h2 className="mt-2 text-lg font-semibold text-slate-900">{section.label}</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Source: <span className="font-medium text-slate-700">{section.sourceType}</span>
+        <h2 className="mt-2 text-lg font-black tracking-tight text-slate-900">{section.label}</h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Source: <span className="font-bold text-slate-700">{section.sourceType}</span>
         </p>
       </div>
       <div className="border-b border-slate-200 px-4 py-3">
@@ -125,6 +132,76 @@ export default function InspectorPane({
           </div>
         ) : selectedTab === "style" ? (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Page Theme
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                Set shared defaults for the full page so sections inherit a consistent visual system.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Canvas Background</span>
+                  <input
+                    type="text"
+                    value={pageThemeTokens.canvasBackground || ""}
+                    onChange={(event) => handleThemeTokenPatch({ canvasBackground: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    placeholder="#eef2f7"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Content Width</span>
+                  <input
+                    type="text"
+                    value={pageThemeTokens.contentWidth || ""}
+                    onChange={(event) => handleThemeTokenPatch({ contentWidth: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    placeholder="1600px"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Section Background</span>
+                  <input
+                    type="text"
+                    value={pageThemeTokens.sectionBackground || ""}
+                    onChange={(event) => handleThemeTokenPatch({ sectionBackground: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    placeholder="#ffffff"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Theme Accent</span>
+                  <input
+                    type="text"
+                    value={pageThemeTokens.accentColor || ""}
+                    onChange={(event) => handleThemeTokenPatch({ accentColor: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    placeholder="#0f766e"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Theme Text</span>
+                  <input
+                    type="text"
+                    value={pageThemeTokens.textColor || ""}
+                    onChange={(event) => handleThemeTokenPatch({ textColor: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    placeholder="#0f172a"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Theme Radius</span>
+                  <input
+                    type="text"
+                    value={pageThemeTokens.radius || ""}
+                    onChange={(event) => handleThemeTokenPatch({ radius: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    placeholder="24px"
+                  />
+                </label>
+              </div>
+            </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Quick Presets
