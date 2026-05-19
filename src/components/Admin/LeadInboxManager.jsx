@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FaCheckCircle, FaCopy, FaWhatsapp } from "react-icons/fa";
+import { useSearchParams } from "react-router-dom";
 
 import Badge from "../UI/Badge";
 import Button from "../UI/Button";
@@ -16,14 +17,23 @@ import {
   updateInquiryStatus,
 } from "../../services/api";
 import { generateQuotePdf } from "../../utils/quotePdfGenerator";
-
-const STATUS_FILTERS = ["all", "Pending", "Contacted", "Booked", "Cancelled"];
-const SOURCE_FILTERS = ["all", "website", "plan-my-trip", "whatsapp-button", "chatbot"];
+import {
+  filterLeadInboxItems,
+  LEAD_SOURCE_FILTERS,
+  LEAD_STATUS_FILTERS,
+  readLeadInboxFiltersFromSearchParams,
+} from "./leadInboxFilters";
 
 const LeadInboxManager = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFilters = useMemo(
+    () => readLeadInboxFiltersFromSearchParams(searchParams),
+    [searchParams]
+  );
   const [inquiries, setInquiries] = useState([]);
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedSource, setSelectedSource] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState(initialFilters.status);
+  const [selectedSource, setSelectedSource] = useState(initialFilters.source);
+  const [selectedCampaign, setSelectedCampaign] = useState(initialFilters.campaign);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState("");
   const [copiedId, setCopiedId] = useState("");
@@ -55,18 +65,21 @@ const LeadInboxManager = () => {
     loadInquiries();
   }, []);
 
+  useEffect(() => {
+    const filters = readLeadInboxFiltersFromSearchParams(searchParams);
+    setSelectedStatus(filters.status);
+    setSelectedSource(filters.source);
+    setSelectedCampaign(filters.campaign);
+  }, [searchParams]);
+
   const filteredInquiries = useMemo(
     () =>
-      inquiries.filter((inquiry) => {
-        const matchesStatus =
-          selectedStatus === "all" || inquiry.status === selectedStatus;
-        const matchesSource =
-          selectedSource === "all" ||
-          (inquiry.sourceChannel || "website") === selectedSource;
-
-        return matchesStatus && matchesSource;
+      filterLeadInboxItems(inquiries, {
+        status: selectedStatus,
+        source: selectedSource,
+        campaign: selectedCampaign,
       }),
-    [inquiries, selectedSource, selectedStatus]
+    [inquiries, selectedCampaign, selectedSource, selectedStatus]
   );
 
   const stats = useMemo(
@@ -78,9 +91,32 @@ const LeadInboxManager = () => {
       whatsapp: inquiries.filter(
         (inquiry) => inquiry.contactPreference === "whatsapp"
       ).length,
+      marketplace: inquiries.filter(
+        (inquiry) => (inquiry.sourceChannel || "website") === "global-marketplace"
+      ).length,
     }),
     [inquiries]
   );
+
+  const syncFilterParams = (nextFilters) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextFilters.status && nextFilters.status !== "all") {
+      nextParams.set("status", nextFilters.status);
+    } else {
+      nextParams.delete("status");
+    }
+    if (nextFilters.source && nextFilters.source !== "all") {
+      nextParams.set("source", nextFilters.source);
+    } else {
+      nextParams.delete("source");
+    }
+    if (nextFilters.campaign) {
+      nextParams.set("campaign", nextFilters.campaign);
+    } else {
+      nextParams.delete("campaign");
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const handleStatusChange = async (inquiryId, status) => {
     setSavingId(inquiryId);
@@ -224,6 +260,7 @@ const LeadInboxManager = () => {
           <Badge variant="primary">{stats.total} Leads</Badge>
           <Badge variant="secondary">{stats.newLeads} New</Badge>
           <Badge variant="accent">{stats.whatsapp} WhatsApp</Badge>
+          <Badge variant="accent">{stats.marketplace} Marketplace</Badge>
         </div>
       </div>
 
@@ -249,13 +286,29 @@ const LeadInboxManager = () => {
           </Button>
         </div>
 
+        {selectedCampaign && (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-3xl border border-sky-200 bg-sky-50 px-4 py-4">
+            <Badge variant="primary">Campaign {selectedCampaign}</Badge>
+            <p className="text-sm font-semibold text-sky-900">
+              The inbox is narrowed to marketplace leads attributed to this package.
+            </p>
+            <button
+              type="button"
+              onClick={() => syncFilterParams({ status: selectedStatus, source: selectedSource, campaign: "" })}
+              className="rounded-full border border-sky-300 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-sky-800"
+            >
+              Clear campaign filter
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div className="flex flex-wrap gap-2">
-            {STATUS_FILTERS.map((status) => (
+            {LEAD_STATUS_FILTERS.map((status) => (
               <button
                 key={status}
                 type="button"
-                onClick={() => setSelectedStatus(status)}
+                onClick={() => syncFilterParams({ status, source: selectedSource, campaign: selectedCampaign })}
                 className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition ${
                   selectedStatus === status
                     ? "bg-slate-900 text-white border-slate-900"
@@ -268,11 +321,11 @@ const LeadInboxManager = () => {
           </div>
 
           <div className="flex flex-wrap gap-2 md:justify-end">
-            {SOURCE_FILTERS.map((source) => (
+            {LEAD_SOURCE_FILTERS.map((source) => (
               <button
                 key={source}
                 type="button"
-                onClick={() => setSelectedSource(source)}
+                onClick={() => syncFilterParams({ status: selectedStatus, source, campaign: selectedCampaign })}
                 className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition ${
                   selectedSource === source
                     ? "bg-primary text-white border-primary"
@@ -314,6 +367,9 @@ const LeadInboxManager = () => {
                       <Badge variant="secondary">
                         {inquiry.sourceChannel || "website"}
                       </Badge>
+                      {inquiry.campaignLabel ? (
+                        <Badge variant="primary">{inquiry.campaignLabel}</Badge>
+                      ) : null}
                       <Badge variant="accent">
                         {inquiry.contactPreference || "whatsapp"}
                       </Badge>
