@@ -7,6 +7,16 @@ const statusClass = {
   "on-request": "bg-sky-50 text-sky-700 border-sky-200",
 };
 
+const demandTone = (score = 0) => {
+  if (score >= 5) {
+    return "bg-rose-100 text-rose-800";
+  }
+  if (score >= 2) {
+    return "bg-amber-100 text-amber-800";
+  }
+  return "bg-zinc-100 text-zinc-700";
+};
+
 const AvailabilityOperationsTable = ({
   rows = [],
   selectedRowIds = [],
@@ -25,6 +35,7 @@ const AvailabilityOperationsTable = ({
             <th className="px-4 py-4">Status</th>
             <th className="px-4 py-4">Spots</th>
             <th className="px-4 py-4">Signals</th>
+            <th className="px-4 py-4">Demand</th>
             <th className="px-4 py-4">Action</th>
           </tr>
         </thead>
@@ -73,6 +84,16 @@ const AvailabilityOperationsTable = ({
                 </div>
               </td>
               <td className="px-4 py-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${demandTone(row.demandScore)}`}>
+                    Score {row.demandScore || 0}
+                  </span>
+                  <span className="text-xs font-semibold text-zinc-500">
+                    {row.savedTripCount || 0} saved / {row.reminderWatcherCount || 0} watchers
+                  </span>
+                </div>
+              </td>
+              <td className="px-4 py-4">
                 <button
                   type="button"
                   onClick={() => onOpenTour?.(row.tourId)}
@@ -85,7 +106,7 @@ const AvailabilityOperationsTable = ({
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan="7" className="px-4 py-10 text-center text-sm font-semibold text-zinc-500">
+              <td colSpan="8" className="px-4 py-10 text-center text-sm font-semibold text-zinc-500">
                 No departures match the current filters.
               </td>
             </tr>

@@ -16,6 +16,7 @@ import {
 import {
   buildMarketplaceAvailabilityHealth,
   buildMarketplaceAvailabilityRows,
+  buildMarketplaceAvailabilityWorkspace,
 } from "../utils/marketplaceAvailabilityOperations.js";
 import {
   buildReminderWatchStatesForTours,
@@ -819,15 +820,25 @@ router.get("/availability", requireTenantAdmin, async (req, res) => {
       )
       .lean();
 
-    return res.status(200).json({
-      rows: buildMarketplaceAvailabilityRows(tours),
-      health: buildMarketplaceAvailabilityHealth(tours),
-      tours: tours.map((tour) => ({
-        id: String(tour._id || ""),
-        title: tour.title || "",
-        location: tour.location || "",
-      })),
+    const tourIds = tours.map((tour) => tour._id);
+    const savedTripLists =
+      tourIds.length > 0
+        ? await SavedTripList.find({
+            $or: [
+              { selectedTourIds: { $in: tourIds } },
+              { "reminders.watchStates.tourId": { $in: tourIds } },
+            ],
+          })
+            .select("selectedTourIds reminders")
+            .lean()
+        : [];
+
+    const workspace = buildMarketplaceAvailabilityWorkspace({
+      tours,
+      savedTripLists,
     });
+
+    return res.status(200).json(workspace);
   } catch (error) {
     console.error("Marketplace availability list error:", error);
     return res.status(500).json({ message: "Unable to load marketplace availability right now." });

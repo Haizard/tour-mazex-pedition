@@ -12,6 +12,7 @@ import AvailabilityBulkActionsBar from "./AvailabilityBulkActionsBar";
 import AvailabilityFiltersBar from "./AvailabilityFiltersBar";
 import AvailabilityHealthPanel from "./AvailabilityHealthPanel";
 import AvailabilityOperationsTable from "./AvailabilityOperationsTable";
+import AvailabilitySummaryStrip from "./AvailabilitySummaryStrip";
 import {
   buildAvailabilityBulkPayload,
   filterAvailabilityRows,
@@ -52,6 +53,13 @@ const MarketplaceAvailabilityManager = () => {
     () => filterAvailabilityRows(workspace.rows || [], filters),
     [workspace.rows, filters]
   );
+  const topDemandTours = useMemo(
+    () =>
+      [...(workspace.tours || [])]
+        .sort((left, right) => (right.demandScore || 0) - (left.demandScore || 0))
+        .slice(0, 3),
+    [workspace.tours]
+  );
 
   const openTour = async (tourId) => {
     setActiveTourId(tourId);
@@ -82,6 +90,8 @@ const MarketplaceAvailabilityManager = () => {
         tours={workspace.tours || []}
         onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
       />
+
+      <AvailabilitySummaryStrip summary={workspace.summary || {}} />
 
       <AvailabilityBulkActionsBar
         selectionCount={selectedRowIds.length}
@@ -122,7 +132,11 @@ const MarketplaceAvailabilityManager = () => {
           }}
         />
 
-        <AvailabilityHealthPanel health={workspace.health || []} onOpenTour={openTour} />
+        <AvailabilityHealthPanel
+          health={workspace.health || []}
+          topDemandTours={topDemandTours}
+          onOpenTour={openTour}
+        />
       </div>
 
       {loading && (
