@@ -20,6 +20,7 @@ function InsertButton({ label, onClick }) {
 export default function CanvasPane({
   page,
   state,
+  viewport = "desktop",
   selectedSectionId,
   selectedLibrarySection,
   onSelectSection,
@@ -34,6 +35,12 @@ export default function CanvasPane({
   );
 
   const sections = canvasState.sections;
+  const canvasWidthClass =
+    viewport === "mobile"
+      ? "max-w-md"
+      : viewport === "tablet"
+        ? "max-w-3xl"
+        : "max-w-5xl";
   const dropTargets = useMemo(() => createDropTargets(sections), [sections]);
   const [draggedSectionId, setDraggedSectionId] = React.useState(null);
   const [activeDropTargetId, setActiveDropTargetId] = React.useState(null);
@@ -109,7 +116,7 @@ export default function CanvasPane({
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-[#eef2f7]" data-testid="template-studio-canvas">
       <div className="flex-1 overflow-auto p-6">
-        <div className="mx-auto flex min-h-[42rem] w-full max-w-5xl flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.12)]">
+        <div className={`mx-auto flex min-h-[42rem] w-full ${canvasWidthClass} flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.12)]`}>
           <div className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">

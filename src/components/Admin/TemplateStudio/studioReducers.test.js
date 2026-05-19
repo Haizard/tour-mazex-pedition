@@ -190,3 +190,26 @@ test("updates section content and style fields without dropping prior data", () 
   assert.equal(nextState.sections[0].styles.backgroundColor, "#f8fafc");
   assert.equal(nextState.sections[0].customCss, ".hero { padding: 72px; }");
 });
+
+test("replaces a section in place while keeping canvas ordering", () => {
+  const state = createStudioCanvasState({
+    sections: [makeSection("hero"), makeSection("story"), makeSection("proof")],
+    selectedSectionId: "story",
+  });
+
+  const nextState = reduce(state, {
+    type: "replace-section",
+    sectionId: "story",
+    section: makeSection("faq", {
+      label: "FAQ Section",
+      sourceType: "reusable",
+    }),
+  });
+
+  assert.deepEqual(
+    nextState.sections.map((section) => section.id),
+    ["hero", "faq", "proof"],
+  );
+  assert.equal(nextState.sections[1].label, "FAQ Section");
+  assert.equal(nextState.selectedSectionId, "faq");
+});

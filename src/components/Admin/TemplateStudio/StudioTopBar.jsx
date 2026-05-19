@@ -13,7 +13,13 @@ export default function StudioTopBar({
   pageName = "Untitled Page",
   pageType = "custom",
   status = "Draft",
+  viewport = "desktop",
+  canUndo = false,
+  canRedo = false,
   onAction,
+  onUndo,
+  onRedo,
+  onViewportChange,
 }) {
   return (
     <header
@@ -52,6 +58,40 @@ export default function StudioTopBar({
         <span className="rounded-full bg-slate-100 px-3 py-1">Import and Bind</span>
         <span className="rounded-full bg-slate-100 px-3 py-1">Canvas Composition</span>
         <span className="rounded-full bg-slate-100 px-3 py-1">CMS Connections</span>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
+            {["desktop", "tablet", "mobile"].map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                  viewport === mode
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+                onClick={() => onViewportChange?.(mode)}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            disabled={!canUndo}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={onUndo}
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            disabled={!canRedo}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={onRedo}
+          >
+            Redo
+          </button>
+        </div>
       </div>
     </header>
   );

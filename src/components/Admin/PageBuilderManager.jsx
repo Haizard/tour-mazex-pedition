@@ -30,6 +30,8 @@ import {
   getMediaUrl,
   createPlatformTenantTemplateStudioReusableSection,
   createTemplateStudioReusableSection,
+  deletePlatformTenantTemplateStudioReusableSection,
+  deleteTemplateStudioReusableSection,
   importPlatformTenantPageBuilderSource,
   importPlatformTenantTemplateStudioSource,
   importPageBuilderSource,
@@ -1143,6 +1145,32 @@ const PageBuilderManager = ({
     }
   };
 
+  const handleDeleteReusableStudioSection = async (section) => {
+    const reusableTemplateId = section?.sourceMeta?.reusableTemplateId;
+    if (!canManageLayout || !reusableTemplateId) return;
+
+    setSaving(true);
+    setMessage("");
+
+    try {
+      if (tenantId) {
+        await deletePlatformTenantTemplateStudioReusableSection(tenantId, reusableTemplateId);
+      } else {
+        await deleteTemplateStudioReusableSection(reusableTemplateId);
+      }
+
+      setStudioReusableSections((current) =>
+        current.filter((item) => item.sourceMeta?.reusableTemplateId !== reusableTemplateId)
+      );
+      setMessage(`${section.label || "Reusable section"} removed from the studio library.`);
+    } catch (error) {
+      console.error("Failed to delete reusable studio section:", error);
+      setMessage(error?.response?.data?.message || "Failed to delete reusable studio section.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleRequestStudioBindings = async (section) => {
     if (!canManageLayout) return { suggestions: [] };
 
@@ -1828,6 +1856,7 @@ const PageBuilderManager = ({
           }
           onSaveStudioPage={handleSaveStudioPage}
           onSaveReusableSection={handleSaveReusableStudioSection}
+          onDeleteReusableSection={handleDeleteReusableStudioSection}
           onImportStudioSource={handleImportStudioSource}
           onRequestBindingSuggestions={handleRequestStudioBindings}
           onTopBarAction={handleTemplateStudioTopBarAction}

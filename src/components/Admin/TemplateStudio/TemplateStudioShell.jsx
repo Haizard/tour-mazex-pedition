@@ -5,6 +5,12 @@ import ImportLab from "./ImportLab.jsx";
 import InspectorPane from "./InspectorPane.jsx";
 import LibraryPane from "./LibraryPane.jsx";
 import { createStudioCanvasState, createStudioSectionNode, studioCanvasReducer } from "./studioReducers.js";
+import {
+  createStudioHistoryState,
+  pushStudioHistory,
+  redoStudioHistory,
+  undoStudioHistory,
+} from "./studioHistory.js";
 import StudioSidebar from "./StudioSidebar.jsx";
 import StudioTopBar from "./StudioTopBar.jsx";
 import {
@@ -36,6 +42,7 @@ export default function TemplateStudioShell({
   message = "",
   onSaveStudioPage,
   onSaveReusableSection,
+  onDeleteReusableSection,
   onImportStudioSource,
   onRequestBindingSuggestions,
   onTopBarAction,
@@ -53,12 +60,13 @@ export default function TemplateStudioShell({
     [pageName, pageType, sections, status, studioPage]
   );
 
-  const [canvasState, dispatch] = React.useReducer(
-    studioCanvasReducer,
-    createStudioCanvasState({
-      sections: page.sections,
-      selectedSectionId: selectedSection?.id || page.sections?.[0]?.id || null,
-    })
+  const [historyState, setHistoryState] = React.useState(() =>
+    createStudioHistoryState(
+      createStudioCanvasState({
+        sections: page.sections,
+        selectedSectionId: selectedSection?.id || page.sections?.[0]?.id || null,
+      })
+    )
   );
   const [selectedLibrarySection, setSelectedLibrarySection] = React.useState(null);
   const [sidebarGroup, setSidebarGroup] = React.useState(activeSidebarGroup);
@@ -66,13 +74,37 @@ export default function TemplateStudioShell({
   const [importState, setImportState] = React.useState(defaultImportState);
   const [importedLibrarySections, setImportedLibrarySections] = React.useState([]);
   const [bindingSuggestionsBySection, setBindingSuggestionsBySection] = React.useState({});
+  const [viewport, setViewport] = React.useState("desktop");
+
+  const canvasState = historyState.present;
+
+  const dispatchCanvas = React.useCallback((action, options = {}) => {
+    setHistoryState((currentHistory) => {
+      const nextPresent = studioCanvasReducer(currentHistory.present, action);
+      const shouldTrack =
+        options.trackHistory !== false &&
+        !["select-section", "hydrate-canvas"].includes(action.type);
+
+      if (!shouldTrack) {
+        return {
+          ...currentHistory,
+          present: nextPresent,
+        };
+      }
+
+      return pushStudioHistory(currentHistory, nextPresent);
+    });
+  }, []);
 
   React.useEffect(() => {
-    dispatch({
-      type: "hydrate-canvas",
-      sections: page.sections,
-      selectedSectionId: selectedSection?.id || page.sections?.[0]?.id || null,
-    });
+    setHistoryState(
+      createStudioHistoryState(
+        createStudioCanvasState({
+          sections: page.sections,
+          selectedSectionId: selectedSection?.id || page.sections?.[0]?.id || null,
+        })
+      )
+    );
   }, [page.sections, page.id, selectedSection?.id]);
 
   const mergedLibrarySections = React.useMemo(
@@ -85,8 +117,9 @@ export default function TemplateStudioShell({
     createStudioSectionDraft(selectedSection);
 
   const handleInsertSection = React.useCallback(
-    ({ position, targetSectionId }) => {
+    ({ position, targetSectionId, section: explicitSection }) => {
       const baseSection =
+        explicitSection ||
         selectedLibrarySection ||
         createStudioSectionNode({
           id: `section-${Date.now()}`,
@@ -96,7 +129,7 @@ export default function TemplateStudioShell({
           summary: "A blank section ready for content, styling, and CMS bindings.",
         });
 
-      dispatch({
+      dispatchCanvas({
         type: "insert-section",
         targetSectionId,
         position,
@@ -106,20 +139,20 @@ export default function TemplateStudioShell({
         },
       });
     },
-    [selectedLibrarySection]
+    [dispatchCanvas, selectedLibrarySection]
   );
 
   const handleSectionAction = React.useCallback((actionId, section, index) => {
     if (actionId === "move-up") {
-      dispatch({ type: "move-section", sectionId: section.id, direction: "up" });
+      dispatchCanvas({ type: "move-section", sectionId: section.id, direction: "up" });
       return;
     }
     if (actionId === "move-down") {
-      dispatch({ type: "move-section", sectionId: section.id, direction: "down" });
+      dispatchCanvas({ type: "move-section", sectionId: section.id, direction: "down" });
       return;
     }
     if (actionId === "duplicate") {
-      dispatch({ type: "duplicate-section", sectionId: section.id });
+      dispatchCanvas({ type: "duplicate-section", sectionId: section.id });
       return;
     }
     if (actionId === "save-reusable") {
@@ -127,15 +160,18 @@ export default function TemplateStudioShell({
       return;
     }
     if (actionId === "delete") {
-      dispatch({ type: "delete-section", sectionId: section.id });
+      dispatchCanvas({ type: "delete-section", sectionId: section.id });
       return;
     }
     if (actionId === "toggle-visibility") {
-      dispatch({ type: "toggle-section-visibility", sectionId: section.id });
+      dispatchCanvas({ type: "toggle-section-visibility", sectionId: section.id });
       return;
     }
-    dispatch({ type: "select-section", sectionId: section.id || canvasState.sections[index]?.id });
-  }, [canvasState.sections]);
+    dispatchCanvas(
+      { type: "select-section", sectionId: section.id || canvasState.sections[index]?.id },
+      { trackHistory: false }
+    );
+  }, [canvasState.sections, dispatchCanvas, onSaveReusableSection]);
 
   const handleTopBarAction = async (actionId) => {
     onTopBarAction?.(actionId);
@@ -189,7 +225,7 @@ export default function TemplateStudioShell({
     if (resolvedResult?.sectionDrafts?.length) {
       setImportedLibrarySections((current) => [...resolvedResult.sectionDrafts, ...current]);
       setSidebarGroup("templates");
-      dispatch({
+      dispatchCanvas({
         type: "insert-section",
         targetSectionId: canvasState.sections[canvasState.sections.length - 1]?.id || null,
         position: "below",
@@ -218,6 +254,12 @@ export default function TemplateStudioShell({
         pageType={page.pageType}
         status={saving ? "Saving..." : page.status}
         onAction={handleTopBarAction}
+        viewport={viewport}
+        canUndo={historyState.past.length > 0}
+        canRedo={historyState.future.length > 0}
+        onUndo={() => setHistoryState((current) => undoStudioHistory(current))}
+        onRedo={() => setHistoryState((current) => redoStudioHistory(current))}
+        onViewportChange={setViewport}
       />
       {message ? (
         <div className="border-b border-slate-200 bg-emerald-50 px-6 py-3 text-sm font-medium text-emerald-800">
@@ -237,18 +279,37 @@ export default function TemplateStudioShell({
           <LibraryPane
             sections={mergedLibrarySections}
             selectedSectionId={selectedLibrarySection?.id}
+            selectedCanvasSection={selectedCanvasSection}
             onSelectSection={setSelectedLibrarySection}
+            onInsertSection={(section, targetSectionId) => {
+              setSelectedLibrarySection(section);
+              handleInsertSection({ position: "below", targetSectionId, section });
+            }}
+            onReplaceSection={(section, targetSectionId) =>
+              dispatchCanvas({
+                type: "replace-section",
+                sectionId: targetSectionId,
+                section: {
+                  ...section,
+                  id: `${section.id}-${Date.now()}`,
+                },
+              })
+            }
+            onDeleteSection={onDeleteReusableSection}
           />
         )}
         <CanvasPane
           page={{ ...page, sections: canvasState.sections }}
           state={canvasState}
+          viewport={viewport}
           selectedSectionId={canvasState.selectedSectionId}
           selectedLibrarySection={selectedLibrarySection}
-          onSelectSection={(sectionId) => dispatch({ type: "select-section", sectionId })}
+          onSelectSection={(sectionId) =>
+            dispatchCanvas({ type: "select-section", sectionId }, { trackHistory: false })
+          }
           onInsertSection={handleInsertSection}
           onReorderSection={(sectionId, toIndex) =>
-            dispatch({ type: "reorder-section", sectionId, toIndex })
+            dispatchCanvas({ type: "reorder-section", sectionId, toIndex })
           }
           onSectionAction={handleSectionAction}
         />
@@ -258,7 +319,7 @@ export default function TemplateStudioShell({
           bindingSuggestions={bindingSuggestionsBySection[selectedCanvasSection.id] || selectedCanvasSection.bindings || []}
           onRequestBindingSuggestions={handleRequestBindings}
           onSelectTab={setInspectorTab}
-          onUpdateSection={(sectionId, patch) => dispatch({ type: "update-section", sectionId, patch })}
+          onUpdateSection={(sectionId, patch) => dispatchCanvas({ type: "update-section", sectionId, patch })}
         />
       </div>
     </section>
