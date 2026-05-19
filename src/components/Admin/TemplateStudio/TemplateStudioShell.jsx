@@ -4,6 +4,7 @@ import CanvasPane from "./CanvasPane.jsx";
 import ImportLab from "./ImportLab.jsx";
 import InspectorPane from "./InspectorPane.jsx";
 import LibraryPane from "./LibraryPane.jsx";
+import PreviewPane from "./PreviewPane.jsx";
 import VersionManagerPane from "./VersionManagerPane.jsx";
 import {
   createStudioCanvasState,
@@ -89,6 +90,7 @@ export default function TemplateStudioShell({
   const [bindingSuggestionsBySection, setBindingSuggestionsBySection] = React.useState({});
   const [viewport, setViewport] = React.useState("desktop");
   const [selectedSnapshotId, setSelectedSnapshotId] = React.useState("");
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
 
   const canvasState = historyState.present;
 
@@ -113,6 +115,7 @@ export default function TemplateStudioShell({
   React.useEffect(() => {
     setPageDraft(initialPage);
     setSelectedSnapshotId("");
+    setIsPreviewOpen(false);
   }, [initialPage]);
 
   React.useEffect(() => {
@@ -269,6 +272,11 @@ export default function TemplateStudioShell({
       return;
     }
 
+    if (actionId === "preview") {
+      setIsPreviewOpen(true);
+      return;
+    }
+
     if (actionId === "add-section") {
       handleInsertSection({
         position: "below",
@@ -366,76 +374,93 @@ export default function TemplateStudioShell({
         </div>
       ) : null}
       <div className="flex min-h-0 flex-1">
-        <StudioSidebar activeGroup={sidebarGroup} onSelectGroup={setSidebarGroup} />
-        {sidebarGroup === "imports" ? (
-          <ImportLab
-            importState={importState}
-            onChange={handleImportChange}
-            onImport={handleImport}
-            importing={importing}
-          />
-        ) : sidebarGroup === "versions" ? (
-          <VersionManagerPane
-            pageName={pageDraft.pageName}
-            snapshots={pageDraft.snapshots || []}
-            selectedSnapshotId={selectedSnapshotId}
-            onCreateSnapshot={handleSaveSnapshot}
-            onRestoreSnapshot={handleSnapshotChange}
-            onRenameSnapshot={handleRenameSnapshot}
-            onDeleteSnapshot={handleDeleteSnapshot}
+        {isPreviewOpen ? (
+          <PreviewPane
+            page={{ ...pageDraft, sections: canvasState.sections }}
+            viewport={viewport}
+            onClose={() => setIsPreviewOpen(false)}
+            onPublish={async () => {
+              await onSaveStudioPage?.({
+                ...pageDraft,
+                status: "published",
+                sections: canvasState.sections,
+              });
+            }}
           />
         ) : (
-          <LibraryPane
-            sections={mergedLibrarySections}
-            selectedSectionId={selectedLibrarySection?.id}
-            selectedCanvasSection={selectedCanvasSection}
-            onSelectSection={setSelectedLibrarySection}
-            onInsertSection={(section, targetSectionId) => {
-              setSelectedLibrarySection(section);
-              handleInsertSection({ position: "below", targetSectionId, section });
-            }}
-            onReplaceSection={(section, targetSectionId) =>
-              dispatchCanvas({
-                type: "replace-section",
-                sectionId: targetSectionId,
-                section: {
-                  ...section,
-                  id: `${section.id}-${Date.now()}`,
-                },
-              })
-            }
-            onDeleteSection={onDeleteReusableSection}
-          />
+          <>
+            <StudioSidebar activeGroup={sidebarGroup} onSelectGroup={setSidebarGroup} />
+            {sidebarGroup === "imports" ? (
+              <ImportLab
+                importState={importState}
+                onChange={handleImportChange}
+                onImport={handleImport}
+                importing={importing}
+              />
+            ) : sidebarGroup === "versions" ? (
+              <VersionManagerPane
+                pageName={pageDraft.pageName}
+                snapshots={pageDraft.snapshots || []}
+                selectedSnapshotId={selectedSnapshotId}
+                onCreateSnapshot={handleSaveSnapshot}
+                onRestoreSnapshot={handleSnapshotChange}
+                onRenameSnapshot={handleRenameSnapshot}
+                onDeleteSnapshot={handleDeleteSnapshot}
+              />
+            ) : (
+              <LibraryPane
+                sections={mergedLibrarySections}
+                selectedSectionId={selectedLibrarySection?.id}
+                selectedCanvasSection={selectedCanvasSection}
+                onSelectSection={setSelectedLibrarySection}
+                onInsertSection={(section, targetSectionId) => {
+                  setSelectedLibrarySection(section);
+                  handleInsertSection({ position: "below", targetSectionId, section });
+                }}
+                onReplaceSection={(section, targetSectionId) =>
+                  dispatchCanvas({
+                    type: "replace-section",
+                    sectionId: targetSectionId,
+                    section: {
+                      ...section,
+                      id: `${section.id}-${Date.now()}`,
+                    },
+                  })
+                }
+                onDeleteSection={onDeleteReusableSection}
+              />
+            )}
+            <CanvasPane
+              page={{ ...pageDraft, sections: canvasState.sections }}
+              state={canvasState}
+              viewport={viewport}
+              selectedSectionId={canvasState.selectedSectionId}
+              selectedLibrarySection={selectedLibrarySection}
+              onSelectSection={(sectionId) =>
+                dispatchCanvas({ type: "select-section", sectionId }, { trackHistory: false })
+              }
+              onInsertSection={handleInsertSection}
+              onReorderSection={(sectionId, toIndex) =>
+                dispatchCanvas({ type: "reorder-section", sectionId, toIndex })
+              }
+              onSectionAction={handleSectionAction}
+            />
+            <InspectorPane
+              selectedSection={selectedCanvasSection}
+              selectedTab={inspectorTab}
+              bindingSuggestions={
+                bindingSuggestionsBySection[selectedCanvasSection.id] ||
+                selectedCanvasSection.bindings ||
+                []
+              }
+              onRequestBindingSuggestions={handleRequestBindings}
+              onSelectTab={setInspectorTab}
+              onUpdateSection={(sectionId, patch) =>
+                dispatchCanvas({ type: "update-section", sectionId, patch })
+              }
+            />
+          </>
         )}
-        <CanvasPane
-          page={{ ...pageDraft, sections: canvasState.sections }}
-          state={canvasState}
-          viewport={viewport}
-          selectedSectionId={canvasState.selectedSectionId}
-          selectedLibrarySection={selectedLibrarySection}
-          onSelectSection={(sectionId) =>
-            dispatchCanvas({ type: "select-section", sectionId }, { trackHistory: false })
-          }
-          onInsertSection={handleInsertSection}
-          onReorderSection={(sectionId, toIndex) =>
-            dispatchCanvas({ type: "reorder-section", sectionId, toIndex })
-          }
-          onSectionAction={handleSectionAction}
-        />
-        <InspectorPane
-          selectedSection={selectedCanvasSection}
-          selectedTab={inspectorTab}
-          bindingSuggestions={
-            bindingSuggestionsBySection[selectedCanvasSection.id] ||
-            selectedCanvasSection.bindings ||
-            []
-          }
-          onRequestBindingSuggestions={handleRequestBindings}
-          onSelectTab={setInspectorTab}
-          onUpdateSection={(sectionId, patch) =>
-            dispatchCanvas({ type: "update-section", sectionId, patch })
-          }
-        />
       </div>
     </section>
   );
