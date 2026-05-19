@@ -93,6 +93,13 @@ export default function StudioTopBar({
                 Latest: {latestSnapshot.name}
               </span>
             ) : null}
+            <button
+              type="button"
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50"
+              onClick={() => onAction?.("open-versions")}
+            >
+              Manage
+            </button>
           </div>
           <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
             {["desktop", "tablet", "mobile"].map((mode) => (

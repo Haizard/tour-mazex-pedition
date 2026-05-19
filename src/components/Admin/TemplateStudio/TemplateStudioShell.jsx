@@ -4,13 +4,25 @@ import CanvasPane from "./CanvasPane.jsx";
 import ImportLab from "./ImportLab.jsx";
 import InspectorPane from "./InspectorPane.jsx";
 import LibraryPane from "./LibraryPane.jsx";
-import { createStudioCanvasState, createStudioSectionNode, studioCanvasReducer } from "./studioReducers.js";
+import VersionManagerPane from "./VersionManagerPane.jsx";
+import {
+  createStudioCanvasState,
+  createStudioSectionNode,
+  studioCanvasReducer,
+} from "./studioReducers.js";
 import {
   createStudioHistoryState,
   pushStudioHistory,
   redoStudioHistory,
   undoStudioHistory,
 } from "./studioHistory.js";
+import {
+  createSnapshotEntry,
+  deleteSnapshot,
+  findSnapshot,
+  prependSnapshot,
+  renameSnapshot,
+} from "./snapshotUtils.js";
 import StudioSidebar from "./StudioSidebar.jsx";
 import StudioTopBar from "./StudioTopBar.jsx";
 import {
@@ -59,8 +71,8 @@ export default function TemplateStudioShell({
       ),
     [pageName, pageType, sections, status, studioPage]
   );
-  const [pageDraft, setPageDraft] = React.useState(initialPage);
 
+  const [pageDraft, setPageDraft] = React.useState(initialPage);
   const [historyState, setHistoryState] = React.useState(() =>
     createStudioHistoryState(
       createStudioCanvasState({
@@ -115,7 +127,10 @@ export default function TemplateStudioShell({
   }, [initialPage.sections, initialPage.id, selectedSection?.id]);
 
   const mergedLibrarySections = React.useMemo(
-    () => [...importedLibrarySections, ...librarySections].map((section) => createStudioSectionNode(section)),
+    () =>
+      [...importedLibrarySections, ...librarySections].map((section) =>
+        createStudioSectionNode(section)
+      ),
     [importedLibrarySections, librarySections]
   );
 
@@ -149,36 +164,97 @@ export default function TemplateStudioShell({
     [dispatchCanvas, selectedLibrarySection]
   );
 
-  const handleSectionAction = React.useCallback((actionId, section, index) => {
-    if (actionId === "move-up") {
-      dispatchCanvas({ type: "move-section", sectionId: section.id, direction: "up" });
-      return;
-    }
-    if (actionId === "move-down") {
-      dispatchCanvas({ type: "move-section", sectionId: section.id, direction: "down" });
-      return;
-    }
-    if (actionId === "duplicate") {
-      dispatchCanvas({ type: "duplicate-section", sectionId: section.id });
-      return;
-    }
-    if (actionId === "save-reusable") {
-      onSaveReusableSection?.(section);
-      return;
-    }
-    if (actionId === "delete") {
-      dispatchCanvas({ type: "delete-section", sectionId: section.id });
-      return;
-    }
-    if (actionId === "toggle-visibility") {
-      dispatchCanvas({ type: "toggle-section-visibility", sectionId: section.id });
-      return;
-    }
-    dispatchCanvas(
-      { type: "select-section", sectionId: section.id || canvasState.sections[index]?.id },
-      { trackHistory: false }
-    );
-  }, [canvasState.sections, dispatchCanvas, onSaveReusableSection]);
+  const handleSectionAction = React.useCallback(
+    (actionId, section, index) => {
+      if (actionId === "move-up") {
+        dispatchCanvas({ type: "move-section", sectionId: section.id, direction: "up" });
+        return;
+      }
+      if (actionId === "move-down") {
+        dispatchCanvas({ type: "move-section", sectionId: section.id, direction: "down" });
+        return;
+      }
+      if (actionId === "duplicate") {
+        dispatchCanvas({ type: "duplicate-section", sectionId: section.id });
+        return;
+      }
+      if (actionId === "save-reusable") {
+        onSaveReusableSection?.(section);
+        return;
+      }
+      if (actionId === "delete") {
+        dispatchCanvas({ type: "delete-section", sectionId: section.id });
+        return;
+      }
+      if (actionId === "toggle-visibility") {
+        dispatchCanvas({ type: "toggle-section-visibility", sectionId: section.id });
+        return;
+      }
+
+      dispatchCanvas(
+        { type: "select-section", sectionId: section.id || canvasState.sections[index]?.id },
+        { trackHistory: false }
+      );
+    },
+    [canvasState.sections, dispatchCanvas, onSaveReusableSection]
+  );
+
+  const handleSaveSnapshot = React.useCallback(() => {
+    const snapshot = createSnapshotEntry({
+      pageName: pageDraft.pageName,
+      sectionLabel: selectedCanvasSection?.label || "Canvas",
+      sections: canvasState.sections,
+      viewport,
+    });
+
+    setPageDraft((current) => ({
+      ...current,
+      snapshots: prependSnapshot(current.snapshots || [], snapshot),
+    }));
+    setSelectedSnapshotId(snapshot.id);
+  }, [canvasState.sections, pageDraft.pageName, selectedCanvasSection?.label, viewport]);
+
+  const handleSnapshotChange = React.useCallback(
+    (snapshotId) => {
+      if (!snapshotId) {
+        setSelectedSnapshotId("");
+        return;
+      }
+
+      const snapshot = findSnapshot(pageDraft.snapshots || [], snapshotId);
+
+      if (!snapshot) {
+        return;
+      }
+
+      setSelectedSnapshotId(snapshotId);
+      setViewport(snapshot.viewport || "desktop");
+      dispatchCanvas(
+        {
+          type: "hydrate-canvas",
+          sections: snapshot.sections || [],
+          selectedSectionId: snapshot.sections?.[0]?.id || null,
+        },
+        { trackHistory: false }
+      );
+    },
+    [dispatchCanvas, pageDraft.snapshots]
+  );
+
+  const handleRenameSnapshot = React.useCallback((snapshotId, nextName) => {
+    setPageDraft((current) => ({
+      ...current,
+      snapshots: renameSnapshot(current.snapshots || [], snapshotId, nextName),
+    }));
+  }, []);
+
+  const handleDeleteSnapshot = React.useCallback((snapshotId) => {
+    setPageDraft((current) => ({
+      ...current,
+      snapshots: deleteSnapshot(current.snapshots || [], snapshotId),
+    }));
+    setSelectedSnapshotId((current) => (current === snapshotId ? "" : current));
+  }, []);
 
   const handleTopBarAction = async (actionId) => {
     onTopBarAction?.(actionId);
@@ -188,10 +264,18 @@ export default function TemplateStudioShell({
       return;
     }
 
+    if (actionId === "open-versions") {
+      setSidebarGroup("versions");
+      return;
+    }
+
     if (actionId === "add-section") {
       handleInsertSection({
         position: "below",
-        targetSectionId: canvasState.selectedSectionId || canvasState.sections[canvasState.sections.length - 1]?.id || null,
+        targetSectionId:
+          canvasState.selectedSectionId ||
+          canvasState.sections[canvasState.sections.length - 1]?.id ||
+          null,
       });
       return;
     }
@@ -214,50 +298,9 @@ export default function TemplateStudioShell({
     }
 
     if (actionId === "save-snapshot") {
-      const timestamp = new Date().toISOString();
-      const snapshotId = `snapshot-${Date.now()}`;
-      const sectionLabel = selectedCanvasSection?.label || "Canvas";
-
-      setPageDraft((current) => ({
-        ...current,
-        snapshots: [
-          {
-            id: snapshotId,
-            name: `${current.pageName || "Untitled Page"} · ${sectionLabel} · ${new Date(timestamp).toLocaleString()}`,
-            createdAt: timestamp,
-            sections: canvasState.sections.map((section) => ({ ...section })),
-            viewport,
-          },
-          ...(current.snapshots || []),
-        ].slice(0, 20),
-      }));
-      setSelectedSnapshotId(snapshotId);
+      handleSaveSnapshot();
     }
   };
-
-  const handleSnapshotChange = React.useCallback((snapshotId) => {
-    if (!snapshotId) {
-      setSelectedSnapshotId("");
-      return;
-    }
-
-    const snapshot = (pageDraft.snapshots || []).find((entry) => entry.id === snapshotId);
-
-    if (!snapshot) {
-      return;
-    }
-
-    setSelectedSnapshotId(snapshotId);
-    setViewport(snapshot.viewport || "desktop");
-    dispatchCanvas(
-      {
-        type: "hydrate-canvas",
-        sections: snapshot.sections || [],
-        selectedSectionId: snapshot.sections?.[0]?.id || null,
-      },
-      { trackHistory: false }
-    );
-  }, [dispatchCanvas, pageDraft.snapshots]);
 
   const handleImportChange = (field, value) => {
     setImportState((current) => ({
@@ -331,6 +374,16 @@ export default function TemplateStudioShell({
             onImport={handleImport}
             importing={importing}
           />
+        ) : sidebarGroup === "versions" ? (
+          <VersionManagerPane
+            pageName={pageDraft.pageName}
+            snapshots={pageDraft.snapshots || []}
+            selectedSnapshotId={selectedSnapshotId}
+            onCreateSnapshot={handleSaveSnapshot}
+            onRestoreSnapshot={handleSnapshotChange}
+            onRenameSnapshot={handleRenameSnapshot}
+            onDeleteSnapshot={handleDeleteSnapshot}
+          />
         ) : (
           <LibraryPane
             sections={mergedLibrarySections}
@@ -372,10 +425,16 @@ export default function TemplateStudioShell({
         <InspectorPane
           selectedSection={selectedCanvasSection}
           selectedTab={inspectorTab}
-          bindingSuggestions={bindingSuggestionsBySection[selectedCanvasSection.id] || selectedCanvasSection.bindings || []}
+          bindingSuggestions={
+            bindingSuggestionsBySection[selectedCanvasSection.id] ||
+            selectedCanvasSection.bindings ||
+            []
+          }
           onRequestBindingSuggestions={handleRequestBindings}
           onSelectTab={setInspectorTab}
-          onUpdateSection={(sectionId, patch) => dispatchCanvas({ type: "update-section", sectionId, patch })}
+          onUpdateSection={(sectionId, patch) =>
+            dispatchCanvas({ type: "update-section", sectionId, patch })
+          }
         />
       </div>
     </section>

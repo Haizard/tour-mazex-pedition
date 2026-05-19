@@ -24,9 +24,9 @@ export const STUDIO_SIDEBAR_GROUPS = [
     items: ["Code Intake", "Reference Uploads", "Recent Jobs"],
   },
   {
-    id: "assets",
-    label: "Assets",
-    items: ["Media", "CMS Sources", "History"],
+    id: "versions",
+    label: "Versions",
+    items: ["Named Drafts", "Snapshots", "Restore Points"],
   },
 ];
 
