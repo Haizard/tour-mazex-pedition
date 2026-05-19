@@ -46,7 +46,6 @@ Multi-tenant tourism platform for tour operators, combining website CMS, booking
 
 ### Marketplace Next
 - Browser QA and mobile refinement across marketplace surfaces
-- More advanced operator-side availability workflows
 - Stronger conversion analytics around saved trips, reminders, and inquiries
 - Richer community and trust presentation where real traveler content grows
 - Template marketplace for ready-to-use tourism website UI, connected to the page builder with purchased-template status and tenant-specific personalization before use
@@ -82,6 +81,7 @@ These are intentionally not in the near-term rollout because they either depend 
 ## Tenant Admin Highlights
 
 - `Packages`: inventory, marketplace controls, and availability settings
+- `Marketplace Availability`: cross-tour departure operations, bulk publishing, and schedule management
 - `Distribution`: marketplace operations, visibility, and moderation
 - `Inbox And Sales`: lead inbox, unified inbox, and email integrations
 - `Social Accounts`: public WhatsApp number, Meta setup, WhatsApp Business setup

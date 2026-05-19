@@ -749,6 +749,18 @@ export const fetchMarketplaceModerationQueue = () =>
   cachedGet("/marketplace/moderation");
 export const fetchMarketplaceOperationsSnapshot = () =>
   cachedGet("/marketplace/operations");
+export const fetchMarketplaceAvailabilityWorkspace = () =>
+  cachedGet("/marketplace/availability");
+export const fetchMarketplaceAvailabilityTourSchedule = (tourId) =>
+  cachedGet(`/marketplace/availability/${tourId}`);
+export const createMarketplaceAvailabilityEntry = (tourId, payload) =>
+  API.post(`/marketplace/availability/${tourId}/entries`, payload);
+export const updateMarketplaceAvailabilityEntry = (tourId, dateKey, payload) =>
+  API.patch(`/marketplace/availability/${tourId}/entries/${dateKey}`, payload);
+export const deleteMarketplaceAvailabilityEntry = (tourId, dateKey) =>
+  API.delete(`/marketplace/availability/${tourId}/entries/${dateKey}`);
+export const applyMarketplaceAvailabilityBulkAction = (tourId, payload) =>
+  API.post(`/marketplace/availability/${tourId}/bulk`, payload);
 export const fetchMarketplaceSavedTrips = (params = {}) =>
   cachedGet("/marketplace/saved-trips", { params });
 export const updateMarketplaceSavedTrips = (payload) =>

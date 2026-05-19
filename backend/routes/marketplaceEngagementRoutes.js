@@ -14,6 +14,10 @@ import {
   computeAvailabilityEntries,
 } from "../utils/marketplaceAvailability.js";
 import {
+  buildMarketplaceAvailabilityHealth,
+  buildMarketplaceAvailabilityRows,
+} from "../utils/marketplaceAvailabilityOperations.js";
+import {
   buildReminderWatchStatesForTours,
   processMarketplaceReminderNotificationsNow,
   sendMarketplaceReminderEmail,
@@ -29,12 +33,167 @@ import {
 } from "../utils/marketplaceModeration.js";
 
 const router = express.Router();
+const AVAILABILITY_STATUSES = new Set(["available", "limited", "unavailable", "on-request"]);
 
 const normalizeUniqueTourIds = (selectedTourIds = [], maxItems = 24) =>
   [...new Set((selectedTourIds || []).map((tourId) => String(tourId || "").trim()).filter(Boolean))].slice(
     0,
     maxItems
   );
+
+const normalizeAvailabilityDateKey = (value = "") => {
+  const parsed = value ? new Date(value) : null;
+  if (!parsed || Number.isNaN(parsed.getTime())) {
+    throw new Error("A valid departure date is required.");
+  }
+
+  return new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()))
+    .toISOString()
+    .slice(0, 10);
+};
+
+export const normalizeMarketplaceAvailabilityEntry = (payload = {}, fallbackDateKey = "") => {
+  const dateKey = normalizeAvailabilityDateKey(payload.date || fallbackDateKey);
+  const status = String(payload.status || "available");
+  if (!AVAILABILITY_STATUSES.has(status)) {
+    throw new Error("A supported availability status is required.");
+  }
+
+  const remainingSpots =
+    payload.remainingSpots === null || payload.remainingSpots === undefined || payload.remainingSpots === ""
+      ? null
+      : Math.max(Number(payload.remainingSpots || 0), 0);
+
+  return {
+    date: dateKey,
+    status,
+    published: payload.published !== false,
+    remainingSpots: Number.isFinite(remainingSpots) ? remainingSpots : null,
+    note: String(payload.note || "").trim(),
+  };
+};
+
+const serializeMarketplaceAvailabilityEntries = (entries = []) =>
+  (Array.isArray(entries) ? entries : [])
+    .map((entry) => normalizeMarketplaceAvailabilityEntry(entry, entry?.date))
+    .sort((left, right) => new Date(left.date) - new Date(right.date));
+
+export const addMarketplaceAvailabilityEntry = (tour = {}, payload = {}) => {
+  const nextEntry = normalizeMarketplaceAvailabilityEntry(payload);
+  const nextEntries = serializeMarketplaceAvailabilityEntries([
+    ...(tour.marketplaceAvailability || []).filter(
+      (entry) => String(entry?.date || "").slice(0, 10) !== nextEntry.date
+    ),
+    nextEntry,
+  ]);
+
+  return {
+    ...tour,
+    marketplaceAvailability: nextEntries,
+  };
+};
+
+export const updateMarketplaceAvailabilityEntry = (tour = {}, dateKey = "", patch = {}) => {
+  const normalizedDateKey = normalizeAvailabilityDateKey(dateKey);
+  let found = false;
+  const nextEntries = serializeMarketplaceAvailabilityEntries(
+    (tour.marketplaceAvailability || []).map((entry) => {
+      if (String(entry?.date || "").slice(0, 10) !== normalizedDateKey) {
+        return entry;
+      }
+
+      found = true;
+      return normalizeMarketplaceAvailabilityEntry(
+        {
+          ...entry,
+          ...patch,
+        },
+        normalizedDateKey
+      );
+    })
+  );
+
+  if (!found) {
+    throw new Error("Departure entry not found.");
+  }
+
+  return {
+    ...tour,
+    marketplaceAvailability: nextEntries,
+  };
+};
+
+export const deleteMarketplaceAvailabilityEntry = (tour = {}, dateKey = "") => {
+  const normalizedDateKey = normalizeAvailabilityDateKey(dateKey);
+  const nextEntries = (tour.marketplaceAvailability || []).filter(
+    (entry) => String(entry?.date || "").slice(0, 10) !== normalizedDateKey
+  );
+
+  if (nextEntries.length === (tour.marketplaceAvailability || []).length) {
+    throw new Error("Departure entry not found.");
+  }
+
+  return {
+    ...tour,
+    marketplaceAvailability: serializeMarketplaceAvailabilityEntries(nextEntries),
+  };
+};
+
+export const applyBulkMarketplaceAvailabilityAction = (tour = {}, payload = {}) => {
+  const dateKeys = [...new Set((payload.dateKeys || []).map((value) => normalizeAvailabilityDateKey(value)))];
+  if (dateKeys.length === 0) {
+    throw new Error("At least one departure date is required.");
+  }
+
+  const action = String(payload.action || "").trim();
+  const nextEntries = serializeMarketplaceAvailabilityEntries(
+    (tour.marketplaceAvailability || []).map((entry) => {
+      const entryDateKey = String(entry?.date || "").slice(0, 10);
+      if (!dateKeys.includes(entryDateKey)) {
+        return entry;
+      }
+
+      if (action === "set-status") {
+        return normalizeMarketplaceAvailabilityEntry(
+          { ...entry, status: payload.status },
+          entryDateKey
+        );
+      }
+
+      if (action === "set-published") {
+        return normalizeMarketplaceAvailabilityEntry(
+          { ...entry, published: payload.published === true },
+          entryDateKey
+        );
+      }
+
+      if (action === "adjust-spots") {
+        const currentSpots = Number(entry?.remainingSpots || 0);
+        return normalizeMarketplaceAvailabilityEntry(
+          {
+            ...entry,
+            remainingSpots: Math.max(currentSpots + Number(payload.delta || 0), 0),
+          },
+          entryDateKey
+        );
+      }
+
+      if (action === "set-note") {
+        return normalizeMarketplaceAvailabilityEntry(
+          { ...entry, note: payload.note || "" },
+          entryDateKey
+        );
+      }
+
+      throw new Error("Unsupported bulk availability action.");
+    })
+  );
+
+  return {
+    ...tour,
+    marketplaceAvailability: nextEntries,
+  };
+};
 
 const buildMarketplaceSelectableTour = (tour = {}) => {
   const availability = buildAvailabilitySummary(tour);
@@ -649,6 +808,146 @@ router.get("/operations", requireTenantAdmin, async (req, res) => {
   } catch (error) {
     console.error("Marketplace operations error:", error);
     return res.status(500).json({ message: "Unable to load marketplace operations right now." });
+  }
+});
+
+router.get("/availability", requireTenantAdmin, async (req, res) => {
+  try {
+    const tours = await TourPackage.find({ tenantId: req.tenantId })
+      .select(
+        "_id title location category isMarketplaceVisible isPubliclyDistributable marketplaceAvailability marketplaceAvailabilitySettings"
+      )
+      .lean();
+
+    return res.status(200).json({
+      rows: buildMarketplaceAvailabilityRows(tours),
+      health: buildMarketplaceAvailabilityHealth(tours),
+      tours: tours.map((tour) => ({
+        id: String(tour._id || ""),
+        title: tour.title || "",
+        location: tour.location || "",
+      })),
+    });
+  } catch (error) {
+    console.error("Marketplace availability list error:", error);
+    return res.status(500).json({ message: "Unable to load marketplace availability right now." });
+  }
+});
+
+router.get("/availability/:tourId", requireTenantAdmin, async (req, res) => {
+  try {
+    const tour = await TourPackage.findOne({ _id: req.params.tourId, tenantId: req.tenantId })
+      .select(
+        "_id title location category isMarketplaceVisible marketplaceAvailability marketplaceAvailabilitySettings"
+      )
+      .lean();
+
+    if (!tour) {
+      return res.status(404).json({ message: "Marketplace package not found." });
+    }
+
+    return res.status(200).json({
+      tour: {
+        id: String(tour._id || ""),
+        title: tour.title || "",
+        location: tour.location || "",
+        category: tour.category || "",
+        isMarketplaceVisible: tour.isMarketplaceVisible === true,
+      },
+      entries: computeAvailabilityEntries(tour),
+      summary: buildAvailabilitySummary(tour),
+    });
+  } catch (error) {
+    console.error("Marketplace availability drawer error:", error);
+    return res.status(500).json({ message: "Unable to load package availability right now." });
+  }
+});
+
+router.post("/availability/:tourId/entries", requireTenantAdmin, async (req, res) => {
+  try {
+    const tour = await TourPackage.findOne({ _id: req.params.tourId, tenantId: req.tenantId })
+      .select("_id marketplaceAvailability")
+      .lean();
+
+    if (!tour) {
+      return res.status(404).json({ message: "Marketplace package not found." });
+    }
+
+    const next = addMarketplaceAvailabilityEntry(tour, req.body);
+    await TourPackage.updateOne(
+      { _id: req.params.tourId, tenantId: req.tenantId },
+      { $set: { marketplaceAvailability: next.marketplaceAvailability } }
+    );
+
+    return res.status(201).json({ entries: next.marketplaceAvailability });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/availability/:tourId/entries/:dateKey", requireTenantAdmin, async (req, res) => {
+  try {
+    const tour = await TourPackage.findOne({ _id: req.params.tourId, tenantId: req.tenantId })
+      .select("_id marketplaceAvailability")
+      .lean();
+
+    if (!tour) {
+      return res.status(404).json({ message: "Marketplace package not found." });
+    }
+
+    const next = updateMarketplaceAvailabilityEntry(tour, req.params.dateKey, req.body);
+    await TourPackage.updateOne(
+      { _id: req.params.tourId, tenantId: req.tenantId },
+      { $set: { marketplaceAvailability: next.marketplaceAvailability } }
+    );
+
+    return res.status(200).json({ entries: next.marketplaceAvailability });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.delete("/availability/:tourId/entries/:dateKey", requireTenantAdmin, async (req, res) => {
+  try {
+    const tour = await TourPackage.findOne({ _id: req.params.tourId, tenantId: req.tenantId })
+      .select("_id marketplaceAvailability")
+      .lean();
+
+    if (!tour) {
+      return res.status(404).json({ message: "Marketplace package not found." });
+    }
+
+    const next = deleteMarketplaceAvailabilityEntry(tour, req.params.dateKey);
+    await TourPackage.updateOne(
+      { _id: req.params.tourId, tenantId: req.tenantId },
+      { $set: { marketplaceAvailability: next.marketplaceAvailability } }
+    );
+
+    return res.status(200).json({ entries: next.marketplaceAvailability });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/availability/:tourId/bulk", requireTenantAdmin, async (req, res) => {
+  try {
+    const tour = await TourPackage.findOne({ _id: req.params.tourId, tenantId: req.tenantId })
+      .select("_id marketplaceAvailability")
+      .lean();
+
+    if (!tour) {
+      return res.status(404).json({ message: "Marketplace package not found." });
+    }
+
+    const next = applyBulkMarketplaceAvailabilityAction(tour, req.body);
+    await TourPackage.updateOne(
+      { _id: req.params.tourId, tenantId: req.tenantId },
+      { $set: { marketplaceAvailability: next.marketplaceAvailability } }
+    );
+
+    return res.status(200).json({ entries: next.marketplaceAvailability });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
 });
 

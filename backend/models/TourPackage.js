@@ -13,6 +13,7 @@ const marketplaceAvailabilitySchema = new mongoose.Schema({
     enum: ["available", "limited", "unavailable", "on-request"],
     default: "available",
   },
+  published: { type: Boolean, default: true },
   remainingSpots: { type: Number, default: null },
   note: { type: String, default: "" },
 }, { _id: false });

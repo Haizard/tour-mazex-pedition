@@ -14,6 +14,7 @@ const isoDate = (value) => {
 };
 
 const toArray = (value) => (Array.isArray(value) ? value : []);
+const isPublishedEntry = (entry = {}) => entry?.published !== false;
 
 const deriveRemainingSpots = (tour = {}, entry = {}, settings = {}) => {
   if (typeof entry.remainingSpots === "number") {
@@ -62,6 +63,7 @@ const generateTemplateEntries = (tour = {}, settings = {}, referenceDate = new D
         generated.push({
           date: key,
           status,
+          published: true,
           remainingSpots: deriveRemainingSpots(tour, {}, settings),
           note: settings.generatedNote || "",
           source: "generated",
@@ -80,6 +82,7 @@ export const computeAvailabilityEntries = (tour = {}, options = {}) => {
   const settings = tour.marketplaceAvailabilitySettings || {};
 
   const manualEntries = toArray(tour.marketplaceAvailability)
+    .filter((entry) => isPublishedEntry(entry))
     .map((entry) => {
       const date = isoDate(entry?.date);
       if (!date) {
@@ -89,6 +92,7 @@ export const computeAvailabilityEntries = (tour = {}, options = {}) => {
       return {
         date,
         status: entry?.status || "available",
+        published: isPublishedEntry(entry),
         remainingSpots: deriveRemainingSpots(tour, entry || {}, settings),
         note: entry?.note || "",
         source: "manual",

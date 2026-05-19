@@ -86,6 +86,7 @@ import InfrastructureReadinessManager from "../components/Admin/InfrastructureRe
 import DistributionManager from "../components/Admin/DistributionManager";
 import MarketplaceModerationManager from "../components/Admin/MarketplaceModerationManager";
 import MarketplaceOperationsOverview from "../components/Admin/MarketplaceOperationsOverview";
+import MarketplaceAvailabilityManager from "../components/Admin/MarketplaceAvailability/MarketplaceAvailabilityManager";
 import MarketplaceVisibilityManager from "../components/Admin/MarketplaceVisibilityManager";
 import DynamicPricingManager from "../components/Admin/DynamicPricingManager";
 import TravelerAssistanceManager from "../components/Admin/TravelerAssistanceManager";
@@ -4231,6 +4232,8 @@ const AdminDashboard = () => {
           {activeTab === "campaigns" && <CampaignManager />}
 
           {activeTab === "guide-drivers" && <GuideDriverManager />}
+
+          {activeTab === "marketplace-availability" && <MarketplaceAvailabilityManager />}
 
           {activeTab === "accommodations" && <AccommodationManager />}
 
