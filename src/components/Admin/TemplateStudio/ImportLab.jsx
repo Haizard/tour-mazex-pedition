@@ -11,6 +11,8 @@ export default function ImportLab({
   importState,
   onChange,
   onImport,
+  onToggleReviewSection,
+  onCommitImport,
   importing = false,
 }) {
   const state = importState || {
@@ -22,6 +24,9 @@ export default function ImportLab({
   };
 
   const detectedSections = state.result?.sectionDrafts || [];
+  const selectedSectionIds = state.review?.selectedSectionIds || [];
+  const selectedCount = state.review?.selectedCount || 0;
+  const hasReviewableSections = detectedSections.length > 0;
 
   return (
     <section
@@ -99,14 +104,29 @@ export default function ImportLab({
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Detected Sections</p>
             <div className="mt-3 space-y-2">
-              {detectedSections.length ? (
+              {hasReviewableSections ? (
                 detectedSections.map((section) => (
                   <div key={section.id} className="rounded-xl bg-white px-3 py-3 text-sm text-slate-700">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-slate-900">{section.label}</span>
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600">
-                        {section.type}
-                      </span>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-semibold text-slate-900">{section.label}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600">
+                            {section.type}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-500">
+                          {section.summary || "Ready for canvas insertion and CMS binding."}
+                        </p>
+                      </div>
+                      <label className="flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={selectedSectionIds.includes(section.id)}
+                          onChange={() => onToggleReviewSection?.(section.id)}
+                        />
+                        Keep
+                      </label>
                     </div>
                   </div>
                 ))
@@ -116,6 +136,29 @@ export default function ImportLab({
                 </div>
               )}
             </div>
+
+            {hasReviewableSections ? (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Import Review
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {selectedCount} of {detectedSections.length} sections selected for import.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onCommitImport?.()}
+                    disabled={!selectedCount}
+                    className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Import Selected
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {state.result?.warnings?.length ? (
               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">

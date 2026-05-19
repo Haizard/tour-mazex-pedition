@@ -58,6 +58,26 @@ test("inserts a new section below the target section and selects it", () => {
   assert.equal(nextState.selectedSectionId, "gallery");
 });
 
+test("inserts multiple sections below the target section and selects the last one", () => {
+  const state = createStudioCanvasState({
+    sections: [makeSection("hero"), makeSection("story")],
+    selectedSectionId: "story",
+  });
+
+  const nextState = reduce(state, {
+    type: "insert-sections",
+    targetSectionId: "hero",
+    position: "below",
+    sections: [makeSection("gallery"), makeSection("faq")],
+  });
+
+  assert.deepEqual(
+    nextState.sections.map((section) => section.id),
+    ["hero", "gallery", "faq", "story"],
+  );
+  assert.equal(nextState.selectedSectionId, "faq");
+});
+
 test("moves a section up and down without losing relative order", () => {
   const state = createStudioCanvasState({
     sections: [makeSection("hero"), makeSection("story"), makeSection("proof")],

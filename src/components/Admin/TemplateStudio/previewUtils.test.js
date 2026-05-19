@@ -65,3 +65,32 @@ test("buildPreviewPageModel creates CMS-aware preview data and applies page them
   assert.equal(preview.sections[0].presentation.badgeStyle.color, "#8b5cf6");
   assert.equal(preview.sections[0].presentation.containerStyle.backgroundColor, "#f5f3ff");
 });
+
+test("buildPreviewPageModel prefers provided CMS sources over sample fallback data", () => {
+  const preview = buildPreviewPageModel({
+    page: {
+      pageName: "Live Preview",
+      sections: [
+        {
+          id: "blog-grid",
+          label: "Latest Stories",
+          type: "blogFeed",
+          bindings: [
+            {
+              sourceKey: "blogs",
+              bindingType: "dynamic-collection",
+              fieldPath: "items",
+            },
+          ],
+        },
+      ],
+    },
+    cmsSources: {
+      blogs: [{ title: "Real Tenant Story", meta: "Imported from live CMS" }],
+    },
+  });
+
+  assert.equal(preview.sections[0].previewData.kind, "collection");
+  assert.equal(preview.sections[0].previewData.items.length, 1);
+  assert.equal(preview.sections[0].previewData.items[0].title, "Real Tenant Story");
+});

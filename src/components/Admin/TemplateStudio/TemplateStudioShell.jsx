@@ -5,6 +5,11 @@ import ImportLab from "./ImportLab.jsx";
 import InspectorPane from "./InspectorPane.jsx";
 import LibraryPane from "./LibraryPane.jsx";
 import PreviewPane from "./PreviewPane.jsx";
+import {
+  buildApprovedImportPayload,
+  createImportReviewState,
+  toggleImportReviewSection,
+} from "./importReviewUtils.js";
 import VersionManagerPane from "./VersionManagerPane.jsx";
 import {
   createStudioCanvasState,
@@ -59,6 +64,7 @@ export default function TemplateStudioShell({
   onImportStudioSource,
   onRequestBindingSuggestions,
   onTopBarAction,
+  cmsSources,
 }) {
   const initialPage = React.useMemo(
     () =>
@@ -329,19 +335,40 @@ export default function TemplateStudioShell({
     setImportState((current) => ({
       ...current,
       result: resolvedResult,
+      review: resolvedResult ? createImportReviewState(resolvedResult) : null,
     }));
-
-    if (resolvedResult?.sectionDrafts?.length) {
-      setImportedLibrarySections((current) => [...resolvedResult.sectionDrafts, ...current]);
-      setSidebarGroup("templates");
-      dispatchCanvas({
-        type: "insert-section",
-        targetSectionId: canvasState.sections[canvasState.sections.length - 1]?.id || null,
-        position: "below",
-        section: resolvedResult.sectionDrafts[0],
-      });
-    }
   };
+
+  const handleToggleReviewSection = React.useCallback((sectionId) => {
+    setImportState((current) => ({
+      ...current,
+      review: toggleImportReviewSection(current.review || {}, sectionId),
+    }));
+  }, []);
+
+  const handleCommitImport = React.useCallback(() => {
+    const approved = buildApprovedImportPayload(importState.result, importState.review);
+
+    if (!approved.sectionDrafts?.length) {
+      return;
+    }
+
+    setImportedLibrarySections((current) => [...approved.sectionDrafts, ...current]);
+    setSidebarGroup("templates");
+    dispatchCanvas({
+      type: "insert-sections",
+      targetSectionId: canvasState.sections[canvasState.sections.length - 1]?.id || null,
+      position: "below",
+      sections: approved.sectionDrafts.map((section, index) => ({
+        ...section,
+        id: `${section.id}-${Date.now()}-${index}`,
+      })),
+    });
+    setImportState((current) => ({
+      ...current,
+      result: approved,
+    }));
+  }, [canvasState.sections, dispatchCanvas, importState.result, importState.review]);
 
   const handleRequestBindings = async (section) => {
     const response = await onRequestBindingSuggestions?.(section);
@@ -383,6 +410,7 @@ export default function TemplateStudioShell({
           <PreviewPane
             page={{ ...pageDraft, sections: canvasState.sections }}
             viewport={viewport}
+            cmsSources={cmsSources}
             onClose={() => setIsPreviewOpen(false)}
             onPublish={async () => {
               await onSaveStudioPage?.({
@@ -400,6 +428,8 @@ export default function TemplateStudioShell({
                 importState={importState}
                 onChange={handleImportChange}
                 onImport={handleImport}
+                onToggleReviewSection={handleToggleReviewSection}
+                onCommitImport={handleCommitImport}
                 importing={importing}
               />
             ) : sidebarGroup === "versions" ? (

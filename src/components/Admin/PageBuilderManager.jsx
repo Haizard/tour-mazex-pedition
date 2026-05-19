@@ -21,6 +21,11 @@ import {
   fetchPlatformTenantPageConfig,
   fetchPlatformTenantPageConfigs,
   fetchTemplateMarketplace,
+  fetchTours,
+  fetchBlogs,
+  fetchSiteSettings,
+  fetchTaxonomies,
+  fetchPublicTestimonials,
   fetchPlatformTenantTemplateStudioReusableSections,
   fetchTemplateStudioReusableSections,
   applyPageBuilderTemplate,
@@ -492,6 +497,7 @@ const PageBuilderManager = ({
   const [loadingStudioReusableSections, setLoadingStudioReusableSections] = React.useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = React.useState("safari-signature-home");
   const [marketplaceTemplates, setMarketplaceTemplates] = React.useState([]);
+  const [studioPreviewSources, setStudioPreviewSources] = React.useState({});
   const [newSectionType, setNewSectionType] = React.useState(
     Object.keys(sectionRegistry.metadata || {})[0] || "hero"
   );
@@ -577,6 +583,52 @@ const PageBuilderManager = ({
     };
 
     loadStudioReusableSections();
+
+    return () => {
+      active = false;
+    };
+  }, [canManageLayout, tenantId, useTemplateStudio]);
+
+  React.useEffect(() => {
+    if (!canManageLayout || !useTemplateStudio || tenantId) {
+      return undefined;
+    }
+
+    let active = true;
+
+    const loadStudioPreviewSources = async () => {
+      try {
+        const [toursResponse, blogsResponse, siteSettingsResponse, destinationsResponse, testimonialsResponse] =
+          await Promise.all([
+            fetchTours(),
+            fetchBlogs(),
+            fetchSiteSettings(),
+            fetchTaxonomies("destination"),
+            fetchPublicTestimonials(),
+          ]);
+
+        if (!active) {
+          return;
+        }
+
+        setStudioPreviewSources({
+          tourPackages: toursResponse?.data || [],
+          blogs: blogsResponse?.data || [],
+          siteSettings: siteSettingsResponse?.data || {},
+          taxonomies: {
+            destinations: destinationsResponse?.data || [],
+          },
+          testimonials: testimonialsResponse?.data || [],
+        });
+      } catch (error) {
+        console.error("Failed to load Template Studio preview sources:", error);
+        if (active) {
+          setStudioPreviewSources({});
+        }
+      }
+    };
+
+    loadStudioPreviewSources();
 
     return () => {
       active = false;
@@ -1848,6 +1900,7 @@ const PageBuilderManager = ({
           studioPage={studioPage}
           selectedSection={studioPage.sections[selectedSectionIndex] || null}
           librarySections={studioLibrarySections}
+          cmsSources={studioPreviewSources}
           importing={importingSource}
           saving={saving || loadingStudioReusableSections}
           message={

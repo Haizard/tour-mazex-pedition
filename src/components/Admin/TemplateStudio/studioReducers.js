@@ -90,6 +90,27 @@ function insertSection(state, action) {
   return replaceSections(state, sections, section.id);
 }
 
+function insertSections(state, action) {
+  const incomingSections = (action.sections || []).map((section) => createStudioSectionNode(section));
+
+  if (!incomingSections.length) {
+    return state;
+  }
+
+  const sections = [...state.sections];
+  const targetIndex = getSectionIndex(sections, action.targetSectionId);
+
+  if (targetIndex === -1) {
+    sections.push(...incomingSections);
+    return replaceSections(state, sections, incomingSections[incomingSections.length - 1].id);
+  }
+
+  const insertionIndex = action.position === "above" ? targetIndex : targetIndex + 1;
+  sections.splice(insertionIndex, 0, ...incomingSections);
+
+  return replaceSections(state, sections, incomingSections[incomingSections.length - 1].id);
+}
+
 function moveSection(state, action) {
   const sections = [...state.sections];
   const index = getSectionIndex(sections, action.sectionId);
@@ -224,6 +245,8 @@ export function studioCanvasReducer(state, action) {
       });
     case "insert-section":
       return insertSection(state, action);
+    case "insert-sections":
+      return insertSections(state, action);
     case "move-section":
       return moveSection(state, action);
     case "reorder-section":

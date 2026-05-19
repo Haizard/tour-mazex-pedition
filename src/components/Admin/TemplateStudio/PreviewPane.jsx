@@ -88,10 +88,11 @@ function PreviewSection({ section }) {
 export default function PreviewPane({
   page,
   viewport = "desktop",
+  cmsSources,
   onClose,
   onPublish,
 }) {
-  const preview = buildPreviewPageModel({ page, viewport });
+  const preview = buildPreviewPageModel({ page, viewport, cmsSources });
   const contentFrameClass =
     viewport === "desktop"
       ? "w-full"
