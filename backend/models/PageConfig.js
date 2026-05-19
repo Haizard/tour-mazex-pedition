@@ -46,6 +46,7 @@ const pageConfigSchema = new mongoose.Schema(
       sourceType: { type: String, trim: true, default: "" },
       layoutShell: { type: String, trim: true, default: "" },
       themeTokens: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+      snapshots: { type: [mongoose.Schema.Types.Mixed], default: [] },
       sourceMeta: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     },
     sections: { type: [pageSectionSchema], default: [] },

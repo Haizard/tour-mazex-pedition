@@ -191,6 +191,34 @@ test("updates section content and style fields without dropping prior data", () 
   assert.equal(nextState.sections[0].customCss, ".hero { padding: 72px; }");
 });
 
+test("updates responsive overrides without dropping earlier breakpoint settings", () => {
+  const state = createStudioCanvasState({
+    sections: [
+      makeSection("hero", {
+        responsive: {
+          mobile: { columns: "1" },
+          desktop: { columns: "3" },
+        },
+      }),
+    ],
+  });
+
+  const nextState = reduce(state, {
+    type: "update-section",
+    sectionId: "hero",
+    patch: {
+      responsive: {
+        tablet: { columns: "2", paddingY: "48px" },
+      },
+    },
+  });
+
+  assert.equal(nextState.sections[0].responsive.mobile.columns, "1");
+  assert.equal(nextState.sections[0].responsive.desktop.columns, "3");
+  assert.equal(nextState.sections[0].responsive.tablet.columns, "2");
+  assert.equal(nextState.sections[0].responsive.tablet.paddingY, "48px");
+});
+
 test("replaces a section in place while keeping canvas ordering", () => {
   const state = createStudioCanvasState({
     sections: [makeSection("hero"), makeSection("story"), makeSection("proof")],

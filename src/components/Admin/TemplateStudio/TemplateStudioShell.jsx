@@ -47,7 +47,7 @@ export default function TemplateStudioShell({
   onRequestBindingSuggestions,
   onTopBarAction,
 }) {
-  const page = React.useMemo(
+  const initialPage = React.useMemo(
     () =>
       createStudioPageDraft(
         studioPage || {
@@ -59,12 +59,13 @@ export default function TemplateStudioShell({
       ),
     [pageName, pageType, sections, status, studioPage]
   );
+  const [pageDraft, setPageDraft] = React.useState(initialPage);
 
   const [historyState, setHistoryState] = React.useState(() =>
     createStudioHistoryState(
       createStudioCanvasState({
-        sections: page.sections,
-        selectedSectionId: selectedSection?.id || page.sections?.[0]?.id || null,
+        sections: initialPage.sections,
+        selectedSectionId: selectedSection?.id || initialPage.sections?.[0]?.id || null,
       })
     )
   );
@@ -75,6 +76,7 @@ export default function TemplateStudioShell({
   const [importedLibrarySections, setImportedLibrarySections] = React.useState([]);
   const [bindingSuggestionsBySection, setBindingSuggestionsBySection] = React.useState({});
   const [viewport, setViewport] = React.useState("desktop");
+  const [selectedSnapshotId, setSelectedSnapshotId] = React.useState("");
 
   const canvasState = historyState.present;
 
@@ -97,15 +99,20 @@ export default function TemplateStudioShell({
   }, []);
 
   React.useEffect(() => {
+    setPageDraft(initialPage);
+    setSelectedSnapshotId("");
+  }, [initialPage]);
+
+  React.useEffect(() => {
     setHistoryState(
       createStudioHistoryState(
         createStudioCanvasState({
-          sections: page.sections,
-          selectedSectionId: selectedSection?.id || page.sections?.[0]?.id || null,
+          sections: initialPage.sections,
+          selectedSectionId: selectedSection?.id || initialPage.sections?.[0]?.id || null,
         })
       )
     );
-  }, [page.sections, page.id, selectedSection?.id]);
+  }, [initialPage.sections, initialPage.id, selectedSection?.id]);
 
   const mergedLibrarySections = React.useMemo(
     () => [...importedLibrarySections, ...librarySections].map((section) => createStudioSectionNode(section)),
@@ -191,7 +198,7 @@ export default function TemplateStudioShell({
 
     if (actionId === "save") {
       await onSaveStudioPage?.({
-        ...page,
+        ...pageDraft,
         sections: canvasState.sections,
       });
       return;
@@ -199,12 +206,58 @@ export default function TemplateStudioShell({
 
     if (actionId === "publish") {
       await onSaveStudioPage?.({
-        ...page,
+        ...pageDraft,
         status: "published",
         sections: canvasState.sections,
       });
+      return;
+    }
+
+    if (actionId === "save-snapshot") {
+      const timestamp = new Date().toISOString();
+      const snapshotId = `snapshot-${Date.now()}`;
+      const sectionLabel = selectedCanvasSection?.label || "Canvas";
+
+      setPageDraft((current) => ({
+        ...current,
+        snapshots: [
+          {
+            id: snapshotId,
+            name: `${current.pageName || "Untitled Page"} · ${sectionLabel} · ${new Date(timestamp).toLocaleString()}`,
+            createdAt: timestamp,
+            sections: canvasState.sections.map((section) => ({ ...section })),
+            viewport,
+          },
+          ...(current.snapshots || []),
+        ].slice(0, 20),
+      }));
+      setSelectedSnapshotId(snapshotId);
     }
   };
+
+  const handleSnapshotChange = React.useCallback((snapshotId) => {
+    if (!snapshotId) {
+      setSelectedSnapshotId("");
+      return;
+    }
+
+    const snapshot = (pageDraft.snapshots || []).find((entry) => entry.id === snapshotId);
+
+    if (!snapshot) {
+      return;
+    }
+
+    setSelectedSnapshotId(snapshotId);
+    setViewport(snapshot.viewport || "desktop");
+    dispatchCanvas(
+      {
+        type: "hydrate-canvas",
+        sections: snapshot.sections || [],
+        selectedSectionId: snapshot.sections?.[0]?.id || null,
+      },
+      { trackHistory: false }
+    );
+  }, [dispatchCanvas, pageDraft.snapshots]);
 
   const handleImportChange = (field, value) => {
     setImportState((current) => ({
@@ -250,16 +303,19 @@ export default function TemplateStudioShell({
       data-testid="template-studio-shell"
     >
       <StudioTopBar
-        pageName={page.pageName}
-        pageType={page.pageType}
-        status={saving ? "Saving..." : page.status}
+        pageName={pageDraft.pageName}
+        pageType={pageDraft.pageType}
+        status={saving ? "Saving..." : pageDraft.status}
         onAction={handleTopBarAction}
+        snapshots={pageDraft.snapshots || []}
+        selectedSnapshotId={selectedSnapshotId}
         viewport={viewport}
         canUndo={historyState.past.length > 0}
         canRedo={historyState.future.length > 0}
         onUndo={() => setHistoryState((current) => undoStudioHistory(current))}
         onRedo={() => setHistoryState((current) => redoStudioHistory(current))}
         onViewportChange={setViewport}
+        onSnapshotChange={handleSnapshotChange}
       />
       {message ? (
         <div className="border-b border-slate-200 bg-emerald-50 px-6 py-3 text-sm font-medium text-emerald-800">
@@ -299,7 +355,7 @@ export default function TemplateStudioShell({
           />
         )}
         <CanvasPane
-          page={{ ...page, sections: canvasState.sections }}
+          page={{ ...pageDraft, sections: canvasState.sections }}
           state={canvasState}
           viewport={viewport}
           selectedSectionId={canvasState.selectedSectionId}

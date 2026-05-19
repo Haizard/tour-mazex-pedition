@@ -3,6 +3,12 @@ import React from "react";
 import BindingInspector from "./BindingInspector.jsx";
 import { INSPECTOR_TABS, createStudioSectionDraft } from "./studioTypes.js";
 
+const RESPONSIVE_BREAKPOINTS = [
+  { id: "mobile", label: "Mobile" },
+  { id: "tablet", label: "Tablet" },
+  { id: "desktop", label: "Desktop" },
+];
+
 export default function InspectorPane({
   selectedTab = "content",
   selectedSection,
@@ -14,8 +20,19 @@ export default function InspectorPane({
   const section = createStudioSectionDraft(selectedSection);
   const content = section.content || {};
   const styles = section.styles || {};
+  const responsive = section.responsive || {};
 
   const handlePatch = (patch) => onUpdateSection?.(section.id, patch);
+  const handleResponsivePatch = (device, key, value) =>
+    handlePatch({
+      responsive: {
+        ...responsive,
+        [device]: {
+          ...(responsive[device] || {}),
+          [key]: value,
+        },
+      },
+    });
 
   return (
     <aside
@@ -111,6 +128,70 @@ export default function InspectorPane({
               />
             </label>
             <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Background Color</span>
+              <input
+                type="text"
+                value={styles.backgroundColor || ""}
+                onChange={(event) => handlePatch({ styles: { backgroundColor: event.target.value } })}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                placeholder="#f8fafc"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Text Color</span>
+              <input
+                type="text"
+                value={styles.textColor || ""}
+                onChange={(event) => handlePatch({ styles: { textColor: event.target.value } })}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                placeholder="#0f172a"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Padding Y</span>
+                <input
+                  type="text"
+                  value={styles.paddingY || ""}
+                  onChange={(event) => handlePatch({ styles: { paddingY: event.target.value } })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                  placeholder="72px"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Gap</span>
+                <input
+                  type="text"
+                  value={styles.gap || ""}
+                  onChange={(event) => handlePatch({ styles: { gap: event.target.value } })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                  placeholder="24px"
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Radius</span>
+                <input
+                  type="text"
+                  value={styles.radius || ""}
+                  onChange={(event) => handlePatch({ styles: { radius: event.target.value } })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                  placeholder="32px"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Max Width</span>
+                <input
+                  type="text"
+                  value={styles.maxWidth || ""}
+                  onChange={(event) => handlePatch({ styles: { maxWidth: event.target.value } })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                  placeholder="1200px"
+                />
+              </label>
+            </div>
+            <label className="block">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Custom CSS</span>
               <textarea
                 rows={8}
@@ -132,9 +213,67 @@ export default function InspectorPane({
           </div>
         ) : selectedTab === "responsive" ? (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            <p>
-              Responsive overrides will expand here. This section already supports shared canvas ordering and saved reusable variants.
+            <p className="text-sm text-slate-600">
+              Tune how this section compresses across breakpoints without losing the imported or reusable layout.
             </p>
+            {RESPONSIVE_BREAKPOINTS.map((device) => {
+              const deviceSettings = responsive[device.id] || {};
+              return (
+                <div key={device.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-slate-900">{device.label}</h3>
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      {device.id}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Columns</span>
+                      <input
+                        type="text"
+                        value={deviceSettings.columns || ""}
+                        onChange={(event) => handleResponsivePatch(device.id, "columns", event.target.value)}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        placeholder={device.id === "mobile" ? "1" : device.id === "tablet" ? "2" : "3"}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Padding Y</span>
+                      <input
+                        type="text"
+                        value={deviceSettings.paddingY || ""}
+                        onChange={(event) => handleResponsivePatch(device.id, "paddingY", event.target.value)}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        placeholder={device.id === "mobile" ? "32px" : device.id === "tablet" ? "48px" : "72px"}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Gap</span>
+                      <input
+                        type="text"
+                        value={deviceSettings.gap || ""}
+                        onChange={(event) => handleResponsivePatch(device.id, "gap", event.target.value)}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        placeholder="20px"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Align</span>
+                      <select
+                        value={deviceSettings.align || ""}
+                        onChange={(event) => handleResponsivePatch(device.id, "align", event.target.value)}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                      >
+                        <option value="">Inherit</option>
+                        <option value="start">Start</option>
+                        <option value="center">Center</option>
+                        <option value="end">End</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">

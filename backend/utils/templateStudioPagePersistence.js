@@ -53,6 +53,7 @@ export const buildStudioPageFromPageConfig = (pageConfig = {}) => {
     seo: { ...(pageConfig.seo || {}) },
     templateSource: { ...(pageConfig.templateSource || {}) },
     themeTokens: { ...(pageConfig.templateStudio?.themeTokens || {}) },
+    snapshots: [...(pageConfig.templateStudio?.snapshots || [])],
     layout: {
       shell: pageConfig.templateStudio?.layoutShell || "",
     },
@@ -78,6 +79,7 @@ export const buildPageConfigFromStudioPage = ({ studioPage = {}, tenantId } = {}
       sourceType: studioPage.sourceSummary?.sourceType || "",
       layoutShell: studioPage.layout?.shell || "",
       themeTokens: { ...(studioPage.themeTokens || {}) },
+      snapshots: [...(studioPage.snapshots || [])],
       sourceMeta: {
         ...(studioPage.sourceSummary || {}),
       },

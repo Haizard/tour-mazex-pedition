@@ -14,13 +14,18 @@ export default function StudioTopBar({
   pageType = "custom",
   status = "Draft",
   viewport = "desktop",
+  snapshots = [],
+  selectedSnapshotId = "",
   canUndo = false,
   canRedo = false,
   onAction,
   onUndo,
   onRedo,
   onViewportChange,
+  onSnapshotChange,
 }) {
+  const latestSnapshot = snapshots[0] || null;
+
   return (
     <header
       className="flex flex-col gap-4 border-b border-slate-200 bg-white/90 px-6 py-4 backdrop-blur"
@@ -59,6 +64,36 @@ export default function StudioTopBar({
         <span className="rounded-full bg-slate-100 px-3 py-1">Canvas Composition</span>
         <span className="rounded-full bg-slate-100 px-3 py-1">CMS Connections</span>
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
+            <span className="uppercase tracking-wide text-slate-400">Snapshots</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
+              {snapshots.length}
+            </span>
+            <button
+              type="button"
+              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+              onClick={() => onAction?.("save-snapshot")}
+            >
+              Save Snapshot
+            </button>
+            <select
+              value={selectedSnapshotId}
+              onChange={(event) => onSnapshotChange?.(event.target.value)}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700"
+            >
+              <option value="">Current Draft</option>
+              {snapshots.map((snapshot) => (
+                <option key={snapshot.id} value={snapshot.id}>
+                  {snapshot.name}
+                </option>
+              ))}
+            </select>
+            {latestSnapshot ? (
+              <span className="hidden text-[11px] text-slate-400 lg:inline">
+                Latest: {latestSnapshot.name}
+              </span>
+            ) : null}
+          </div>
           <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
             {["desktop", "tablet", "mobile"].map((mode) => (
               <button

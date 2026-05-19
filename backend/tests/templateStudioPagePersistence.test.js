@@ -76,3 +76,32 @@ test("buildPageConfigFromStudioPage accepts pageName from the studio shell when 
 
   assert.equal(payload.title, "About Us");
 });
+
+test("template studio snapshots round-trip through page persistence helpers", () => {
+  const payload = buildPageConfigFromStudioPage({
+    studioPage: {
+      pageType: "about",
+      slug: "/about",
+      title: "About Us",
+      snapshots: [
+        {
+          id: "snapshot-1",
+          name: "About Hero Snapshot",
+          createdAt: "2026-05-19T08:00:00.000Z",
+          viewport: "tablet",
+          sections: [{ id: "section-hero", type: "hero", label: "Hero" }],
+        },
+      ],
+      sections: [],
+    },
+    tenantId: "64f0f0f0f0f0f0f0f0f0f0f0",
+  });
+
+  assert.equal(payload.templateStudio.snapshots.length, 1);
+  assert.equal(payload.templateStudio.snapshots[0].name, "About Hero Snapshot");
+
+  const studioPage = buildStudioPageFromPageConfig(payload);
+
+  assert.equal(studioPage.snapshots.length, 1);
+  assert.equal(studioPage.snapshots[0].viewport, "tablet");
+});

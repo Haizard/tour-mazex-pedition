@@ -83,6 +83,7 @@ export function createStudioPageDraft(overrides = {}) {
     pageType: overrides.pageType || "custom",
     status: overrides.status || "draft",
     sections: overrides.sections || [],
+    snapshots: overrides.snapshots || [],
     ...overrides,
   };
 }
@@ -96,6 +97,7 @@ export function pageConfigToStudioPage(pageConfig = {}, pageType = "home") {
     slug: pageConfig.slug || "/",
     status: pageConfig.status || "draft",
     themeTokens: pageConfig.templateStudio?.themeTokens || {},
+    snapshots: pageConfig.templateStudio?.snapshots || [],
     sourceSummary: {
       sourceType: pageConfig.templateStudio?.sourceType || "",
       ...(pageConfig.templateStudio?.sourceMeta || {}),
@@ -139,6 +141,7 @@ export function studioPageToPageConfig(studioPage = {}, currentPageConfig = {}) 
       sourceType: studioPage.sourceSummary?.sourceType || currentPageConfig.templateStudio?.sourceType || "",
       layoutShell: studioPage.layout?.shell || currentPageConfig.templateStudio?.layoutShell || "",
       themeTokens: studioPage.themeTokens || currentPageConfig.templateStudio?.themeTokens || {},
+      snapshots: studioPage.snapshots || currentPageConfig.templateStudio?.snapshots || [],
       sourceMeta: studioPage.sourceSummary || currentPageConfig.templateStudio?.sourceMeta || {},
     },
     sections: (studioPage.sections || []).map((section, index) => ({

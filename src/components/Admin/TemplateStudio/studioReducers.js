@@ -185,6 +185,14 @@ function updateSection(state, action) {
             ...(section.styles || {}),
             ...(action.patch?.styles || {}),
           },
+          responsive: {
+            ...(section.responsive || {}),
+            ...(action.patch?.responsive || {}),
+          },
+          visibility: {
+            ...(section.visibility || {}),
+            ...(action.patch?.visibility || {}),
+          },
           bindings: action.patch?.bindings || section.bindings || [],
         })
       : section
