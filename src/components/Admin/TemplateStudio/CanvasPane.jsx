@@ -160,6 +160,7 @@ export default function CanvasPane({
                 >
                   <CanvasSectionCard
                     section={section}
+                    viewport={viewport}
                     isSelected={canvasState.selectedSectionId === section.id}
                     onAction={(actionId) => onSectionAction?.(actionId, section, index)}
                   />

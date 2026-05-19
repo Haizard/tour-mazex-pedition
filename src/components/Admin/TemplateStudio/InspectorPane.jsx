@@ -1,6 +1,7 @@
 import React from "react";
 
 import BindingInspector from "./BindingInspector.jsx";
+import { findStylePreset, STYLE_PRESETS } from "./stylePresets.js";
 import { INSPECTOR_TABS, createStudioSectionDraft } from "./studioTypes.js";
 
 const RESPONSIVE_BREAKPOINTS = [
@@ -33,6 +34,13 @@ export default function InspectorPane({
         },
       },
     });
+  const handleApplyPreset = (presetId) => {
+    const preset = findStylePreset(presetId);
+    if (!preset) {
+      return;
+    }
+    handlePatch({ styles: preset.styles });
+  };
 
   return (
     <aside
@@ -117,6 +125,30 @@ export default function InspectorPane({
           </div>
         ) : selectedTab === "style" ? (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Quick Presets
+              </p>
+              <div className="mt-3 grid gap-3">
+                {STYLE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => handleApplyPreset(preset.id)}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold text-slate-900">{preset.label}</span>
+                      <span
+                        className="h-4 w-4 rounded-full border border-white shadow-sm"
+                        style={{ backgroundColor: preset.styles.accentColor }}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">{preset.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
             <label className="block">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Accent Color</span>
               <input
@@ -191,6 +223,38 @@ export default function InspectorPane({
                 />
               </label>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Headline Size</span>
+                <input
+                  type="text"
+                  value={styles.headlineSize || ""}
+                  onChange={(event) => handlePatch({ styles: { headlineSize: event.target.value } })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                  placeholder="2.2rem"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Body Size</span>
+                <input
+                  type="text"
+                  value={styles.bodySize || ""}
+                  onChange={(event) => handlePatch({ styles: { bodySize: event.target.value } })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                  placeholder="1rem"
+                />
+              </label>
+            </div>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Font Family</span>
+              <input
+                type="text"
+                value={styles.fontFamily || ""}
+                onChange={(event) => handlePatch({ styles: { fontFamily: event.target.value } })}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                placeholder="Georgia, serif"
+              />
+            </label>
             <label className="block">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Custom CSS</span>
               <textarea
