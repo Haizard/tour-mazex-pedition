@@ -5,6 +5,7 @@ import {
   FaArrowRight,
   FaBalanceScale,
   FaCompass,
+  FaTimes,
   FaMapMarkerAlt,
   FaMoneyBillWave,
   FaSearch,
@@ -22,6 +23,7 @@ import {
   updateMarketplaceSavedTrips,
 } from "../services/api";
 import { getMarketplaceTravelerSessionKey } from "../components/Marketplace/travelerSession";
+import { countActiveDiscoveryFilters } from "./discoveryFilterUtils";
 
 const createInitialFilters = () => ({
   q: "",
@@ -89,6 +91,7 @@ const GlobalDiscovery = () => {
   const [comparisonTrips, setComparisonTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(createInitialFilters);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const fetchOperators = useCallback(async () => {
     try {
@@ -184,6 +187,7 @@ const GlobalDiscovery = () => {
   };
 
   const clearFilters = () => setFilters(createInitialFilters());
+  const activeFilterCount = useMemo(() => countActiveDiscoveryFilters(filters), [filters]);
 
   const saveIds = useMemo(() => new Set(savedTrips.map((trip) => trip._id)), [savedTrips]);
   const comparisonIds = useMemo(() => new Set(comparisonTrips.map((trip) => trip._id)), [comparisonTrips]);
@@ -316,7 +320,7 @@ const GlobalDiscovery = () => {
 
       <section className="mx-auto max-w-[1680px] px-5 py-10 sm:px-6 xl:px-8 2xl:max-w-[1820px]">
         <div className="grid gap-8 xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="space-y-6">
+          <aside className="hidden space-y-6 xl:block">
             <div className="rounded-[32px] border border-[#e2d2b7] bg-white p-6 shadow-[0_20px_60px_rgba(35,66,50,0.08)]">
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-[#234232] p-3 text-white">
@@ -524,6 +528,31 @@ const GlobalDiscovery = () => {
           </aside>
 
           <div className="space-y-8">
+            <div className="flex flex-wrap gap-3 xl:hidden">
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters(true)}
+                className="inline-flex items-center gap-3 rounded-2xl border border-[#d8c8ae] bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-900 shadow-[0_12px_30px_rgba(35,66,50,0.08)]"
+              >
+                <FaSlidersH className="text-primary" />
+                Filters
+                {activeFilterCount > 0 ? (
+                  <span className="rounded-full bg-[#224433] px-2 py-1 text-[10px] text-white">
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+              </button>
+              {activeFilterCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 shadow-[0_12px_30px_rgba(35,66,50,0.08)]"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
+
             <DiscoveryRegionMap
               regions={regions}
               tours={tours}
@@ -882,6 +911,247 @@ const GlobalDiscovery = () => {
           </div>
         </div>
       </section>
+
+      {showMobileFilters ? (
+        <div className="fixed inset-0 z-50 bg-slate-950/55 px-4 py-6 xl:hidden">
+          <div className="mx-auto flex h-full max-w-xl flex-col overflow-hidden rounded-[32px] border border-[#d8c8ae] bg-[#f6f1e8] shadow-[0_30px_90px_rgba(15,23,42,0.32)]">
+            <div className="flex items-center justify-between border-b border-[#e2d2b7] bg-white px-5 py-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+                  Marketplace Filters
+                </p>
+                <h2 className="mt-1 text-lg font-black uppercase tracking-tight text-slate-900">
+                  Refine discovery
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 text-slate-600"
+                aria-label="Close filters"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="rounded-[32px] border border-[#e2d2b7] bg-white p-6 shadow-[0_20px_60px_rgba(35,66,50,0.08)]">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-2xl bg-[#234232] p-3 text-white">
+                    <FaSlidersH />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+                      Filter Trips
+                    </p>
+                    <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">
+                      Refine the list
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  <label className="block">
+                    <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Search
+                    </span>
+                    <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <FaSearch className="mr-3 text-slate-400" />
+                      <input
+                        type="text"
+                        name="q"
+                        value={filters.q}
+                        onChange={handleFilterChange}
+                        placeholder="Big five, Kilimanjaro, Zanzibar..."
+                        className="w-full bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Location
+                    </span>
+                    <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <FaMapMarkerAlt className="mr-3 text-slate-400" />
+                      <input
+                        type="text"
+                        name="location"
+                        value={filters.location}
+                        onChange={handleFilterChange}
+                        placeholder="Tanzania, Kenya, Uganda..."
+                        className="w-full bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Operator
+                    </span>
+                    <select
+                      name="operator"
+                      value={filters.operator}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="">All operators</option>
+                      {operators.map((operator) => (
+                        <option key={operator._id} value={operator.slug || operator.name}>
+                          {operator.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        Category
+                      </span>
+                      <select
+                        name="category"
+                        value={filters.category}
+                        onChange={handleFilterChange}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">All styles</option>
+                        {categoryOptions.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        Duration
+                      </span>
+                      <select
+                        name="duration"
+                        value={filters.duration}
+                        onChange={handleFilterChange}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">Any length</option>
+                        {durationOptions.map((duration) => (
+                          <option key={duration} value={duration}>
+                            {duration} days
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        Availability
+                      </span>
+                      <select
+                        name="availability"
+                        value={filters.availability}
+                        onChange={handleFilterChange}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">Any availability</option>
+                        <option value="upcoming">Has upcoming dates</option>
+                        <option value="bookable">Bookable departures</option>
+                        <option value="instant">Instant-booking ready</option>
+                        <option value="request">Request next dates</option>
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        Departure Month
+                      </span>
+                      <input
+                        type="month"
+                        name="departureMonth"
+                        value={filters.departureMonth}
+                        onChange={handleFilterChange}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        Minimum Price
+                      </span>
+                      <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <FaMoneyBillWave className="mr-3 text-slate-400" />
+                        <input
+                          type="number"
+                          name="minPrice"
+                          value={filters.minPrice}
+                          onChange={handleFilterChange}
+                          placeholder="0"
+                          className="w-full bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+                        />
+                      </div>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        Maximum Price
+                      </span>
+                      <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <FaMoneyBillWave className="mr-3 text-slate-400" />
+                        <input
+                          type="number"
+                          name="maxPrice"
+                          value={filters.maxPrice}
+                          onChange={handleFilterChange}
+                          placeholder="5000"
+                          className="w-full bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  <label className="block">
+                    <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Sort Results
+                    </span>
+                    <select
+                      name="sort"
+                      value={filters.sort}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="featured">Featured first</option>
+                      <option value="price-asc">Price: low to high</option>
+                      <option value="price-desc">Price: high to low</option>
+                      <option value="newest">Newest additions</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 border-t border-[#e2d2b7] bg-white p-4">
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="rounded-2xl border border-slate-200 px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
+              >
+                Clear all
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters(false)}
+                className="rounded-2xl bg-[#224433] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white"
+              >
+                Show {tours.length} trips
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

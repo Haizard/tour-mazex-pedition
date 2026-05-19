@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import {
   FaArrowLeft,
   FaBalanceScale,
+  FaChevronDown,
   FaCalendarCheck,
   FaCheckCircle,
   FaClock,
@@ -92,6 +93,7 @@ const DiscoveryTourDetail = () => {
   const [instantBookingStatus, setInstantBookingStatus] = useState("");
   const [instantBookingLoading, setInstantBookingLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const inquirySectionId = "marketplace-trip-request";
 
   useEffect(() => {
     const fetchTour = async () => {
@@ -511,7 +513,7 @@ const DiscoveryTourDetail = () => {
   } Please confirm availability and share the best next steps.`;
 
   return (
-    <div className="min-h-screen bg-[#f6f1e8] px-4 pb-20 pt-32 md:px-6 md:pt-40">
+    <div className="min-h-screen bg-[#f6f1e8] px-4 pb-36 pt-32 md:px-6 md:pb-20 md:pt-40">
       <div className="mx-auto max-w-7xl">
         <Link
           to="/discover"
@@ -1096,7 +1098,7 @@ const DiscoveryTourDetail = () => {
           </div>
 
           <aside className="space-y-6 xl:sticky xl:top-32 xl:h-fit">
-            <div className="overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
+            <div id={inquirySectionId} className="overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
               <div className="bg-[#234232] p-6 text-white">
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d9c79f]">
                   Direct Inquiry
@@ -1350,6 +1352,42 @@ const DiscoveryTourDetail = () => {
               </div>
             </div>
           </aside>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-4 bottom-4 z-40 xl:hidden">
+        <div className="rounded-[28px] border border-[#d8c8ae] bg-white/95 p-3 shadow-[0_24px_80px_rgba(15,23,42,0.18)] backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8b7451]">
+                Marketplace inquiry
+              </p>
+              <p className="truncate text-sm font-black uppercase tracking-tight text-slate-900">
+                {selectedAvailabilityLabel || "Request the next available departure"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleSavedTrip}
+                className={`inline-flex h-11 items-center gap-2 rounded-2xl px-4 text-[10px] font-black uppercase tracking-[0.16em] ${
+                  savedTripIds.includes(tour._id)
+                    ? "bg-[#224433] text-white"
+                    : "border border-slate-200 text-slate-700"
+                }`}
+              >
+                <FaHeart />
+                {savedTripIds.includes(tour._id) ? "Saved" : "Save"}
+              </button>
+              <a
+                href={`#${inquirySectionId}`}
+                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#224433] px-4 text-[10px] font-black uppercase tracking-[0.16em] text-white"
+              >
+                Request trip
+                <FaChevronDown />
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

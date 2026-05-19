@@ -58,6 +58,8 @@ const quoteProposalSchema = new mongoose.Schema(
     },
     validUntil: { type: Date, default: null },
     generatedBy: { type: String, default: "" },
+    leadSource: { type: String, trim: true, default: "" },
+    campaignLabel: { type: String, trim: true, default: "" },
     generationMeta: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

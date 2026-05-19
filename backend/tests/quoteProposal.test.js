@@ -25,6 +25,8 @@ test("generateQuoteProposal creates priced line items and next steps", () => {
       adults: 2,
       travelWhen: "July 2026",
       services: ["airport pickup"],
+      sourceChannel: "global-marketplace",
+      campaignLabel: "tour_tour-1",
     },
     tours: [
       { _id: "a", title: "Serengeti Fly-In", location: "Serengeti", price: 2200, itinerary: [] },
@@ -38,4 +40,6 @@ test("generateQuoteProposal creates priced line items and next steps", () => {
   assert.equal(quote.totalPrice > 0, true);
   assert.equal(quote.recommendedTourIds.length > 0, true);
   assert.equal(quote.nextSteps.length > 0, true);
+  assert.equal(quote.generationMeta.leadSource, "global-marketplace");
+  assert.equal(quote.generationMeta.campaignLabel, "tour_tour-1");
 });

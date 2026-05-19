@@ -326,6 +326,8 @@ test("buildQuoteRevenueView reconstructs the admin quote payload from postgres",
     source_payload: {
       summary: "A private safari through the north.",
       travelerCount: 2,
+      leadSource: "global-marketplace",
+      campaignLabel: "tour_tour-1",
     },
   });
 
@@ -333,6 +335,8 @@ test("buildQuoteRevenueView reconstructs the admin quote payload from postgres",
   assert.equal(quote.status, "sent");
   assert.equal(quote.paymentStatus, "pending");
   assert.equal(quote.summary, "A private safari through the north.");
+  assert.equal(quote.leadSource, "global-marketplace");
+  assert.equal(quote.campaignLabel, "tour_tour-1");
 });
 
 test("buildPublicPaymentRevenueView reconstructs the public payment payload from postgres", () => {

@@ -524,6 +524,8 @@ router.post('/:id/generate-quote', requireTenantAdmin, async (req, res) => {
         const quote = await createPostgresFirstQuote(
             withTenantId(req, {
                 inquiryId: inquiry._id,
+                leadSource: inquiry.sourceChannel || "website",
+                campaignLabel: inquiry.campaignLabel || "",
                 ...proposal,
             }),
             process.env

@@ -146,6 +146,8 @@ export const generateQuoteProposal = ({
       source: "smart-quote-v1",
       recommendedTourTitles: recommendedTours.map((tour) => tour.title),
       inquiryBudget: inquiry.budget || "",
+      leadSource: inquiry.sourceChannel || "website",
+      campaignLabel: inquiry.campaignLabel || "",
     },
   };
 };

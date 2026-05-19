@@ -425,13 +425,23 @@ const LeadInboxManager = () => {
                             <div key={quote._id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-3">
                               <div>
                                 <p className="text-[11px] font-bold text-slate-900">{quote.title}</p>
-                                <div className="mt-1 flex gap-2">
+                                <div className="mt-1 flex flex-wrap gap-2">
                                   <span className={`text-[9px] font-black uppercase tracking-widest ${quote.status === "sent" ? "text-primary" : quote.status === "accepted" ? "text-emerald-600" : "text-slate-400"}`}>
                                     {quote.status}
                                   </span>
                                   <span className="text-[9px] font-bold text-slate-400">
                                     {quote.currency} {quote.totalPrice.toLocaleString()}
                                   </span>
+                                  {(quote.leadSource || inquiry.sourceChannel) ? (
+                                    <span className="rounded-full bg-slate-200 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-700">
+                                      {quote.leadSource || inquiry.sourceChannel}
+                                    </span>
+                                  ) : null}
+                                  {(quote.campaignLabel || inquiry.campaignLabel) ? (
+                                    <span className="rounded-full bg-[#eef4ed] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-[#224433]">
+                                      {quote.campaignLabel || inquiry.campaignLabel}
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
                               <div className="flex flex-wrap gap-2">
