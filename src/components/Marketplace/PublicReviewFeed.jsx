@@ -6,11 +6,11 @@ const PublicReviewFeed = ({ reviews = [] }) => (
           Community Feedback
         </p>
         <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
-          What travelers are saying
+          Traveler voice on this package
         </h2>
       </div>
       <p className="text-sm font-medium text-slate-500">
-        Reviews are labeled by verification type before publication.
+        Every published review keeps its verification type visible before you decide to inquire.
       </p>
     </div>
 

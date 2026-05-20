@@ -16,7 +16,7 @@ const ReviewSummaryPanel = ({ summary }) => {
             Traveler Reviews
           </p>
           <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
-            Verified review snapshot
+            Verified traveler proof
           </h2>
           <div className="mt-5 flex items-end gap-4">
             <span className="text-6xl font-black uppercase tracking-[-0.06em] text-[#224433]">
@@ -27,7 +27,7 @@ const ReviewSummaryPanel = ({ summary }) => {
                 {reviewCount} published review{reviewCount === 1 ? "" : "s"}
               </p>
               <p className="mt-1 text-sm font-medium text-slate-500">
-                Ratings currently prioritize verified booking feedback.
+                Ratings weight verified booking feedback first, then verified inquiry context.
               </p>
             </div>
           </div>
