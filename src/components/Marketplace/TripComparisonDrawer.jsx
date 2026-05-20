@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { buildTripComparisonFields } from "./tripComparisonUtils";
 
 const formatAvailabilityDate = (value = "") => {
   if (!value) return "";
@@ -28,7 +29,59 @@ const TripComparisonDrawer = ({ trips = [], onRemove, onClear }) => (
     </div>
 
     {trips.length > 0 ? (
-      <div className="mt-6 overflow-x-auto">
+      <>
+        <div className="mt-6 space-y-4 md:hidden">
+          {trips.map((trip) => (
+            <article key={trip._id} className="rounded-[28px] border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-tight text-slate-900">{trip.title}</p>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8b7451]">
+                    {trip.operator?.name || "Verified Operator"}
+                  </p>
+                  <p className="mt-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    {trip.marketplaceAvailability?.[0]
+                      ? `${trip.marketplaceAvailability[0].status} • ${formatAvailabilityDate(
+                          trip.marketplaceAvailability[0].date,
+                        )}`
+                      : "Dates on request"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    to={`/discover/tour/${trip._id}`}
+                    className="rounded-full bg-[#224433] px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white"
+                  >
+                    Open
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => onRemove?.(trip._id)}
+                    className="rounded-full border border-slate-200 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {buildTripComparisonFields(trip).map(([label, value]) => (
+                  <div
+                    key={`${trip._id}-${label}`}
+                    className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3"
+                  >
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      {label}
+                    </p>
+                    <p className="mt-1 text-sm font-medium leading-6 text-slate-700">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-6 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[860px] text-left">
           <thead>
             <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
@@ -66,54 +119,22 @@ const TripComparisonDrawer = ({ trips = [], onRemove, onClear }) => (
             </tr>
           </thead>
           <tbody className="align-top text-sm font-medium text-slate-600">
-            {[
-              ["Starting price", (trip) => `$${Number(trip.price || 0).toLocaleString()}`],
-              ["Duration", (trip) => trip.duration || "Multi-day"],
-              ["Location", (trip) => trip.location || "East Africa"],
-              [
-                "Next departure",
-                (trip) =>
-                  trip.marketplaceAvailability?.[0]
-                    ? `${trip.marketplaceAvailability[0].status} - ${formatAvailabilityDate(
-                        trip.marketplaceAvailability[0].date
-                      )}${
-                        typeof trip.marketplaceAvailability[0].remainingSpots === "number"
-                          ? ` (${trip.marketplaceAvailability[0].remainingSpots} spots)`
-                          : ""
-                      }`
-                    : "Request next available dates",
-              ],
-              ["Travel style", (trip) => trip.category || trip.tourType || "Curated journey"],
-              [
-                "Review summary",
-                (trip) =>
-                  trip.marketplace?.averageRating
-                    ? `${trip.marketplace.averageRating}/5 from ${trip.marketplace.reviewCount || 0} reviews`
-                    : "New feedback profile",
-              ],
-              [
-                "Inclusions snapshot",
-                (trip) => (trip.inclusions || []).slice(0, 3).join(", ") || "Ask operator for inclusions",
-              ],
-              [
-                "Destinations",
-                (trip) => (trip.destinationsVisited || []).slice(0, 4).join(", ") || "Route details on request",
-              ],
-            ].map(([label, render]) => (
+            {buildTripComparisonFields(trips[0]).map(([label]) => (
               <tr key={label} className="border-b border-slate-100">
                 <td className="py-4 pr-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                   {label}
                 </td>
                 {trips.map((trip) => (
                   <td key={`${trip._id}-${label}`} className="py-4 pr-4 leading-7">
-                    {render(trip)}
+                    {buildTripComparisonFields(trip).find(([fieldLabel]) => fieldLabel === label)?.[1]}
                   </td>
                 ))}
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+        </div>
+      </>
     ) : (
       <div className="mt-6 rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-8">
         <p className="text-sm font-medium leading-7 text-slate-600">

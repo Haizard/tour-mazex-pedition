@@ -29,9 +29,12 @@ const SavedTripsRail = ({ trips = [], onRemove }) => (
     </div>
 
     {trips.length > 0 ? (
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-6 flex snap-x gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:overflow-visible md:pb-0 xl:grid-cols-3">
         {trips.map((trip) => (
-          <article key={trip._id} className="overflow-hidden rounded-[28px] border border-slate-100 bg-slate-50">
+          <article
+            key={trip._id}
+            className="min-w-[280px] snap-start overflow-hidden rounded-[28px] border border-slate-100 bg-slate-50 md:min-w-0"
+          >
             <img src={trip.image} alt={trip.title} className="h-40 w-full object-cover" />
             <div className="p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">

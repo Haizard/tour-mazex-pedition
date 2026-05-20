@@ -4,6 +4,10 @@ import { fetchPublicQuote, respondToPublicQuote } from "../services/api";
 import Badge from "../components/UI/Badge";
 import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
+import {
+  getMarketplaceQuoteContext,
+  getQuoteStatusLabel,
+} from "./quotePublicViewUtils";
 
 const QuotePublicView = () => {
   const { token } = useParams();
@@ -12,6 +16,7 @@ const QuotePublicView = () => {
   const [error, setError] = useState("");
   const [responding, setResponding] = useState(false);
   const [responseSuccess, setResponseSuccess] = useState("");
+  const [changeRequest, setChangeRequest] = useState("");
 
   useEffect(() => {
     const loadQuote = async () => {
@@ -34,6 +39,7 @@ const QuotePublicView = () => {
       const response = await respondToPublicQuote(token, { action, notes });
       setResponseSuccess(action === "accept" ? "Thank you! We have received your acceptance. Our team will contact you shortly to finalize the booking." : "Thank you for your feedback. We will review it and get back to you with an updated proposal.");
       setQuote(response.data?.quote || null);
+      setChangeRequest("");
     } catch (err) {
       setError("Failed to submit your response. Please try again.");
     } finally {
@@ -66,6 +72,7 @@ const QuotePublicView = () => {
   }
 
   const isAccepted = quote.status === "accepted";
+  const marketplaceContext = getMarketplaceQuoteContext(quote);
 
   return (
     <div className="min-h-screen bg-[#fcfdfe] pb-24 pt-12 font-sans selection:bg-primary selection:text-white">
@@ -87,10 +94,24 @@ const QuotePublicView = () => {
               {quote.tripLengthDays} Days
             </Badge>
             <Badge variant={isAccepted ? "accent" : "secondary"} className="px-4 py-2 text-xs font-black uppercase tracking-widest">
-              Status: {quote.status}
+              Status: {getQuoteStatusLabel(quote.status)}
             </Badge>
           </div>
         </div>
+
+        {marketplaceContext ? (
+          <div className="mb-8 rounded-[28px] border border-[#d8c8ae] bg-[#fbf8f1] px-6 py-5 shadow-sm" data-aos="fade-up">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#8b7451]">
+              {marketplaceContext.eyebrow}
+            </p>
+            <h2 className="mt-2 text-lg font-black uppercase tracking-tight text-slate-900">
+              {marketplaceContext.title}
+            </h2>
+            <p className="mt-2 text-sm font-medium leading-7 text-slate-600">
+              {marketplaceContext.detail}
+            </p>
+          </div>
+        ) : null}
 
         {responseSuccess && (
           <div className="mb-12 animate-fade-in rounded-[32px] border border-emerald-100 bg-emerald-50 px-8 py-6 text-center shadow-sm" data-aos="zoom-in">
@@ -174,16 +195,25 @@ const QuotePublicView = () => {
                   >
                     {responding ? "Processing..." : "Accept Proposal"}
                   </Button>
-                  <button 
-                    className="w-full rounded-2xl border border-white/20 py-4 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-white/10"
-                    onClick={() => {
-                      const notes = prompt("How can we improve this for you?");
-                      if (notes) handleResponse("reject", notes);
-                    }}
-                    disabled={responding}
-                  >
-                    Request Changes
-                  </button>
+                  <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                      Need a revision?
+                    </p>
+                    <textarea
+                      value={changeRequest}
+                      onChange={(event) => setChangeRequest(event.target.value)}
+                      rows={4}
+                      placeholder="Tell the operator what you want changed: dates, inclusions, group size, accommodation level, or budget."
+                      className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/25 px-4 py-3 text-sm font-medium text-white outline-none placeholder:text-slate-400"
+                    />
+                    <button
+                      className="mt-3 w-full rounded-2xl border border-white/20 py-4 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => handleResponse("reject", changeRequest.trim())}
+                      disabled={responding || !changeRequest.trim()}
+                    >
+                      {responding ? "Sending..." : "Request Changes"}
+                    </button>
+                  </div>
                 </div>
               )}
             </Card>
