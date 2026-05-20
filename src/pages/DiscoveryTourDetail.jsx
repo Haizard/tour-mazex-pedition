@@ -21,10 +21,13 @@ import {
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import PackageQuestionsPanel from "../components/Marketplace/PackageQuestionsPanel";
 import PublicReviewFeed from "../components/Marketplace/PublicReviewFeed";
+import OperatorCredibilityCard from "../components/Marketplace/OperatorCredibilityCard";
 import ReviewSubmissionForm from "../components/Marketplace/ReviewSubmissionForm";
 import ReviewSummaryPanel from "../components/Marketplace/ReviewSummaryPanel";
+import TravelerProofCard from "../components/Marketplace/TravelerProofCard";
 import TravelerPhotoGallery from "../components/Marketplace/TravelerPhotoGallery";
 import TravelerPhotoSubmissionForm from "../components/Marketplace/TravelerPhotoSubmissionForm";
+import DepartureConfidenceBadge from "../components/Marketplace/DepartureConfidenceBadge";
 import {
   fetchMarketplacePhotos,
   fetchMarketplaceQuestions,
@@ -38,6 +41,11 @@ import {
   updateMarketplaceComparisons,
 } from "../services/api";
 import { getMarketplaceTravelerSessionKey } from "../components/Marketplace/travelerSession";
+import {
+  getDepartureConfidenceCopy,
+  getInquiryReassuranceCopy,
+  getOperatorTrustSupportCopy,
+} from "../components/Marketplace/marketplaceTrustUtils";
 
 const getDiscoveryApiUrl = (path, params = null) => {
   const query = params ? `?${params.toString()}` : "";
@@ -47,13 +55,6 @@ const getDiscoveryApiUrl = (path, params = null) => {
   }
 
   return `${path}${query}`;
-};
-
-const getAvailabilityTone = (status = "") => {
-  if (status === "available") return "bg-[#e1efe6] text-[#234232]";
-  if (status === "limited") return "bg-[#fff3d6] text-[#8a5a05]";
-  if (status === "unavailable") return "bg-[#fde7e7] text-[#a33b3b]";
-  return "bg-slate-100 text-slate-700";
 };
 
 const formatShortAvailabilityDate = (value = "") => {
@@ -441,13 +442,7 @@ const DiscoveryTourDetail = () => {
     || availabilityMonths[0]?.entries
     || [];
   const selectedAvailabilitySummary = selectedAvailabilityEntry
-    ? typeof selectedAvailabilityEntry.remainingSpots === "number"
-      ? `${selectedAvailabilityEntry.remainingSpots} spots currently noted for this departure.`
-      : selectedAvailabilityEntry.status === "limited"
-        ? "This date is published with limited remaining availability."
-        : selectedAvailabilityEntry.status === "unavailable"
-          ? "This date is currently unavailable. Use the inquiry form to request the next opening."
-          : "This date is published and ready for operator confirmation."
+    ? getDepartureConfidenceCopy(selectedAvailabilityEntry)
     : "Ask the operator for the next confirmed departure window.";
   const handleSaveReminder = async () => {
     try {
@@ -597,102 +592,19 @@ const DiscoveryTourDetail = () => {
               </div>
 
               <div className="space-y-8">
-                <div className="rounded-[36px] border border-[#e4d6be] bg-[#fbf8f1] p-6 shadow-[0_18px_60px_rgba(35,66,50,0.06)]">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
-                    Marketplace Trust
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
-                      <FaCheckCircle className="mt-1 text-primary" />
-                      <div>
-                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                          Marketplace visibility
-                        </p>
-                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                          This package is currently published on the marketplace and can accept traveler
-                          inquiries from this page.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
-                      <FaStar className="mt-1 text-[#d9a441]" />
-                      <div>
-                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                          External review signal
-                        </p>
-                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                          {tour.tripAdvisorRating
-                            ? `${tour.tripAdvisorRating}/5 from ${tour.tripAdvisorReviewCount || 0} published reviews.`
-                            : "No published external review snapshot is connected to this package yet."}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
-                      <FaHeadset className="mt-1 text-primary" />
-                      <div>
-                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                          Marketplace inquiry flow
-                        </p>
-                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                          Use the inquiry form to request dates, availability, and a quote. Marketplace
-                          inquiries from this page are routed to {tour.operator?.name || "the listed operator"}.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-4">
-                      <FaHeart className="mt-1 text-primary" />
-                      <div>
-                        <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                          Traveler activity
-                        </p>
-                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                          {[
-                            marketplaceControls.reviewsEnabled ? "reviews" : null,
-                            marketplaceControls.travelerPhotosEnabled ? "shared travel moments" : null,
-                            marketplaceControls.questionsEnabled ? "public questions" : null,
-                          ]
-                            .filter(Boolean)
-                            .join(", ") || "Marketplace community actions are currently turned off for this package."}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-[36px] border border-[#d8c8ae] bg-white p-6 shadow-[0_18px_60px_rgba(35,66,50,0.08)]">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
-                    Why travelers shortlist this
-                  </p>
-                  <div className="mt-5 space-y-3">
-                    <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                        Operator-led itinerary
-                      </p>
-                      <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                        Package details, pricing, and responses stay connected to the original operator.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                        Clear route structure
-                      </p>
-                      <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                        Review the journey flow, accommodation notes, and route highlights before you inquire.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
-                        Faster comparison
-                      </p>
-                      <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                        Compare this package with other marketplace trips without losing context on style or budget.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <OperatorCredibilityCard
+                  tour={tour}
+                  selectedAvailabilityEntry={selectedAvailabilityEntry}
+                  selectedAvailabilityLabel={selectedAvailabilityLabel}
+                />
+                <TravelerProofCard
+                  summary={reviewData.summary}
+                  reviewsEnabled={marketplaceControls.reviewsEnabled}
+                  travelerPhotosEnabled={marketplaceControls.travelerPhotosEnabled}
+                  questionsEnabled={marketplaceControls.questionsEnabled}
+                  photoCount={photoData.length}
+                  questionCount={questionData.length}
+                />
               </div>
             </section>
 
@@ -1105,25 +1017,19 @@ const DiscoveryTourDetail = () => {
                 </p>
                 <h3 className="mt-2 text-2xl font-black uppercase tracking-tight">Request this trip</h3>
                 <p className="mt-3 text-sm font-medium leading-6 text-white/75">
-                  Your request will be tied to {tour.operator?.name || "the operator"} who owns this package.
+                  {getInquiryReassuranceCopy(tour, selectedAvailabilityEntry)}
                 </p>
                 {selectedAvailabilityEntry ? (
                   <div className="mt-5 rounded-[24px] border border-white/10 bg-white/10 p-4 backdrop-blur">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${getAvailabilityTone(
-                          selectedAvailabilityEntry.status
-                        )}`}
-                      >
-                        {selectedAvailabilityEntry.status}
-                      </span>
-                      <span className="text-[11px] font-black uppercase tracking-[0.18em] text-white">
-                        {selectedAvailabilityLabel}
-                      </span>
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em] text-white">
+                      {selectedAvailabilityLabel}
                     </div>
-                    <p className="mt-3 text-sm font-medium leading-6 text-white/80">
-                      {selectedAvailabilityEntry.note || selectedAvailabilitySummary}
-                    </p>
+                    <div className="mt-3">
+                      <DepartureConfidenceBadge
+                        entry={selectedAvailabilityEntry}
+                        className="bg-white/15 text-white"
+                      />
+                    </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {selectedAvailabilityEntry.bookable ? (
                         <span className="rounded-full bg-white/15 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white">
@@ -1163,8 +1069,7 @@ const DiscoveryTourDetail = () => {
                 {tour.operator?.name || "Verified operator"}
               </h3>
               <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
-                This package is discoverable through the marketplace, but fulfillment stays with the original
-                operator so pricing, availability, and trip details remain accurate.
+                {getOperatorTrustSupportCopy(tour)}
               </p>
               <div className="mt-5 grid gap-3">
                 <button
@@ -1347,6 +1252,9 @@ const DiscoveryTourDetail = () => {
                   </p>
                   <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">
                     Routes to listed operator
+                  </p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
+                    {getInquiryReassuranceCopy(tour, selectedAvailabilityEntry)}
                   </p>
                 </div>
               </div>

@@ -15,6 +15,12 @@ import {
 import DiscoveryRegionMap from "../components/Marketplace/DiscoveryRegionMap";
 import SavedTripsRail from "../components/Marketplace/SavedTripsRail";
 import TripComparisonDrawer from "../components/Marketplace/TripComparisonDrawer";
+import DepartureConfidenceBadge from "../components/Marketplace/DepartureConfidenceBadge";
+import {
+  getOperatorTrustLabel,
+  getOperatorTrustSupportCopy,
+  getTravelerProofSummary,
+} from "../components/Marketplace/marketplaceTrustUtils";
 import {
   fetchMarketplaceComparisons,
   fetchMarketplaceMapRegions,
@@ -40,38 +46,6 @@ const createInitialFilters = () => ({
 
 const categoryOptions = ["Luxury", "Midrange", "Budget", "Family", "Honeymoon", "Adventure"];
 const durationOptions = ["1-3", "4-6", "7-10", "10+"];
-
-const formatAvailabilityDate = (value = "") => {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-};
-
-const getAvailabilityTone = (status = "") => {
-  if (status === "available") return "bg-[#e1efe6] text-[#234232]";
-  if (status === "limited") return "bg-[#fff3d6] text-[#8a5a05]";
-  if (status === "unavailable") return "bg-[#fde7e7] text-[#a33b3b]";
-  return "bg-slate-100 text-slate-700";
-};
-
-const getAvailabilityCopy = (entry = null) => {
-  if (!entry) {
-    return "Travel dates are confirmed on request.";
-  }
-
-  if (typeof entry.remainingSpots === "number") {
-    return `${entry.remainingSpots} spots currently noted for this departure.`;
-  }
-
-  if (entry.status === "unavailable") {
-    return "This published date is currently unavailable. Ask the operator for the next opening.";
-  }
-
-  if (entry.status === "limited") {
-    return "Published departure with limited availability remaining.";
-  }
-
-  return "Published departure date ready for traveler inquiries.";
-};
 
 const getDiscoveryApiUrl = (path, params = null) => {
   const query = params ? `?${params.toString()}` : "";
@@ -649,7 +623,7 @@ const GlobalDiscovery = () => {
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="rounded-full bg-[#234232] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-                        {featuredTour.operator?.name || "Verified Operator"}
+                        {getOperatorTrustLabel(featuredTour)}
                       </span>
                       <span className="rounded-full bg-[#f4e4be] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6b531f]">
                         {featuredTour.category || "Curated"}
@@ -668,9 +642,11 @@ const GlobalDiscovery = () => {
                           {featuredTour.tripAdvisorRating || "New"}
                         </p>
                         <p className="mt-1 text-sm font-medium text-slate-500">
-                          {featuredTour.tripAdvisorReviewCount
-                            ? `${featuredTour.tripAdvisorReviewCount} external reviews`
-                            : "Waiting for published review data"}
+                          {getTravelerProofSummary({
+                            averageRating: featuredTour.tripAdvisorRating,
+                            reviewCount: featuredTour.tripAdvisorReviewCount,
+                            verificationBreakdown: {},
+                          })}
                         </p>
                       </div>
                       <div className="rounded-[24px] bg-slate-50 px-4 py-4">
@@ -681,7 +657,7 @@ const GlobalDiscovery = () => {
                           ${featuredTour.price}
                         </p>
                         <p className="mt-1 text-sm font-medium text-slate-500">
-                          Send an inquiry to receive operator-specific availability.
+                          {getOperatorTrustSupportCopy(featuredTour)}
                         </p>
                       </div>
                       <div className="rounded-[24px] bg-slate-50 px-4 py-4 sm:col-span-2 xl:col-span-1">
@@ -690,21 +666,9 @@ const GlobalDiscovery = () => {
                         </p>
                         {featuredAvailability ? (
                           <>
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span
-                                className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${getAvailabilityTone(
-                                  featuredAvailability.status
-                                )}`}
-                              >
-                                {featuredAvailability.status}
-                              </span>
-                              <span className="text-base font-black uppercase tracking-tight text-slate-900">
-                                {formatAvailabilityDate(featuredAvailability.date)}
-                              </span>
+                            <div className="mt-3">
+                              <DepartureConfidenceBadge entry={featuredAvailability} />
                             </div>
-                            <p className="mt-2 text-sm font-medium text-slate-500">
-                              {featuredAvailability.note || getAvailabilityCopy(featuredAvailability)}
-                            </p>
                           </>
                         ) : (
                           <>
@@ -786,7 +750,7 @@ const GlobalDiscovery = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-900 backdrop-blur">
-                        {tour.operator?.name || "Verified Operator"}
+                        {getOperatorTrustLabel(tour)}
                       </div>
                     </div>
 
@@ -805,23 +769,9 @@ const GlobalDiscovery = () => {
                         {tour.description}
                       </p>
 
-                      {tour.marketplaceAvailability?.[0] ? (
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
-                          <span
-                            className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${getAvailabilityTone(
-                              tour.marketplaceAvailability[0].status
-                            )}`}
-                          >
-                            {tour.marketplaceAvailability[0].status}
-                          </span>
-                          <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                            {formatAvailabilityDate(tour.marketplaceAvailability[0].date)}
-                            {typeof tour.marketplaceAvailability[0].remainingSpots === "number"
-                              ? ` - ${tour.marketplaceAvailability[0].remainingSpots} spots`
-                              : ""}
-                          </span>
-                        </div>
-                      ) : null}
+                      <div className="mt-4">
+                        <DepartureConfidenceBadge entry={tour.marketplaceAvailability?.[0] || null} />
+                      </div>
 
                       <div className="mt-5 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
                         <span className="rounded-full bg-slate-100 px-3 py-2">{tour.location}</span>
@@ -838,9 +788,11 @@ const GlobalDiscovery = () => {
                             {tour.tripAdvisorRating || "New listing"}
                           </p>
                           <p className="mt-1 text-xs font-medium text-slate-500">
-                            {tour.tripAdvisorReviewCount
-                              ? `${tour.tripAdvisorReviewCount} published reviews`
-                              : "No external review count yet"}
+                            {getTravelerProofSummary({
+                              averageRating: tour.tripAdvisorRating,
+                              reviewCount: tour.tripAdvisorReviewCount,
+                              verificationBreakdown: {},
+                            })}
                           </p>
                         </div>
 
