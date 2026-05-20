@@ -80,6 +80,15 @@ export const normalizePlatformTemplatePayload = (payload = {}) => {
     templateSource: payload.templateSource && typeof payload.templateSource === "object"
       ? payload.templateSource
       : {},
+    marketplaceVisibility:
+      payload.marketplaceVisibility === "hidden" ||
+      payload.marketplaceVisibility === "platform-only"
+        ? payload.marketplaceVisibility
+        : "marketplace",
+    assignmentRules:
+      payload.assignmentRules && typeof payload.assignmentRules === "object"
+        ? payload.assignmentRules
+        : {},
     themeTokens:
       payload.themeTokens && typeof payload.themeTokens === "object"
         ? payload.themeTokens
@@ -106,6 +115,8 @@ export const serializePlatformTemplate = (template = {}) => {
     releaseOrder: raw.releaseOrder || 100,
     seo: raw.seo || {},
     templateSource: raw.templateSource || {},
+    marketplaceVisibility: raw.marketplaceVisibility || "marketplace",
+    assignmentRules: raw.assignmentRules || {},
     themeTokens: raw.themeTokens || {},
     sections: raw.sections || [],
     source: "platform",

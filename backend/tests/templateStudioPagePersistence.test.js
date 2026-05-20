@@ -105,3 +105,35 @@ test("template studio snapshots round-trip through page persistence helpers", ()
   assert.equal(studioPage.snapshots.length, 1);
   assert.equal(studioPage.snapshots[0].viewport, "tablet");
 });
+
+test("assignment-aware template source metadata round-trips through studio page persistence", () => {
+  const payload = buildPageConfigFromStudioPage({
+    studioPage: {
+      pageType: "home",
+      slug: "/",
+      title: "Assigned Home",
+      templateSource: {
+        templateId: "signature-safari",
+        templateName: "Signature Safari",
+        assignmentId: "assignment-1",
+        masterTemplateId: "signature-safari",
+        personalizationMode: "assignment",
+      },
+      sourceSummary: {
+        assignmentId: "assignment-1",
+        masterTemplateId: "signature-safari",
+        personalizationLayerId: "signature-safari:home",
+      },
+      sections: [],
+    },
+    tenantId: "64f0f0f0f0f0f0f0f0f0f0f0",
+  });
+
+  assert.equal(payload.templateSource.assignmentId, "assignment-1");
+  assert.equal(payload.templateStudio.sourceMeta.personalizationLayerId, "signature-safari:home");
+
+  const studioPage = buildStudioPageFromPageConfig(payload);
+
+  assert.equal(studioPage.templateSource.masterTemplateId, "signature-safari");
+  assert.equal(studioPage.sourceSummary.assignmentId, "assignment-1");
+});

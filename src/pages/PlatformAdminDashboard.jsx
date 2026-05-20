@@ -19,6 +19,7 @@ import {
 } from "../services/api";
 import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
+import TemplateAssignmentManager from "../components/Admin/TemplateAssignments/TemplateAssignmentManager";
 import NavigationManager from "../components/Admin/NavigationManager";
 import { getTemplateCatalog } from "../pageBuilder/templateMarketplace";
 import { platformPrimarySections } from "./platformAdminNavigation";
@@ -1259,6 +1260,12 @@ const PlatformAdminDashboard = () => {
                 );
               })}
             </div>
+
+            <TemplateAssignmentManager
+              tenants={tenants}
+              templates={adminTemplateCatalog}
+              selectedTenant={selectedTenant}
+            />
           </div>
         )}
 

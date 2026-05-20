@@ -20,7 +20,9 @@ import {
   fetchPlatformTenantMenuItems,
   fetchPlatformTenantPageConfig,
   fetchPlatformTenantPageConfigs,
+  fetchPlatformTenantTemplateStudioActiveAssignment,
   fetchTemplateMarketplace,
+  fetchTemplateStudioActiveAssignment,
   fetchTours,
   fetchBlogs,
   fetchSiteSettings,
@@ -493,6 +495,7 @@ const PageBuilderManager = ({
   const [applyingTemplate, setApplyingTemplate] = React.useState("");
   const [requestingTemplate, setRequestingTemplate] = React.useState("");
   const [useTemplateStudio, setUseTemplateStudio] = React.useState(canManageLayout);
+  const [activeTemplateAssignment, setActiveTemplateAssignment] = React.useState(null);
   const [studioReusableSections, setStudioReusableSections] = React.useState([]);
   const [loadingStudioReusableSections, setLoadingStudioReusableSections] = React.useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = React.useState("safari-signature-home");
@@ -515,9 +518,18 @@ const PageBuilderManager = ({
   );
   const canEditPageSlug = canManageLayout && isCustomPageType(activePageType);
   const canPublishPageToNavbar = canManageLayout && tenantId && canAppearInNavbar(pageSlug);
+  const canUseTemplateStudio = canManageLayout || Boolean(activeTemplateAssignment);
   const templateCatalog = React.useMemo(
-    () => resolveTemplateCatalogForTenant({ purchasedTemplates, requestedTemplates }, marketplaceTemplates),
-    [marketplaceTemplates, purchasedTemplates, requestedTemplates]
+    () =>
+      resolveTemplateCatalogForTenant(
+        {
+          purchasedTemplates,
+          requestedTemplates,
+          activeTemplateAssignment,
+        },
+        marketplaceTemplates
+      ),
+    [activeTemplateAssignment, marketplaceTemplates, purchasedTemplates, requestedTemplates]
   );
   const selectedTemplate = React.useMemo(
     () => templateCatalog.find((template) => template.id === selectedTemplateId) || templateCatalog[0],
@@ -534,25 +546,77 @@ const PageBuilderManager = ({
     () => pageConfigToStudioPage(pageConfig, activePageType),
     [activePageType, pageConfig]
   );
+  const studioAssignmentContext = React.useMemo(
+    () =>
+      activeTemplateAssignment
+        ? {
+            active: true,
+            assignmentId: activeTemplateAssignment._id || activeTemplateAssignment.id || "",
+            masterTemplateId: activeTemplateAssignment.masterTemplateId,
+            templateName:
+              templateCatalog.find(
+                (template) => template.id === activeTemplateAssignment.masterTemplateId
+              )?.name || activeTemplateAssignment.masterTemplateId,
+            personalizationOnly: true,
+          }
+        : null,
+    [activeTemplateAssignment, templateCatalog]
+  );
   const studioLibrarySections = React.useMemo(
     () =>
       [
         ...studioReusableSections,
         ...Object.entries(sectionRegistry.metadata || {}).map(([type, metadata]) => ({
-        id: `library-${type}`,
-        type,
-        label: metadata.label || type,
-        sourceType: "reusable",
-        summary:
-          metadata.description ||
-          `Reusable ${metadata.label || type} section that can be inserted anywhere on the page canvas.`,
+          id: `library-${type}`,
+          type,
+          label: metadata.label || type,
+          sourceType: "reusable",
+          summary:
+            metadata.description ||
+            `Reusable ${metadata.label || type} section that can be inserted anywhere on the page canvas.`,
         })),
       ],
     [studioReusableSections]
   );
 
   React.useEffect(() => {
-    if (!canManageLayout || !useTemplateStudio) {
+    let active = true;
+
+    const loadActiveAssignment = async () => {
+      try {
+        const response = tenantId
+          ? await fetchPlatformTenantTemplateStudioActiveAssignment(tenantId)
+          : await fetchTemplateStudioActiveAssignment();
+
+        if (!active) {
+          return;
+        }
+
+        const nextAssignment = response.data?.activeAssignment || null;
+        setActiveTemplateAssignment(nextAssignment);
+
+        if (nextAssignment?.masterTemplateId) {
+          setSelectedTemplateId(nextAssignment.masterTemplateId);
+          if (!canManageLayout) {
+            setUseTemplateStudio(true);
+          }
+        }
+      } catch (_error) {
+        if (active) {
+          setActiveTemplateAssignment(null);
+        }
+      }
+    };
+
+    loadActiveAssignment();
+
+    return () => {
+      active = false;
+    };
+  }, [canManageLayout, tenantId]);
+
+  React.useEffect(() => {
+    if (!canUseTemplateStudio || !useTemplateStudio) {
       return undefined;
     }
 
@@ -587,10 +651,10 @@ const PageBuilderManager = ({
     return () => {
       active = false;
     };
-  }, [canManageLayout, tenantId, useTemplateStudio]);
+  }, [canUseTemplateStudio, tenantId, useTemplateStudio]);
 
   React.useEffect(() => {
-    if (!canManageLayout || !useTemplateStudio || tenantId) {
+    if (!canUseTemplateStudio || !useTemplateStudio || tenantId) {
       return undefined;
     }
 
@@ -633,7 +697,7 @@ const PageBuilderManager = ({
     return () => {
       active = false;
     };
-  }, [canManageLayout, tenantId, useTemplateStudio]);
+  }, [canUseTemplateStudio, tenantId, useTemplateStudio]);
 
   React.useEffect(() => {
     let active = true;
@@ -1074,7 +1138,7 @@ const PageBuilderManager = ({
   };
 
   const handleImportSource = async () => {
-    if (!canManageLayout) return;
+    if (!canUseTemplateStudio) return;
     if (!importSource.trim()) {
       setMessage("Paste HTML/CSS source code before importing.");
       return;
@@ -1122,7 +1186,7 @@ const PageBuilderManager = ({
   };
 
   const handleSaveStudioPage = async (nextStudioPage) => {
-    if (!canManageLayout) return;
+    if (!canUseTemplateStudio) return;
     setSaving(true);
     setMessage("");
 
@@ -1147,7 +1211,7 @@ const PageBuilderManager = ({
   };
 
   const handleImportStudioSource = async (payload) => {
-    if (!canManageLayout) return null;
+    if (!canUseTemplateStudio) return null;
     setImportingSource(true);
     setMessage("");
 
@@ -1167,7 +1231,7 @@ const PageBuilderManager = ({
   };
 
   const handleSaveReusableStudioSection = async (section) => {
-    if (!canManageLayout || !section?.type) return;
+    if (!canUseTemplateStudio || !section?.type) return;
 
     setSaving(true);
     setMessage("");
@@ -1199,7 +1263,7 @@ const PageBuilderManager = ({
 
   const handleDeleteReusableStudioSection = async (section) => {
     const reusableTemplateId = section?.sourceMeta?.reusableTemplateId;
-    if (!canManageLayout || !reusableTemplateId) return;
+    if (!canUseTemplateStudio || !reusableTemplateId) return;
 
     setSaving(true);
     setMessage("");
@@ -1224,7 +1288,7 @@ const PageBuilderManager = ({
   };
 
   const handleRequestStudioBindings = async (section) => {
-    if (!canManageLayout) return { suggestions: [] };
+    if (!canUseTemplateStudio) return { suggestions: [] };
 
     try {
       const response = tenantId
@@ -1874,7 +1938,7 @@ const PageBuilderManager = ({
     );
   };
 
-  if (canManageLayout && useTemplateStudio) {
+  if (canUseTemplateStudio && useTemplateStudio) {
     return (
       <div className="w-full max-w-none space-y-4">
         <div className="flex items-center justify-between gap-3 rounded-[1.8rem] border border-slate-900/60 bg-[#08090d] px-5 py-4 text-white shadow-[0_24px_60px_rgba(2,6,23,0.45)]">
@@ -1884,7 +1948,9 @@ const PageBuilderManager = ({
               Advanced import, bind, and canvas editing workspace
             </h2>
             <p className="mt-2 text-sm font-medium text-slate-400">
-              Build pages with imported templates, reusable sections, and CMS-connected blocks in a cleaner studio flow.
+              {studioAssignmentContext
+                ? `Personalize the platform-owned ${studioAssignmentContext.templateName} master without mutating the source template.`
+                : "Build pages with imported templates, reusable sections, and CMS-connected blocks in a cleaner studio flow."}
             </p>
           </div>
           <button
@@ -1898,6 +1964,7 @@ const PageBuilderManager = ({
 
         <TemplateStudioShell
           studioPage={studioPage}
+          assignmentContext={studioAssignmentContext}
           selectedSection={studioPage.sections[selectedSectionIndex] || null}
           librarySections={studioLibrarySections}
           cmsSources={studioPreviewSources}
@@ -1930,11 +1997,13 @@ const PageBuilderManager = ({
             <p className="mt-2 max-w-3xl text-sm font-medium text-slate-400">
               {canManageLayout
                 ? `Design section structure, visibility, variants, and SEO${tenantName ? ` for ${tenantName}` : ""}.`
-                : "Edit only the text and images inside sections prepared by the platform administrator."}
+                : studioAssignmentContext
+                  ? `Personalize the assigned ${studioAssignmentContext.templateName} template while its platform-owned structure stays protected.`
+                  : "Edit only the text and images inside sections prepared by the platform administrator."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {canManageLayout ? (
+            {canUseTemplateStudio ? (
               <button
                 type="button"
                 onClick={() => setUseTemplateStudio(true)}

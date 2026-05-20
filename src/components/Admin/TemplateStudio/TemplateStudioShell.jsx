@@ -47,6 +47,7 @@ const defaultImportState = {
 
 export default function TemplateStudioShell({
   studioPage,
+  assignmentContext = null,
   pageName,
   pageType,
   status,
@@ -400,6 +401,12 @@ export default function TemplateStudioShell({
         onViewportChange={setViewport}
         onSnapshotChange={handleSnapshotChange}
       />
+      {assignmentContext?.active ? (
+        <div className="border-b border-amber-300/20 bg-amber-400/10 px-6 py-3 text-sm font-medium text-amber-100">
+          Assigned master template: <span className="font-black">{assignmentContext.templateName}</span>. You are editing
+          the tenant personalization layer only, while the platform-owned structure stays locked.
+        </div>
+      ) : null}
       {message ? (
         <div className="border-b border-white/10 bg-emerald-400/10 px-6 py-3 text-sm font-medium text-emerald-200">
           {message}

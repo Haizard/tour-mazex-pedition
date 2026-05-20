@@ -10,6 +10,10 @@ test("TemplateStudioShell renders the structured studio shell with top bar actio
     React.createElement(TemplateStudioShell, {
       pageName: "About Us",
       pageType: "about",
+      assignmentContext: {
+        active: true,
+        templateName: "Signature Safari",
+      },
       selectedSection: {
         id: "section_about_story",
         label: "Our Story",
@@ -37,4 +41,6 @@ test("TemplateStudioShell renders the structured studio shell with top bar actio
   assert.match(markup, /Inspector/);
   assert.match(markup, /About Us/);
   assert.match(markup, /Our Story/);
+  assert.match(markup, /Assigned master template/);
+  assert.match(markup, /Signature Safari/);
 });

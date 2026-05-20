@@ -14,10 +14,12 @@ import EmailProviderConnection from "../models/EmailProviderConnection.js";
 import EmailThread from "../models/EmailThread.js";
 import PageConfig from "../models/PageConfig.js";
 import PageBuilderTemplate from "../models/PageBuilderTemplate.js";
+import TenantTemplateAssignment from "../models/TenantTemplateAssignment.js";
 import MenuItem from "../models/MenuItem.js";
 import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.js";
 import {
   generatePageBuilderAiVariants,
+  getActiveTemplateAssignment,
   createTemplateStudioReusableSection,
   deleteTemplateStudioReusableSection,
   getPageConfig,
@@ -62,6 +64,7 @@ import {
   buildPlatformTemplateAiPrompt,
   parseTemplateBuilderResponse,
 } from "../utils/platformTemplateAiBuilder.js";
+import { resolveActiveTemplateAssignment } from "../utils/templateAssignmentResolution.js";
 import { getTemplateCatalog } from "../../src/pageBuilder/templateMarketplace.js";
 
 const router = express.Router();
@@ -352,6 +355,119 @@ router.get("/page-builder-templates", async (_req, res) => {
   }
 });
 
+router.get("/template-assignments", async (_req, res) => {
+  try {
+    const assignments = await TenantTemplateAssignment.find()
+      .sort({ active: -1, assignedAt: -1, createdAt: -1 })
+      .lean();
+
+    res.status(200).json({ assignments });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/template-assignments/:tenantId/active", async (req, res) => {
+  try {
+    const assignments = await TenantTemplateAssignment.find({ tenantId: req.params.tenantId })
+      .sort({ active: -1, assignedAt: -1, createdAt: -1 })
+      .lean();
+
+    const activeAssignment = resolveActiveTemplateAssignment({
+      tenantId: req.params.tenantId,
+      assignments,
+    });
+
+    res.status(200).json({
+      activeAssignment,
+      history: assignments,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/template-assignments", async (req, res) => {
+  try {
+    const tenantId = req.body.tenantId?.toString().trim();
+    const masterTemplateId = req.body.masterTemplateId?.toString().trim().toLowerCase();
+    const note = req.body.note?.toString().trim() || "";
+
+    if (!tenantId || !masterTemplateId) {
+      return res.status(400).json({ message: "tenantId and masterTemplateId are required." });
+    }
+
+    const [tenant, platformTemplates] = await Promise.all([
+      Tenant.findById(tenantId).lean(),
+      PageBuilderTemplate.find().lean(),
+    ]);
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    const catalog = getTemplateCatalog(platformTemplates.map(serializePlatformTemplate));
+    const template = catalog.find((entry) => entry.id === masterTemplateId);
+
+    if (!template) {
+      return res.status(404).json({ message: "Master template not found." });
+    }
+
+    const existingAssignments = await TenantTemplateAssignment.find({ tenantId }).sort({
+      active: -1,
+      assignedAt: -1,
+      createdAt: -1,
+    });
+
+    const activeAssignment = resolveActiveTemplateAssignment({
+      tenantId,
+      assignments: existingAssignments.map((assignment) => assignment.toObject()),
+    });
+
+    if (activeAssignment?.masterTemplateId === masterTemplateId) {
+      const history = existingAssignments.map((assignment) => assignment.toObject());
+      return res.status(200).json({
+        message: `${template.name} is already the active website template for ${tenant.name}.`,
+        activeAssignment,
+        history,
+      });
+    }
+
+    await TenantTemplateAssignment.updateMany(
+      { tenantId, active: true },
+      {
+        $set: {
+          active: false,
+          assignmentStatus: "archived",
+          endedAt: new Date(),
+        },
+      }
+    );
+
+    const assignment = await TenantTemplateAssignment.create({
+      tenantId,
+      masterTemplateId,
+      active: true,
+      assignmentStatus: "active",
+      assignedAt: new Date(),
+      assignedBy: req.platformAdmin?._id || null,
+      note,
+    });
+
+    const history = await TenantTemplateAssignment.find({ tenantId })
+      .sort({ active: -1, assignedAt: -1, createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      message: `${template.name} assigned to ${tenant.name}.`,
+      activeAssignment: assignment.toObject(),
+      history,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 const generateTemplateDraftWithProvider = async (prompt, requestBody = {}) => {
   if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
     return { draft: null, source: "deterministic-fallback" };
@@ -586,6 +702,11 @@ router.post(
   applyPageBuilderTemplate
 );
 
+router.get(
+  "/tenants/:tenantId/page-config/studio/assignment",
+  loadTenantForPlatformPageConfig,
+  getActiveTemplateAssignment
+);
 router.get(
   "/tenants/:tenantId/page-config/studio/reusable-sections",
   loadTenantForPlatformPageConfig,

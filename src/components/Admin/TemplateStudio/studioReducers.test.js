@@ -162,6 +162,44 @@ test("deletes a section and falls back selection to the nearest remaining sectio
   assert.equal(nextState.selectedSectionId, "proof");
 });
 
+test("locked assigned sections cannot be structurally deleted or moved", () => {
+  const state = createStudioCanvasState({
+    sections: [
+      makeSection("hero", {
+        sourceMeta: {
+          assignmentMeta: {
+            structureLocked: true,
+            contentEditable: true,
+            styleEditable: true,
+            bindingEditable: true,
+          },
+        },
+      }),
+      makeSection("story"),
+    ],
+    selectedSectionId: "hero",
+  });
+
+  const deleted = reduce(state, {
+    type: "delete-section",
+    sectionId: "hero",
+  });
+  const moved = reduce(state, {
+    type: "move-section",
+    sectionId: "hero",
+    direction: "down",
+  });
+
+  assert.deepEqual(
+    deleted.sections.map((section) => section.id),
+    ["hero", "story"],
+  );
+  assert.deepEqual(
+    moved.sections.map((section) => section.id),
+    ["hero", "story"],
+  );
+});
+
 test("toggles section visibility in place", () => {
   const state = createStudioCanvasState({
     sections: [makeSection("hero"), makeSection("story", { isHidden: false })],
@@ -209,6 +247,44 @@ test("updates section content and style fields without dropping prior data", () 
   assert.equal(nextState.sections[0].styles.accentColor, "#0f766e");
   assert.equal(nextState.sections[0].styles.backgroundColor, "#f8fafc");
   assert.equal(nextState.sections[0].customCss, ".hero { padding: 72px; }");
+});
+
+test("locked assigned sections still allow approved personalization fields", () => {
+  const state = createStudioCanvasState({
+    sections: [
+      makeSection("hero", {
+        label: "Assigned Hero",
+        content: { title: "Old title" },
+        styles: { accentColor: "#0f766e" },
+        bindings: [{ sourceKey: "blogs" }],
+        sourceMeta: {
+          assignmentMeta: {
+            structureLocked: true,
+            contentEditable: true,
+            styleEditable: true,
+            bindingEditable: true,
+          },
+        },
+      }),
+    ],
+  });
+
+  const nextState = reduce(state, {
+    type: "update-section",
+    sectionId: "hero",
+    patch: {
+      label: "Assigned Hero Updated",
+      content: { body: "New summary" },
+      styles: { backgroundColor: "#f8fafc" },
+      bindings: [{ sourceKey: "tourPackages" }],
+    },
+  });
+
+  assert.equal(nextState.sections[0].label, "Assigned Hero Updated");
+  assert.equal(nextState.sections[0].content.title, "Old title");
+  assert.equal(nextState.sections[0].content.body, "New summary");
+  assert.equal(nextState.sections[0].styles.backgroundColor, "#f8fafc");
+  assert.equal(nextState.sections[0].bindings[0].sourceKey, "tourPackages");
 });
 
 test("updates responsive overrides without dropping earlier breakpoint settings", () => {

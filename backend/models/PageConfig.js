@@ -38,8 +38,13 @@ const pageConfigSchema = new mongoose.Schema(
     templateSource: {
       templateId: { type: String, trim: true, default: "" },
       templateName: { type: String, trim: true, default: "" },
+      assignmentId: { type: String, trim: true, default: "" },
+      masterTemplateId: { type: String, trim: true, default: "" },
+      personalizationMode: { type: String, trim: true, default: "" },
       personalizedFor: { type: String, trim: true, default: "" },
       personalizationNote: { type: String, trim: true, default: "" },
+      assignmentStatus: { type: String, trim: true, default: "" },
+      assignedAt: { type: Date, default: null },
     },
     templateStudio: {
       pageId: { type: String, trim: true, default: "" },

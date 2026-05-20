@@ -43,6 +43,18 @@ function ensureSelection(sections, selectedSectionId) {
   return sections[0].id;
 }
 
+function resolveAssignmentMeta(section = {}) {
+  return {
+    ...(section.assignmentMeta || {}),
+    ...(section.sourceMeta?.assignmentMeta || {}),
+    ...(section.studioMeta?.assignmentMeta || {}),
+  };
+}
+
+function isStructureLocked(section = {}) {
+  return resolveAssignmentMeta(section).structureLocked === true;
+}
+
 export function createStudioSectionNode(overrides = {}) {
   const draft = createStudioSectionDraft(overrides);
 
@@ -119,6 +131,10 @@ function moveSection(state, action) {
     return state;
   }
 
+  if (isStructureLocked(sections[index])) {
+    return state;
+  }
+
   const targetIndex = action.direction === "up" ? index - 1 : index + 1;
 
   if (targetIndex < 0 || targetIndex >= sections.length) {
@@ -139,6 +155,10 @@ function reorderSection(state, action) {
     return state;
   }
 
+  if (isStructureLocked(sections[index])) {
+    return state;
+  }
+
   const [section] = sections.splice(index, 1);
   const targetIndex = clampIndex(action.toIndex, sections.length + 1);
   sections.splice(targetIndex, 0, section);
@@ -151,6 +171,10 @@ function duplicateSection(state, action) {
   const index = getSectionIndex(sections, action.sectionId);
 
   if (index === -1) {
+    return state;
+  }
+
+  if (isStructureLocked(sections[index])) {
     return state;
   }
 
@@ -175,6 +199,10 @@ function deleteSection(state, action) {
     return state;
   }
 
+  if (isStructureLocked(sections[index])) {
+    return state;
+  }
+
   sections.splice(index, 1);
 
   const fallback = sections[index]?.id ?? sections[index - 1]?.id ?? null;
@@ -195,27 +223,47 @@ function toggleSectionVisibility(state, action) {
 function updateSection(state, action) {
   const sections = state.sections.map((section) =>
     section.id === action.sectionId
-      ? createStudioSectionNode({
-          ...section,
-          ...(action.patch || {}),
-          content: {
-            ...(section.content || {}),
-            ...(action.patch?.content || {}),
-          },
-          styles: {
-            ...(section.styles || {}),
-            ...(action.patch?.styles || {}),
-          },
-          responsive: {
-            ...(section.responsive || {}),
-            ...(action.patch?.responsive || {}),
-          },
-          visibility: {
-            ...(section.visibility || {}),
-            ...(action.patch?.visibility || {}),
-          },
-          bindings: action.patch?.bindings || section.bindings || [],
-        })
+      ? (() => {
+          const assignmentMeta = resolveAssignmentMeta(section);
+          const patch = { ...(action.patch || {}) };
+
+          if (assignmentMeta.contentEditable === false) {
+            delete patch.content;
+            delete patch.label;
+          }
+
+          if (assignmentMeta.styleEditable === false) {
+            delete patch.styles;
+            delete patch.customCss;
+            delete patch.responsive;
+          }
+
+          if (assignmentMeta.bindingEditable === false) {
+            delete patch.bindings;
+          }
+
+          return createStudioSectionNode({
+            ...section,
+            ...patch,
+            content: {
+              ...(section.content || {}),
+              ...(patch.content || {}),
+            },
+            styles: {
+              ...(section.styles || {}),
+              ...(patch.styles || {}),
+            },
+            responsive: {
+              ...(section.responsive || {}),
+              ...(patch.responsive || {}),
+            },
+            visibility: {
+              ...(section.visibility || {}),
+              ...(patch.visibility || {}),
+            },
+            bindings: patch.bindings || section.bindings || [],
+          });
+        })()
       : section
   );
 
@@ -225,11 +273,13 @@ function updateSection(state, action) {
 function replaceSection(state, action) {
   const sections = state.sections.map((section) =>
     section.id === action.sectionId
-      ? createStudioSectionNode({
-          ...action.section,
-          order: section.order,
-          id: action.section?.id || section.id,
-        })
+      ? isStructureLocked(section)
+        ? section
+        : createStudioSectionNode({
+            ...action.section,
+            order: section.order,
+            id: action.section?.id || section.id,
+          })
       : section
   );
 

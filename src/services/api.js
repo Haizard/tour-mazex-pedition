@@ -349,6 +349,18 @@ export const fetchPlatformPageBuilderTemplates = () =>
   cachedGet("/platform-admin/page-builder-templates", {
     headers: getPlatformAdminHeaders(),
   });
+export const fetchPlatformTemplateAssignments = () =>
+  cachedGet("/platform-admin/template-assignments", {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantActiveTemplateAssignment = (tenantId) =>
+  cachedGet(`/platform-admin/template-assignments/${tenantId}/active`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const assignPlatformTemplateToTenant = (data) =>
+  API.post("/platform-admin/template-assignments", data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const createPlatformPageBuilderTemplate = (data) =>
   API.post("/platform-admin/page-builder-templates", data, {
     headers: getPlatformAdminHeaders(),
@@ -380,6 +392,10 @@ export const fetchPlatformTenantPageConfig = (tenantId, pageType = "home") =>
   });
 export const fetchPlatformTenantTemplateStudioPage = (tenantId, pageType = "home") =>
   cachedGet(`/platform-admin/tenants/${tenantId}/page-config/studio/${encodeURIComponent(pageType)}`, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformTenantTemplateStudioActiveAssignment = (tenantId) =>
+  cachedGet(`/platform-admin/tenants/${tenantId}/page-config/studio/assignment`, {
     headers: getPlatformAdminHeaders(),
   });
 export const fetchPlatformTenantPageConfigs = (tenantId) =>
@@ -563,6 +579,10 @@ export const fetchPageConfigs = () => cachedGet("/page-config/list/all");
 export const fetchTemplateStudioPage = (pageType = "home") =>
   cachedGet(`/page-config/studio/${encodeURIComponent(pageType)}`, {
     headers: getAuthHeadersForUrl("/page-config/studio"),
+  });
+export const fetchTemplateStudioActiveAssignment = () =>
+  cachedGet("/page-config/studio/assignment", {
+    headers: getAuthHeadersForUrl("/page-config/studio/assignment"),
   });
 export const resolvePageConfigBySlug = (slug) =>
   cachedGet("/page-config/resolve/by-slug", {

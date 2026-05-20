@@ -73,3 +73,16 @@ test("tenant requests mark available templates as requested", () => {
   assert.equal(islandTemplate.priceLabel, "Requested");
   assert.equal(isTemplateUsable(islandTemplate), false);
 });
+
+test("active assigned template is marked read-only but usable in the builder", () => {
+  const catalog = resolveTemplateCatalogForTenant({
+    activeTemplateAssignment: {
+      masterTemplateId: "island-escape-landing",
+    },
+  });
+  const islandTemplate = catalog.find((template) => template.id === "island-escape-landing");
+
+  assert.equal(islandTemplate.purchaseStatus, "assigned");
+  assert.equal(islandTemplate.priceLabel, "Assigned Site Template");
+  assert.equal(isTemplateUsable(islandTemplate), true);
+});

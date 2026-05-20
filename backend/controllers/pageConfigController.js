@@ -1,6 +1,8 @@
 import process from "node:process";
 import PageConfig from "../models/PageConfig.js";
+import PageBuilderTemplate from "../models/PageBuilderTemplate.js";
 import ReusableSectionTemplate from "../models/ReusableSectionTemplate.js";
+import TenantTemplateAssignment from "../models/TenantTemplateAssignment.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { LEGACY_TENANT_SLUG } from "../utils/tenantDefaults.js";
 import { HOME_PAGE_DEFAULT } from "../utils/pageBuilderDefaults.js";
@@ -10,7 +12,11 @@ import {
   parseAiVariantResponse,
 } from "../utils/pageBuilderAiVariants.js";
 import { buildImportedSectionFromSource } from "../utils/pageBuilderSourceImport.js";
-import { buildTemplatePageConfigPayload } from "../utils/pageBuilderTemplateApplication.js";
+import {
+  buildAssignedTemplatePageConfigPayload,
+  buildTemplatePageConfigPayload,
+} from "../utils/pageBuilderTemplateApplication.js";
+import { serializePlatformTemplate } from "../utils/platformTemplateRegistry.js";
 import { suggestBindingsForPage, suggestBindingsForSection } from "../utils/templateStudioBindingSuggestions.js";
 import { createTemplateStudioImportDraft } from "../utils/templateStudioImportPipeline.js";
 import {
@@ -27,6 +33,7 @@ import {
   normalizePageSlug,
 } from "../utils/pagePublishing.js";
 import { syncAssistantKnowledgeEmbedding } from "../utils/pgvectorRetrieval.js";
+import { resolveActiveTemplateAssignment } from "../utils/templateAssignmentResolution.js";
 
 const normalizeSections = (sections = []) =>
   [...sections]
@@ -42,6 +49,35 @@ const createEmptyPageConfig = (req, pageType) => ({
   sections: [],
   tenantId: req.tenantId,
 });
+
+const loadActiveTemplateAssignmentForRequest = async (req) => {
+  const assignments = await TenantTemplateAssignment.find({ tenantId: req.tenantId })
+    .sort({ active: -1, assignedAt: -1, createdAt: -1 })
+    .lean();
+
+  return resolveActiveTemplateAssignment({
+    tenantId: req.tenantId,
+    assignments,
+  });
+};
+
+const buildAssignedTemplateFallbackPage = async (req, pageType, status = "published") => {
+  const assignment = await loadActiveTemplateAssignmentForRequest(req);
+
+  if (!assignment?.masterTemplateId || !req.tenant) {
+    return null;
+  }
+
+  const platformTemplates = await PageBuilderTemplate.find({ status: "published" }).lean();
+
+  return buildAssignedTemplatePageConfigPayload({
+    assignment,
+    tenant: req.tenant,
+    customTemplates: platformTemplates.map(serializePlatformTemplate),
+    pageType,
+    status,
+  });
+};
 
 const mergeContentOnlySections = (currentSections = [], incomingSections = []) => {
   const incomingById = new Map(
@@ -138,7 +174,9 @@ export const getPageConfig = async (req, res) => {
     }
 
     if (!page) {
-      page = createEmptyPageConfig(req, pageType);
+      page =
+        (await buildAssignedTemplateFallbackPage(req, pageType, "published")) ||
+        createEmptyPageConfig(req, pageType);
     }
 
     page.sections = normalizeSections(page.sections);
@@ -283,9 +321,10 @@ export const getTemplateStudioPage = async (req, res) => {
     const page = await PageConfig.findOne(buildTenantFilter(req, { pageType })).lean();
 
     if (!page) {
-      return res.status(200).json(
-        buildStudioPageFromPageConfig(createEmptyPageConfig(req, pageType))
-      );
+      const fallbackPage =
+        (await buildAssignedTemplateFallbackPage(req, pageType, "draft")) ||
+        createEmptyPageConfig(req, pageType);
+      return res.status(200).json(buildStudioPageFromPageConfig(fallbackPage));
     }
 
     return res.status(200).json(buildStudioPageFromPageConfig(page));
@@ -297,7 +336,7 @@ export const getTemplateStudioPage = async (req, res) => {
 export const upsertTemplateStudioPage = async (req, res) => {
   try {
     if (!canManagePageBuilderLayout(req)) {
-      return res.status(403).json({ message: "Only platform administrators can manage template studio pages." });
+      return res.status(403).json({ message: "Only tenant or platform administrators can manage template studio pages." });
     }
 
     const pageType = req.params.pageType || req.body.pageType || "home";
@@ -330,7 +369,16 @@ export const upsertTemplateStudioPage = async (req, res) => {
   }
 };
 
-const canManagePageBuilderLayout = (req) => Boolean(req.platformAdmin);
+export const getActiveTemplateAssignment = async (req, res) => {
+  try {
+    const activeAssignment = await loadActiveTemplateAssignmentForRequest(req);
+    return res.status(200).json({ activeAssignment });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const canManagePageBuilderLayout = (req) => Boolean(req.platformAdmin || req.admin);
 
 const buildReusableSectionLibraryFilter = (req) => {
   const tenantIds = [null];

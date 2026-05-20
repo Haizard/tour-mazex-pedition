@@ -232,13 +232,23 @@ export const getTemplateById = (templateId) =>
   getTemplateCatalog().find((template) => template.id === templateId) || null;
 
 export const isTemplateUsable = (template) =>
-  ["purchased", "included"].includes(template?.purchaseStatus);
+  ["purchased", "included", "assigned"].includes(template?.purchaseStatus);
 
 export const resolveTemplateCatalogForTenant = (tenant = {}, platformTemplates = []) => {
   const purchasedTemplates = new Set(tenant?.purchasedTemplates || []);
   const requestedTemplates = new Set(tenant?.requestedTemplates || []);
+  const activeAssignedTemplateId =
+    tenant?.activeTemplateAssignment?.masterTemplateId || tenant?.activeAssignedTemplateId || "";
 
   return getTemplateCatalog(platformTemplates).map((template) => {
+    if (activeAssignedTemplateId && template.id === activeAssignedTemplateId) {
+      return {
+        ...template,
+        purchaseStatus: "assigned",
+        priceLabel: "Assigned Site Template",
+      };
+    }
+
     if (purchasedTemplates.has(template.id)) {
       return {
         ...template,

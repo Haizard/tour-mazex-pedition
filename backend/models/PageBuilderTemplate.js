@@ -17,6 +17,11 @@ const pageBuilderTemplateSchema = new mongoose.Schema(
       enum: ["draft", "published"],
       default: "published",
     },
+    marketplaceVisibility: {
+      type: String,
+      enum: ["hidden", "platform-only", "marketplace"],
+      default: "marketplace",
+    },
     previewImage: { type: String, trim: true, default: "" },
     preview: { type: String, required: true, trim: true },
     bestFor: { type: [String], default: [] },
@@ -32,6 +37,12 @@ const pageBuilderTemplateSchema = new mongoose.Schema(
       importJobId: { type: String, trim: true, default: "" },
       sourceUrl: { type: String, trim: true, default: "" },
       sourceLabel: { type: String, trim: true, default: "" },
+    },
+    assignmentRules: {
+      allowTenantThemeOverrides: { type: Boolean, default: true },
+      allowTenantContentEdits: { type: Boolean, default: true },
+      allowTenantBindingEdits: { type: Boolean, default: true },
+      allowReusableSectionInsertion: { type: Boolean, default: true },
     },
     themeTokens: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     sections: {
