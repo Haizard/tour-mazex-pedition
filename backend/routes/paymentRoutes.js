@@ -43,8 +43,42 @@ import {
 
 const router = express.Router();
 
+const toQuoteSummary = (quote = null) => {
+  if (!quote || typeof quote !== "object") {
+    return null;
+  }
+
+  return {
+    _id: String(quote._id || ""),
+    title: String(quote.title || ""),
+    status: String(quote.status || ""),
+    conversionStage: String(quote.conversionStage || ""),
+    paymentStatus: String(quote.paymentStatus || ""),
+  };
+};
+
+const toBookingSummary = (booking = null) => {
+  if (!booking || typeof booking !== "object") {
+    return booking || null;
+  }
+
+  const quoteSummary = toQuoteSummary(booking.quoteProposalId);
+
+  return {
+    _id: String(booking._id || ""),
+    name: String(booking.name || ""),
+    packageTour: String(booking.packageTour || ""),
+    status: String(booking.status || ""),
+    revenueStage: String(booking.revenueStage || ""),
+    paymentStatus: String(booking.paymentStatus || ""),
+    ...(quoteSummary?._id ? { quoteProposalId: quoteSummary._id } : {}),
+  };
+};
+
 const toPaymentResponse = (payment = {}) => ({
   ...payment,
+  bookingId: toBookingSummary(payment.bookingId),
+  quoteProposal: toQuoteSummary(payment.bookingId?.quoteProposalId),
   paymentSummary: summarizePaymentTransaction(payment),
   lifecycle: {
     status: payment.status,
@@ -87,7 +121,14 @@ router.get("/checkout/:token", async (req, res) => {
     const payment = await PaymentTransaction.findOne(
       { publicToken: req.params.token }
     )
-      .populate("bookingId", "name packageTour travelDate")
+      .populate({
+        path: "bookingId",
+        select: "name packageTour travelDate status revenueStage paymentStatus quoteProposalId",
+        populate: {
+          path: "quoteProposalId",
+          select: "title status conversionStage paymentStatus",
+        },
+      })
       .lean();
 
     if (!payment) {
@@ -308,7 +349,14 @@ router.use(requireSubscriptionFeature("payment-automation"));
 router.get("/", async (req, res) => {
   try {
     const payments = await PaymentTransaction.find(buildTenantFilter(req))
-      .populate("bookingId", "name packageTour status revenueStage paymentStatus totalPrice")
+      .populate({
+        path: "bookingId",
+        select: "name packageTour status revenueStage paymentStatus totalPrice quoteProposalId",
+        populate: {
+          path: "quoteProposalId",
+          select: "title status conversionStage paymentStatus",
+        },
+      })
       .sort({ createdAt: -1 })
       .lean();
 

@@ -5,6 +5,10 @@ import Badge from "../UI/Badge";
 import Button from "../UI/Button";
 import Card from "../UI/Card";
 import {
+  buildPaymentLifecycleItems,
+  buildPaymentLifecycleTimestampLabel,
+} from "./paymentLifecycleUtils";
+import {
   createPaymentTransaction,
   deletePaymentTransaction,
   fetchBookings,
@@ -306,7 +310,11 @@ const PaymentAutomationManager = () => {
             )}
 
             {!loading &&
-              payments.map((payment) => (
+              payments.map((payment) => {
+                const lifecycleItems = buildPaymentLifecycleItems(payment);
+                const lifecycleTimestampLabel = buildPaymentLifecycleTimestampLabel(payment);
+
+                return (
                 <div key={payment._id} className="rounded-[28px] border border-slate-200 bg-white px-5 py-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-3">
@@ -328,13 +336,32 @@ const PaymentAutomationManager = () => {
                         {payment.bookingId?.name && (
                           <Badge variant="secondary">{payment.bookingId.name}</Badge>
                         )}
+                        {payment.bookingId?.packageTour && (
+                          <Badge variant="secondary">{payment.bookingId.packageTour}</Badge>
+                        )}
+                        {payment.quoteProposal?.title && (
+                          <Badge variant="secondary">{payment.quoteProposal.title}</Badge>
+                        )}
                         {payment.bookingId?.revenueStage && (
                           <Badge variant="secondary">Revenue {payment.bookingId.revenueStage}</Badge>
                         )}
                         {payment.bookingId?.paymentStatus && (
                           <Badge variant="secondary">Booking Pay {payment.bookingId.paymentStatus}</Badge>
                         )}
+                        {payment.quoteProposal?.paymentStatus && (
+                          <Badge variant="secondary">Quote Pay {payment.quoteProposal.paymentStatus}</Badge>
+                        )}
                         {payment.checkoutUrl && <Badge variant="secondary">Checkout Ready</Badge>}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {lifecycleItems.map((item) => (
+                          <span
+                            key={`${payment._id}-${item.key}`}
+                            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600"
+                          >
+                            {item.label}: {item.value}
+                          </span>
+                        ))}
                       </div>
                       {(payment.providerReference || payment.failureReason || payment.lifecycle?.paymentUpdatedAt) && (
                         <div className="grid gap-2 text-xs font-bold text-slate-500 md:grid-cols-2">
@@ -348,10 +375,10 @@ const PaymentAutomationManager = () => {
                               <span className="text-slate-900">Reason:</span> {payment.failureReason}
                             </p>
                           )}
-                          {payment.lifecycle?.paymentUpdatedAt && (
+                          {lifecycleTimestampLabel && (
                             <p>
                               <span className="text-slate-900">Updated:</span>{" "}
-                              {new Date(payment.lifecycle.paymentUpdatedAt).toLocaleString()}
+                              {lifecycleTimestampLabel.replace("Last status ", "")}
                             </p>
                           )}
                         </div>
@@ -387,7 +414,7 @@ const PaymentAutomationManager = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
           </div>
         </Card>
       </div>

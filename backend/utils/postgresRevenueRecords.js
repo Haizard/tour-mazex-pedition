@@ -586,11 +586,20 @@ export const buildPaymentRevenueLookup = ({ sourceId = "", tenantId = "" } = {})
       pr.source_payload,
       pr.updated_at,
       br.traveler_name as booking_name,
+      br.package_tour as booking_package_tour,
+      br.status as booking_status,
       br.revenue_stage as booking_revenue_stage,
-      br.payment_status as booking_payment_status
+      br.payment_status as booking_payment_status,
+      br.quote_proposal_id as booking_quote_proposal_id,
+      qr.title as quote_title,
+      qr.status as quote_status,
+      qr.conversion_stage as quote_conversion_stage,
+      qr.payment_status as quote_payment_status
     from public.payment_records pr
     left join public.booking_records br
       on br.source_id = pr.booking_id and br.tenant_id = pr.tenant_id
+    left join public.quote_records qr
+      on qr.source_id = br.quote_proposal_id and qr.tenant_id = pr.tenant_id
     where pr.source_id = $1 and pr.tenant_id = $2
     limit 1
   `,
@@ -617,11 +626,20 @@ export const buildLegacyPaymentRevenueLookup = ({ sourceId = "", tenantId = "" }
       pr.source_payload,
       pr.updated_at,
       br.traveler_name as booking_name,
+      br.package_tour as booking_package_tour,
+      br.status as booking_status,
       br.revenue_stage as booking_revenue_stage,
-      br.payment_status as booking_payment_status
+      br.payment_status as booking_payment_status,
+      br.quote_proposal_id as booking_quote_proposal_id,
+      qr.title as quote_title,
+      qr.status as quote_status,
+      qr.conversion_stage as quote_conversion_stage,
+      qr.payment_status as quote_payment_status
     from public.payment_records pr
     left join public.booking_records br
       on br.source_id = pr.booking_id and br.tenant_id = pr.tenant_id
+    left join public.quote_records qr
+      on qr.source_id = br.quote_proposal_id and qr.tenant_id = pr.tenant_id
     where pr.source_id = $1 and pr.tenant_id = $2
     limit 1
   `,

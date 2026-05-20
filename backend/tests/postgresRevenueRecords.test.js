@@ -427,8 +427,15 @@ test("buildPaymentRevenueView reconstructs the admin payment payload from postgr
     paid_at: "2026-04-30T10:00:00.000Z",
     updated_at: "2026-04-30T10:00:00.000Z",
     booking_name: "Amina",
+    booking_package_tour: "Luxury Serengeti",
+    booking_status: "Confirmed",
     booking_revenue_stage: "paid",
     booking_payment_status: "paid",
+    booking_quote_proposal_id: "quote-1",
+    quote_title: "Luxury Serengeti Proposal",
+    quote_status: "accepted",
+    quote_conversion_stage: "converted",
+    quote_payment_status: "paid",
     source_payload: {
       checkoutUrl: "https://example.com/pay",
       notes: "Deposit settled",
@@ -437,7 +444,11 @@ test("buildPaymentRevenueView reconstructs the admin payment payload from postgr
 
   assert.equal(payment._id, "payment-1");
   assert.equal(payment.bookingId.name, "Amina");
+  assert.equal(payment.bookingId.packageTour, "Luxury Serengeti");
+  assert.equal(payment.bookingId.status, "Confirmed");
   assert.equal(payment.bookingId.paymentStatus, "paid");
+  assert.equal(payment.quoteProposal._id, "quote-1");
+  assert.equal(payment.quoteProposal.conversionStage, "converted");
   assert.equal(payment.checkoutUrl, "https://example.com/pay");
   assert.equal(payment.lifecycle.paidAt, "2026-04-30T10:00:00.000Z");
 });

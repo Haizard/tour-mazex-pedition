@@ -46,8 +46,22 @@ export const normalizePrimaryPaymentRows = (rows = []) =>
         ? {
             _id: String(row.booking_id),
             name: String(row.booking_name || ""),
+            packageTour: String(row.booking_package_tour || ""),
+            status: String(row.booking_status || ""),
             revenueStage: String(row.booking_revenue_stage || ""),
             paymentStatus: String(row.booking_payment_status || ""),
+            quoteProposalId: row.booking_quote_proposal_id
+              ? String(row.booking_quote_proposal_id)
+              : null,
+          }
+        : null,
+      quoteProposal: row.booking_quote_proposal_id
+        ? {
+            _id: String(row.booking_quote_proposal_id),
+            title: String(row.quote_title || ""),
+            status: String(row.quote_status || ""),
+            conversionStage: String(row.quote_conversion_stage || ""),
+            paymentStatus: String(row.quote_payment_status || ""),
           }
         : null,
       customerName: String(row.customer_name || ""),
@@ -438,11 +452,20 @@ export const fetchPrimaryPayments = async (tenantId = "", env = globalThis.proce
           pr.source_payload,
           pr.updated_at,
           br.traveler_name as booking_name,
+          br.package_tour as booking_package_tour,
+          br.status as booking_status,
           br.revenue_stage as booking_revenue_stage,
-          br.payment_status as booking_payment_status
+          br.payment_status as booking_payment_status,
+          br.quote_proposal_id as booking_quote_proposal_id,
+          qr.title as quote_title,
+          qr.status as quote_status,
+          qr.conversion_stage as quote_conversion_stage,
+          qr.payment_status as quote_payment_status
         from public.payment_records pr
         left join public.booking_records br
           on br.source_id = pr.booking_id and br.tenant_id = pr.tenant_id
+        left join public.quote_records qr
+          on qr.source_id = br.quote_proposal_id and qr.tenant_id = pr.tenant_id
         where pr.tenant_id = $1
         order by pr.updated_at desc
       `,

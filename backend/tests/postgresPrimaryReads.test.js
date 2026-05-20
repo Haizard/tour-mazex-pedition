@@ -42,14 +42,26 @@ test("normalizePrimaryPaymentRows rebuilds payment admin records from postgres r
         notes: "Priority traveler",
       },
       booking_name: "Serengeti Gold",
+      booking_package_tour: "Serengeti Gold Fly-In",
+      booking_status: "Confirmed",
       booking_revenue_stage: "paid",
       booking_payment_status: "paid",
+      booking_quote_proposal_id: "quote-1",
+      quote_title: "Serengeti Gold Proposal",
+      quote_status: "accepted",
+      quote_conversion_stage: "accepted",
+      quote_payment_status: "pending",
     },
   ]);
 
   assert.equal(rows[0]._id, "payment-1");
   assert.equal(rows[0].bookingId._id, "booking-1");
   assert.equal(rows[0].bookingId.name, "Serengeti Gold");
+  assert.equal(rows[0].bookingId.packageTour, "Serengeti Gold Fly-In");
+  assert.equal(rows[0].bookingId.status, "Confirmed");
+  assert.equal(rows[0].quoteProposal._id, "quote-1");
+  assert.equal(rows[0].quoteProposal.status, "accepted");
+  assert.equal(rows[0].quoteProposal.paymentStatus, "pending");
   assert.equal(rows[0].checkoutUrl, "https://checkout.example");
   assert.equal(rows[0].paymentSummary.summary.includes("USD 500"), true);
 });
