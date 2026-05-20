@@ -10,6 +10,7 @@ export const summarizePaymentTransaction = (transaction = {}) => {
   const provider = (transaction.provider || "payment").toUpperCase();
   const amountLabel = formatMoney(transaction.amount, transaction.currency);
   const customerName = transaction.customerName || "Customer";
+  const failureReason = String(transaction.failureReason || "").trim();
 
   if (transaction.status === "paid") {
     return {
@@ -21,7 +22,9 @@ export const summarizePaymentTransaction = (transaction = {}) => {
   if (transaction.status === "failed") {
     return {
       badgeLabel: "Failed",
-      summary: `${provider} payment attempt for ${customerName} failed and needs retry or manual follow-up.`,
+      summary: failureReason
+        ? `${provider} payment attempt for ${customerName} failed (${failureReason}) and needs retry or manual follow-up.`
+        : `${provider} payment attempt for ${customerName} failed and needs retry or manual follow-up.`,
     };
   }
 

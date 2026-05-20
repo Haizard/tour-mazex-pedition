@@ -3,6 +3,22 @@ const toDateOrNow = (value) => {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 };
 
+const isRegressiveStatusTransition = (currentStatus = "", incomingStatus = "") => {
+  if (!currentStatus || !incomingStatus || currentStatus === incomingStatus) {
+    return false;
+  }
+
+  if (currentStatus === "refunded") {
+    return true;
+  }
+
+  if (currentStatus === "paid" && ["failed", "cancelled", "pending"].includes(incomingStatus)) {
+    return true;
+  }
+
+  return false;
+};
+
 export const shouldIgnoreWebhookEvent = ({
   currentStatus = "",
   incomingStatus = "",
@@ -14,6 +30,10 @@ export const shouldIgnoreWebhookEvent = ({
   }
 
   if (!externalEventId && currentStatus && incomingStatus && currentStatus === incomingStatus) {
+    return true;
+  }
+
+  if (isRegressiveStatusTransition(currentStatus, incomingStatus)) {
     return true;
   }
 
@@ -48,6 +68,8 @@ export const buildPaymentStatusPatch = ({
 
   if (failureReason) {
     patch.failureReason = failureReason;
+  } else if (incomingStatus && incomingStatus !== "failed" && current.failureReason) {
+    patch.failureReason = "";
   }
 
   if (incomingStatus === "paid" && current.status !== "paid") {

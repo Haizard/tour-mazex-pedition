@@ -128,6 +128,20 @@ router.post("/checkout/:token/respond", async (req, res) => {
       return res.status(404).json({ message: "Payment link not found." });
     }
 
+    if (
+      shouldIgnoreWebhookEvent({
+        currentStatus: payment.status,
+        incomingStatus: requestedStatus,
+        externalEventId: req.body.externalEventId,
+        processedEventIds: payment.processedEventIds,
+      })
+    ) {
+      return res.status(200).json({
+        ignored: true,
+        ...(toPaymentResponse(payment.toObject())),
+      });
+    }
+
     const updates = buildPaymentStatusPatch({
       current: payment.toObject(),
       incomingStatus: requestedStatus,
@@ -136,13 +150,14 @@ router.post("/checkout/:token/respond", async (req, res) => {
       failureReason: req.body.failureReason,
     });
 
-    await updatePostgresFirstPayment(
+    const updatedPayment = await updatePostgresFirstPayment(
       payment._id,
       payment.tenantId,
       updates,
       process.env
     );
-    await syncLinkedRevenueRecords(req, payment.toObject());
+    const updatedPaymentRecord = updatedPayment?.toObject?.() || updatedPayment;
+    await syncLinkedRevenueRecords(req, updatedPaymentRecord);
 
     const refreshedPayment = await safePrimaryLookup(
       () => findPaymentRevenueRecordByPublicToken(req.params.token, process.env),
@@ -265,7 +280,7 @@ router.post("/webhooks/:provider", async (req, res) => {
       failureReason,
     });
 
-    await updatePostgresFirstPayment(
+    const updatedPayment = await updatePostgresFirstPayment(
       payment._id,
       payment.tenantId,
       {
@@ -274,12 +289,13 @@ router.post("/webhooks/:provider", async (req, res) => {
       },
       process.env
     );
-    await syncLinkedRevenueRecords(req, payment.toObject());
+    const updatedPaymentRecord = updatedPayment?.toObject?.() || updatedPayment;
+    await syncLinkedRevenueRecords(req, updatedPaymentRecord);
 
     return res.status(200).json({
       ignored: false,
       queued: false,
-      payment: toPaymentResponse(payment.toObject()),
+      payment: toPaymentResponse(updatedPaymentRecord),
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });

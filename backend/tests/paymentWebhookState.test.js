@@ -28,6 +28,17 @@ test("shouldIgnoreWebhookEvent ignores status repeats without a new provider eve
   assert.equal(result, true);
 });
 
+test("shouldIgnoreWebhookEvent ignores regressive states after payment capture", () => {
+  const result = shouldIgnoreWebhookEvent({
+    currentStatus: "paid",
+    incomingStatus: "failed",
+    externalEventId: "evt_late_failure",
+    processedEventIds: [],
+  });
+
+  assert.equal(result, true);
+});
+
 test("buildPaymentStatusPatch stores provider event and lifecycle timestamps", () => {
   const patch = buildPaymentStatusPatch({
     current: {
@@ -45,4 +56,22 @@ test("buildPaymentStatusPatch stores provider event and lifecycle timestamps", (
   assert.deepEqual(patch.processedEventIds, ["evt_999"]);
   assert.equal(patch.failedAt instanceof Date, true);
   assert.equal(patch.lastWebhookAt instanceof Date, true);
+});
+
+test("buildPaymentStatusPatch clears stale failure reasons after recovery", () => {
+  const patch = buildPaymentStatusPatch({
+    current: {
+      status: "failed",
+      failureReason: "insufficient_funds",
+      processedEventIds: ["evt_old"],
+    },
+    incomingStatus: "paid",
+    occurredAt: "2026-04-28T10:30:00.000Z",
+    externalEventId: "evt_paid",
+  });
+
+  assert.equal(patch.status, "paid");
+  assert.deepEqual(patch.processedEventIds, ["evt_old", "evt_paid"]);
+  assert.equal(patch.failureReason, "");
+  assert.equal(patch.paidAt instanceof Date, true);
 });

@@ -51,3 +51,18 @@ test("summarizePaymentTransaction highlights refunded collections", () => {
   assert.equal(result.summary.includes("refunded"), true);
   assert.equal(result.summary.includes("USD 900"), true);
 });
+
+test("summarizePaymentTransaction includes failure reasons for operator follow-up", () => {
+  const result = summarizePaymentTransaction({
+    provider: "stripe",
+    amount: 1200,
+    currency: "USD",
+    status: "failed",
+    customerName: "Baraka",
+    failureReason: "card_declined",
+  });
+
+  assert.equal(result.badgeLabel, "Failed");
+  assert.equal(result.summary.includes("Baraka"), true);
+  assert.equal(result.summary.includes("card_declined"), true);
+});
