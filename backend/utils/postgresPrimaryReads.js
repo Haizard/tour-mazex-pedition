@@ -274,6 +274,35 @@ export const normalizePrimaryPartnerRows = (rows = []) =>
     status: String(row.status || "pending"),
   }));
 
+export const normalizePrimaryHotelRows = (rows = []) =>
+  rows.map((row = {}) => ({
+    _id: String(row.source_id || ""),
+    tenantId: String(row.tenant_id || ""),
+    partnerAccountId: row.partner_account_id ? String(row.partner_account_id) : "",
+    hotelName: String(row.hotel_name || ""),
+    slug: String(row.slug || ""),
+    destination: String(row.destination || ""),
+    region: String(row.region || ""),
+    hotelType: String(row.hotel_type || "hotel"),
+    description: String(row.description || ""),
+    amenityTags: Array.isArray(row.amenity_tags) ? row.amenity_tags : [],
+    roomStyleSummary: String(row.room_style_summary || ""),
+    publishedStatus: String(row.published_status || "draft"),
+    coordinates: {
+      latitude:
+        row.latitude === null || row.latitude === undefined ? null : Number(row.latitude),
+      longitude:
+        row.longitude === null || row.longitude === undefined ? null : Number(row.longitude),
+    },
+    trust: {
+      rating: toNumber(row.trust_rating, 0),
+      reviewCount: toNumber(row.review_count, 0),
+    },
+    aiHighlights: Array.isArray(row.source_payload?.aiHighlights)
+      ? row.source_payload.aiHighlights
+      : [],
+  }));
+
 export const normalizePrimaryCompetitorRows = (rows = []) =>
   rows.map((row = {}) => ({
     _id: String(row.source_id || ""),
