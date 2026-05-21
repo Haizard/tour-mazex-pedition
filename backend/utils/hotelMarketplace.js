@@ -3,6 +3,11 @@ const regex = (value = "") => new RegExp(String(value).trim(), "i");
 const compact = (values = []) =>
   values.map((value) => String(value || "").trim()).filter(Boolean);
 
+export {
+  buildHotelConciergeRecommendations,
+  buildHotelConciergeRequest,
+} from "./hotelAiConcierge.js";
+
 export const getHotelReviewLabel = (hotel = {}) => {
   const rating = Number(hotel.averageRating || 0);
   const count = Number(hotel.reviewCount || 0);

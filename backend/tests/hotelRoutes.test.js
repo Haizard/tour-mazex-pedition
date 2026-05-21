@@ -35,3 +35,15 @@ test("hotel routes include tenant-admin partner profile approval workflow", asyn
   assert.equal(source.includes("pendingPartnerUpdate"), true);
   assert.equal(source.includes("updatePostgresFirstHotel"), true);
 });
+
+test("hotel routes include public AI concierge recommendations before admin auth", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+  const conciergeIndex = source.indexOf('router.post("/public/concierge/recommendations"');
+  const adminAuthIndex = source.indexOf("router.use(requireTenantAdmin)");
+
+  assert.equal(conciergeIndex > -1, true);
+  assert.equal(conciergeIndex < adminAuthIndex, true);
+  assert.equal(source.includes("buildHotelConciergeRecommendations"), true);
+});

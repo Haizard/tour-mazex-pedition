@@ -699,6 +699,8 @@ export const reviewHotelPartnerProfileUpdate = (id, data) =>
 export const fetchPublicHotels = (params = {}) => cachedGet("/hotels/public", { params });
 export const fetchPublicHotelBySlug = (slug) =>
   cachedGet(`/hotels/public/${encodeURIComponent(slug)}`);
+export const requestHotelConciergeRecommendations = (data) =>
+  API.post("/hotels/public/concierge/recommendations", data);
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

@@ -7,6 +7,7 @@ import { hashAdminPassword } from "../utils/adminAuth.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { buildHotelPartnerAdminAccountPayload } from "../utils/hotelPartnerAccess.js";
 import {
+  buildHotelConciergeRecommendations,
   buildHotelDiscoveryQuery,
   buildHotelSort,
   shapeHotelDetail,
@@ -94,6 +95,22 @@ router.get("/public", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch hotels.", error: error.message });
+  }
+});
+
+router.post("/public/concierge/recommendations", async (req, res) => {
+  try {
+    const hotels = await Hotel.find(buildHotelDiscoveryQuery({}))
+      .sort(buildHotelSort("featured"))
+      .lean();
+    const recommendations = buildHotelConciergeRecommendations(hotels, req.body);
+
+    return res.status(200).json({ recommendations });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to build hotel concierge recommendations.",
+      error: error.message,
+    });
   }
 });
 

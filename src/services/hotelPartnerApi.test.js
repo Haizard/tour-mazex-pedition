@@ -24,3 +24,10 @@ test("api service exposes tenant-admin hotel partner profile review call", async
   assert.equal(source.includes("reviewHotelPartnerProfileUpdate"), true);
   assert.equal(source.includes('API.post(`/hotels/${id}/partner-profile-review`, data)'), true);
 });
+
+test("api service exposes public hotel AI concierge recommendations", async () => {
+  const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("requestHotelConciergeRecommendations"), true);
+  assert.equal(source.includes('API.post("/hotels/public/concierge/recommendations", data)'), true);
+});
