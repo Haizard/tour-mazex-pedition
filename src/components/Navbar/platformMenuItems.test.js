@@ -8,3 +8,9 @@ test("platform menu links to the tourism templates page", () => {
     PLATFORM_MENU_ITEMS.some((item) => item.label === "Templates" && item.link === "/templates"),
   );
 });
+
+test("platform menu exposes the hotel marketplace", () => {
+  assert.ok(
+    PLATFORM_MENU_ITEMS.some((item) => item.label === "Hotels" && item.link === "/discover/hotels"),
+  );
+});

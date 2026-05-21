@@ -71,3 +71,21 @@ test("getPlatformPublicApiFallback returns platform-safe objects", () => {
   assert.equal(getPlatformPublicApiFallback("/site-settings").facebook, "");
   assert.equal(getPlatformPublicApiFallback("/page-config/home").tenantId, null);
 });
+
+test("getPlatformPublicApiFallback returns demo hotel discovery data for platform previews", () => {
+  const response = getPlatformPublicApiFallback("/hotels/public");
+
+  assert.equal(Array.isArray(response.hotels), true);
+  assert.equal(response.hotels.length > 0, true);
+  assert.equal(response.hotels[0].slug.length > 0, true);
+  assert.equal(response.hotels[0].marketplaceVisible, true);
+});
+
+test("getPlatformPublicApiFallback returns demo hotel detail data by slug", () => {
+  const list = getPlatformPublicApiFallback("/hotels/public");
+  const detail = getPlatformPublicApiFallback(`/hotels/public/${list.hotels[0].slug}`);
+
+  assert.equal(detail.slug, list.hotels[0].slug);
+  assert.equal(detail.conversion.requestInItinerary.hotelIntentType, "itinerary-add-on");
+  assert.equal(detail.aiConcierge.groundingWarning.includes("must not invent"), true);
+});

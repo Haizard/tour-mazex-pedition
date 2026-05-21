@@ -90,8 +90,130 @@ const emptySiteSettings = {
   logoUrl: "",
 };
 
+const platformDemoHotels = [
+  {
+    _id: "platform-hotel-arusha-garden-lodge",
+    name: "Arusha Garden Lodge",
+    slug: "arusha-garden-lodge",
+    summary: "A calm garden lodge suited to arrival nights before northern circuit safaris.",
+    description:
+      "Arusha Garden Lodge is presented as a demo marketplace hotel for platform previews. It is useful for showing how travelers can assess stay style, destination fit, amenities, and itinerary intent without implying live rates or confirmed inventory.",
+    destination: "Arusha",
+    region: "Northern Tanzania",
+    accommodationType: "lodge",
+    amenities: ["Airport transfer", "Pool", "Garden rooms", "Breakfast"],
+    roomStyleSummary: "quiet garden rooms and easy transfer access",
+    photos: ["https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1400&q=80"],
+    averageRating: 4.7,
+    reviewCount: 18,
+    sponsoredPlacement: true,
+    published: true,
+    marketplaceVisible: true,
+    operator: {
+      id: "platform-demo-operator",
+      name: "MAZ Demo Operator",
+      slug: "maz-demo",
+    },
+    trust: {
+      reviewLabel: "4.7/5 from 18 reviews",
+      summary: "Demo trust signals are grounded in visible sample fields for preview only.",
+    },
+    fitTags: ["Lodge stay", "Arusha", "Airport transfer", "Pool", "Garden rooms"],
+  },
+  {
+    _id: "platform-hotel-serengeti-migration-camp",
+    name: "Serengeti Migration Camp",
+    slug: "serengeti-migration-camp",
+    summary: "A tented camp preview for travelers comparing safari route comfort and wildlife access.",
+    description:
+      "Serengeti Migration Camp demonstrates how hotel detail pages can support comfort-level explanations, route fit, and itinerary add-on requests while keeping availability and prices human-confirmed.",
+    destination: "Serengeti",
+    region: "Northern Tanzania",
+    accommodationType: "tented camp",
+    amenities: ["Game drive access", "Full board", "Lounge", "Sundowner deck"],
+    roomStyleSummary: "canvas suites close to game-drive routes",
+    photos: ["https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1400&q=80"],
+    averageRating: 4.9,
+    reviewCount: 26,
+    sponsoredPlacement: false,
+    published: true,
+    marketplaceVisible: true,
+    operator: {
+      id: "platform-demo-operator",
+      name: "MAZ Demo Operator",
+      slug: "maz-demo",
+    },
+    trust: {
+      reviewLabel: "4.9/5 from 26 reviews",
+      summary: "Demo review signals show where verified traveler proof will appear.",
+    },
+    fitTags: ["Tented camp stay", "Serengeti", "Game drive access", "Full board", "Lounge"],
+  },
+  {
+    _id: "platform-hotel-zanzibar-boutique-retreat",
+    name: "Zanzibar Boutique Retreat",
+    slug: "zanzibar-boutique-retreat",
+    summary: "A coastal retreat preview for post-safari rest, honeymoon extensions, and beach add-ons.",
+    description:
+      "Zanzibar Boutique Retreat helps preview how beach stays can be folded into wider itineraries after safari or trekking plans. Confirm live rates and reservation details with the operator.",
+    destination: "Zanzibar",
+    region: "Coast",
+    accommodationType: "boutique hotel",
+    amenities: ["Beach access", "Spa", "Sea-view rooms", "Restaurant"],
+    roomStyleSummary: "sea-view rooms and quiet boutique spaces",
+    photos: ["https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1400&q=80"],
+    averageRating: 4.6,
+    reviewCount: 14,
+    sponsoredPlacement: false,
+    published: true,
+    marketplaceVisible: true,
+    operator: {
+      id: "platform-demo-operator",
+      name: "MAZ Demo Operator",
+      slug: "maz-demo",
+    },
+    trust: {
+      reviewLabel: "4.6/5 from 14 reviews",
+      summary: "Demo trust content is for interface preview and avoids live confirmation claims.",
+    },
+    fitTags: ["Boutique hotel stay", "Zanzibar", "Beach access", "Spa", "Sea-view rooms"],
+  },
+];
+
+const buildPlatformDemoHotelDetail = (hotel) => ({
+  ...hotel,
+  geo: { latitude: null, longitude: null },
+  partnerAccountId: "",
+  conversion: {
+    sendInquiry: {
+      hotelId: hotel._id,
+      hotelName: hotel.name,
+      hotelIntentType: "direct-hotel",
+    },
+    requestInItinerary: {
+      hotelId: hotel._id,
+      hotelName: hotel.name,
+      hotelIntentType: "itinerary-add-on",
+    },
+  },
+  aiConcierge: {
+    groundingWarning:
+      "AI guidance is based on known hotel fields and must not invent availability, prices, or confirmations.",
+  },
+});
+
 export const getPlatformPublicApiFallback = (url = "") => {
   const path = String(url || "").split("?")[0];
+
+  if (path === "/hotels/public") {
+    return { hotels: platformDemoHotels };
+  }
+
+  if (path.startsWith("/hotels/public/")) {
+    const slug = decodeURIComponent(path.replace("/hotels/public/", ""));
+    const hotel = platformDemoHotels.find((item) => item.slug === slug);
+    return hotel ? buildPlatformDemoHotelDetail(hotel) : undefined;
+  }
 
   if (
     path === "/tours" ||

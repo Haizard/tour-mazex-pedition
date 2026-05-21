@@ -5,6 +5,7 @@ import {
   FaArrowRight,
   FaBalanceScale,
   FaCompass,
+  FaHotel,
   FaTimes,
   FaMapMarkerAlt,
   FaMoneyBillWave,
@@ -289,6 +290,39 @@ const GlobalDiscovery = () => {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[#d8c8ae] bg-[#fffaf1] px-5 py-5 sm:px-6 xl:px-8">
+        <div className="mx-auto grid max-w-[1680px] gap-4 md:grid-cols-2 2xl:max-w-[1820px]">
+          <Link
+            to="/discover"
+            className="rounded-[28px] border border-[#d8c8ae] bg-white p-5 shadow-sm transition hover:-translate-y-0.5"
+          >
+            <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#8b7451]">
+              <FaCompass /> Tour marketplace
+            </p>
+            <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-slate-950">
+              Safari and journey packages
+            </h2>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+              Compare operator-linked tours, published dates, and traveler intent paths.
+            </p>
+          </Link>
+          <Link
+            to="/discover/hotels"
+            className="rounded-[28px] border border-[#d8c8ae] bg-white p-5 shadow-sm transition hover:-translate-y-0.5"
+          >
+            <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#8b7451]">
+              <FaHotel /> Hotel stays
+            </p>
+            <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-slate-950">
+              Hotels for the journey
+            </h2>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+              Preview trusted stays for pre-safari nights, post-trip comfort, and itinerary add-ons.
+            </p>
+          </Link>
         </div>
       </section>
 

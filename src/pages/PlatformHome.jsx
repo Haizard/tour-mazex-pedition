@@ -110,6 +110,12 @@ const PlatformHome = () => (
             >
               See Pricing
             </Link>
+            <Link
+              to="/discover/hotels"
+              className="rounded-full border border-emerald-800/20 bg-white/80 px-7 py-4 text-sm font-black uppercase tracking-[0.22em] text-[#2f5b3a] transition hover:border-[#2f5b3a] hover:bg-white"
+            >
+              Browse Hotels
+            </Link>
           </div>
         </div>
 
@@ -257,6 +263,9 @@ const PlatformHome = () => (
           <div className="flex flex-wrap gap-4 lg:justify-end">
             <Link to="/discover" className="rounded-full bg-white px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-950">
               Browse Tours
+            </Link>
+            <Link to="/discover/hotels" className="rounded-full bg-amber-300 px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-950">
+              Browse Hotels
             </Link>
             <Link to="/demo/mazexpeditions" className="rounded-full border border-white/30 px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white">
               View Demo Site
