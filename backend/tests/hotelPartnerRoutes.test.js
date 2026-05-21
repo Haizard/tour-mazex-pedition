@@ -34,3 +34,13 @@ test("hotel partner portal routes expose scoped accommodation request handling",
   assert.equal(source.includes("canHotelPartnerManageAccommodationRequest"), true);
   assert.equal(source.includes("buildHotelPartnerAccommodationResponseUpdate"), true);
 });
+
+test("hotel partner hotel updates are submitted for tourism admin approval", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelPartnerPortalRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes("buildHotelPartnerPendingProfileUpdate"), true);
+  assert.equal(source.includes("pendingPartnerUpdate"), true);
+  assert.equal(source.includes("updatePostgresFirstHotel(req.params.id"), false);
+});

@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaHotel, FaKey, FaPlus, FaSave, FaSearch, FaTrash } from "react-icons/fa";
+import { FaCheck, FaHotel, FaKey, FaPlus, FaSave, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
 import {
   createHotelPartnerAdmin,
   createHotel,
   deleteHotel,
   fetchHotels,
+  reviewHotelPartnerProfileUpdate,
   updateHotel,
 } from "../../services/api";
 import {
+  buildPartnerProfileReviewSummary,
   buildHotelPartnerAdminPayload,
   buildHotelPayload,
   createEmptyHotelDraft,
   createEmptyHotelPartnerAdminDraft,
   filterHotelRows,
   getHotelPartnerLoginPath,
+  hasPendingPartnerUpdate,
 } from "./hotelManagerState";
 
 const HotelManager = () => {
@@ -27,6 +30,7 @@ const HotelManager = () => {
   const [partnerDraft, setPartnerDraft] = useState(createEmptyHotelPartnerAdminDraft);
   const [partnerMessage, setPartnerMessage] = useState("");
   const [savingPartner, setSavingPartner] = useState(false);
+  const [reviewingPartnerUpdate, setReviewingPartnerUpdate] = useState("");
 
   const visibleHotels = useMemo(() => filterHotelRows(hotels, filters), [hotels, filters]);
   const partnerLoginPath = getHotelPartnerLoginPath(
@@ -128,6 +132,21 @@ const HotelManager = () => {
       setPartnerMessage(error?.response?.data?.message || "Unable to create hotel partner account.");
     } finally {
       setSavingPartner(false);
+    }
+  };
+
+  const reviewPartnerProfileUpdate = async (hotelId, action) => {
+    setReviewingPartnerUpdate(`${hotelId}:${action}`);
+    setMessage("");
+
+    try {
+      await reviewHotelPartnerProfileUpdate(hotelId, { action });
+      await loadHotels();
+      setMessage(action === "reject" ? "Partner profile update rejected." : "Partner profile update approved.");
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to review partner profile update.");
+    } finally {
+      setReviewingPartnerUpdate("");
     }
   };
 
@@ -288,9 +307,13 @@ const HotelManager = () => {
             <p className="py-10 text-center text-sm font-bold text-zinc-500">Loading hotels...</p>
           ) : (
             <div className="grid gap-3">
-              {visibleHotels.map((hotel) => (
+              {visibleHotels.map((hotel) => {
+                const pendingReview = buildPartnerProfileReviewSummary(hotel);
+                const reviewPrefix = String(hotel._id);
+
+                return (
                 <div key={hotel._id} className="rounded-xl border border-zinc-200 p-4">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-lg font-black text-zinc-950">{hotel.name}</p>
                       <p className="text-sm font-medium text-zinc-600">{hotel.destination || "No destination"} · {hotel.accommodationType || "hotel"}</p>
@@ -298,6 +321,7 @@ const HotelManager = () => {
                         {hotel.published ? <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">Published</span> : <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-500">Draft</span>}
                         {hotel.marketplaceVisible ? <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">Marketplace</span> : null}
                         {hotel.sponsoredPlacement ? <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">Sponsored</span> : null}
+                        {hasPendingPartnerUpdate(hotel) ? <span className="rounded-full bg-orange-50 px-3 py-1 text-orange-700">Partner Review</span> : null}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -309,8 +333,42 @@ const HotelManager = () => {
                       </button>
                     </div>
                   </div>
+                  {hasPendingPartnerUpdate(hotel) ? (
+                    <div className="mt-4 rounded-xl border border-orange-200 bg-orange-50 p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">
+                            Partner profile edit pending
+                          </p>
+                          <p className="mt-1 text-sm font-bold text-zinc-800">{pendingReview.label}</p>
+                          <p className="mt-1 text-xs font-semibold text-zinc-600">
+                            {pendingReview.changedFields.join(", ")}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => reviewPartnerProfileUpdate(hotel._id, "approve")}
+                            disabled={reviewingPartnerUpdate === `${reviewPrefix}:approve`}
+                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black uppercase text-white disabled:bg-zinc-300"
+                          >
+                            <FaCheck /> {reviewingPartnerUpdate === `${reviewPrefix}:approve` ? "Approving..." : "Approve"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => reviewPartnerProfileUpdate(hotel._id, "reject")}
+                            disabled={reviewingPartnerUpdate === `${reviewPrefix}:reject`}
+                            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-black uppercase text-red-600 disabled:text-zinc-300"
+                          >
+                            <FaTimes /> {reviewingPartnerUpdate === `${reviewPrefix}:reject` ? "Rejecting..." : "Reject"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              ))}
+                );
+              })}
               {!visibleHotels.length ? (
                 <p className="py-10 text-center text-sm font-bold text-zinc-500">No hotel listings match this view.</p>
               ) : null}

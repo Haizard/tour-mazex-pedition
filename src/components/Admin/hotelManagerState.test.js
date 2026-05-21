@@ -3,11 +3,13 @@ import assert from "node:assert/strict";
 
 import {
   buildHotelPartnerAdminPayload,
+  buildPartnerProfileReviewSummary,
   buildHotelPayload,
   createEmptyHotelDraft,
   createEmptyHotelPartnerAdminDraft,
   filterHotelRows,
   getHotelPartnerLoginPath,
+  hasPendingPartnerUpdate,
 } from "./hotelManagerState.js";
 
 test("createEmptyHotelDraft provides marketplace-safe defaults", () => {
@@ -77,4 +79,23 @@ test("buildHotelPartnerAdminPayload normalizes account credentials", () => {
 test("getHotelPartnerLoginPath uses demo tenant context when present", () => {
   assert.equal(getHotelPartnerLoginPath("/demo/maz-expeditions/admin"), "/demo/maz-expeditions/hotel-partner/login");
   assert.equal(getHotelPartnerLoginPath("/admin"), "/hotel-partner/login");
+});
+
+test("hasPendingPartnerUpdate detects submitted hotel partner edits", () => {
+  assert.equal(hasPendingPartnerUpdate({ pendingPartnerUpdate: { status: "pending-review" } }), true);
+  assert.equal(hasPendingPartnerUpdate({ pendingPartnerUpdate: { status: "approved" } }), false);
+});
+
+test("buildPartnerProfileReviewSummary exposes changed field names", () => {
+  const summary = buildPartnerProfileReviewSummary({
+    pendingPartnerUpdate: {
+      payload: {
+        name: "Updated Lodge",
+        amenities: ["Pool"],
+      },
+    },
+  });
+
+  assert.deepEqual(summary.changedFields, ["name", "amenities"]);
+  assert.equal(summary.label, "2 fields pending review");
 });

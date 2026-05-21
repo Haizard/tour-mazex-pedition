@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildHotelPartnerAdminAccountPayload,
   buildHotelPartnerAccommodationResponseUpdate,
+  buildHotelPartnerPendingProfileUpdate,
   buildHotelPartnerProfileUpdate,
   canHotelPartnerManageAccommodationRequest,
   canHotelPartnerManageHotel,
@@ -49,6 +50,24 @@ test("buildHotelPartnerProfileUpdate keeps approval fields tourism-admin-only", 
   assert.equal("marketplaceVisible" in payload, false);
   assert.equal("sponsoredPlacement" in payload, false);
   assert.equal("tenantId" in payload, false);
+});
+
+test("buildHotelPartnerPendingProfileUpdate wraps partner profile edits for operator review", () => {
+  const pendingUpdate = buildHotelPartnerPendingProfileUpdate(
+    {
+      name: "Arusha Garden Lodge",
+      summary: "Updated summary",
+      published: true,
+    },
+    { partnerAdminId: "partner-admin-1" }
+  );
+
+  assert.equal(pendingUpdate.status, "pending-review");
+  assert.equal(pendingUpdate.submittedBy, "partner-admin-1");
+  assert.equal(pendingUpdate.payload.name, "Arusha Garden Lodge");
+  assert.equal(pendingUpdate.payload.summary, "Updated summary");
+  assert.equal("published" in pendingUpdate.payload, false);
+  assert.equal(Boolean(pendingUpdate.submittedAt), true);
 });
 
 test("buildHotelPartnerAdminAccountPayload prepares tenant-created partner accounts", () => {

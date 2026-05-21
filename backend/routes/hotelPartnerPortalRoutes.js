@@ -4,12 +4,11 @@ import Hotel from "../models/Hotel.js";
 import { requireHotelPartnerAdmin } from "../middleware/hotelPartnerAuthMiddleware.js";
 import {
   buildHotelPartnerAccommodationResponseUpdate,
-  buildHotelPartnerProfileUpdate,
+  buildHotelPartnerPendingProfileUpdate,
   canHotelPartnerManageAccommodationRequest,
   canHotelPartnerManageHotel,
 } from "../utils/hotelPartnerAccess.js";
 import { updatePostgresFirstAccommodationReservation } from "../utils/postgresFirstAccommodationService.js";
-import { updatePostgresFirstHotel } from "../utils/postgresFirstHotelService.js";
 
 const router = express.Router();
 
@@ -43,8 +42,14 @@ router.patch("/hotels/:id", async (req, res) => {
       return res.status(403).json({ message: "This hotel is not assigned to your partner account." });
     }
 
-    const payload = buildHotelPartnerProfileUpdate(req.body);
-    const updatedHotel = await updatePostgresFirstHotel(req.params.id, req.tenantId, payload);
+    const pendingPartnerUpdate = buildHotelPartnerPendingProfileUpdate(req.body, {
+      partnerAdminId: req.hotelPartnerAdmin._id,
+    });
+    const updatedHotel = await Hotel.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
+      { pendingPartnerUpdate },
+      { new: true, runValidators: true }
+    ).lean();
 
     return res.status(200).json(updatedHotel);
   } catch (error) {

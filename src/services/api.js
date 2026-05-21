@@ -694,6 +694,8 @@ export const updateHotel = (id, data) => API.patch(`/hotels/${id}`, data);
 export const deleteHotel = (id) => API.delete(`/hotels/${id}`);
 export const createHotelPartnerAdmin = (id, data) =>
   API.post(`/hotels/${id}/partner-admins`, data);
+export const reviewHotelPartnerProfileUpdate = (id, data) =>
+  API.post(`/hotels/${id}/partner-profile-review`, data);
 export const fetchPublicHotels = (params = {}) => cachedGet("/hotels/public", { params });
 export const fetchPublicHotelBySlug = (slug) =>
   cachedGet(`/hotels/public/${encodeURIComponent(slug)}`);

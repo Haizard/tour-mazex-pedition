@@ -25,3 +25,13 @@ test("hotel routes include tenant-admin partner account onboarding", async () =>
   assert.equal(source.includes('router.post("/:id/partner-admins"'), true);
   assert.equal(source.includes("HotelPartnerAdmin.create"), true);
 });
+
+test("hotel routes include tenant-admin partner profile approval workflow", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.post("/:id/partner-profile-review"'), true);
+  assert.equal(source.includes("pendingPartnerUpdate"), true);
+  assert.equal(source.includes("updatePostgresFirstHotel"), true);
+});

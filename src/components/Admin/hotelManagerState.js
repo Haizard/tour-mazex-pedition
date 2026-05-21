@@ -88,6 +88,19 @@ export const getHotelPartnerLoginPath = (pathname = "") => {
   return demoMatch ? `${demoMatch[0]}/hotel-partner/login` : "/hotel-partner/login";
 };
 
+export const hasPendingPartnerUpdate = (hotel = {}) =>
+  hotel.pendingPartnerUpdate?.status === "pending-review";
+
+export const buildPartnerProfileReviewSummary = (hotel = {}) => {
+  const payload = hotel.pendingPartnerUpdate?.payload || {};
+  const changedFields = Object.keys(payload);
+
+  return {
+    changedFields,
+    label: `${changedFields.length} ${changedFields.length === 1 ? "field" : "fields"} pending review`,
+  };
+};
+
 export const filterHotelRows = (hotels = [], filters = {}) => {
   const search = String(filters.search || "").trim().toLowerCase();
   const status = String(filters.status || "").trim();

@@ -40,6 +40,40 @@ const hotelSchema = new mongoose.Schema(
       default: "draft",
     },
     sourceMeta: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    pendingPartnerUpdate: {
+      status: {
+        type: String,
+        enum: ["none", "pending-review", "approved", "rejected"],
+        default: "none",
+      },
+      payload: {
+        type: mongoose.Schema.Types.Mixed,
+        default: () => ({}),
+      },
+      submittedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "HotelPartnerAdmin",
+        default: null,
+      },
+      submittedAt: {
+        type: Date,
+        default: null,
+      },
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "TenantAdmin",
+        default: null,
+      },
+      reviewedAt: {
+        type: Date,
+        default: null,
+      },
+      reviewNote: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+    },
     businessTruth: {
       type: new mongoose.Schema(
         createBusinessTruthMetadataSchemaDefinition({ entityKey: "hotels" }),

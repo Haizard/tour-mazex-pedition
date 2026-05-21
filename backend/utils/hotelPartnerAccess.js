@@ -81,6 +81,16 @@ export const buildHotelPartnerProfileUpdate = (body = {}) => {
   }, {});
 };
 
+export const buildHotelPartnerPendingProfileUpdate = (body = {}, context = {}) => ({
+  status: "pending-review",
+  payload: buildHotelPartnerProfileUpdate(body),
+  submittedBy: context.partnerAdminId || null,
+  submittedAt: new Date().toISOString(),
+  reviewedBy: null,
+  reviewedAt: null,
+  reviewNote: "",
+});
+
 export const buildHotelPartnerAdminAccountPayload = (body = {}) => {
   const username = String(body.username || "").trim().toLowerCase();
   const password = String(body.password || "");

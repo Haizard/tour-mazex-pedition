@@ -200,6 +200,56 @@ router.post("/:id/partner-admins", async (req, res) => {
   }
 });
 
+router.post("/:id/partner-profile-review", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    if (hotel.pendingPartnerUpdate?.status !== "pending-review") {
+      return res.status(400).json({ message: "No pending partner profile update to review." });
+    }
+
+    const action = req.body.action === "reject" ? "reject" : "approve";
+    const reviewNote = String(req.body.reviewNote || "").trim();
+
+    if (action === "reject") {
+      const rejectedHotel = await Hotel.findOneAndUpdate(
+        buildTenantFilter(req, { _id: req.params.id }),
+        {
+          "pendingPartnerUpdate.status": "rejected",
+          "pendingPartnerUpdate.reviewedBy": req.admin?._id || null,
+          "pendingPartnerUpdate.reviewedAt": new Date(),
+          "pendingPartnerUpdate.reviewNote": reviewNote,
+        },
+        { new: true, runValidators: true }
+      ).lean();
+
+      return res.status(200).json(rejectedHotel);
+    }
+
+    const payload = normalizeHotelPayload(req, {
+      ...hotel,
+      ...(hotel.pendingPartnerUpdate.payload || {}),
+    });
+    delete payload.tenantId;
+    payload.pendingPartnerUpdate = {
+      ...hotel.pendingPartnerUpdate,
+      status: "approved",
+      reviewedBy: req.admin?._id || null,
+      reviewedAt: new Date(),
+      reviewNote,
+    };
+
+    const approvedHotel = await updatePostgresFirstHotel(req.params.id, req.tenantId, payload, process.env);
+    return res.status(200).json(approvedHotel);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
 router.delete("/:id", async (req, res) => {
   try {
     const hotel = await Hotel.findOneAndDelete(buildTenantFilter(req, { _id: req.params.id })).lean();
