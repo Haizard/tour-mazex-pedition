@@ -16,3 +16,12 @@ test("server registers hotel routes", async () => {
   assert.equal(source.includes('from "./routes/hotelRoutes.js"'), true);
   assert.equal(source.includes('app.use("/api/hotels", hotelRoutes)'), true);
 });
+
+test("hotel routes include tenant-admin partner account onboarding", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.post("/:id/partner-admins"'), true);
+  assert.equal(source.includes("HotelPartnerAdmin.create"), true);
+});

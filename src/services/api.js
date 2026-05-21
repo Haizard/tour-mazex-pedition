@@ -209,7 +209,27 @@ const getPlatformAdminHeaders = () => {
   };
 };
 
+const getHotelPartnerHeaders = () => {
+  if (!isBrowser) {
+    return {};
+  }
+
+  const token = window.localStorage.getItem("hotelPartnerAuthToken");
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 const getAuthHeadersForUrl = (url = "") => {
+  if (url.includes("/hotel-partner")) {
+    return getHotelPartnerHeaders();
+  }
+
   const adminHeaders = getAdminHeaders();
   const platformHeaders = getPlatformAdminHeaders();
 
@@ -291,6 +311,7 @@ API.interceptors.response.use(
     const requestUrl = error.config?.url || "";
     const isLoginRequest =
       requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/hotel-partner-auth/login") ||
       requestUrl.includes("/platform-auth/login");
 
     // A login request returning 401 is just wrong credentials. Other 401s mean
@@ -306,6 +327,7 @@ API.interceptors.response.use(
         console.warn("Session expired. Clearing local auth state and redirecting...");
         window.localStorage.removeItem("adminAuthToken");
         window.localStorage.removeItem("platformAdminAuthToken");
+        window.localStorage.removeItem("hotelPartnerAuthToken");
 
         if (!window.location.pathname.endsWith("/login")) {
           const isPlatformPath =
@@ -335,6 +357,19 @@ export const loginPlatformAdmin = (data) =>
 export const fetchPlatformAdminSession = () =>
   API.get("/platform-auth/me", {
     headers: getPlatformAdminHeaders(),
+  });
+export const loginHotelPartnerAdmin = (data) => API.post("/hotel-partner-auth/login", data);
+export const fetchHotelPartnerSession = () =>
+  API.get("/hotel-partner-auth/me", {
+    headers: getHotelPartnerHeaders(),
+  });
+export const fetchHotelPartnerHotels = () =>
+  cachedGet("/hotel-partner/hotels", {
+    headers: getHotelPartnerHeaders(),
+  });
+export const updateHotelPartnerHotel = (hotelId, data) =>
+  API.patch(`/hotel-partner/hotels/${hotelId}`, data, {
+    headers: getHotelPartnerHeaders(),
   });
 export const fetchPlatformSummary = () =>
   cachedGet("/platform-admin/summary", {

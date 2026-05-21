@@ -1,8 +1,11 @@
 import express from "express";
 import process from "node:process";
 import Hotel from "../models/Hotel.js";
+import HotelPartnerAdmin from "../models/HotelPartnerAdmin.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
+import { hashAdminPassword } from "../utils/adminAuth.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { buildHotelPartnerAdminAccountPayload } from "../utils/hotelPartnerAccess.js";
 import {
   buildHotelDiscoveryQuery,
   buildHotelSort,
@@ -155,6 +158,45 @@ router.patch("/:id", async (req, res) => {
     res.status(200).json(hotelRecord ? buildHotelRecordView(hotelRecord) : hotel);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/:id/partner-admins", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    const payload = buildHotelPartnerAdminAccountPayload(req.body);
+    const passwordRecord = await hashAdminPassword(payload.password);
+    const partnerAdmin = await HotelPartnerAdmin.create({
+      tenantId: req.tenantId,
+      hotelIds: [hotel._id],
+      username: payload.username,
+      displayName: payload.displayName,
+      role: payload.role,
+      status: payload.status,
+      ...passwordRecord,
+    });
+
+    return res.status(201).json({
+      partnerAdmin: {
+        id: partnerAdmin._id,
+        username: partnerAdmin.username,
+        displayName: partnerAdmin.displayName,
+        role: partnerAdmin.role,
+        status: partnerAdmin.status,
+        hotelIds: partnerAdmin.hotelIds.map((hotelId) => String(hotelId)),
+      },
+    });
+  } catch (error) {
+    const duplicateMessage =
+      error.code === 11000
+        ? "A hotel partner admin with that username already exists for this tenant."
+        : error.message;
+    return res.status(400).json({ message: duplicateMessage });
   }
 });
 

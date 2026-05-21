@@ -7,6 +7,7 @@ import ConfiguredPage from "./pages/ConfiguredPage";
 import DynamicTenantPage from "./pages/DynamicTenantPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminRoute from "./components/Admin/AdminRoute";
+import HotelPartnerRoute from "./components/HotelPartner/HotelPartnerRoute";
 import PlatformAdminRoute from "./components/Admin/PlatformAdminRoute";
 import PlatformAdminLogin from "./pages/PlatformAdminLogin";
 
@@ -37,6 +38,8 @@ const GlobalDiscovery = React.lazy(() => import("./pages/GlobalDiscovery"));
 const DiscoveryTourDetail = React.lazy(() => import("./pages/DiscoveryTourDetail"));
 const HotelDiscovery = React.lazy(() => import("./pages/HotelDiscovery"));
 const HotelDetail = React.lazy(() => import("./pages/HotelDetail"));
+const HotelPartnerLogin = React.lazy(() => import("./pages/HotelPartnerLogin"));
+const HotelPartnerDashboard = React.lazy(() => import("./pages/HotelPartnerDashboard"));
 const TemplateMarketplace = React.lazy(() => import("./pages/TemplateMarketplace"));
 const DashboardRouteFallback = ({ label }) => (
   <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
@@ -125,6 +128,17 @@ const AppRoutes = () => (
       />
       <Route path="login" element={<AdminLogin />} />
       <Route path="admin/login" element={<AdminLogin />} />
+      <Route path="hotel-partner/login" element={withPublicSuspense(<HotelPartnerLogin />)} />
+      <Route
+        path="hotel-partner"
+        element={(
+          <HotelPartnerRoute>
+            <Suspense fallback={<DashboardRouteFallback label="Loading hotel partner workspace" />}>
+              <HotelPartnerDashboard />
+            </Suspense>
+          </HotelPartnerRoute>
+        )}
+      />
       <Route
         path="platform"
         element={(
@@ -163,6 +177,17 @@ const AppRoutes = () => (
       />
       <Route path="login" element={<AdminLogin />} />
       <Route path="admin/login" element={<AdminLogin />} />
+      <Route path="hotel-partner/login" element={withPublicSuspense(<HotelPartnerLogin />)} />
+      <Route
+        path="hotel-partner"
+        element={(
+          <HotelPartnerRoute>
+            <Suspense fallback={<DashboardRouteFallback label="Loading hotel partner workspace" />}>
+              <HotelPartnerDashboard />
+            </Suspense>
+          </HotelPartnerRoute>
+        )}
+      />
       <Route path="*" element={<DynamicTenantPage />} />
     </Route>
   </Routes>

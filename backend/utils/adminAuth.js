@@ -1,4 +1,6 @@
 import crypto from "crypto";
+import { Buffer } from "node:buffer";
+import process from "node:process";
 
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
 
@@ -86,6 +88,32 @@ export const signPlatformAdminToken = ({
   return `${encodedPayload}.${signature}`;
 };
 
+export const signHotelPartnerToken = ({
+  partnerAdminId,
+  tenantId,
+  username,
+  role,
+  hotelIds = [],
+  expiresInMs = TOKEN_TTL_MS,
+}) => {
+  const payload = {
+    partnerAdminId,
+    tenantId,
+    username,
+    role,
+    hotelIds: hotelIds.map((hotelId) => String(hotelId)),
+    scope: "hotel_partner",
+    exp: Date.now() + expiresInMs,
+  };
+  const encodedPayload = toBase64Url(JSON.stringify(payload));
+  const signature = crypto
+    .createHmac("sha256", getAuthSecret())
+    .update(encodedPayload)
+    .digest("base64url");
+
+  return `${encodedPayload}.${signature}`;
+};
+
 export const verifyAdminToken = (token) => {
   if (!token || !token.includes(".")) {
     throw new Error("Invalid token format.");
@@ -118,6 +146,16 @@ export const verifyPlatformAdminToken = (token) => {
 
   if (payload.scope !== "platform_admin") {
     throw new Error("Token is not a platform admin token.");
+  }
+
+  return payload;
+};
+
+export const verifyHotelPartnerToken = (token) => {
+  const payload = verifyAdminToken(token);
+
+  if (payload.scope !== "hotel_partner") {
+    throw new Error("Token is not a hotel partner token.");
   }
 
   return payload;
