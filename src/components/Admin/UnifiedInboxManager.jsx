@@ -63,6 +63,12 @@ const actionTone = {
   tag: "border-stone-200 bg-stone-50 text-stone-700",
 };
 
+const revenuePriorityTone = {
+  high: "border-red-200 bg-red-50 text-red-700",
+  medium: "border-amber-200 bg-amber-50 text-amber-700",
+  normal: "border-slate-200 bg-slate-50 text-slate-600",
+};
+
 const formatAgentLabel = (value = "") =>
   value
     .replace(/-/g, " ")
@@ -71,7 +77,16 @@ const formatAgentLabel = (value = "") =>
 const UnifiedInboxManager = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
-  const [counts, setCounts] = useState({ total: 0, whatsapp: 0, email: 0, website: 0, open: 0 });
+  const [counts, setCounts] = useState({
+    total: 0,
+    whatsapp: 0,
+    email: 0,
+    website: 0,
+    lead: 0,
+    open: 0,
+    followUp: 0,
+    humanReview: 0,
+  });
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [loading, setLoading] = useState(true);
   const [sendingWhatsAppId, setSendingWhatsAppId] = useState("");
@@ -89,7 +104,18 @@ const UnifiedInboxManager = () => {
     try {
       const response = await fetchUnifiedInboxItems();
       setItems(Array.isArray(response.data?.items) ? response.data.items : []);
-      setCounts(response.data?.counts || { total: 0, whatsapp: 0, email: 0, website: 0, open: 0 });
+      setCounts(
+        response.data?.counts || {
+          total: 0,
+          whatsapp: 0,
+          email: 0,
+          website: 0,
+          lead: 0,
+          open: 0,
+          followUp: 0,
+          humanReview: 0,
+        }
+      );
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load the unified inbox right now.");
     } finally {
@@ -305,6 +331,23 @@ const UnifiedInboxManager = () => {
     }
   };
 
+  const handleManualRevenueAction = async (item, type) => {
+    if (!item.agentDecision) {
+      return;
+    }
+
+    const action = {
+      type,
+      label: type === "escalate" ? "Escalate for review" : "Queue follow-up",
+      rationale:
+        type === "escalate"
+          ? "Operator flagged this conversation for human review."
+          : "Operator scheduled the next follow-up step from the inbox.",
+    };
+
+    await handleRecordAgentAction(item, action, 0);
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -324,6 +367,9 @@ const UnifiedInboxManager = () => {
           <Badge variant="secondary">{counts.email} Email</Badge>
           <Badge variant="accent">{counts.whatsapp} WhatsApp</Badge>
           <Badge variant="secondary">{counts.website} Website</Badge>
+          <Badge variant="secondary">{counts.lead} Lead</Badge>
+          <Badge variant="secondary">{counts.followUp} Follow-up</Badge>
+          <Badge variant="secondary">{counts.humanReview} Human Review</Badge>
         </div>
       </div>
 
@@ -408,9 +454,31 @@ const UnifiedInboxManager = () => {
                       <p>
                         <span className="font-black text-slate-900">Stage:</span> {item.conversionStage || "new"}
                       </p>
+                      <p>
+                        <span className="font-black text-slate-900">Channel Type:</span> {item.channelLabel || item.channel}
+                      </p>
+                      <p>
+                        <span className="font-black text-slate-900">Campaign:</span> {item.campaignLabel || "Not tagged"}
+                      </p>
                     </div>
 
                     <p className="text-sm leading-6 text-slate-600">{item.preview || "No preview available yet."}</p>
+
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${revenuePriorityTone[item.revenuePriority] || revenuePriorityTone.normal}`}>
+                        {item.revenuePriority || "normal"} priority
+                      </span>
+                      {item.canFollowUp && (
+                        <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-sky-700">
+                          Follow-up ready
+                        </span>
+                      )}
+                      {item.requiresHumanReview && (
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-amber-700">
+                          Human review
+                        </span>
+                      )}
+                    </div>
 
                     {agentDecision && (
                       <div className="rounded-[26px] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-amber-50/60 px-4 py-4 shadow-sm">
@@ -596,6 +664,30 @@ const UnifiedInboxManager = () => {
                       >
                         <FaInbox />
                         Open Source Record
+                      </button>
+                    )}
+
+                    {item.canFollowUp && (
+                      <button
+                        type="button"
+                        onClick={() => handleManualRevenueAction(item, "follow-up")}
+                        disabled={loggingActionId === `${item.id}-follow-up-0`}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-sky-700 disabled:opacity-50"
+                      >
+                        <FaBolt />
+                        {loggingActionId === `${item.id}-follow-up-0` ? "Saving..." : "Log Follow-Up"}
+                      </button>
+                    )}
+
+                    {item.canEscalate && (
+                      <button
+                        type="button"
+                        onClick={() => handleManualRevenueAction(item, "escalate")}
+                        disabled={loggingActionId === `${item.id}-escalate-0`}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-amber-700 disabled:opacity-50"
+                      >
+                        <FaExclamationTriangle />
+                        {loggingActionId === `${item.id}-escalate-0` ? "Saving..." : "Flag Review"}
                       </button>
                     )}
 

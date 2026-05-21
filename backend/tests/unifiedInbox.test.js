@@ -96,6 +96,7 @@ test("buildUnifiedInboxItems exposes conversion metadata for operator workflows"
         contactPreference: "email",
         status: "Contacted",
         sourceChannel: "chatbot",
+        campaignLabel: "spring-chatbot",
         leadStage: "qualified",
         updatedAt: "2026-04-23T09:00:00.000Z",
       },
@@ -104,10 +105,45 @@ test("buildUnifiedInboxItems exposes conversion metadata for operator workflows"
 
   assert.equal(items.length, 1);
   assert.equal(items[0].leadSource, "chatbot");
+  assert.equal(items[0].campaignLabel, "spring-chatbot");
   assert.equal(items[0].conversionStage, "qualified");
   assert.equal(items[0].canReply, true);
+  assert.equal(items[0].canFollowUp, true);
   assert.equal(items[0].canEscalate, true);
+  assert.equal(items[0].assignedTo, null);
   assert.equal(items[0].agentDecision.guardrails.includes("never-invent-prices"), true);
+});
+
+test("buildUnifiedInboxItems keeps recency ordering while exposing follow-up and review eligibility", () => {
+  const items = buildUnifiedInboxItems({
+    chatConversations: [
+      {
+        _id: "chat-2",
+        visitorLabel: "Serious Chat Lead",
+        visitorEmail: "chat2@example.com",
+        status: "new",
+        sourceChannel: "website-chat",
+        lastVisitorMessage: "I need exact pricing for July.",
+        lastActivityAt: "2026-04-24T12:30:00.000Z",
+      },
+    ],
+    contactMessages: [
+      {
+        _id: "website-2",
+        name: "Contact Lead",
+        email: "contact@example.com",
+        status: "Read",
+        message: "Please follow up with package options.",
+        updatedAt: "2026-04-23T11:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(items[0].sourceId, "chat-2");
+  assert.equal(items[0].canFollowUp, true);
+  assert.equal(items[0].canEscalate, true);
+  assert.equal(items[1].sourceId, "website-2");
+  assert.equal(items[1].canFollowUp, true);
 });
 
 test("buildUnifiedInboxItems routes cold email threads to nurture agent", () => {

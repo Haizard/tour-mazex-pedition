@@ -135,9 +135,12 @@ router.get("/", async (req, res) => {
         whatsapp: inboxItems.filter((item) => item.channel === "whatsapp").length,
         email: inboxItems.filter((item) => item.channel === "email").length,
         website: inboxItems.filter((item) => item.channel === "website").length,
+        lead: inboxItems.filter((item) => item.channel === "lead").length,
         open: inboxItems.filter((item) =>
           ["open", "pending", "Pending", "Contacted", "New", "Read", "new", "open"].includes(item.status)
         ).length,
+        followUp: inboxItems.filter((item) => item.canFollowUp).length,
+        humanReview: inboxItems.filter((item) => item.requiresHumanReview).length,
       },
     });
   } catch (error) {
