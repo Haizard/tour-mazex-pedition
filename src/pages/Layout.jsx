@@ -3,13 +3,21 @@ import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import { useTenant } from "../context/TenantContext";
+import {
+  TRAVELER_AUTH_TOKEN_KEY,
+  TRAVELER_GOOGLE_PROMPT_DELAY_MS,
+  TRAVELER_GOOGLE_PROMPT_DISMISSED_KEY,
+  shouldScheduleTravelerGooglePrompt,
+} from "../components/Auth/travelerGooglePromptState";
 
 const OrderPopup = React.lazy(() => import("../components/OrderPopup/OrderPopup"));
 const ChatBot = React.lazy(() => import("../components/Chat/ChatBot"));
 const WhatsAppButton = React.lazy(() => import("../components/WhatsApp/WhatsAppButton"));
+const TravelerGooglePrompt = React.lazy(() => import("../components/Auth/TravelerGooglePrompt"));
 
 const Layout = () => {
   const [orderPopup, setOrderPopup] = React.useState(false);
+  const [travelerGooglePromptVisible, setTravelerGooglePromptVisible] = React.useState(false);
   const location = useLocation();
   const { loading, bootstrapError, isPlatform } = useTenant();
 
@@ -50,6 +58,31 @@ const Layout = () => {
 
     return () => window.clearTimeout(timerId);
   }, [shouldAutoPrompt, location.pathname]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const shouldSchedule = shouldScheduleTravelerGooglePrompt({
+      pathname: location.pathname,
+      isAdminRoute,
+      isPlatform,
+      isDismissed: window.sessionStorage.getItem(TRAVELER_GOOGLE_PROMPT_DISMISSED_KEY) === "true",
+      isSignedIn: Boolean(window.localStorage.getItem(TRAVELER_AUTH_TOKEN_KEY)),
+    });
+
+    if (!shouldSchedule) {
+      setTravelerGooglePromptVisible(false);
+      return undefined;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setTravelerGooglePromptVisible(true);
+    }, TRAVELER_GOOGLE_PROMPT_DELAY_MS);
+
+    return () => window.clearTimeout(timerId);
+  }, [isAdminRoute, isPlatform, location.pathname]);
 
   if (!isAdminRoute && loading) {
     return (
@@ -104,6 +137,11 @@ const Layout = () => {
           <OrderPopup
             isVisible={orderPopup}
             setOrderPopupVisible={setOrderPopup}
+          />
+        )}
+        {travelerGooglePromptVisible && (
+          <TravelerGooglePrompt
+            onDismiss={() => setTravelerGooglePromptVisible(false)}
           />
         )}
       </Suspense>

@@ -47,6 +47,7 @@ import visionaryRoutes from "./routes/visionaryRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
 import infrastructureRoutes from "./routes/infrastructureRoutes.js";
 import travelerPortalRoutes from "./routes/travelerPortalRoutes.js";
+import travelerAuthRoutes from "./routes/travelerAuthRoutes.js";
 import discoveryRoutes from "./routes/discoveryRoutes.js";
 import marketplaceEngagementRoutes from "./routes/marketplaceEngagementRoutes.js";
 import {
@@ -175,7 +176,11 @@ app.use("/api", (req, res, next) => {
     return;
   }
 
-  if (req.path.startsWith("/auth") || req.path.startsWith("/platform-auth")) {
+  if (
+    req.path.startsWith("/auth") ||
+    req.path.startsWith("/platform-auth") ||
+    req.path.startsWith("/traveler-auth")
+  ) {
     next();
     return;
   }
@@ -184,6 +189,7 @@ app.use("/api", (req, res, next) => {
 });
 app.use("/api/auth", tenantAuthRateLimit, authRoutes);
 app.use("/api/platform-auth", platformAuthRateLimit, platformAuthRoutes);
+app.use("/api/traveler-auth", travelerAuthRoutes);
 app.use("/api/platform-admin", platformAdminRoutes);
 app.use("/api/tenant", tenantRoutes);
 app.use("/api/page-config", pageConfigRoutes);
