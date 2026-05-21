@@ -30,6 +30,21 @@ export const canHotelPartnerManageHotel = (partnerAdmin = {}, hotel = {}) => {
   return Boolean(tenantId && hotelTenantId && tenantId === hotelTenantId && assignedHotelIds.includes(hotelId));
 };
 
+export const canHotelPartnerManageAccommodationRequest = (partnerAdmin = {}, reservation = {}) => {
+  const tenantId = toId(partnerAdmin.tenantId);
+  const reservationTenantId = toId(reservation.tenantId);
+  const hotelId = toId(reservation.hotelId);
+  const assignedHotelIds = toList(partnerAdmin.hotelIds).map(toId);
+
+  return Boolean(
+    tenantId &&
+      reservationTenantId &&
+      tenantId === reservationTenantId &&
+      hotelId &&
+      assignedHotelIds.includes(hotelId)
+  );
+};
+
 export const buildHotelPartnerProfileUpdate = (body = {}) => {
   const allowedFields = [
     "name",
@@ -84,5 +99,18 @@ export const buildHotelPartnerAdminAccountPayload = (body = {}) => {
     displayName: String(body.displayName || "Hotel Partner Admin").trim(),
     role: ["hotel-owner", "hotel-manager"].includes(body.role) ? body.role : "hotel-owner",
     status: "active",
+  };
+};
+
+export const buildHotelPartnerAccommodationResponseUpdate = (body = {}) => {
+  const status = ["pending", "confirmed", "cancelled"].includes(body.status)
+    ? body.status
+    : "confirmed";
+
+  return {
+    status,
+    reservationCode: String(body.reservationCode || "").trim(),
+    notes: String(body.notes || "").trim(),
+    lastSupplierMessageSharedAt: new Date().toISOString(),
   };
 };

@@ -10,6 +10,12 @@ export const createEmptyPartnerHotelDraft = () => ({
   trustSummary: "",
 });
 
+export const createEmptyPartnerRequestDraft = () => ({
+  status: "confirmed",
+  reservationCode: "",
+  notes: "",
+});
+
 const splitList = (value) => {
   if (Array.isArray(value)) {
     return value.map((item) => String(item).trim()).filter(Boolean);
@@ -33,6 +39,14 @@ export const buildPartnerHotelUpdatePayload = (draft = {}) => ({
   trustSummary: String(draft.trustSummary || "").trim(),
 });
 
+export const buildPartnerAccommodationResponsePayload = (draft = {}) => ({
+  status: ["pending", "confirmed", "cancelled"].includes(draft.status)
+    ? draft.status
+    : "confirmed",
+  reservationCode: String(draft.reservationCode || "").trim(),
+  notes: String(draft.notes || "").trim(),
+});
+
 export const filterPartnerHotels = (hotels = [], search = "") => {
   const needle = String(search || "").trim().toLowerCase();
 
@@ -45,4 +59,29 @@ export const filterPartnerHotels = (hotels = [], search = "") => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(needle))
   );
+};
+
+export const filterPartnerAccommodationRequests = (requests = [], filters = {}) => {
+  const search = String(filters.search || "").trim().toLowerCase();
+  const status = String(filters.status || "").trim();
+
+  return requests.filter((request = {}) => {
+    if (status && request.status !== status) {
+      return false;
+    }
+
+    if (!search) {
+      return true;
+    }
+
+    return [
+      request.bookingGuestName,
+      request.hotelName,
+      request.assignedTourTitle,
+      request.reservationCode,
+      request.roomPlan,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(search));
+  });
 };

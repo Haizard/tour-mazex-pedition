@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 
 import {
   buildHotelPartnerAdminAccountPayload,
+  buildHotelPartnerAccommodationResponseUpdate,
   buildHotelPartnerProfileUpdate,
+  canHotelPartnerManageAccommodationRequest,
   canHotelPartnerManageHotel,
 } from "../utils/hotelPartnerAccess.js";
 
@@ -65,4 +67,55 @@ test("buildHotelPartnerAdminAccountPayload prepares tenant-created partner accou
   assert.equal(payload.role, "hotel-manager");
   assert.equal(payload.status, "active");
   assert.equal("hotelIds" in payload, false);
+});
+
+test("canHotelPartnerManageAccommodationRequest only allows assigned hotel requests", () => {
+  const partnerAdmin = {
+    tenantId: "tenant-1",
+    hotelIds: ["hotel-1"],
+  };
+
+  assert.equal(
+    canHotelPartnerManageAccommodationRequest(partnerAdmin, {
+      tenantId: "tenant-1",
+      hotelId: "hotel-1",
+    }),
+    true
+  );
+  assert.equal(
+    canHotelPartnerManageAccommodationRequest(partnerAdmin, {
+      tenantId: "tenant-1",
+      hotelId: "hotel-2",
+    }),
+    false
+  );
+  assert.equal(
+    canHotelPartnerManageAccommodationRequest(partnerAdmin, {
+      tenantId: "tenant-2",
+      hotelId: "hotel-1",
+    }),
+    false
+  );
+});
+
+test("buildHotelPartnerAccommodationResponseUpdate keeps request response fields narrow", () => {
+  const payload = buildHotelPartnerAccommodationResponseUpdate({
+    status: "confirmed",
+    reservationCode: "LODGE-123",
+    notes: "Confirmed king room.",
+    bookingId: "booking-2",
+    hotelId: "hotel-2",
+    guestCount: 99,
+  });
+
+  assert.deepEqual(payload, {
+    status: "confirmed",
+    reservationCode: "LODGE-123",
+    notes: "Confirmed king room.",
+    lastSupplierMessageSharedAt: payload.lastSupplierMessageSharedAt,
+  });
+  assert.equal(Boolean(payload.lastSupplierMessageSharedAt), true);
+  assert.equal("bookingId" in payload, false);
+  assert.equal("hotelId" in payload, false);
+  assert.equal("guestCount" in payload, false);
 });

@@ -371,6 +371,15 @@ export const updateHotelPartnerHotel = (hotelId, data) =>
   API.patch(`/hotel-partner/hotels/${hotelId}`, data, {
     headers: getHotelPartnerHeaders(),
   });
+export const fetchHotelPartnerAccommodationRequests = (params = {}) =>
+  cachedGet("/hotel-partner/accommodation-requests", {
+    params,
+    headers: getHotelPartnerHeaders(),
+  });
+export const updateHotelPartnerAccommodationRequest = (requestId, data) =>
+  API.patch(`/hotel-partner/accommodation-requests/${requestId}`, data, {
+    headers: getHotelPartnerHeaders(),
+  });
 export const fetchPlatformSummary = () =>
   cachedGet("/platform-admin/summary", {
     headers: getPlatformAdminHeaders(),

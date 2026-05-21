@@ -23,3 +23,14 @@ test("server registers hotel partner auth and portal routes", async () => {
   assert.equal(source.includes('app.use("/api/hotel-partner-auth", hotelPartnerAuthRoutes)'), true);
   assert.equal(source.includes('app.use("/api/hotel-partner", hotelPartnerPortalRoutes)'), true);
 });
+
+test("hotel partner portal routes expose scoped accommodation request handling", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelPartnerPortalRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/accommodation-requests"'), true);
+  assert.equal(source.includes('router.patch("/accommodation-requests/:id"'), true);
+  assert.equal(source.includes("canHotelPartnerManageAccommodationRequest"), true);
+  assert.equal(source.includes("buildHotelPartnerAccommodationResponseUpdate"), true);
+});

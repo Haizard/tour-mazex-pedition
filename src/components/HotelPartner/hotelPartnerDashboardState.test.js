@@ -2,8 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildPartnerAccommodationResponsePayload,
   buildPartnerHotelUpdatePayload,
   createEmptyPartnerHotelDraft,
+  createEmptyPartnerRequestDraft,
+  filterPartnerAccommodationRequests,
   filterPartnerHotels,
 } from "./hotelPartnerDashboardState.js";
 
@@ -50,4 +53,41 @@ test("filterPartnerHotels searches assigned hotel records", () => {
   assert.deepEqual(filterPartnerHotels(hotels, "river").map((hotel) => hotel.name), [
     "Serengeti River Camp",
   ]);
+});
+
+test("createEmptyPartnerRequestDraft starts with confirmation response defaults", () => {
+  const draft = createEmptyPartnerRequestDraft();
+
+  assert.equal(draft.status, "confirmed");
+  assert.equal(draft.reservationCode, "");
+  assert.equal(draft.notes, "");
+});
+
+test("buildPartnerAccommodationResponsePayload normalizes response fields", () => {
+  const payload = buildPartnerAccommodationResponsePayload({
+    status: "cancelled",
+    reservationCode: "  ABC-123 ",
+    notes: " Sold out ",
+    hotelId: "hotel-2",
+  });
+
+  assert.deepEqual(payload, {
+    status: "cancelled",
+    reservationCode: "ABC-123",
+    notes: "Sold out",
+  });
+});
+
+test("filterPartnerAccommodationRequests searches traveler and hotel request fields", () => {
+  const requests = [
+    { bookingGuestName: "Amina Said", hotelName: "Arusha Lodge", status: "pending" },
+    { bookingGuestName: "Daniel", hotelName: "Serengeti Camp", status: "confirmed" },
+  ];
+
+  assert.deepEqual(
+    filterPartnerAccommodationRequests(requests, { search: "amina", status: "pending" }).map(
+      (request) => request.bookingGuestName
+    ),
+    ["Amina Said"]
+  );
 });
