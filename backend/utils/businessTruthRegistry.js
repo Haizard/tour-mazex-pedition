@@ -103,6 +103,19 @@ const businessTruthEntities = [
     notes:
       "Commercial agreements, affiliate payouts, and attribution joins are now PostgreSQL-owned.",
   },
+  {
+    key: "hotels",
+    label: "Hotel Marketplace",
+    currentOwner: "postgresql",
+    targetOwner: "postgresql",
+    migrationMode: "cutover",
+    cutoverWave: 4,
+    cutoverOrder: 9,
+    serviceBoundary: "distribution-and-network",
+    stores: ["mongodb", "postgresql", "pgvector"],
+    notes:
+      "Public hotel inventory, trust summaries, and itinerary-fit context are PostgreSQL-owned for marketplace and AI concierge workflows.",
+  },
 ];
 
 const infrastructureServices = [

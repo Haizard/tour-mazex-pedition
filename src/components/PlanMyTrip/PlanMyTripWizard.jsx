@@ -165,6 +165,9 @@ const PlanMyTripWizard = ({
   defaultTravelWhen = "",
   operatorTenantId = "",
   operatorTenantSlug = "",
+  hotelId = "",
+  hotelName = "",
+  hotelIntentType = "",
 }) => {
   const [showForm, setShowForm] = useState(!showIntro);
   const [currentStep, setCurrentStep] = useState(0);
@@ -274,6 +277,9 @@ const PlanMyTripWizard = ({
         referralCode: formData.referralCode || defaultReferralCode || "",
         operatorTenantId,
         operatorTenantSlug,
+        hotelId,
+        hotelName,
+        hotelIntentType,
       });
       setSuccessAutomation(response.data?.automation || null);
       setSuccess(true);

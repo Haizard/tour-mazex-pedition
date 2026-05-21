@@ -90,6 +90,7 @@ const groupedMenuItems = [
     label: "Operations",
     items: [
       { id: "marketplace-availability", label: "Availability", icon: <FaCalendarCheck /> },
+      { id: "hotels", label: "Hotels", icon: <FaHotel /> },
       { id: "guide-drivers", label: "Guides & Drivers", icon: <FaTruck />, accessKey: "guideDriverManagement" },
       { id: "accommodations", label: "Accommodations", icon: <FaHotel />, accessKey: "accommodationCoordination" },
       { id: "airport-pickups", label: "Airport Pickups", icon: <FaCarSide />, accessKey: "airportPickupCoordination" },

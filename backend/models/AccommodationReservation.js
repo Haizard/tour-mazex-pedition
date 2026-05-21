@@ -14,6 +14,12 @@ const accommodationReservationSchema = new mongoose.Schema(
       ref: "Booking",
       default: null,
     },
+    hotelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hotel",
+      default: null,
+      index: true,
+    },
     bookingGuestName: {
       type: String,
       trim: true,

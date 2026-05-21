@@ -35,6 +35,8 @@ const EmbeddedPlanMyTrip = React.lazy(() => import("./pages/EmbeddedPlanMyTrip")
 const TravelerPortal = React.lazy(() => import("./pages/TravelerPortal"));
 const GlobalDiscovery = React.lazy(() => import("./pages/GlobalDiscovery"));
 const DiscoveryTourDetail = React.lazy(() => import("./pages/DiscoveryTourDetail"));
+const HotelDiscovery = React.lazy(() => import("./pages/HotelDiscovery"));
+const HotelDetail = React.lazy(() => import("./pages/HotelDetail"));
 const TemplateMarketplace = React.lazy(() => import("./pages/TemplateMarketplace"));
 const DashboardRouteFallback = ({ label }) => (
   <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
@@ -101,6 +103,8 @@ const tenantSiteRoutes = (
     <Route path="trip/:token" element={withPublicSuspense(<TravelerPortal />)} />
     <Route path="discover" element={withPublicSuspense(<GlobalDiscovery />)} />
     <Route path="discover/tour/:id" element={withPublicSuspense(<DiscoveryTourDetail />)} />
+    <Route path="discover/hotels" element={withPublicSuspense(<HotelDiscovery />)} />
+    <Route path="discover/hotels/:slug" element={withPublicSuspense(<HotelDetail />)} />
     <Route path="templates" element={withPublicSuspense(<TemplateMarketplace />)} />
   </>
 );

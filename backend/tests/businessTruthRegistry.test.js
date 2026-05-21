@@ -13,7 +13,7 @@ test("listBusinessTruthEntities returns entities in safe cutover order", () => {
 
   assert.equal(entities[0].key, "bookings");
   assert.equal(entities[1].key, "payments");
-  assert.equal(entities.at(-1)?.key, "partner-contracts-and-attribution");
+  assert.equal(entities.at(-1)?.key, "hotels");
 });
 
 test("business truth entities declare current and target owners", () => {
@@ -38,4 +38,5 @@ test("buildBusinessTruthCutoverPlan groups entities by wave", () => {
   assert.equal(plan[0].wave, 1);
   assert.equal(plan[0].entities[0].key, "bookings");
   assert.equal(plan[1].entities.some((entity) => entity.key === "quotes"), true);
+  assert.equal(plan.at(-1).entities.some((entity) => entity.key === "hotels"), true);
 });

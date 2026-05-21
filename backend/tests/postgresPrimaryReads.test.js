@@ -91,6 +91,9 @@ test("normalizePrimaryInquiryRows rebuilds lead inbox records from postgres rows
         contactPreference: "whatsapp",
         followUpMessage: "We have a great itinerary ready.",
         automationSummary: "High intent lead",
+        hotelId: "hotel-1",
+        hotelName: "Arusha Garden Lodge",
+        hotelIntentType: "hotel-first",
       },
     },
   ]);
@@ -98,6 +101,9 @@ test("normalizePrimaryInquiryRows rebuilds lead inbox records from postgres rows
   assert.equal(rows[0]._id, "inquiry-1");
   assert.equal(rows[0].name, "Amina Said");
   assert.equal(rows[0].contactPreference, "whatsapp");
+  assert.equal(rows[0].hotelId, "hotel-1");
+  assert.equal(rows[0].hotelName, "Arusha Garden Lodge");
+  assert.equal(rows[0].hotelIntentType, "hotel-first");
   assert.equal(rows[0].followUpMessage, "We have a great itinerary ready.");
   assert.deepEqual(rows[0].destinations, ["Serengeti", "Ngorongoro"]);
 });
@@ -174,6 +180,7 @@ test("normalizePrimaryAccommodationRows rebuilds accommodation rows from postgre
       source_id: "reservation-1",
       tenant_id: "tenant-1",
       booking_id: "booking-1",
+      hotel_id: "hotel-1",
       booking_guest_name: "Amina Said",
       hotel_name: "Serena Lodge",
       supplier_name: "Serena",
@@ -191,6 +198,7 @@ test("normalizePrimaryAccommodationRows rebuilds accommodation rows from postgre
   ]);
 
   assert.equal(rows[0]._id, "reservation-1");
+  assert.equal(rows[0].hotelId, "hotel-1");
   assert.equal(rows[0].hotelName, "Serena Lodge");
   assert.equal(rows[0].bookingGuestName, "Amina Said");
   assert.equal(rows[0].guestCount, 2);

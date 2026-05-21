@@ -169,6 +169,7 @@ router.post("/", async (req, res) => {
   try {
     const payload = withTenantId(req, {
       bookingId: req.body.bookingId || null,
+      hotelId: req.body.hotelId || null,
       bookingGuestName: req.body.bookingGuestName,
       assignedTourTitle: req.body.assignedTourTitle,
       hotelName: req.body.hotelName,
@@ -209,6 +210,9 @@ router.patch("/:id", async (req, res) => {
     const updates = {
       bookingId: Object.prototype.hasOwnProperty.call(req.body, "bookingId")
         ? req.body.bookingId || null
+        : undefined,
+      hotelId: Object.prototype.hasOwnProperty.call(req.body, "hotelId")
+        ? req.body.hotelId || null
         : undefined,
       bookingGuestName: req.body.bookingGuestName,
       assignedTourTitle: req.body.assignedTourTitle,

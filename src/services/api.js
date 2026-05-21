@@ -643,6 +643,15 @@ export const generateTourSeo = (data) =>
 export const generateFullTourPackage = (data) =>
   API.post("/tours/generate-full", data);
 
+// Hotels
+export const fetchHotels = () => cachedGet("/hotels");
+export const createHotel = (data) => API.post("/hotels", data);
+export const updateHotel = (id, data) => API.patch(`/hotels/${id}`, data);
+export const deleteHotel = (id) => API.delete(`/hotels/${id}`);
+export const fetchPublicHotels = (params = {}) => cachedGet("/hotels/public", { params });
+export const fetchPublicHotelBySlug = (slug) =>
+  cachedGet(`/hotels/public/${encodeURIComponent(slug)}`);
+
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>
   cachedGet("/social-posts", { params });

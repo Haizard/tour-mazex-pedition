@@ -108,6 +108,7 @@ export const buildAccommodationReservationRecord = (reservation = {}) => ({
   sourceId: String(reservation._id || ""),
   tenantId: String(reservation.tenantId || ""),
   bookingId: String(reservation.bookingId || ""),
+  hotelId: String(reservation.hotelId || ""),
   bookingGuestName: reservation.bookingGuestName || "",
   hotelName: reservation.hotelName || "",
   supplierName: reservation.supplierName || "",
@@ -131,9 +132,9 @@ export const buildAccommodationReservationUpsert = (reservation = {}) => {
       insert into public.accommodation_reservation_records (
         source_id, tenant_id, booking_id, booking_guest_name, hotel_name, supplier_name,
         supplier_contact, destination, reservation_code, room_plan, check_in_date,
-        check_out_date, guest_count, status, notes, assigned_tour_title, source_payload
+        check_out_date, guest_count, status, notes, assigned_tour_title, hotel_id, source_payload
       ) values (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb
       )
       on conflict (source_id)
       do update set
@@ -152,13 +153,14 @@ export const buildAccommodationReservationUpsert = (reservation = {}) => {
         status = excluded.status,
         notes = excluded.notes,
         assigned_tour_title = excluded.assigned_tour_title,
+        hotel_id = excluded.hotel_id,
         source_payload = excluded.source_payload,
         updated_at = now()
     `,
     values: [
       record.sourceId, record.tenantId, record.bookingId, record.bookingGuestName, record.hotelName, record.supplierName,
       record.supplierContact, record.destination, record.reservationCode, record.roomPlan, record.checkInDate,
-      record.checkOutDate, record.guestCount, record.status, record.notes, record.assignedTourTitle,
+      record.checkOutDate, record.guestCount, record.status, record.notes, record.assignedTourTitle, record.hotelId,
       JSON.stringify(record.sourcePayload || {}),
     ],
   };
@@ -233,22 +235,28 @@ export const syncAirportPickupRecord = (pickup, env) =>
 // --- Lookups ---
 
 export const findGuideDriverAssignmentRecord = (sourceId, tenantId, env) =>
-  querySingleRow({
+  querySingleRow(buildGuideDriverAssignmentLookup(sourceId, tenantId), env);
+
+export const buildGuideDriverAssignmentLookup = (sourceId, tenantId) => ({
     text: "select * from public.guide_driver_assignment_records where source_id = $1 and tenant_id = $2 limit 1",
     values: [String(sourceId || ""), String(tenantId || "")],
-  }, env);
+});
 
 export const findAccommodationReservationRecord = (sourceId, tenantId, env) =>
-  querySingleRow({
+  querySingleRow(buildAccommodationReservationLookup(sourceId, tenantId), env);
+
+export const buildAccommodationReservationLookup = (sourceId, tenantId) => ({
     text: "select * from public.accommodation_reservation_records where source_id = $1 and tenant_id = $2 limit 1",
     values: [String(sourceId || ""), String(tenantId || "")],
-  }, env);
+});
 
 export const findAirportPickupRecord = (sourceId, tenantId, env) =>
-  querySingleRow({
+  querySingleRow(buildAirportPickupLookup(sourceId, tenantId), env);
+
+export const buildAirportPickupLookup = (sourceId, tenantId) => ({
     text: "select * from public.airport_pickup_records where source_id = $1 and tenant_id = $2 limit 1",
     values: [String(sourceId || ""), String(tenantId || "")],
-  }, env);
+});
 
 // --- View Builders ---
 
@@ -277,22 +285,28 @@ export const buildGuideDriverAssignmentView = (row = {}) => ({
 // --- Deletes ---
 
 export const deleteGuideDriverAssignmentRecord = (sourceId, tenantId, env = globalThis.process?.env || {}) =>
-  deleteRecord({
+  deleteRecord(buildGuideDriverAssignmentDelete(sourceId, tenantId), env);
+
+export const buildGuideDriverAssignmentDelete = (sourceId, tenantId) => ({
     text: "delete from public.guide_driver_assignment_records where source_id = $1 and tenant_id = $2",
     values: [String(sourceId || ""), String(tenantId || "")],
-  }, env);
+});
 
 export const deleteAccommodationReservationRecord = (sourceId, tenantId, env = globalThis.process?.env || {}) =>
-  deleteRecord({
+  deleteRecord(buildAccommodationReservationDelete(sourceId, tenantId), env);
+
+export const buildAccommodationReservationDelete = (sourceId, tenantId) => ({
     text: "delete from public.accommodation_reservation_records where source_id = $1 and tenant_id = $2",
     values: [String(sourceId || ""), String(tenantId || "")],
-  }, env);
+});
 
 export const deleteAirportPickupRecord = (sourceId, tenantId, env = globalThis.process?.env || {}) =>
-  deleteRecord({
+  deleteRecord(buildAirportPickupDelete(sourceId, tenantId), env);
+
+export const buildAirportPickupDelete = (sourceId, tenantId) => ({
     text: "delete from public.airport_pickup_records where source_id = $1 and tenant_id = $2",
     values: [String(sourceId || ""), String(tenantId || "")],
-  }, env);
+});
 
 // --- Accommodation View Builder ---
 
@@ -300,6 +314,7 @@ export const buildAccommodationReservationView = (row = {}) => ({
   _id: String(row.source_id || ""),
   tenantId: String(row.tenant_id || ""),
   bookingId: String(row.booking_id || ""),
+  hotelId: String(row.hotel_id || ""),
   bookingGuestName: String(row.booking_guest_name || ""),
   hotelName: String(row.hotel_name || ""),
   supplierName: String(row.supplier_name || ""),

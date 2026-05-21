@@ -30,6 +30,17 @@ const customInquirySchema = new mongoose.Schema({
     duration: { type: String },
     budget: { type: String },
     services: [{ type: String }],
+    hotelId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Hotel',
+        default: null,
+    },
+    hotelName: { type: String, trim: true, default: '' },
+    hotelIntentType: {
+        type: String,
+        enum: ['direct-hotel', 'itinerary-add-on', ''],
+        default: '',
+    },
     message: { type: String, required: true },
     sourceChannel: {
         type: String,
