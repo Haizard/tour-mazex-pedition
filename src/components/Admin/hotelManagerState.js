@@ -24,6 +24,13 @@ export const createEmptyHotelDraft = () => ({
   partnerAccountId: "",
 });
 
+export const createEmptyHotelPartnerAdminDraft = () => ({
+  username: "",
+  password: "",
+  displayName: "",
+  role: "hotel-owner",
+});
+
 export const buildHotelPayload = (draft = {}) => {
   const amenities = Array.isArray(draft.amenities)
     ? draft.amenities
@@ -58,6 +65,27 @@ export const buildHotelPayload = (draft = {}) => {
     status: draft.status || "draft",
     partnerAccountId: draft.partnerAccountId || null,
   };
+};
+
+export const buildHotelPartnerAdminPayload = (draft = {}) => {
+  const username = String(draft.username || "").trim().toLowerCase();
+  const password = String(draft.password || "").trim();
+  const displayName = String(draft.displayName || "").trim();
+  const role = ["hotel-owner", "hotel-manager"].includes(draft.role)
+    ? draft.role
+    : "hotel-owner";
+
+  return {
+    username,
+    password,
+    displayName,
+    role,
+  };
+};
+
+export const getHotelPartnerLoginPath = (pathname = "") => {
+  const demoMatch = String(pathname || "").match(/^\/demo\/[^/]+/);
+  return demoMatch ? `${demoMatch[0]}/hotel-partner/login` : "/hotel-partner/login";
 };
 
 export const filterHotelRows = (hotels = [], filters = {}) => {

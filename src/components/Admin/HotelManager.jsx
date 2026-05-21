@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaHotel, FaPlus, FaSave, FaSearch, FaTrash } from "react-icons/fa";
+import { FaHotel, FaKey, FaPlus, FaSave, FaSearch, FaTrash } from "react-icons/fa";
 import {
+  createHotelPartnerAdmin,
   createHotel,
   deleteHotel,
   fetchHotels,
   updateHotel,
 } from "../../services/api";
 import {
+  buildHotelPartnerAdminPayload,
   buildHotelPayload,
   createEmptyHotelDraft,
+  createEmptyHotelPartnerAdminDraft,
   filterHotelRows,
+  getHotelPartnerLoginPath,
 } from "./hotelManagerState";
 
 const HotelManager = () => {
@@ -20,8 +24,14 @@ const HotelManager = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [partnerDraft, setPartnerDraft] = useState(createEmptyHotelPartnerAdminDraft);
+  const [partnerMessage, setPartnerMessage] = useState("");
+  const [savingPartner, setSavingPartner] = useState(false);
 
   const visibleHotels = useMemo(() => filterHotelRows(hotels, filters), [hotels, filters]);
+  const partnerLoginPath = getHotelPartnerLoginPath(
+    typeof window !== "undefined" ? window.location.pathname : ""
+  );
 
   const loadHotels = async () => {
     setLoading(true);
@@ -57,6 +67,8 @@ const HotelManager = () => {
   const resetForm = () => {
     setEditingId("");
     setDraft(createEmptyHotelDraft());
+    setPartnerDraft(createEmptyHotelPartnerAdminDraft());
+    setPartnerMessage("");
   };
 
   const saveHotel = async (event) => {
@@ -89,6 +101,33 @@ const HotelManager = () => {
       if (editingId === hotelId) resetForm();
     } catch (error) {
       setMessage(error?.response?.data?.message || "Unable to delete hotel.");
+    }
+  };
+
+  const updatePartnerDraft = (key, value) => {
+    setPartnerDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const createPartnerAdmin = async (event) => {
+    event.preventDefault();
+
+    if (!editingId) {
+      setPartnerMessage("Save or select a hotel before creating partner access.");
+      return;
+    }
+
+    setSavingPartner(true);
+    setPartnerMessage("");
+
+    try {
+      const payload = buildHotelPartnerAdminPayload(partnerDraft);
+      await createHotelPartnerAdmin(editingId, payload);
+      setPartnerMessage(`Partner account created. Share ${partnerLoginPath} with the hotel admin.`);
+      setPartnerDraft(createEmptyHotelPartnerAdminDraft());
+    } catch (error) {
+      setPartnerMessage(error?.response?.data?.message || "Unable to create hotel partner account.");
+    } finally {
+      setSavingPartner(false);
     }
   };
 
@@ -163,6 +202,63 @@ const HotelManager = () => {
             <FaSave /> {saving ? "Saving..." : "Save Hotel"}
           </button>
           {message ? <p className="text-sm font-semibold text-zinc-600">{message}</p> : null}
+        </form>
+
+        <form onSubmit={createPartnerAdmin} className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+              Hotel partner onboarding
+            </p>
+            <h3 className="mt-2 flex items-center gap-2 text-lg font-black text-zinc-950">
+              <FaKey className="text-primary" /> Create hotel admin access
+            </h3>
+            <p className="mt-2 text-xs font-semibold leading-5 text-zinc-500">
+              Partner admins can edit assigned hotel profile details only. Publishing, marketplace visibility, and sponsored placement stay here with the tourism admin.
+            </p>
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Hotel partner login</span>
+            <input
+              readOnly
+              value={partnerLoginPath}
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-700"
+            />
+          </label>
+          {[
+            ["username", "Username"],
+            ["password", "Temporary password"],
+            ["displayName", "Display name"],
+          ].map(([key, label]) => (
+            <label key={key} className="block">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">{label}</span>
+              <input
+                type={key === "password" ? "password" : "text"}
+                value={partnerDraft[key] || ""}
+                onChange={(event) => updatePartnerDraft(key, event.target.value)}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+                required={key !== "displayName"}
+              />
+            </label>
+          ))}
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Role</span>
+            <select
+              value={partnerDraft.role}
+              onChange={(event) => updatePartnerDraft("role", event.target.value)}
+              className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-bold outline-none focus:border-primary"
+            >
+              <option value="hotel-owner">Hotel owner</option>
+              <option value="hotel-manager">Hotel manager</option>
+            </select>
+          </label>
+          <button
+            type="submit"
+            disabled={savingPartner || !editingId}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-white disabled:bg-zinc-300"
+          >
+            <FaKey /> {savingPartner ? "Creating..." : "Create Partner Access"}
+          </button>
+          {partnerMessage ? <p className="text-sm font-semibold text-zinc-600">{partnerMessage}</p> : null}
         </form>
 
         <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">

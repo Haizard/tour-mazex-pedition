@@ -2,9 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildHotelPartnerAdminPayload,
   buildHotelPayload,
   createEmptyHotelDraft,
+  createEmptyHotelPartnerAdminDraft,
   filterHotelRows,
+  getHotelPartnerLoginPath,
 } from "./hotelManagerState.js";
 
 test("createEmptyHotelDraft provides marketplace-safe defaults", () => {
@@ -44,4 +47,34 @@ test("filterHotelRows applies status and search filters", () => {
 
   assert.equal(rows.length, 1);
   assert.equal(rows[0].name, "Arusha Garden Lodge");
+});
+
+test("createEmptyHotelPartnerAdminDraft provides onboarding defaults", () => {
+  const draft = createEmptyHotelPartnerAdminDraft();
+
+  assert.equal(draft.role, "hotel-owner");
+  assert.equal(draft.username, "");
+  assert.equal(draft.password, "");
+});
+
+test("buildHotelPartnerAdminPayload normalizes account credentials", () => {
+  const payload = buildHotelPartnerAdminPayload({
+    username: " FrontDesk ",
+    password: " safari123 ",
+    displayName: " Front Desk ",
+    role: "hotel-manager",
+    status: "disabled",
+  });
+
+  assert.deepEqual(payload, {
+    username: "frontdesk",
+    password: "safari123",
+    displayName: "Front Desk",
+    role: "hotel-manager",
+  });
+});
+
+test("getHotelPartnerLoginPath uses demo tenant context when present", () => {
+  assert.equal(getHotelPartnerLoginPath("/demo/maz-expeditions/admin"), "/demo/maz-expeditions/hotel-partner/login");
+  assert.equal(getHotelPartnerLoginPath("/admin"), "/hotel-partner/login");
 });
