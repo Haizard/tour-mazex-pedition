@@ -142,7 +142,7 @@ const normalizeChatConversationItem = (conversation = {}) => ({
   linkedChatConversation: conversation,
   whatsappAutomation: null,
   leadSource: conversation.sourceChannel || "website-chat",
-  campaignLabel: "",
+  campaignLabel: conversation.metadata?.campaignLabel || "",
   conversionStage: conversation.status || "new",
   canReply: Boolean(conversation.visitorEmail || conversation.visitorPhone),
   canFollowUp: !["closed", "archived"].includes(String(conversation.status || "").toLowerCase()),

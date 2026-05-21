@@ -29,7 +29,10 @@ test("buildSalesAssistantPayload recommends a matching package and qualification
   assert.ok(payload.summary.includes("Serengeti Migration Escape"));
   assert.equal(payload.quickActions.length > 0, true);
   assert.ok(payload.quickActions.some((action) => action.href === "/plan-my-trip"));
+  assert.ok(payload.quickActions.some((action) => action.kind === "package"));
   assert.ok(payload.qualificationQuestion.length > 0);
+  assert.equal(payload.salesStage, "qualified-intent");
+  assert.ok(payload.leadCapturePrompt.includes("email"));
   assert.equal(payload.intent, "recommend-package");
   assert.equal(payload.recommendedNextStep, "view-package");
   assert.equal(payload.matchedTourId, "tour-1");
@@ -43,6 +46,9 @@ test("buildSalesAssistantPayload falls back to trip-planning CTA when no tour ma
 
   assert.ok(payload.summary.includes("custom"));
   assert.equal(payload.quickActions[0].href, "/plan-my-trip");
+  assert.equal(payload.quickActions[0].kind, "planner");
+  assert.equal(payload.salesStage, "discovery");
+  assert.ok(payload.leadCapturePrompt.includes("WhatsApp"));
   assert.equal(payload.intent, "custom-trip");
   assert.equal(payload.recommendedNextStep, "open-planner");
 });

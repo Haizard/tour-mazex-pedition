@@ -67,14 +67,24 @@ const persistConversation = async (
                 lastVisitorMessage,
                 transcript,
                 lastActivityAt: new Date(),
-                metadata: {
-                    lastSyncedFrom: "chatbot",
-                    preferredLocale:
-                        visitorProfile.preferredLocale ||
-                        visitorProfile.browserLanguage ||
-                        "",
-                    assistantSignals,
-                },
+                "metadata.lastSyncedFrom": "chatbot",
+                "metadata.preferredLocale":
+                    visitorProfile.preferredLocale ||
+                    visitorProfile.browserLanguage ||
+                    "",
+                "metadata.browserLanguage": visitorProfile.browserLanguage || "",
+                "metadata.timezone": visitorProfile.timezone || "",
+                "metadata.market": visitorProfile.market || "",
+                "metadata.currentPage": visitorProfile.currentPage || "",
+                "metadata.currentUrl": visitorProfile.currentUrl || "",
+                "metadata.referrer": visitorProfile.referrer || "",
+                "metadata.referrerHost": visitorProfile.referrerHost || "",
+                "metadata.sourceHint": visitorProfile.sourceHint || "",
+                "metadata.campaignLabel": visitorProfile.campaignLabel || "",
+                "metadata.assistantSignals": assistantSignals,
+            },
+            $setOnInsert: {
+                "metadata.firstTouchAt": new Date(),
             },
         },
         {

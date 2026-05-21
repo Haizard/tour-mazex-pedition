@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { IoSend, IoClose, IoChatbubbleEllipses } from "react-icons/io5";
 import { Link, useLocation } from "react-router-dom";
 import { sendChatMessage } from "../../services/api";
+import { buildChatVisitorProfile } from "./chatAttribution.js";
 import { buildTenantScopedPath } from "../../utils/tenantRoutes.js";
 
 const CHAT_SESSION_STORAGE_KEY = "tourmazeChatSessionId";
@@ -26,13 +27,12 @@ const getVisitorProfile = () => {
     return {};
   }
 
-  return {
-    preferredLocale: window.navigator?.language || "",
-    browserLanguage: window.navigator?.language || "",
-    timezone:
-      Intl.DateTimeFormat().resolvedOptions().timeZone || "",
-    currentPage: window.location?.pathname || "",
-  };
+  return buildChatVisitorProfile({
+    navigatorLanguage: window.navigator?.language || "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    locationLike: window.location,
+    referrer: window.document?.referrer || "",
+  });
 };
 
 const ChatBot = () => {
@@ -166,16 +166,28 @@ const ChatBot = () => {
                           Recommended: {msg.salesAssistant.recommendedNextStep.replace(/-/g, " ")}
                         </p>
                       )}
+                      {msg.salesAssistant.salesStage && (
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                          Sales Stage: {msg.salesAssistant.salesStage.replace(/-/g, " ")}
+                        </p>
+                      )}
                       <p className="text-xs leading-5 text-gray-600">
                         {msg.salesAssistant.qualificationQuestion}
                       </p>
+                      {msg.salesAssistant.leadCapturePrompt && (
+                        <p className="text-[11px] leading-5 text-gray-500">
+                          {msg.salesAssistant.leadCapturePrompt}
+                        </p>
+                      )}
                       <div className="flex flex-wrap gap-2">
                         {msg.salesAssistant.quickActions?.map((action) => (
                           <Link
                             key={`${action.href}-${action.label}`}
                             to={buildTenantScopedPath(action.href, location.pathname)}
                             onClick={() => setIsOpen(false)}
-                            className="rounded-full bg-primary px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                            className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white ${
+                              action.kind === "planner" ? "bg-slate-800" : "bg-primary"
+                            }`}
                           >
                             {action.label}
                           </Link>

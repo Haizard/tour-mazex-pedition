@@ -125,6 +125,10 @@ test("buildUnifiedInboxItems keeps recency ordering while exposing follow-up and
         sourceChannel: "website-chat",
         lastVisitorMessage: "I need exact pricing for July.",
         lastActivityAt: "2026-04-24T12:30:00.000Z",
+        metadata: {
+          campaignLabel: "homepage-chat",
+          currentPage: "/discover",
+        },
       },
     ],
     contactMessages: [
@@ -142,6 +146,7 @@ test("buildUnifiedInboxItems keeps recency ordering while exposing follow-up and
   assert.equal(items[0].sourceId, "chat-2");
   assert.equal(items[0].canFollowUp, true);
   assert.equal(items[0].canEscalate, true);
+  assert.equal(items[0].campaignLabel, "homepage-chat");
   assert.equal(items[1].sourceId, "website-2");
   assert.equal(items[1].canFollowUp, true);
 });

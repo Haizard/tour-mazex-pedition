@@ -49,12 +49,16 @@ export const buildSalesAssistantPayload = ({ message = "", tours = [] }) => {
       summary:
         "This sounds like a custom trip request, so the best next step is to shape it in the tailor-made planner.",
       intent: "custom-trip",
+      salesStage: "discovery",
       recommendedNextStep: "open-planner",
       qualificationQuestion:
         "What travel month and budget range should we design around?",
+      leadCapturePrompt:
+        "If you already know your dates, leave your email or WhatsApp in the planner so the sales team can turn this into a custom quote quickly.",
       quickActions: [
         {
           label: "Design Your Trip",
+          kind: "planner",
           href: "/plan-my-trip",
         },
       ],
@@ -64,17 +68,22 @@ export const buildSalesAssistantPayload = ({ message = "", tours = [] }) => {
   return {
     summary: `${bestMatch.title} looks like the strongest fit based on your request.`,
     intent: "recommend-package",
+    salesStage: "qualified-intent",
     recommendedNextStep: "view-package",
     matchedTourId: bestMatch._id || "",
     qualificationQuestion:
       "How many travelers and what date window should we plan around?",
+    leadCapturePrompt:
+      "If this looks close, share your email or WhatsApp after opening the package so we can prepare pricing and availability for you.",
     quickActions: [
       {
         label: "View Matching Package",
+        kind: "package",
         href: `/packages/${slugifyTitle(bestMatch.title)}${bestMatch._id ? `?tourId=${bestMatch._id}` : ""}`,
       },
       {
         label: "Design Your Trip",
+        kind: "planner",
         href: "/plan-my-trip",
       },
     ],
