@@ -171,3 +171,10 @@ test("tenant auth routes support the Google callback alias used by configured OA
   assert.equal(source.includes("handleTravelerGoogleCallback"), true);
   assert.equal(source.includes('router.get("/callback/google"'), true);
 });
+
+test("Google callback merges guest marketplace activity into the traveler account", async () => {
+  const source = await readFile(new URL("../routes/travelerAuthRoutes.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("mergeTravelerAccountContinuity"), true);
+  assert.equal(source.includes("sessionKey: state.sessionKey"), true);
+});

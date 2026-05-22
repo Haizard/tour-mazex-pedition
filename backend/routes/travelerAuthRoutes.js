@@ -11,6 +11,7 @@ import {
   signTravelerAuthToken,
   verifyTravelerAuthToken,
 } from "../utils/travelerAuthTokens.js";
+import { mergeTravelerAccountContinuity } from "../utils/travelerAccountContinuity.js";
 import TravelerIdentity from "../models/TravelerIdentity.js";
 
 const router = express.Router();
@@ -86,6 +87,11 @@ export const handleTravelerGoogleCallback = async (req, res) => {
     const identity = await findOrCreateGoogleTravelerIdentity({
       profile,
       sessionKey: state.sessionKey,
+    });
+    await mergeTravelerAccountContinuity({
+      identity,
+      sessionKey: state.sessionKey,
+      email: identity.email,
     });
     const token = signTravelerAuthToken({
       travelerIdentityId: String(identity._id),
