@@ -1,3 +1,5 @@
+import { buildHotelInventorySummary } from "./hotelInventory.js";
+
 const regex = (value = "") => new RegExp(String(value).trim(), "i");
 
 const compact = (values = []) =>
@@ -54,6 +56,7 @@ export const shapeHotelDiscoveryCard = (hotel = {}) => ({
     summary: hotel.trustSummary || "",
   },
   fitTags: getHotelFitTags(hotel),
+  inventorySummary: buildHotelInventorySummary(hotel),
 });
 
 export const shapeHotelDetail = (hotel = {}) => ({

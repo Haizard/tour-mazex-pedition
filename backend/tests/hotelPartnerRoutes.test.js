@@ -44,3 +44,14 @@ test("hotel partner hotel updates are submitted for tourism admin approval", asy
   assert.equal(source.includes("pendingPartnerUpdate"), true);
   assert.equal(source.includes("updatePostgresFirstHotel(req.params.id"), false);
 });
+
+test("hotel partner portal routes expose hotel inventory editing endpoints", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelPartnerPortalRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/hotels/:id/inventory"'), true);
+  assert.equal(source.includes('router.patch("/hotels/:id/inventory"'), true);
+  assert.equal(source.includes("normalizeHotelInventoryPayload"), true);
+  assert.equal(source.includes("normalizeHotelAvailabilityEntries"), true);
+});

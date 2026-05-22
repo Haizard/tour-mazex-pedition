@@ -18,6 +18,15 @@ test("api service exposes hotel partner accommodation request calls", async () =
   assert.equal(source.includes('API.patch(`/hotel-partner/accommodation-requests/${requestId}`, data'), true);
 });
 
+test("api service exposes hotel partner inventory calls", async () => {
+  const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("fetchHotelPartnerHotelInventory"), true);
+  assert.equal(source.includes('cachedGet(`/hotel-partner/hotels/${hotelId}/inventory`'), true);
+  assert.equal(source.includes("updateHotelPartnerHotelInventory"), true);
+  assert.equal(source.includes('API.patch(`/hotel-partner/hotels/${hotelId}/inventory`, data'), true);
+});
+
 test("api service exposes tenant-admin hotel partner profile review call", async () => {
   const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
 
@@ -52,4 +61,13 @@ test("api service exposes public hotel claim intake and tenant-admin claim moder
   assert.equal(source.includes('cachedGet("/hotels/claims"'), true);
   assert.equal(source.includes("reviewHotelClaimRequest"), true);
   assert.equal(source.includes('API.post(`/hotels/claims/${id}/review`, data)'), true);
+});
+
+test("api service exposes tenant-admin hotel inventory calls", async () => {
+  const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("fetchHotelInventory"), true);
+  assert.equal(source.includes('cachedGet(`/hotels/${id}/inventory`)'), true);
+  assert.equal(source.includes("updateHotelInventory"), true);
+  assert.equal(source.includes('API.patch(`/hotels/${id}/inventory`, data)'), true);
 });

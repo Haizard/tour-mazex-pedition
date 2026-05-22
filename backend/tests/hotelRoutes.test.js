@@ -80,3 +80,14 @@ test("hotel routes expose tenant-admin claim moderation workflow", async () => {
   assert.equal(source.includes('router.post("/claims/:id/review"'), true);
   assert.equal(source.includes("HotelClaimRequest"), true);
 });
+
+test("hotel routes expose tenant-admin hotel inventory endpoints", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/:id/inventory"'), true);
+  assert.equal(source.includes('router.patch("/:id/inventory"'), true);
+  assert.equal(source.includes("normalizeHotelInventoryPayload"), true);
+  assert.equal(source.includes("normalizeHotelAvailabilityEntries"), true);
+});

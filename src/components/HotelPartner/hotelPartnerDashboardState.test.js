@@ -3,10 +3,13 @@ import assert from "node:assert/strict";
 
 import {
   buildPartnerAccommodationResponsePayload,
+  buildPartnerInventoryPayload,
   buildPartnerHotelUpdatePayload,
   createEmptyPartnerHotelDraft,
+  createEmptyPartnerInventoryDraft,
   createEmptyPartnerRequestDraft,
   filterPartnerAccommodationRequests,
+  filterPartnerInventoryEntries,
   filterPartnerHotels,
 } from "./hotelPartnerDashboardState.js";
 
@@ -90,4 +93,56 @@ test("filterPartnerAccommodationRequests searches traveler and hotel request fie
     ),
     ["Amina Said"]
   );
+});
+
+test("createEmptyPartnerInventoryDraft starts with inventory defaults", () => {
+  const draft = createEmptyPartnerInventoryDraft();
+
+  assert.equal(Array.isArray(draft.roomInventory), true);
+  assert.equal(Array.isArray(draft.availabilityCalendar), true);
+  assert.equal(draft.inventorySettings.defaultStatus, "open");
+});
+
+test("buildPartnerInventoryPayload normalizes room and calendar inventory", () => {
+  const payload = buildPartnerInventoryPayload({
+    roomInventory: [
+      {
+        roomTypeCode: " deluxe ",
+        label: " Deluxe Room ",
+        capacity: "2",
+        totalUnits: "5",
+        baseNightlyRate: "180",
+        currency: "usd",
+      },
+    ],
+    availabilityCalendar: [
+      {
+        date: "2026-07-12",
+        roomTypeCode: "deluxe",
+        status: "limited",
+        availableUnits: "2",
+      },
+    ],
+    inventorySettings: {
+      defaultCurrency: "usd",
+    },
+  });
+
+  assert.equal(payload.roomInventory[0].roomTypeCode, "deluxe");
+  assert.equal(payload.roomInventory[0].currency, "USD");
+  assert.equal(payload.availabilityCalendar[0].availableUnits, 2);
+  assert.equal(payload.inventorySettings.defaultCurrency, "USD");
+});
+
+test("filterPartnerInventoryEntries searches room and note fields", () => {
+  const rows = filterPartnerInventoryEntries(
+    [
+      { roomTypeCode: "deluxe", label: "Deluxe Room", status: "open", note: "Best seller" },
+      { roomTypeCode: "suite", label: "Suite", status: "sold-out", note: "Peak season" },
+    ],
+    { search: "deluxe", status: "open" }
+  );
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].roomTypeCode, "deluxe");
 });

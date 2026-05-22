@@ -557,6 +557,14 @@ export const updateHotelPartnerHotel = (hotelId, data) =>
   API.patch(`/hotel-partner/hotels/${hotelId}`, data, {
     headers: getHotelPartnerHeaders(),
   });
+export const fetchHotelPartnerHotelInventory = (hotelId) =>
+  cachedGet(`/hotel-partner/hotels/${hotelId}/inventory`, {
+    headers: getHotelPartnerHeaders(),
+  });
+export const updateHotelPartnerHotelInventory = (hotelId, data) =>
+  API.patch(`/hotel-partner/hotels/${hotelId}/inventory`, data, {
+    headers: getHotelPartnerHeaders(),
+  });
 export const fetchHotelPartnerAccommodationRequests = (params = {}) =>
   cachedGet("/hotel-partner/accommodation-requests", {
     params,
@@ -898,6 +906,8 @@ export const fetchHotelClaimRequests = (params = {}) =>
   cachedGet("/hotels/claims", { params });
 export const reviewHotelClaimRequest = (id, data) =>
   API.post(`/hotels/claims/${id}/review`, data);
+export const fetchHotelInventory = (id) => cachedGet(`/hotels/${id}/inventory`);
+export const updateHotelInventory = (id, data) => API.patch(`/hotels/${id}/inventory`, data);
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

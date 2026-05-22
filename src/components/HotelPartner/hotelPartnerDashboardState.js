@@ -10,6 +10,18 @@ export const createEmptyPartnerHotelDraft = () => ({
   trustSummary: "",
 });
 
+export const createEmptyPartnerInventoryDraft = () => ({
+  roomInventory: [],
+  availabilityCalendar: [],
+  inventorySettings: {
+    autoExtendCalendar: false,
+    monthsAhead: 3,
+    defaultCurrency: "USD",
+    defaultStatus: "open",
+    checkInCutoffDays: 0,
+  },
+});
+
 export const createEmptyPartnerRequestDraft = () => ({
   status: "confirmed",
   reservationCode: "",
@@ -37,6 +49,72 @@ export const buildPartnerHotelUpdatePayload = (draft = {}) => ({
   roomStyleSummary: String(draft.roomStyleSummary || "").trim(),
   photos: splitList(draft.photos),
   trustSummary: String(draft.trustSummary || "").trim(),
+});
+
+const toOptionalNumber = (value) => {
+  if (value === "" || value === null || typeof value === "undefined") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+export const buildPartnerInventoryPayload = (draft = {}) => ({
+  roomInventory: (Array.isArray(draft.roomInventory) ? draft.roomInventory : [])
+    .map((entry = {}) => {
+      const roomTypeCode = String(entry.roomTypeCode || "").trim().toLowerCase();
+      const label = String(entry.label || "").trim();
+      if (!roomTypeCode || !label) {
+        return null;
+      }
+
+      return {
+        roomTypeCode,
+        label,
+        capacity: Number(toOptionalNumber(entry.capacity) || 0),
+        totalUnits: Number(toOptionalNumber(entry.totalUnits) || 0),
+        baseNightlyRate: toOptionalNumber(entry.baseNightlyRate),
+        currency: String(entry.currency || "USD").trim().toUpperCase() || "USD",
+        boardBasis: String(entry.boardBasis || "").trim(),
+        active: entry.active !== false,
+      };
+    })
+    .filter(Boolean),
+  availabilityCalendar: (Array.isArray(draft.availabilityCalendar) ? draft.availabilityCalendar : [])
+    .map((entry = {}) => {
+      const date = String(entry.date || "").trim();
+      const roomTypeCode = String(entry.roomTypeCode || "").trim().toLowerCase();
+      if (!date || !roomTypeCode) {
+        return null;
+      }
+
+      return {
+        date,
+        roomTypeCode,
+        status: ["open", "limited", "sold-out", "on-request", "closed"].includes(entry.status)
+          ? entry.status
+          : "open",
+        availableUnits: Number(toOptionalNumber(entry.availableUnits) || 0),
+        nightlyRate: toOptionalNumber(entry.nightlyRate),
+        currency: String(entry.currency || "").trim().toUpperCase(),
+        minStay: Number(toOptionalNumber(entry.minStay) || 1),
+        note: String(entry.note || "").trim(),
+      };
+    })
+    .filter(Boolean),
+  inventorySettings: {
+    autoExtendCalendar: draft.inventorySettings?.autoExtendCalendar === true,
+    monthsAhead: Number(toOptionalNumber(draft.inventorySettings?.monthsAhead) || 3),
+    defaultCurrency:
+      String(draft.inventorySettings?.defaultCurrency || "USD").trim().toUpperCase() || "USD",
+    defaultStatus: ["open", "limited", "sold-out", "on-request", "closed"].includes(
+      draft.inventorySettings?.defaultStatus
+    )
+      ? draft.inventorySettings.defaultStatus
+      : "open",
+    checkInCutoffDays: Number(toOptionalNumber(draft.inventorySettings?.checkInCutoffDays) || 0),
+  },
 });
 
 export const buildPartnerAccommodationResponsePayload = (draft = {}) => ({
@@ -81,6 +159,25 @@ export const filterPartnerAccommodationRequests = (requests = [], filters = {}) 
       request.reservationCode,
       request.roomPlan,
     ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(search));
+  });
+};
+
+export const filterPartnerInventoryEntries = (entries = [], filters = {}) => {
+  const search = String(filters.search || "").trim().toLowerCase();
+  const status = String(filters.status || "").trim();
+
+  return entries.filter((entry = {}) => {
+    if (status && entry.status !== status) {
+      return false;
+    }
+
+    if (!search) {
+      return true;
+    }
+
+    return [entry.roomTypeCode, entry.label, entry.note]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(search));
   });

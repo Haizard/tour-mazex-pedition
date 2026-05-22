@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   fetchHotelPartnerAccommodationRequests,
+  fetchHotelPartnerHotelInventory,
   fetchHotelPartnerHotels,
   updateHotelPartnerAccommodationRequest,
   updateHotelPartnerHotel,
+  updateHotelPartnerHotelInventory,
 } from "../services/api";
 import {
   buildPartnerAccommodationResponsePayload,
+  buildPartnerInventoryPayload,
   buildPartnerHotelUpdatePayload,
   createEmptyPartnerHotelDraft,
+  createEmptyPartnerInventoryDraft,
   createEmptyPartnerRequestDraft,
   filterPartnerAccommodationRequests,
+  filterPartnerInventoryEntries,
   filterPartnerHotels,
 } from "../components/HotelPartner/hotelPartnerDashboardState";
 
@@ -32,6 +37,8 @@ const HotelPartnerDashboard = () => {
   const [activeHotelId, setActiveHotelId] = useState("");
   const [draft, setDraft] = useState(createEmptyPartnerHotelDraft());
   const [requests, setRequests] = useState([]);
+  const [inventoryDraft, setInventoryDraft] = useState(createEmptyPartnerInventoryDraft());
+  const [inventoryFilters, setInventoryFilters] = useState({ search: "", status: "" });
   const [requestDrafts, setRequestDrafts] = useState({});
   const [requestFilters, setRequestFilters] = useState({ search: "", status: "" });
   const [search, setSearch] = useState("");
@@ -41,6 +48,13 @@ const HotelPartnerDashboard = () => {
   const filteredRequests = useMemo(
     () => filterPartnerAccommodationRequests(requests, requestFilters),
     [requests, requestFilters]
+  );
+  const filteredInventoryEntries = useMemo(
+    () =>
+      (inventoryDraft.availabilityCalendar || [])
+        .map((entry, index) => ({ entry, index }))
+        .filter(({ entry }) => filterPartnerInventoryEntries([entry], inventoryFilters).length > 0),
+    [inventoryDraft.availabilityCalendar, inventoryFilters]
   );
   const activeHotel = hotels.find((hotel) => String(hotel._id) === String(activeHotelId));
 
@@ -72,6 +86,27 @@ const HotelPartnerDashboard = () => {
     );
   }, []);
 
+  const loadInventory = useCallback(
+    async (hotelId) => {
+      if (!hotelId) {
+        setInventoryDraft(createEmptyPartnerInventoryDraft());
+        return;
+      }
+
+      const response = await fetchHotelPartnerHotelInventory(hotelId);
+      setInventoryDraft({
+        ...createEmptyPartnerInventoryDraft(),
+        roomInventory: response.data?.roomInventory || [],
+        availabilityCalendar: response.data?.availabilityCalendar || [],
+        inventorySettings: {
+          ...createEmptyPartnerInventoryDraft().inventorySettings,
+          ...(response.data?.inventorySettings || {}),
+        },
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     Promise.all([loadHotels(), loadRequests()]).catch((error) => {
       setStatus(error.response?.data?.message || "Could not load assigned hotels.");
@@ -82,7 +117,18 @@ const HotelPartnerDashboard = () => {
     setActiveHotelId(hotel._id);
     setDraft(toDraft(hotel));
     setStatus("");
+    loadInventory(hotel._id).catch((error) => {
+      setStatus(error.response?.data?.message || "Could not load hotel inventory.");
+    });
   };
+
+  useEffect(() => {
+    if (activeHotelId) {
+      loadInventory(activeHotelId).catch((error) => {
+        setStatus(error.response?.data?.message || "Could not load hotel inventory.");
+      });
+    }
+  }, [activeHotelId, loadInventory]);
 
   const saveHotel = async (event) => {
     event.preventDefault();
@@ -94,6 +140,18 @@ const HotelPartnerDashboard = () => {
     await updateHotelPartnerHotel(activeHotelId, buildPartnerHotelUpdatePayload(draft));
     await loadHotels();
     setStatus("Profile saved for operator review.");
+  };
+
+  const saveInventory = async (event) => {
+    event.preventDefault();
+    if (!activeHotelId) {
+      return;
+    }
+
+    setStatus("Saving inventory...");
+    await updateHotelPartnerHotelInventory(activeHotelId, buildPartnerInventoryPayload(inventoryDraft));
+    await loadInventory(activeHotelId);
+    setStatus("Inventory saved.");
   };
 
   const updateRequestDraft = (requestId, key, value) => {
@@ -115,6 +173,36 @@ const HotelPartnerDashboard = () => {
     );
     await loadRequests();
     setStatus("Accommodation response shared with the operator.");
+  };
+
+  const updateRoomEntry = (index, key, value) => {
+    setInventoryDraft((current) => {
+      const nextRoomInventory = [...current.roomInventory];
+      nextRoomInventory[index] = {
+        ...(nextRoomInventory[index] || {}),
+        [key]: value,
+      };
+
+      return {
+        ...current,
+        roomInventory: nextRoomInventory,
+      };
+    });
+  };
+
+  const updateAvailabilityEntry = (index, key, value) => {
+    setInventoryDraft((current) => {
+      const nextEntries = [...current.availabilityCalendar];
+      nextEntries[index] = {
+        ...(nextEntries[index] || {}),
+        [key]: value,
+      };
+
+      return {
+        ...current,
+        availabilityCalendar: nextEntries,
+      };
+    });
   };
 
   return (
@@ -315,6 +403,233 @@ const HotelPartnerDashboard = () => {
               </p>
             ) : null}
           </div>
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                Live inventory
+              </p>
+              <h2 className="mt-2 text-2xl font-black">Room types and availability calendar</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                Manage room categories and dated availability without implying instant confirmation.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <input
+                value={inventoryFilters.search}
+                onChange={(event) =>
+                  setInventoryFilters((current) => ({ ...current, search: event.target.value }))
+                }
+                placeholder="Search room entries"
+                className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold"
+              />
+              <select
+                value={inventoryFilters.status}
+                onChange={(event) =>
+                  setInventoryFilters((current) => ({ ...current, status: event.target.value }))
+                }
+                className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold"
+              >
+                <option value="">All statuses</option>
+                <option value="open">Open</option>
+                <option value="limited">Limited</option>
+                <option value="sold-out">Sold out</option>
+                <option value="on-request">On request</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+
+          <form onSubmit={saveInventory} className="mt-6 space-y-6">
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-500">
+                  Default currency
+                </span>
+                <input
+                  value={inventoryDraft.inventorySettings.defaultCurrency}
+                  onChange={(event) =>
+                    setInventoryDraft((current) => ({
+                      ...current,
+                      inventorySettings: {
+                        ...current.inventorySettings,
+                        defaultCurrency: event.target.value,
+                      },
+                    }))
+                  }
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-500">
+                  Default status
+                </span>
+                <select
+                  value={inventoryDraft.inventorySettings.defaultStatus}
+                  onChange={(event) =>
+                    setInventoryDraft((current) => ({
+                      ...current,
+                      inventorySettings: {
+                        ...current.inventorySettings,
+                        defaultStatus: event.target.value,
+                      },
+                    }))
+                  }
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold"
+                >
+                  <option value="open">Open</option>
+                  <option value="limited">Limited</option>
+                  <option value="sold-out">Sold out</option>
+                  <option value="on-request">On request</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg font-black">Room types</h3>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInventoryDraft((current) => ({
+                      ...current,
+                      roomInventory: [
+                        ...current.roomInventory,
+                        {
+                          roomTypeCode: "",
+                          label: "",
+                          capacity: 2,
+                          totalUnits: 0,
+                          baseNightlyRate: "",
+                          currency: current.inventorySettings.defaultCurrency || "USD",
+                          boardBasis: "",
+                          active: true,
+                        },
+                      ],
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black uppercase tracking-widest"
+                >
+                  Add room type
+                </button>
+              </div>
+              <div className="space-y-3">
+                {inventoryDraft.roomInventory.map((entry, index) => (
+                  <div key={`${entry.roomTypeCode || "room"}-${index}`} className="grid gap-3 md:grid-cols-6">
+                    {["roomTypeCode", "label", "capacity", "totalUnits", "baseNightlyRate", "currency"].map((field) => (
+                      <input
+                        key={field}
+                        value={entry[field] ?? ""}
+                        onChange={(event) => updateRoomEntry(index, field, event.target.value)}
+                        placeholder={field}
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                      />
+                    ))}
+                  </div>
+                ))}
+                {!inventoryDraft.roomInventory.length ? (
+                  <p className="text-sm font-semibold text-slate-500">No room types yet.</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg font-black">Availability calendar</h3>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInventoryDraft((current) => ({
+                      ...current,
+                      availabilityCalendar: [
+                        ...current.availabilityCalendar,
+                        {
+                          date: "",
+                          roomTypeCode: current.roomInventory[0]?.roomTypeCode || "",
+                          status: current.inventorySettings.defaultStatus || "open",
+                          availableUnits: 0,
+                          nightlyRate: "",
+                          currency: current.inventorySettings.defaultCurrency || "USD",
+                          minStay: 1,
+                          note: "",
+                        },
+                      ],
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black uppercase tracking-widest"
+                >
+                  Add date row
+                </button>
+              </div>
+              <div className="space-y-3">
+                {filteredInventoryEntries.map(({ entry, index }) => (
+                  <div key={`${entry.date || "date"}-${index}`} className="grid gap-3 md:grid-cols-7">
+                    <input
+                      type="date"
+                      value={entry.date ? String(entry.date).slice(0, 10) : ""}
+                      onChange={(event) => updateAvailabilityEntry(index, "date", event.target.value)}
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                    />
+                    <input
+                      value={entry.roomTypeCode || ""}
+                      onChange={(event) => updateAvailabilityEntry(index, "roomTypeCode", event.target.value)}
+                      placeholder="room type"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                    />
+                    <select
+                      value={entry.status || "open"}
+                      onChange={(event) => updateAvailabilityEntry(index, "status", event.target.value)}
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold"
+                    >
+                      <option value="open">Open</option>
+                      <option value="limited">Limited</option>
+                      <option value="sold-out">Sold out</option>
+                      <option value="on-request">On request</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                    <input
+                      value={entry.availableUnits ?? ""}
+                      onChange={(event) => updateAvailabilityEntry(index, "availableUnits", event.target.value)}
+                      placeholder="units"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                    />
+                    <input
+                      value={entry.nightlyRate ?? ""}
+                      onChange={(event) => updateAvailabilityEntry(index, "nightlyRate", event.target.value)}
+                      placeholder="rate"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                    />
+                    <input
+                      value={entry.minStay ?? ""}
+                      onChange={(event) => updateAvailabilityEntry(index, "minStay", event.target.value)}
+                      placeholder="min stay"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                    />
+                    <input
+                      value={entry.note || ""}
+                      onChange={(event) => updateAvailabilityEntry(index, "note", event.target.value)}
+                      placeholder="note"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                    />
+                  </div>
+                ))}
+                {!filteredInventoryEntries.length ? (
+                  <p className="text-sm font-semibold text-slate-500">No availability rows yet.</p>
+                ) : null}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!activeHotelId}
+              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-black uppercase tracking-widest text-white disabled:opacity-50"
+            >
+              Save inventory
+            </button>
+          </form>
         </section>
       </div>
     </main>

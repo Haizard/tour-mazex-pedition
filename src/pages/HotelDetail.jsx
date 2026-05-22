@@ -87,6 +87,18 @@ const HotelDetail = () => {
                 {(hotel.amenities || []).map((amenity) => <span key={amenity} className="rounded-full bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">{amenity}</span>)}
               </div>
               <p className="mt-6 text-sm font-black text-slate-900">{getHotelTrustLabel(hotel)}</p>
+              {hotel.inventorySummary?.nextAvailableDate ? (
+                <div className="mt-4 rounded-2xl bg-[#eef6f0] px-4 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#234232]">Inventory signal</p>
+                  <p className="mt-2 text-sm font-bold text-slate-900">
+                    {hotel.inventorySummary.nextStatusLabel || "Available"} from {String(hotel.inventorySummary.nextAvailableDate).slice(0, 10)}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-600">
+                    {hotel.inventorySummary.roomTypeCount} room types tracked
+                    {hotel.inventorySummary.fromRate ? ` · From ${hotel.inventorySummary.fromRate} ${hotel.inventorySummary.currency || "USD"}` : ""}
+                  </p>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>

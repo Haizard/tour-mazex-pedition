@@ -20,6 +20,10 @@ test("shapeHotelDiscoveryCard exposes public hotel trust and fit fields", () => 
     averageRating: 4.8,
     reviewCount: 21,
     sponsoredPlacement: true,
+    availabilityCalendar: [
+      { date: "2026-07-12", roomTypeCode: "deluxe", status: "open", availableUnits: 3, nightlyRate: 180 },
+    ],
+    roomInventory: [{ roomTypeCode: "deluxe", label: "Deluxe Room" }],
     tenantId: { _id: "tenant-1", name: "Maz Expeditions", slug: "maz-expeditions" },
   });
 
@@ -28,6 +32,7 @@ test("shapeHotelDiscoveryCard exposes public hotel trust and fit fields", () => 
   assert.equal(card.trust.reviewLabel, "4.8/5 from 21 reviews");
   assert.equal(card.fitTags.includes("Lodge stay"), true);
   assert.equal(card.sponsoredPlacement, true);
+  assert.equal(card.inventorySummary.fromRate, 180);
 });
 
 test("shapeHotelDetail keeps inquiry and itinerary intent context explicit", () => {
@@ -37,12 +42,16 @@ test("shapeHotelDetail keeps inquiry and itinerary intent context explicit", () 
     slug: "arusha-garden-lodge",
     destination: "Arusha",
     amenities: ["Pool"],
+    availabilityCalendar: [
+      { date: "2026-07-12", roomTypeCode: "deluxe", status: "open", availableUnits: 3, nightlyRate: 180 },
+    ],
     tenantId: { _id: "tenant-1", name: "Maz Expeditions", slug: "maz-expeditions" },
   });
 
   assert.equal(detail.conversion.sendInquiry.hotelId, "hotel-1");
   assert.equal(detail.conversion.requestInItinerary.hotelIntentType, "itinerary-add-on");
   assert.equal(detail.aiConcierge.groundingWarning.includes("availability"), true);
+  assert.equal(detail.inventorySummary.totalEntries, 1);
 });
 
 test("buildHotelDiscoveryQuery filters only published marketplace-visible hotels", () => {

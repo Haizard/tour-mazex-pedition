@@ -1,6 +1,53 @@
 import mongoose from "mongoose";
 import { createBusinessTruthMetadataSchemaDefinition } from "../utils/businessTruthSync.js";
 
+const hotelRoomInventorySchema = new mongoose.Schema(
+  {
+    roomTypeCode: { type: String, trim: true, required: true },
+    label: { type: String, trim: true, required: true },
+    capacity: { type: Number, min: 1, default: 2 },
+    totalUnits: { type: Number, min: 0, default: 0 },
+    baseNightlyRate: { type: Number, min: 0, default: null },
+    currency: { type: String, trim: true, uppercase: true, default: "USD" },
+    boardBasis: { type: String, trim: true, default: "" },
+    active: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
+const hotelAvailabilityEntrySchema = new mongoose.Schema(
+  {
+    date: { type: Date, required: true },
+    roomTypeCode: { type: String, trim: true, required: true },
+    status: {
+      type: String,
+      enum: ["open", "limited", "sold-out", "on-request", "closed"],
+      default: "open",
+    },
+    availableUnits: { type: Number, min: 0, default: 0 },
+    nightlyRate: { type: Number, min: 0, default: null },
+    currency: { type: String, trim: true, uppercase: true, default: "" },
+    minStay: { type: Number, min: 1, default: 1 },
+    note: { type: String, trim: true, default: "" },
+  },
+  { _id: false }
+);
+
+const hotelInventorySettingsSchema = new mongoose.Schema(
+  {
+    autoExtendCalendar: { type: Boolean, default: false },
+    monthsAhead: { type: Number, min: 1, max: 24, default: 3 },
+    defaultCurrency: { type: String, trim: true, uppercase: true, default: "USD" },
+    defaultStatus: {
+      type: String,
+      enum: ["open", "limited", "sold-out", "on-request", "closed"],
+      default: "open",
+    },
+    checkInCutoffDays: { type: Number, min: 0, default: 0 },
+  },
+  { _id: false }
+);
+
 const hotelSchema = new mongoose.Schema(
   {
     tenantId: {
@@ -27,6 +74,18 @@ const hotelSchema = new mongoose.Schema(
     accommodationType: { type: String, trim: true, default: "hotel" },
     amenities: { type: [String], default: [] },
     roomStyleSummary: { type: String, trim: true, default: "" },
+    roomInventory: { type: [hotelRoomInventorySchema], default: [] },
+    availabilityCalendar: { type: [hotelAvailabilityEntrySchema], default: [] },
+    inventorySettings: {
+      type: hotelInventorySettingsSchema,
+      default: () => ({
+        autoExtendCalendar: false,
+        monthsAhead: 3,
+        defaultCurrency: "USD",
+        defaultStatus: "open",
+        checkInCutoffDays: 0,
+      }),
+    },
     photos: { type: [String], default: [] },
     averageRating: { type: Number, min: 0, max: 5, default: null },
     reviewCount: { type: Number, min: 0, default: 0 },

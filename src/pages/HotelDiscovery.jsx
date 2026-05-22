@@ -103,6 +103,12 @@ const HotelDiscovery = () => {
                   <p className="mt-2 text-sm font-medium text-slate-500">{hotel.destination || "Destination on request"}</p>
                   <p className="mt-3 line-clamp-3 text-sm font-medium leading-6 text-slate-600">{hotel.summary || "Hotel details are being prepared by the listed operator."}</p>
                   <p className="mt-5 flex items-center gap-2 text-sm font-black text-slate-900"><FaStar className="text-[#d9a441]" /> {getHotelTrustLabel(hotel)}</p>
+                  {hotel.inventorySummary?.nextAvailableDate ? (
+                    <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-[#234232]">
+                      {hotel.inventorySummary.nextStatusLabel || "Available"} · {String(hotel.inventorySummary.nextAvailableDate).slice(0, 10)}
+                      {hotel.inventorySummary.fromRate ? ` · From ${hotel.inventorySummary.fromRate} ${hotel.inventorySummary.currency || "USD"}` : ""}
+                    </p>
+                  ) : null}
                 </div>
               </Link>
             ))}

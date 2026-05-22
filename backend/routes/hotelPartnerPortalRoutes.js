@@ -8,7 +8,12 @@ import {
   canHotelPartnerManageAccommodationRequest,
   canHotelPartnerManageHotel,
 } from "../utils/hotelPartnerAccess.js";
+import {
+  normalizeHotelAvailabilityEntries,
+  normalizeHotelInventoryPayload,
+} from "../utils/hotelInventory.js";
 import { updatePostgresFirstAccommodationReservation } from "../utils/postgresFirstAccommodationService.js";
+import { updatePostgresFirstHotel } from "../utils/postgresFirstHotelService.js";
 
 const router = express.Router();
 
@@ -50,6 +55,58 @@ router.patch("/hotels/:id", async (req, res) => {
       { pendingPartnerUpdate },
       { new: true, runValidators: true }
     ).lean();
+
+    return res.status(200).json(updatedHotel);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.get("/hotels/:id/inventory", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne({ _id: req.params.id, tenantId: req.tenantId }).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    if (!canHotelPartnerManageHotel(req.hotelPartnerAdmin, hotel)) {
+      return res.status(403).json({ message: "This hotel is not assigned to your partner account." });
+    }
+
+    return res.status(200).json({
+      roomInventory: hotel.roomInventory || [],
+      availabilityCalendar: hotel.availabilityCalendar || [],
+      inventorySettings: hotel.inventorySettings || {},
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+router.patch("/hotels/:id/inventory", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne({ _id: req.params.id, tenantId: req.tenantId }).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    if (!canHotelPartnerManageHotel(req.hotelPartnerAdmin, hotel)) {
+      return res.status(403).json({ message: "This hotel is not assigned to your partner account." });
+    }
+
+    const inventoryPayload = normalizeHotelInventoryPayload(req.body);
+    const availabilityCalendar = normalizeHotelAvailabilityEntries(req.body.availabilityCalendar || []);
+    const updatedHotel = await updatePostgresFirstHotel(
+      req.params.id,
+      req.tenantId,
+      {
+        roomInventory: inventoryPayload.roomInventory,
+        inventorySettings: inventoryPayload.inventorySettings,
+        availabilityCalendar,
+      }
+    );
 
     return res.status(200).json(updatedHotel);
   } catch (error) {

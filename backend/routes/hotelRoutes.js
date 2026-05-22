@@ -11,6 +11,10 @@ import { buildHotelAnalyticsSnapshot } from "../utils/hotelAnalytics.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { buildHotelPartnerAdminAccountPayload } from "../utils/hotelPartnerAccess.js";
 import {
+  normalizeHotelAvailabilityEntries,
+  normalizeHotelInventoryPayload,
+} from "../utils/hotelInventory.js";
+import {
   buildApprovedHotelPartnerAdminPayload,
   buildHotelClaimRequestPayload,
   buildHotelClaimReviewUpdate,
@@ -82,6 +86,8 @@ const normalizeHotelPayload = (req, body = {}) => {
     accommodationType: body.accommodationType || "hotel",
     amenities: Array.isArray(body.amenities) ? body.amenities : [],
     roomStyleSummary: body.roomStyleSummary || "",
+    ...normalizeHotelInventoryPayload(body),
+    availabilityCalendar: normalizeHotelAvailabilityEntries(body.availabilityCalendar || []),
     photos: Array.isArray(body.photos) ? body.photos : [],
     averageRating: body.averageRating === null || body.averageRating === "" ? null : Number(body.averageRating || 0),
     reviewCount: Number(body.reviewCount || 0),
@@ -506,6 +512,51 @@ router.post("/:id/partner-admins", async (req, res) => {
         ? "A hotel partner admin with that username already exists for this tenant."
         : error.message;
     return res.status(400).json({ message: duplicateMessage });
+  }
+});
+
+router.get("/:id/inventory", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    return res.status(200).json({
+      roomInventory: hotel.roomInventory || [],
+      availabilityCalendar: hotel.availabilityCalendar || [],
+      inventorySettings: hotel.inventorySettings || {},
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+router.patch("/:id/inventory", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    const inventoryPayload = normalizeHotelInventoryPayload(req.body);
+    const availabilityCalendar = normalizeHotelAvailabilityEntries(req.body.availabilityCalendar || []);
+    const updatedHotel = await updatePostgresFirstHotel(
+      req.params.id,
+      req.tenantId,
+      {
+        roomInventory: inventoryPayload.roomInventory,
+        inventorySettings: inventoryPayload.inventorySettings,
+        availabilityCalendar,
+      },
+      process.env
+    );
+
+    return res.status(200).json(updatedHotel);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
 });
 
