@@ -7,8 +7,11 @@ import SocialAccount from "../models/SocialAccount.js";
 import Tenant from "../models/Tenant.js";
 import TourPackage from '../models/TourPackage.js';
 import { requireTenantAdmin } from '../middleware/adminAuthMiddleware.js';
-import { buildTenantFilter } from '../utils/tenantContext.js';
-import { generateInquiryLeadAutomation } from '../utils/leadAutomation.js';
+import { buildTenantFilter, withTenantId } from '../utils/tenantContext.js';
+import {
+    enhanceHotelInquiryAutomation,
+    generateInquiryLeadAutomation,
+} from '../utils/leadAutomation.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
 import { generateQuoteProposal } from '../utils/quoteProposal.js';
 import {
@@ -24,7 +27,6 @@ import {
     buildTravelerInquiryView,
     deleteTravelerInquiryRecord,
     findTravelerInquiryRecord,
-    syncTravelerInquiryRecord,
 } from '../utils/postgresTravelerInquiryRecords.js';
 import { preferPrimaryCollection } from "../utils/postgresReadFallback.js";
 import { safePrimaryLookup } from "../utils/safePrimaryLookup.js";
@@ -141,20 +143,6 @@ const syncQuoteRevenueViews = async (quote = {}) => {
     }
 };
 
-const syncTravelerInquiryViews = async (inquiry = {}) => {
-    await syncMongoDocumentToShadowStore({
-        entityType: "travelers",
-        document: inquiry,
-        model: CustomInquiry,
-    });
-
-    try {
-        await syncTravelerInquiryRecord(inquiry);
-    } catch (error) {
-        console.error("Traveler inquiry record sync failed:", error.message);
-    }
-};
-
 // Get all inquiries (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
@@ -219,10 +207,13 @@ router.post('/', async (req, res) => {
 
         const inquiryData = buildInquiryPayload(req.body, req.body.sourceChannel || 'website');
         const whatsappNumber = await getTenantWhatsAppNumber(inquiryContext.tenantId);
-        const automation = generateInquiryLeadAutomation(inquiryData, {
-            tenantName: inquiryContext.tenant?.name || req.tenant?.name || 'MAZ Expeditions',
-            whatsappNumber,
-        });
+        const automation = enhanceHotelInquiryAutomation(
+            generateInquiryLeadAutomation(inquiryData, {
+                tenantName: inquiryContext.tenant?.name || req.tenant?.name || 'MAZ Expeditions',
+                whatsappNumber,
+            }),
+            inquiryData
+        );
         const scoring = scoreInquiryLead(inquiryData);
 
         if (inquiryData.referralCode) {
@@ -289,10 +280,13 @@ router.post('/whatsapp-lead', async (req, res) => {
         }, 'whatsapp-button');
 
         const whatsappNumber = await getTenantWhatsAppNumber(inquiryContext.tenantId);
-        const automation = generateInquiryLeadAutomation(inquiryData, {
-            tenantName: inquiryContext.tenant?.name || req.tenant?.name || 'MAZ Expeditions',
-            whatsappNumber,
-        });
+        const automation = enhanceHotelInquiryAutomation(
+            generateInquiryLeadAutomation(inquiryData, {
+                tenantName: inquiryContext.tenant?.name || req.tenant?.name || 'MAZ Expeditions',
+                whatsappNumber,
+            }),
+            inquiryData
+        );
         const scoring = scoreInquiryLead(inquiryData);
 
         if (inquiryData.referralCode) {

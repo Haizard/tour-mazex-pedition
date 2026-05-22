@@ -40,3 +40,43 @@ export const generateInquiryLeadAutomation = (
     whatsappUrl: buildWhatsAppUrl(whatsappNumber, followUpMessage),
   };
 };
+
+const getHotelIntentLabel = (intentType = "") =>
+  intentType === "direct-hotel" ? "Direct hotel inquiry" : "Itinerary hotel add-on";
+
+const getHotelOperatorChecklist = (intentType = "") =>
+  intentType === "direct-hotel"
+    ? [
+        "Confirm room fit, rough availability window, and next-step contact owner.",
+        "Clarify whether the traveler wants a hotel-only stay or a wider trip plan.",
+      ]
+    : [
+        "Check route fit, nights, transfer logic, and operator package pairing.",
+        "Confirm whether the hotel should be proposed as preferred, optional, or alternative.",
+      ];
+
+export const enhanceHotelInquiryAutomation = (automation = {}, inquiry = {}) => {
+  if (!inquiry.hotelId && !inquiry.hotelName && !inquiry.hotelIntentType) {
+    return automation;
+  }
+
+  const hotelName = String(inquiry.hotelName || "Selected hotel").trim();
+  const intentLabel = getHotelIntentLabel(inquiry.hotelIntentType);
+  const operatorChecklist = getHotelOperatorChecklist(inquiry.hotelIntentType);
+  const hotelSummary = `${intentLabel}: ${hotelName}.`;
+
+  return {
+    ...automation,
+    summary: `${automation.summary || ""} ${hotelSummary}`.trim(),
+    operatorChecklist,
+    hotelLead: {
+      hotelId: String(inquiry.hotelId || ""),
+      hotelName,
+      intentType: inquiry.hotelIntentType || "itinerary-add-on",
+      intentLabel,
+      accommodationPreferences: Array.isArray(inquiry.accommodationPreferences)
+        ? inquiry.accommodationPreferences
+        : [],
+    },
+  };
+};
