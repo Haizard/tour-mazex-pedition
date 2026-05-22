@@ -193,6 +193,10 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
         grouped.homeContentIds.push(sourceId);
       }
 
+      if (sourceType === "hotel-listing") {
+        grouped.hotelIds.push(sourceId);
+      }
+
       return grouped;
     },
     {
@@ -204,6 +208,7 @@ export const groupAssistantKnowledgeMatches = (rows = []) =>
       campaignIds: [],
       pageConfigIds: [],
       homeContentIds: [],
+      hotelIds: [],
     }
   );
 
@@ -284,6 +289,7 @@ export const searchAssistantKnowledge = async ({
       campaignIds: [],
       pageConfigIds: [],
       homeContentIds: [],
+      hotelIds: [],
     };
   }
 
@@ -308,6 +314,7 @@ export const searchAssistantKnowledge = async ({
       campaignIds: [],
       pageConfigIds: [],
       homeContentIds: [],
+      hotelIds: [],
     };
   }
 };

@@ -202,6 +202,9 @@ const buildPlatformDemoHotelDetail = (hotel) => ({
   },
 });
 
+const buildPlatformDemoRelatedHotels = (slug = "") =>
+  platformDemoHotels.filter((hotel) => hotel.slug !== slug).slice(0, 3);
+
 export const getPlatformPublicApiFallback = (url = "") => {
   const path = String(url || "").split("?")[0];
 
@@ -209,10 +212,47 @@ export const getPlatformPublicApiFallback = (url = "") => {
     return { hotels: platformDemoHotels };
   }
 
+  if (path.startsWith("/hotels/public/") && path.endsWith("/related")) {
+    const slug = decodeURIComponent(
+      path.replace("/hotels/public/", "").replace("/related", "")
+    );
+    return { hotels: buildPlatformDemoRelatedHotels(slug) };
+  }
+
   if (path.startsWith("/hotels/public/")) {
     const slug = decodeURIComponent(path.replace("/hotels/public/", ""));
     const hotel = platformDemoHotels.find((item) => item.slug === slug);
     return hotel ? buildPlatformDemoHotelDetail(hotel) : undefined;
+  }
+
+  if (path === "/hotels/analytics") {
+    return {
+      summary: {
+        totalHotels: platformDemoHotels.length,
+        publicHotels: platformDemoHotels.length,
+        sponsoredHotels: platformDemoHotels.filter((hotel) => hotel.sponsoredPlacement).length,
+        totalHotelLeads: 7,
+        directHotelLeads: 4,
+        itineraryHotelLeads: 3,
+        totalQuotes: 3,
+        acceptedQuotes: 1,
+      },
+      hotels: platformDemoHotels.map((hotel, index) => ({
+        hotelId: hotel._id,
+        hotelName: hotel.name,
+        destination: hotel.destination,
+        sponsoredPlacement: hotel.sponsoredPlacement === true,
+        published: true,
+        marketplaceVisible: true,
+        inquiryCount: 4 - index,
+        directInquiryCount: 2 - Math.min(index, 1),
+        itineraryInquiryCount: 1 + Number(index === 0),
+        quoteCount: 2 - Number(index > 0),
+        acceptedQuoteCount: Number(index === 0),
+        lastInquiryAt: new Date(Date.now() - index * 86400000).toISOString(),
+        demandScore: 20 - index * 4,
+      })),
+    };
   }
 
   if (
@@ -847,6 +887,9 @@ export const fetchPublicHotelBySlug = (slug) =>
   cachedGet(`/hotels/public/${encodeURIComponent(slug)}`);
 export const requestHotelConciergeRecommendations = (data) =>
   API.post("/hotels/public/concierge/recommendations", data);
+export const fetchRelatedHotels = (slug) =>
+  cachedGet(`/hotels/public/${encodeURIComponent(slug)}/related`);
+export const fetchHotelAnalytics = () => cachedGet("/hotels/analytics");
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

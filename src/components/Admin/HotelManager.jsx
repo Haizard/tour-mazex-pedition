@@ -4,6 +4,7 @@ import {
   createHotelPartnerAdmin,
   createHotel,
   deleteHotel,
+  fetchHotelAnalytics,
   fetchHotels,
   reviewHotelPartnerProfileUpdate,
   updateHotel,
@@ -25,6 +26,7 @@ const HotelManager = () => {
   const [editingId, setEditingId] = useState("");
   const [filters, setFilters] = useState({ search: "", status: "" });
   const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [partnerDraft, setPartnerDraft] = useState(createEmptyHotelPartnerAdminDraft);
@@ -40,8 +42,12 @@ const HotelManager = () => {
   const loadHotels = async () => {
     setLoading(true);
     try {
-      const response = await fetchHotels();
+      const [response, analyticsResponse] = await Promise.all([
+        fetchHotels(),
+        fetchHotelAnalytics().catch(() => ({ data: null })),
+      ]);
       setHotels(Array.isArray(response.data) ? response.data : []);
+      setAnalytics(analyticsResponse.data || null);
     } catch (error) {
       setMessage(error?.response?.data?.message || "Unable to load hotels.");
     } finally {
@@ -59,13 +65,14 @@ const HotelManager = () => {
 
   const startEdit = (hotel) => {
     setEditingId(hotel._id);
-    setDraft({
-      ...createEmptyHotelDraft(),
-      ...hotel,
-      amenitiesText: (hotel.amenities || []).join(", "),
-      latitude: hotel.geo?.latitude ?? "",
-      longitude: hotel.geo?.longitude ?? "",
-    });
+      setDraft({
+        ...createEmptyHotelDraft(),
+        ...hotel,
+        amenitiesText: (hotel.amenities || []).join(", "),
+        photosText: (hotel.photos || []).join("\n"),
+        latitude: hotel.geo?.latitude ?? "",
+        longitude: hotel.geo?.longitude ?? "",
+      });
   };
 
   const resetForm = () => {
@@ -164,6 +171,25 @@ const HotelManager = () => {
         </p>
       </div>
 
+      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-zinc-500">
+          Hotel lead conversion
+        </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-4">
+          {[
+            ["Public Hotels", analytics?.summary?.publicHotels || 0],
+            ["Sponsored Hotels", analytics?.summary?.sponsoredHotels || 0],
+            ["Hotel Leads", analytics?.summary?.totalHotelLeads || 0],
+            ["Accepted Quotes", analytics?.summary?.acceptedQuotes || 0],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl bg-zinc-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+              <p className="mt-3 text-3xl font-black tracking-tight text-zinc-950">{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
         <form onSubmit={saveHotel} className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
@@ -191,11 +217,80 @@ const HotelManager = () => {
             </label>
           ))}
           <label className="block">
+            <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Description</span>
+            <textarea
+              value={draft.description || ""}
+              onChange={(event) => updateDraft("description", event.target.value)}
+              rows={4}
+              className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+            />
+          </label>
+          <label className="block">
             <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Summary</span>
             <textarea
               value={draft.summary || ""}
               onChange={(event) => updateDraft("summary", event.target.value)}
               rows={3}
+              className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Trust summary</span>
+            <textarea
+              value={draft.trustSummary || ""}
+              onChange={(event) => updateDraft("trustSummary", event.target.value)}
+              rows={3}
+              className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+            />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Average rating</span>
+              <input
+                type="number"
+                min="0"
+                max="5"
+                step="0.1"
+                value={draft.averageRating ?? ""}
+                onChange={(event) => updateDraft("averageRating", event.target.value)}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Review count</span>
+              <input
+                type="number"
+                min="0"
+                value={draft.reviewCount ?? ""}
+                onChange={(event) => updateDraft("reviewCount", event.target.value)}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Latitude</span>
+              <input
+                value={draft.latitude ?? ""}
+                onChange={(event) => updateDraft("latitude", event.target.value)}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Longitude</span>
+              <input
+                value={draft.longitude ?? ""}
+                onChange={(event) => updateDraft("longitude", event.target.value)}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+              />
+            </label>
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Photo URLs</span>
+            <textarea
+              value={draft.photosText || ""}
+              onChange={(event) => updateDraft("photosText", event.target.value)}
+              rows={4}
               className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
             />
           </label>
@@ -364,6 +459,33 @@ const HotelManager = () => {
                           </button>
                         </div>
                       </div>
+                    </div>
+                  ) : null}
+                  {analytics?.hotels?.some((row) => row.hotelId === hotel._id) ? (
+                    <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                      {(() => {
+                        const hotelAnalytics = analytics.hotels.find((row) => row.hotelId === hotel._id);
+                        return (
+                          <div className="grid gap-3 md:grid-cols-4 text-sm font-semibold text-zinc-600">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">Leads</p>
+                              <p className="mt-1 text-zinc-950">{hotelAnalytics.inquiryCount}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">Direct</p>
+                              <p className="mt-1 text-zinc-950">{hotelAnalytics.directInquiryCount}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">Itinerary</p>
+                              <p className="mt-1 text-zinc-950">{hotelAnalytics.itineraryInquiryCount}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">Accepted Quotes</p>
+                              <p className="mt-1 text-zinc-950">{hotelAnalytics.acceptedQuoteCount}</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ) : null}
                 </div>

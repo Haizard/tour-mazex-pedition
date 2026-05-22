@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import {
   buildHotelPartnerAdminPayload,
@@ -25,6 +26,7 @@ test("buildHotelPayload normalizes amenities and numeric trust fields", () => {
   const payload = buildHotelPayload({
     name: " Arusha Garden Lodge ",
     amenitiesText: "Pool, Airport transfer, Pool",
+    photosText: "https://example.com/one.jpg\nhttps://example.com/two.jpg",
     averageRating: "4.8",
     reviewCount: "21",
     latitude: "-3.37",
@@ -33,6 +35,10 @@ test("buildHotelPayload normalizes amenities and numeric trust fields", () => {
 
   assert.equal(payload.name, "Arusha Garden Lodge");
   assert.deepEqual(payload.amenities, ["Pool", "Airport transfer"]);
+  assert.deepEqual(payload.photos, [
+    "https://example.com/one.jpg",
+    "https://example.com/two.jpg",
+  ]);
   assert.equal(payload.averageRating, 4.8);
   assert.equal(payload.reviewCount, 21);
   assert.deepEqual(payload.geo, { latitude: -3.37, longitude: 36.69 });
@@ -98,4 +104,18 @@ test("buildPartnerProfileReviewSummary exposes changed field names", () => {
 
   assert.deepEqual(summary.changedFields, ["name", "amenities"]);
   assert.equal(summary.label, "2 fields pending review");
+});
+
+test("HotelManager exposes canonical hotel controls needed by the approved marketplace entity", async () => {
+  const source = await readFile(new URL("./HotelManager.jsx", import.meta.url), "utf8");
+
+  assert.equal(source.includes("Description"), true);
+  assert.equal(source.includes("Trust summary"), true);
+  assert.equal(source.includes("Average rating"), true);
+  assert.equal(source.includes("Review count"), true);
+  assert.equal(source.includes("Latitude"), true);
+  assert.equal(source.includes("Longitude"), true);
+  assert.equal(source.includes("Photo URLs"), true);
+  assert.equal(source.includes("fetchHotelAnalytics"), true);
+  assert.equal(source.includes("Hotel lead conversion"), true);
 });

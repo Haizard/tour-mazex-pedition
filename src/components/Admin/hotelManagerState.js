@@ -12,6 +12,7 @@ export const createEmptyHotelDraft = () => ({
   amenitiesText: "",
   roomStyleSummary: "",
   photos: [],
+  photosText: "",
   averageRating: "",
   reviewCount: "",
   latitude: "",
@@ -40,6 +41,11 @@ export const buildHotelPayload = (draft = {}) => {
 
   const latitude = Number(draft.latitude);
   const longitude = Number(draft.longitude);
+  const photos = Array.isArray(draft.photos)
+    ? draft.photos
+    : String(draft.photosText || "")
+        .split(/\r?\n|,/)
+        .map((item) => item.trim());
 
   return {
     name: String(draft.name || "").trim(),
@@ -51,7 +57,7 @@ export const buildHotelPayload = (draft = {}) => {
     accommodationType: String(draft.accommodationType || "hotel").trim(),
     amenities: unique(amenities),
     roomStyleSummary: String(draft.roomStyleSummary || "").trim(),
-    photos: Array.isArray(draft.photos) ? draft.photos : [],
+    photos: unique(photos),
     averageRating: draft.averageRating === "" ? null : Number(draft.averageRating),
     reviewCount: draft.reviewCount === "" ? 0 : Number(draft.reviewCount),
     geo: {

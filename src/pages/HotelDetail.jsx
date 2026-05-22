@@ -2,14 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FaArrowLeft, FaHotel, FaMapMarkerAlt } from "react-icons/fa";
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
+import HotelDirectInquiryForm from "../components/Marketplace/HotelDirectInquiryForm";
 import HotelAiConciergeCard from "../components/Marketplace/HotelAiConciergeCard";
-import { fetchPublicHotelBySlug } from "../services/api";
+import { fetchPublicHotelBySlug, fetchRelatedHotels } from "../services/api";
 import { getHotelTrustLabel } from "../components/Marketplace/hotelTrustUtils";
 import { buildHotelIntentOptions } from "./hotelDiscoveryUtils";
 
 const HotelDetail = () => {
   const { slug } = useParams();
   const [hotel, setHotel] = useState(null);
+  const [relatedHotels, setRelatedHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIntentId, setSelectedIntentId] = useState("direct");
 
@@ -19,9 +21,12 @@ const HotelDetail = () => {
       try {
         const response = await fetchPublicHotelBySlug(slug);
         setHotel(response.data || null);
+        const relatedResponse = await fetchRelatedHotels(slug).catch(() => ({ data: { hotels: [] } }));
+        setRelatedHotels(relatedResponse.data?.hotels || []);
       } catch (error) {
         console.error("Hotel detail error:", error);
         setHotel(null);
+        setRelatedHotels([]);
       } finally {
         setLoading(false);
       }
@@ -109,22 +114,63 @@ const HotelDetail = () => {
               </div>
             </div>
             <div className="p-1">
-              <PlanMyTripWizard
-                compact
-                showIntro={false}
-                sourceChannel={selectedIntent.payload.sourceChannel}
-                campaignLabel={selectedIntent.payload.campaignLabel}
-                defaultDestinations={selectedIntent.payload.destinations}
-                defaultMessage={defaultMessage}
-                operatorTenantId={selectedIntent.payload.operatorTenantId}
-                operatorTenantSlug={selectedIntent.payload.operatorTenantSlug}
-                hotelId={selectedIntent.payload.hotelId}
-                hotelName={selectedIntent.payload.hotelName}
-                hotelIntentType={selectedIntent.payload.hotelIntentType}
-              />
+              {selectedIntent?.intentType === "direct-hotel" ? (
+                <HotelDirectInquiryForm hotel={hotel} />
+              ) : (
+                <PlanMyTripWizard
+                  compact
+                  showIntro={false}
+                  sourceChannel={selectedIntent.payload.sourceChannel}
+                  campaignLabel={selectedIntent.payload.campaignLabel}
+                  defaultDestinations={selectedIntent.payload.destinations}
+                  defaultMessage={defaultMessage}
+                  operatorTenantId={selectedIntent.payload.operatorTenantId}
+                  operatorTenantSlug={selectedIntent.payload.operatorTenantSlug}
+                  hotelId={selectedIntent.payload.hotelId}
+                  hotelName={selectedIntent.payload.hotelName}
+                  hotelIntentType={selectedIntent.payload.hotelIntentType}
+                />
+              )}
             </div>
           </aside>
         </div>
+
+        {relatedHotels.length ? (
+          <section className="mt-10">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                  Similar stays
+                </p>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  AI-grounded nearby hotel fits
+                </h2>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-5 md:grid-cols-3">
+              {relatedHotels.map((item) => (
+                <Link
+                  key={item._id}
+                  to={`/discover/hotels/${item.slug}`}
+                  className="rounded-[28px] border border-[#d8c8ae] bg-white p-5 shadow-[0_18px_50px_rgba(35,66,50,0.08)] transition hover:-translate-y-1"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8b7451]">
+                    {item.accommodationType || "Hotel"}
+                  </p>
+                  <h3 className="mt-3 text-lg font-black uppercase tracking-tight text-slate-900">
+                    {item.name}
+                  </h3>
+                  <p className="mt-2 text-sm font-medium text-slate-500">
+                    {item.destination || "Destination on request"}
+                  </p>
+                  <p className="mt-3 line-clamp-3 text-sm font-medium leading-6 text-slate-600">
+                    {item.summary || "Operator details are being prepared."}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
     </div>
   );

@@ -47,3 +47,12 @@ test("hotel routes include public AI concierge recommendations before admin auth
   assert.equal(conciergeIndex < adminAuthIndex, true);
   assert.equal(source.includes("buildHotelConciergeRecommendations"), true);
 });
+
+test("hotel routes expose public related-hotel recommendations and admin analytics", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/public/:slug/related"'), true);
+  assert.equal(source.includes('router.get("/analytics"'), true);
+});

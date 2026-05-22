@@ -96,6 +96,8 @@ test("HotelDetail renders selectable hotel inquiry intent controls", async () =>
   assert.equal(source.includes("buildHotelIntentOptions"), true);
   assert.equal(source.includes("selectedIntentId"), true);
   assert.equal(source.includes("selectedIntent.payload.hotelIntentType"), true);
+  assert.equal(source.includes("HotelDirectInquiryForm"), true);
+  assert.equal(source.includes("fetchRelatedHotels"), true);
 });
 
 test("HotelDiscovery renders a public sort selector", async () => {

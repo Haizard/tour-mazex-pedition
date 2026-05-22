@@ -31,3 +31,12 @@ test("api service exposes public hotel AI concierge recommendations", async () =
   assert.equal(source.includes("requestHotelConciergeRecommendations"), true);
   assert.equal(source.includes('API.post("/hotels/public/concierge/recommendations", data)'), true);
 });
+
+test("api service exposes hotel analytics and related hotel reads", async () => {
+  const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("fetchHotelAnalytics"), true);
+  assert.equal(source.includes('cachedGet("/hotels/analytics")'), true);
+  assert.equal(source.includes("fetchRelatedHotels"), true);
+  assert.equal(source.includes('cachedGet(`/hotels/public/${encodeURIComponent(slug)}/related`)'), true);
+});

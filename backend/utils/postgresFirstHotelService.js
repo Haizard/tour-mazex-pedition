@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Hotel from "../models/Hotel.js";
 import { syncHotelRecord } from "./postgresHotelRecords.js";
+import { syncHotelListingVector } from "./postgresHotelVectorService.js";
 import { syncMongoDocumentToShadowStore } from "./postgresShadowWrites.js";
 
 export const createPostgresFirstHotel = async (payload = {}, env = globalThis.process?.env || {}) => {
@@ -31,6 +32,9 @@ export const createPostgresFirstHotel = async (payload = {}, env = globalThis.pr
   try {
     const hotel = new Hotel(hotelData);
     await hotel.save();
+    await syncHotelListingVector(hotel.toObject(), env).catch((error) => {
+      console.error("Hotel vector sync failed:", error.message);
+    });
     await syncMongoDocumentToShadowStore({
       entityType: "hotels",
       document: hotel.toObject(),
@@ -71,6 +75,9 @@ export const updatePostgresFirstHotel = async (
     ).lean();
 
     if (hotel) {
+      await syncHotelListingVector(hotel, env).catch((error) => {
+        console.error("Hotel vector sync failed:", error.message);
+      });
       await syncMongoDocumentToShadowStore({
         entityType: "hotels",
         document: hotel,

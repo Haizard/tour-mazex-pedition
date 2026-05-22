@@ -2,8 +2,11 @@ import express from "express";
 import process from "node:process";
 import Hotel from "../models/Hotel.js";
 import HotelPartnerAdmin from "../models/HotelPartnerAdmin.js";
+import CustomInquiry from "../models/CustomInquiry.js";
+import QuoteProposal from "../models/QuoteProposal.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { hashAdminPassword } from "../utils/adminAuth.js";
+import { buildHotelAnalyticsSnapshot } from "../utils/hotelAnalytics.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import { buildHotelPartnerAdminAccountPayload } from "../utils/hotelPartnerAccess.js";
 import {
@@ -13,6 +16,7 @@ import {
   shapeHotelDetail,
   shapeHotelDiscoveryCard,
 } from "../utils/hotelMarketplace.js";
+import { searchAssistantKnowledge } from "../utils/pgvectorRetrieval.js";
 import {
   buildHotelRecordView,
   deleteHotelRecord,
@@ -22,6 +26,7 @@ import {
   createPostgresFirstHotel,
   updatePostgresFirstHotel,
 } from "../utils/postgresFirstHotelService.js";
+import { deleteHotelListingVector } from "../utils/postgresHotelVectorService.js";
 import {
   deleteMongoDocumentFromShadowStore,
 } from "../utils/postgresShadowWrites.js";
@@ -134,7 +139,105 @@ router.get("/public/:slug", async (req, res) => {
   }
 });
 
+router.get("/public/:slug/related", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne({
+      slug: req.params.slug,
+      published: true,
+      marketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found in marketplace." });
+    }
+
+    const query = [
+      hotel.name,
+      hotel.destination,
+      hotel.region,
+      hotel.accommodationType,
+      hotel.summary,
+      ...(Array.isArray(hotel.amenities) ? hotel.amenities : []),
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const vectorResults = await searchAssistantKnowledge({
+      tenantId: String(hotel.tenantId?._id || hotel.tenantId || ""),
+      query,
+      sourceTypes: ["hotel-listing"],
+      limit: 6,
+      env: process.env,
+    });
+
+    const vectorHotelIds = (vectorResults.hotelIds || []).filter(
+      (hotelId) => String(hotelId) !== String(hotel._id)
+    );
+
+    let relatedHotels = [];
+    if (vectorHotelIds.length) {
+      const candidates = await Hotel.find({
+        _id: { $in: vectorHotelIds },
+        published: true,
+        marketplaceVisible: true,
+      })
+        .populate("tenantId", "name slug")
+        .lean();
+
+      relatedHotels = vectorHotelIds
+        .map((hotelId) =>
+          candidates.find((candidate) => String(candidate._id) === String(hotelId))
+        )
+        .filter(Boolean);
+    }
+
+    if (!relatedHotels.length) {
+      relatedHotels = await Hotel.find({
+        _id: { $ne: hotel._id },
+        published: true,
+        marketplaceVisible: true,
+        destination: hotel.destination || undefined,
+      })
+        .sort(buildHotelSort("rating"))
+        .limit(3)
+        .populate("tenantId", "name slug")
+        .lean();
+    }
+
+    return res.status(200).json({
+      hotels: relatedHotels.slice(0, 3).map(shapeHotelDiscoveryCard),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch related hotels.",
+      error: error.message,
+    });
+  }
+});
+
 router.use(requireTenantAdmin);
+
+router.get("/analytics", async (req, res) => {
+  try {
+    const [hotels, inquiries, quotes] = await Promise.all([
+      Hotel.find(buildTenantFilter(req)).lean(),
+      CustomInquiry.find(
+        buildTenantFilter(req, {
+          hotelId: { $ne: null },
+        })
+      ).lean(),
+      QuoteProposal.find(buildTenantFilter(req))
+        .select("inquiryId status conversionStage")
+        .lean(),
+    ]);
+
+    res.status(200).json(buildHotelAnalyticsSnapshot({ hotels, inquiries, quotes }));
+  } catch (error) {
+    res.status(500).json({ message: "Failed to build hotel analytics.", error: error.message });
+  }
+});
 
 router.get("/", async (req, res) => {
   try {
@@ -277,6 +380,9 @@ router.delete("/:id", async (req, res) => {
 
     await deleteHotelRecord(hotel._id, hotel.tenantId).catch((error) => {
       console.error("Hotel record delete failed:", error.message);
+    });
+    await deleteHotelListingVector(hotel._id, process.env).catch((error) => {
+      console.error("Hotel vector delete failed:", error.message);
     });
     await deleteMongoDocumentFromShadowStore({
       entityType: "hotels",
