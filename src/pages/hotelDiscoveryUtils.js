@@ -36,6 +36,38 @@ export const filterHotelCards = (hotels = [], filters = {}) =>
     return true;
   });
 
+const byNumberDesc = (left, right, key) => Number(right[key] || 0) - Number(left[key] || 0);
+const byDateDesc = (left, right) =>
+  new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime();
+
+export const sortHotelCards = (hotels = [], sort = "featured") => {
+  const rows = [...hotels];
+
+  if (sort === "rating") {
+    return rows.sort(
+      (left, right) =>
+        byNumberDesc(left, right, "averageRating") ||
+        byNumberDesc(left, right, "reviewCount") ||
+        Number(right.sponsoredPlacement === true) - Number(left.sponsoredPlacement === true)
+    );
+  }
+
+  if (sort === "newest") {
+    return rows.sort(
+      (left, right) =>
+        byDateDesc(left, right) ||
+        Number(right.sponsoredPlacement === true) - Number(left.sponsoredPlacement === true)
+    );
+  }
+
+  return rows.sort(
+    (left, right) =>
+      Number(right.sponsoredPlacement === true) - Number(left.sponsoredPlacement === true) ||
+      byNumberDesc(left, right, "averageRating") ||
+      byDateDesc(left, right)
+  );
+};
+
 export const buildHotelInquiryPayload = ({ hotel = {}, intentType = "direct-hotel", traveler = {} } = {}) => ({
   ...traveler,
   hotelId: String(hotel._id || hotel.id || ""),

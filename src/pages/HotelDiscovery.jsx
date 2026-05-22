@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaHotel, FaSearch, FaStar } from "react-icons/fa";
 import { fetchPublicHotels } from "../services/api";
-import { countActiveHotelFilters, filterHotelCards } from "./hotelDiscoveryUtils";
+import { countActiveHotelFilters, filterHotelCards, sortHotelCards } from "./hotelDiscoveryUtils";
 import { getHotelTrustLabel } from "../components/Marketplace/hotelTrustUtils";
 
 const initialFilters = {
@@ -35,7 +35,10 @@ const HotelDiscovery = () => {
     loadHotels();
   }, [filters]);
 
-  const visibleHotels = useMemo(() => filterHotelCards(hotels, filters), [hotels, filters]);
+  const visibleHotels = useMemo(
+    () => sortHotelCards(filterHotelCards(hotels, filters), filters.sort),
+    [hotels, filters]
+  );
   const activeCount = countActiveHotelFilters(filters);
 
   const updateFilter = (event) => {
@@ -54,7 +57,7 @@ const HotelDiscovery = () => {
           Browse operator-linked hotels for pre-safari stays, post-trip comfort, and itinerary add-ons.
         </p>
 
-        <div className="mt-8 grid gap-3 rounded-[28px] border border-[#d8c8ae] bg-white p-4 shadow-sm md:grid-cols-4">
+        <div className="mt-8 grid gap-3 rounded-[28px] border border-[#d8c8ae] bg-white p-4 shadow-sm md:grid-cols-5">
           <label className="flex items-center rounded-2xl border border-slate-200 px-3 py-2">
             <FaSearch className="mr-2 text-slate-400" />
             <input name="q" value={filters.q} onChange={updateFilter} placeholder="Search hotels" className="w-full bg-transparent text-sm font-medium outline-none" />
@@ -62,6 +65,11 @@ const HotelDiscovery = () => {
           <input name="destination" value={filters.destination} onChange={updateFilter} placeholder="Destination" className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-medium outline-none" />
           <input name="accommodationType" value={filters.accommodationType} onChange={updateFilter} placeholder="Lodge, hotel, camp" className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-medium outline-none" />
           <input name="amenity" value={filters.amenity} onChange={updateFilter} placeholder="Pool, transfer..." className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-medium outline-none" />
+          <select name="sort" value={filters.sort} onChange={updateFilter} className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-black uppercase tracking-[0.12em] text-slate-600 outline-none">
+            <option value="featured">Featured</option>
+            <option value="rating">Top rated</option>
+            <option value="newest">Newest</option>
+          </select>
         </div>
         <p className="mt-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
           {activeCount} active filters · {visibleHotels.length} hotels
