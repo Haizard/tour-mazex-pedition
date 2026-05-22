@@ -13,7 +13,8 @@ export const shouldBypassTenantMiddleware = (req) => {
   const path = req.originalUrl || req.url || "";
   return (
     path.startsWith("/api/platform-auth") ||
-    path.startsWith("/api/platform-admin")
+    path.startsWith("/api/platform-admin") ||
+    path.startsWith("/api/traveler-auth")
   );
 };
 

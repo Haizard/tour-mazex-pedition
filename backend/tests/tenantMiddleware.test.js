@@ -21,6 +21,13 @@ test("shouldBypassTenantMiddleware skips platform admin routes", () => {
   );
 });
 
+test("shouldBypassTenantMiddleware skips traveler authentication routes", () => {
+  assert.equal(
+    shouldBypassTenantMiddleware({ originalUrl: "/api/traveler-auth/google/callback" }),
+    true,
+  );
+});
+
 test("shouldBypassTenantMiddleware keeps tenant bootstrap tenant-aware", () => {
   assert.equal(
     shouldBypassTenantMiddleware({ originalUrl: "/api/tenant/bootstrap" }),
