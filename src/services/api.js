@@ -347,7 +347,27 @@ const getHotelPartnerHeaders = () => {
   };
 };
 
+const getTravelerHeaders = () => {
+  if (!isBrowser) {
+    return {};
+  }
+
+  const token = window.localStorage.getItem("travelerAuthToken");
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 const getAuthHeadersForUrl = (url = "") => {
+  if (url.includes("/traveler-auth")) {
+    return getTravelerHeaders();
+  }
+
   if (url.includes("/hotel-partner")) {
     return getHotelPartnerHeaders();
   }
@@ -484,6 +504,10 @@ export const loginHotelPartnerAdmin = (data) => API.post("/hotel-partner-auth/lo
 export const fetchHotelPartnerSession = () =>
   API.get("/hotel-partner-auth/me", {
     headers: getHotelPartnerHeaders(),
+  });
+export const fetchTravelerSession = () =>
+  API.get("/traveler-auth/me", {
+    headers: getTravelerHeaders(),
   });
 export const fetchHotelPartnerHotels = () =>
   cachedGet("/hotel-partner/hotels", {

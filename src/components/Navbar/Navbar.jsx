@@ -10,26 +10,19 @@ import {
   FaWhatsapp,
   FaYoutube,
   FaRedditAlien,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import { HiMenuAlt3, HiMenuAlt1 } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import ResponsiveMenu from "./ResponsiveMenu";
 import { fetchMenuItems, fetchTours, fetchSiteSettings } from "../../services/api";
 import { useTenant } from "../../context/TenantContext";
+import { useTravelerAuth } from "../../context/TravelerAuthContext.jsx";
 import { useRouteData } from "../../utils/routeData.jsx";
 import { buildTenantScopedPath, buildTenantScopedTourPath } from "../../utils/tenantRoutes.js";
 
 import { FRONTEND_MENU_DEFAULTS, MENU_IMAGE_BY_KEY } from "./defaultMenuItems";
 import { PLATFORM_MENU_ITEMS } from "./platformMenuItems";
-
-const slugifyTitle = (value = "") =>
-  value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 
 const normalizeValue = (value = "") =>
   value
@@ -120,6 +113,12 @@ const Navbar = ({ handleOrderPopup }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { siteConfig, tenant, loading, isPlatform } = useTenant();
+  const {
+    isAuthenticated: isTravelerAuthenticated,
+    travelerInitials,
+    travelerProfileLabel,
+    logout,
+  } = useTravelerAuth();
   const routeData = useRouteData();
   const sharedData = routeData.shared || {};
   const shouldUseDefaultMenu = !loading && !isPlatform && (!tenant || tenant.slug === "maz-expeditions");
@@ -233,6 +232,11 @@ const Navbar = ({ handleOrderPopup }) => {
   const scopeMenuLink = (link = "") =>
     isPlatform ? link : buildTenantScopedPath(link, location.pathname);
 
+  const handleTravelerLogout = () => {
+    logout();
+    setShowMenu(false);
+  };
+
   const toggleMenu = () => setShowMenu(!showMenu);
 
   return (
@@ -264,6 +268,25 @@ const Navbar = ({ handleOrderPopup }) => {
           </div>
 
           <div className="flex items-center gap-6 text-[13px] font-medium uppercase tracking-tighter">
+            {isTravelerAuthenticated && (
+              <div className="flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-white">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[10px] font-black text-[#264232]">
+                  {travelerInitials}
+                </span>
+                <span className="max-w-[130px] truncate normal-case tracking-normal">
+                  {travelerProfileLabel}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleTravelerLogout}
+                  className="grid h-7 w-7 place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white"
+                  aria-label="Sign out traveler account"
+                  title="Sign out"
+                >
+                  <FaSignOutAlt />
+                </button>
+              </div>
+            )}
             {isLegacyTenant && (
               <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 text-white">
                 <option>English UK</option>
@@ -446,6 +469,10 @@ const Navbar = ({ handleOrderPopup }) => {
         navigationConfig={navigationConfig}
         footerConfig={footerConfig}
         brandName={isPlatform ? "MAZ Platform" : tenant?.name || ""}
+        isTravelerAuthenticated={isTravelerAuthenticated}
+        travelerInitials={travelerInitials}
+        travelerProfileLabel={travelerProfileLabel}
+        onTravelerLogout={handleTravelerLogout}
       />
     </nav>
   );

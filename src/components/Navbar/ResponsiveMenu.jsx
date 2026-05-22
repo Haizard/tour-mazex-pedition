@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from "react";
 import {
   FaUserCircle,
@@ -8,6 +9,7 @@ import {
   FaYoutube,
   FaRedditAlien,
   FaChevronDown,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +24,10 @@ const ResponsiveMenu = ({
   navigationConfig = {},
   footerConfig = {},
   brandName = "",
+  isTravelerAuthenticated = false,
+  travelerInitials = "T",
+  travelerProfileLabel = "",
+  onTravelerLogout,
 }) => {
   const navigate = useNavigate();
   const currentPathname =
@@ -64,14 +70,32 @@ const ResponsiveMenu = ({
     >
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-start gap-4">
-          <div className="rounded-full bg-white p-3 text-[#6f5336] shadow-lg">
-            <FaUserCircle size={32} />
+          <div className="grid h-14 w-14 place-items-center rounded-full bg-white text-[#6f5336] shadow-lg">
+            {isTravelerAuthenticated ? (
+              <span className="text-sm font-black uppercase">{travelerInitials}</span>
+            ) : (
+              <FaUserCircle size={32} />
+            )}
           </div>
           <div>
-            <h1 className="text-lg font-bold uppercase tracking-wide text-white">{menuHeading}</h1>
-            <h2 className="text-xs italic text-white/60">{menuSubheading}</h2>
+            <h1 className="text-lg font-bold uppercase tracking-wide text-white">
+              {isTravelerAuthenticated ? travelerProfileLabel : menuHeading}
+            </h1>
+            <h2 className="text-xs italic text-white/60">
+              {isTravelerAuthenticated ? "Traveler account" : menuSubheading}
+            </h2>
           </div>
         </div>
+
+        {isTravelerAuthenticated && (
+          <button
+            type="button"
+            onClick={onTravelerLogout}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/20"
+          >
+            <FaSignOutAlt /> Sign out
+          </button>
+        )}
 
         <nav className="mt-2">
           <ul className="flex flex-col gap-2 text-sm font-bold uppercase tracking-wider sm:text-base">

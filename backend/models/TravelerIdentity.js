@@ -10,6 +10,15 @@ const travelerIdentitySchema = new mongoose.Schema(
       default: "",
       index: true,
     },
+    displayName: { type: String, trim: true, default: "" },
+    avatarUrl: { type: String, trim: true, default: "" },
+    googleSubject: { type: String, trim: true, default: "", index: true },
+    authProvider: {
+      type: String,
+      enum: ["guest", "google"],
+      default: "guest",
+    },
+    lastLoginAt: { type: Date, default: null },
     verificationState: {
       type: String,
       enum: ["guest", "verified-inquiry", "verified-booking"],

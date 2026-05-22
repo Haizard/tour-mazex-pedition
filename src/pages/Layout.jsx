@@ -3,8 +3,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import { useTenant } from "../context/TenantContext";
+import { useTravelerAuth } from "../context/TravelerAuthContext.jsx";
 import {
-  TRAVELER_AUTH_TOKEN_KEY,
   TRAVELER_GOOGLE_PROMPT_DELAY_MS,
   TRAVELER_GOOGLE_PROMPT_DISMISSED_KEY,
   shouldScheduleTravelerGooglePrompt,
@@ -20,6 +20,7 @@ const Layout = () => {
   const [travelerGooglePromptVisible, setTravelerGooglePromptVisible] = React.useState(false);
   const location = useLocation();
   const { loading, bootstrapError, isPlatform } = useTenant();
+  const { isAuthenticated: isTravelerAuthenticated, token: travelerAuthToken } = useTravelerAuth();
 
   const handleOrderPopup = () => {
     setOrderPopup((prev) => !prev);
@@ -69,7 +70,7 @@ const Layout = () => {
       isAdminRoute,
       isPlatform,
       isDismissed: window.sessionStorage.getItem(TRAVELER_GOOGLE_PROMPT_DISMISSED_KEY) === "true",
-      isSignedIn: Boolean(window.localStorage.getItem(TRAVELER_AUTH_TOKEN_KEY)),
+      isSignedIn: Boolean(travelerAuthToken || isTravelerAuthenticated),
     });
 
     if (!shouldSchedule) {
@@ -82,7 +83,7 @@ const Layout = () => {
     }, TRAVELER_GOOGLE_PROMPT_DELAY_MS);
 
     return () => window.clearTimeout(timerId);
-  }, [isAdminRoute, isPlatform, location.pathname]);
+  }, [isAdminRoute, isPlatform, isTravelerAuthenticated, location.pathname, travelerAuthToken]);
 
   if (!isAdminRoute && loading) {
     return (
