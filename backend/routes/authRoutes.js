@@ -2,8 +2,11 @@ import express from "express";
 import TenantAdmin from "../models/TenantAdmin.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { signAdminToken, verifyAdminPassword } from "../utils/adminAuth.js";
+import { handleTravelerGoogleCallback } from "./travelerAuthRoutes.js";
 
 const router = express.Router();
+
+router.get("/callback/google", handleTravelerGoogleCallback);
 
 router.post("/login", async (req, res) => {
   try {

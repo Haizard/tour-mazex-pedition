@@ -164,3 +164,10 @@ test("server registers traveler Google auth routes", async () => {
   assert.equal(source.includes('from "./routes/travelerAuthRoutes.js"'), true);
   assert.equal(source.includes('app.use("/api/traveler-auth", travelerAuthRoutes)'), true);
 });
+
+test("tenant auth routes support the Google callback alias used by configured OAuth redirects", async () => {
+  const source = await readFile(new URL("../routes/authRoutes.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("handleTravelerGoogleCallback"), true);
+  assert.equal(source.includes('router.get("/callback/google"'), true);
+});

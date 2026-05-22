@@ -70,7 +70,7 @@ const findOrCreateGoogleTravelerIdentity = async ({ profile, sessionKey }) => {
   );
 };
 
-router.get("/google/callback", async (req, res) => {
+export const handleTravelerGoogleCallback = async (req, res) => {
   try {
     if (req.query.error) {
       return res.redirect(
@@ -114,7 +114,9 @@ router.get("/google/callback", async (req, res) => {
       message: error.message || "Google traveler sign-in failed.",
     });
   }
-});
+};
+
+router.get("/google/callback", handleTravelerGoogleCallback);
 
 router.get("/me", async (req, res) => {
   try {
