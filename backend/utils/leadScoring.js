@@ -16,6 +16,7 @@ export const scoreInquiryLead = (inquiry = {}) => {
     ? inquiry.accommodationPreferences.map((item) => item?.toString().trim().toLowerCase())
     : [];
   const servicesCount = Array.isArray(inquiry.services) ? inquiry.services.filter(Boolean).length : 0;
+  const hasHotelIntent = Boolean(inquiry.hotelId || inquiry.hotelName || inquiry.hotelIntentType);
 
   if (destinationCount >= 1) {
     score += 12;
@@ -78,9 +79,20 @@ export const scoreInquiryLead = (inquiry = {}) => {
   if (inquiry.sourceChannel === "plan-my-trip") {
     score += 10;
     reasons.push("Came through tailor-made planning flow");
+  } else if (inquiry.sourceChannel === "global-marketplace") {
+    score += hasHotelIntent ? 9 : 6;
+    reasons.push(hasHotelIntent ? "Hotel marketplace inquiry intent" : "Came through marketplace discovery");
   } else if (inquiry.sourceChannel === "whatsapp-button" || inquiry.sourceChannel === "chatbot") {
     score += 7;
     reasons.push("Came through an active engagement channel");
+  }
+
+  if (inquiry.hotelIntentType === "direct-hotel") {
+    score += 6;
+    reasons.push("Direct hotel request");
+  } else if (inquiry.hotelIntentType === "itinerary-add-on") {
+    score += 6;
+    reasons.push("Hotel requested inside itinerary");
   }
 
   const clampedScore = Math.max(0, Math.min(100, Math.round(score)));
@@ -89,6 +101,6 @@ export const scoreInquiryLead = (inquiry = {}) => {
   return {
     leadScore: clampedScore,
     leadTemperature: temperature,
-    leadScoreReasons: reasons.slice(0, 6),
+    leadScoreReasons: reasons.slice(0, 8),
   };
 };

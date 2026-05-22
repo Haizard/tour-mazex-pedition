@@ -37,3 +37,23 @@ test("scoreInquiryLead marks low-information requests as cold", () => {
   assert.equal(result.leadTemperature, "cold");
   assert.equal(result.leadScore < 40, true);
 });
+
+test("scoreInquiryLead boosts hotel marketplace intent with clear reasons", () => {
+  const result = scoreInquiryLead({
+    destinations: ["Arusha"],
+    tripLengthDays: 2,
+    adults: 2,
+    travelWhen: "July 2026",
+    message: "Interested in this hotel for arrival night.",
+    contactPreference: "whatsapp",
+    sourceChannel: "global-marketplace",
+    accommodationPreferences: ["Arusha Garden Lodge"],
+    hotelId: "hotel-1",
+    hotelName: "Arusha Garden Lodge",
+    hotelIntentType: "direct-hotel",
+  });
+
+  assert.equal(result.leadScoreReasons.includes("Hotel marketplace inquiry intent"), true);
+  assert.equal(result.leadScoreReasons.includes("Direct hotel request"), true);
+  assert.equal(result.leadScore >= 50, true);
+});
