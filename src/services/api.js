@@ -885,11 +885,19 @@ export const reviewHotelPartnerProfileUpdate = (id, data) =>
 export const fetchPublicHotels = (params = {}) => cachedGet("/hotels/public", { params });
 export const fetchPublicHotelBySlug = (slug) =>
   cachedGet(`/hotels/public/${encodeURIComponent(slug)}`);
+export const searchHotelClaimListings = (params = {}) =>
+  cachedGet("/hotels/public/claim-search", { params });
+export const submitHotelClaimRequest = (data) =>
+  API.post("/hotels/public/claims", data);
 export const requestHotelConciergeRecommendations = (data) =>
   API.post("/hotels/public/concierge/recommendations", data);
 export const fetchRelatedHotels = (slug) =>
   cachedGet(`/hotels/public/${encodeURIComponent(slug)}/related`);
 export const fetchHotelAnalytics = () => cachedGet("/hotels/analytics");
+export const fetchHotelClaimRequests = (params = {}) =>
+  cachedGet("/hotels/claims", { params });
+export const reviewHotelClaimRequest = (id, data) =>
+  API.post(`/hotels/claims/${id}/review`, data);
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

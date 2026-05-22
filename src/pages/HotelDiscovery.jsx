@@ -56,6 +56,14 @@ const HotelDiscovery = () => {
         <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-slate-600">
           Browse operator-linked hotels for pre-safari stays, post-trip comfort, and itinerary add-ons.
         </p>
+        <div className="mt-6">
+          <Link
+            to="/discover/hotels/claim"
+            className="inline-flex items-center gap-2 rounded-full border border-[#d8c8ae] bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#234232]"
+          >
+            <FaHotel /> Claim your hotel
+          </Link>
+        </div>
 
         <div className="mt-8 grid gap-3 rounded-[28px] border border-[#d8c8ae] bg-white p-4 shadow-sm md:grid-cols-5">
           <label className="flex items-center rounded-2xl border border-slate-200 px-3 py-2">

@@ -56,3 +56,27 @@ test("hotel routes expose public related-hotel recommendations and admin analyti
   assert.equal(source.includes('router.get("/public/:slug/related"'), true);
   assert.equal(source.includes('router.get("/analytics"'), true);
 });
+
+test("hotel routes expose claim request intake before admin auth", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+  const claimSearchIndex = source.indexOf('router.get("/public/claim-search"');
+  const claimCreateIndex = source.indexOf('router.post("/public/claims"');
+  const adminAuthIndex = source.indexOf("router.use(requireTenantAdmin)");
+
+  assert.equal(claimSearchIndex > -1, true);
+  assert.equal(claimCreateIndex > -1, true);
+  assert.equal(claimSearchIndex < adminAuthIndex, true);
+  assert.equal(claimCreateIndex < adminAuthIndex, true);
+});
+
+test("hotel routes expose tenant-admin claim moderation workflow", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/claims"'), true);
+  assert.equal(source.includes('router.post("/claims/:id/review"'), true);
+  assert.equal(source.includes("HotelClaimRequest"), true);
+});

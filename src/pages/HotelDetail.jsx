@@ -64,6 +64,12 @@ const HotelDetail = () => {
         <Link to="/discover/hotels" className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-500">
           <FaArrowLeft /> Back to hotels
         </Link>
+        <Link
+          to="/discover/hotels/claim"
+          className="ml-4 inline-flex items-center gap-2 rounded-full border border-[#d8c8ae] bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#234232]"
+        >
+          <FaHotel /> Claim your hotel
+        </Link>
 
         <section className="mt-8 overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr]">

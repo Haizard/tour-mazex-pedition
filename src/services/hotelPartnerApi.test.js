@@ -40,3 +40,16 @@ test("api service exposes hotel analytics and related hotel reads", async () => 
   assert.equal(source.includes("fetchRelatedHotels"), true);
   assert.equal(source.includes('cachedGet(`/hotels/public/${encodeURIComponent(slug)}/related`)'), true);
 });
+
+test("api service exposes public hotel claim intake and tenant-admin claim moderation", async () => {
+  const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("searchHotelClaimListings"), true);
+  assert.equal(source.includes('cachedGet("/hotels/public/claim-search"'), true);
+  assert.equal(source.includes("submitHotelClaimRequest"), true);
+  assert.equal(source.includes('API.post("/hotels/public/claims", data)'), true);
+  assert.equal(source.includes("fetchHotelClaimRequests"), true);
+  assert.equal(source.includes('cachedGet("/hotels/claims"'), true);
+  assert.equal(source.includes("reviewHotelClaimRequest"), true);
+  assert.equal(source.includes('API.post(`/hotels/claims/${id}/review`, data)'), true);
+});

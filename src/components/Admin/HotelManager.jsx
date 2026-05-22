@@ -5,7 +5,9 @@ import {
   createHotel,
   deleteHotel,
   fetchHotelAnalytics,
+  fetchHotelClaimRequests,
   fetchHotels,
+  reviewHotelClaimRequest,
   reviewHotelPartnerProfileUpdate,
   updateHotel,
 } from "../../services/api";
@@ -19,6 +21,10 @@ import {
   getHotelPartnerLoginPath,
   hasPendingPartnerUpdate,
 } from "./hotelManagerState";
+import {
+  buildHotelClaimReviewPayload,
+  filterHotelClaimRows,
+} from "./hotelClaimManagerState";
 
 const HotelManager = () => {
   const [hotels, setHotels] = useState([]);
@@ -33,8 +39,12 @@ const HotelManager = () => {
   const [partnerMessage, setPartnerMessage] = useState("");
   const [savingPartner, setSavingPartner] = useState(false);
   const [reviewingPartnerUpdate, setReviewingPartnerUpdate] = useState("");
+  const [claims, setClaims] = useState([]);
+  const [claimFilters, setClaimFilters] = useState({ search: "", status: "" });
+  const [reviewingClaimAction, setReviewingClaimAction] = useState("");
 
   const visibleHotels = useMemo(() => filterHotelRows(hotels, filters), [hotels, filters]);
+  const visibleClaims = useMemo(() => filterHotelClaimRows(claims, claimFilters), [claims, claimFilters]);
   const partnerLoginPath = getHotelPartnerLoginPath(
     typeof window !== "undefined" ? window.location.pathname : ""
   );
@@ -48,6 +58,8 @@ const HotelManager = () => {
       ]);
       setHotels(Array.isArray(response.data) ? response.data : []);
       setAnalytics(analyticsResponse.data || null);
+      const claimsResponse = await fetchHotelClaimRequests().catch(() => ({ data: [] }));
+      setClaims(Array.isArray(claimsResponse.data) ? claimsResponse.data : []);
     } catch (error) {
       setMessage(error?.response?.data?.message || "Unable to load hotels.");
     } finally {
@@ -154,6 +166,27 @@ const HotelManager = () => {
       setMessage(error?.response?.data?.message || "Unable to review partner profile update.");
     } finally {
       setReviewingPartnerUpdate("");
+    }
+  };
+
+  const reviewClaim = async (claimId, action) => {
+    setReviewingClaimAction(`${claimId}:${action}`);
+    setMessage("");
+
+    try {
+      await reviewHotelClaimRequest(claimId, buildHotelClaimReviewPayload(action));
+      await loadHotels();
+      setMessage(
+        action === "reject"
+          ? "Hotel claim rejected."
+          : action === "needs-more-proof"
+            ? "Hotel claim marked for more proof."
+            : "Hotel claim approved and hotel partner access created."
+      );
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to review hotel claim.");
+    } finally {
+      setReviewingClaimAction("");
     }
   };
 
@@ -496,6 +529,120 @@ const HotelManager = () => {
               ) : null}
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+              Hotel self-registration
+            </p>
+            <h3 className="mt-2 text-lg font-black text-zinc-950">Claim requests queue</h3>
+          </div>
+          <div className="flex flex-col gap-3 md:flex-row">
+            <div className="flex items-center rounded-xl border border-zinc-200 px-3 py-2">
+              <FaSearch className="mr-2 text-zinc-400" />
+              <input
+                value={claimFilters.search}
+                onChange={(event) => setClaimFilters((current) => ({ ...current, search: event.target.value }))}
+                placeholder="Search claims"
+                className="bg-transparent text-sm font-medium outline-none"
+              />
+            </div>
+            <select
+              value={claimFilters.status}
+              onChange={(event) => setClaimFilters((current) => ({ ...current, status: event.target.value }))}
+              className="rounded-xl border border-zinc-200 px-3 py-2 text-sm font-bold"
+            >
+              <option value="">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="needs-more-proof">Needs more proof</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3">
+          {visibleClaims.map((claim) => (
+            <div key={claim.id} className="rounded-xl border border-zinc-200 p-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-lg font-black text-zinc-950">
+                    {claim.hotelNameSnapshot || "Proposed hotel listing"}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-zinc-600">
+                    {claim.destinationSnapshot || "Destination pending"} · {claim.claimType === "new-listing-request" ? "New listing request" : "Existing listing claim"}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-[0.16em]">
+                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-600">{claim.status}</span>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">{claim.claimantRole}</span>
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">{claim.requestedUsername}</span>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-zinc-700">
+                    {claim.claimantName} · {claim.claimantEmail}
+                  </p>
+                  {claim.claimantPhone ? (
+                    <p className="mt-1 text-sm font-medium text-zinc-500">{claim.claimantPhone}</p>
+                  ) : null}
+                  {claim.proofNote ? (
+                    <p className="mt-3 text-sm font-medium leading-6 text-zinc-600">{claim.proofNote}</p>
+                  ) : null}
+                  {claim.proofLinks?.length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {claim.proofLinks.map((link) => (
+                        <a
+                          key={link}
+                          href={link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-full border border-zinc-200 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-zinc-600"
+                        >
+                          Proof Link
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                {["pending", "needs-more-proof"].includes(claim.status) ? (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => reviewClaim(claim.id, "approve")}
+                      disabled={reviewingClaimAction === `${claim.id}:approve`}
+                      className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black uppercase text-white disabled:bg-zinc-300"
+                    >
+                      {reviewingClaimAction === `${claim.id}:approve` ? "Approving..." : "Approve"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => reviewClaim(claim.id, "needs-more-proof")}
+                      disabled={reviewingClaimAction === `${claim.id}:needs-more-proof`}
+                      className="rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs font-black uppercase text-amber-700 disabled:text-zinc-300"
+                    >
+                      {reviewingClaimAction === `${claim.id}:needs-more-proof` ? "Updating..." : "Need proof"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => reviewClaim(claim.id, "reject")}
+                      disabled={reviewingClaimAction === `${claim.id}:reject`}
+                      className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-black uppercase text-red-600 disabled:text-zinc-300"
+                    >
+                      {reviewingClaimAction === `${claim.id}:reject` ? "Rejecting..." : "Reject"}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ))}
+
+          {!visibleClaims.length ? (
+            <p className="py-8 text-center text-sm font-bold text-zinc-500">
+              No hotel claim requests in this view yet.
+            </p>
+          ) : null}
         </div>
       </div>
     </section>
