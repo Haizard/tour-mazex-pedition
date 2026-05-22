@@ -80,6 +80,7 @@ import SocialAccountsManager from "../components/Admin/SocialAccountsManager";
 import GuideDriverManager from "../components/Admin/GuideDriverManager";
 import AccommodationManager from "../components/Admin/AccommodationManager";
 import HotelManager from "../components/Admin/HotelManager";
+import RestaurantManager from "../components/Admin/RestaurantManager";
 import AirportPickupManager from "../components/Admin/AirportPickupManager";
 import PartnerPortalManager from "../components/Admin/PartnerPortalManager";
 import PaymentAutomationManager from "../components/Admin/PaymentAutomationManager";
@@ -4237,6 +4238,8 @@ const AdminDashboard = () => {
           {activeTab === "marketplace-availability" && <MarketplaceAvailabilityManager />}
 
           {activeTab === "hotels" && <HotelManager />}
+
+          {activeTab === "restaurants" && <RestaurantManager />}
 
           {activeTab === "accommodations" && <AccommodationManager />}
 

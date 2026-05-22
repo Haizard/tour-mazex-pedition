@@ -168,6 +168,9 @@ const PlanMyTripWizard = ({
   hotelId = "",
   hotelName = "",
   hotelIntentType = "",
+  restaurantId = "",
+  restaurantName = "",
+  restaurantIntentType = "",
 }) => {
   const [showForm, setShowForm] = useState(!showIntro);
   const [currentStep, setCurrentStep] = useState(0);
@@ -280,6 +283,9 @@ const PlanMyTripWizard = ({
         hotelId,
         hotelName,
         hotelIntentType,
+        restaurantId,
+        restaurantName,
+        restaurantIntentType,
       });
       setSuccessAutomation(response.data?.automation || null);
       setSuccess(true);

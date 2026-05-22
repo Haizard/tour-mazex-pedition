@@ -1,0 +1,272 @@
+import { useEffect, useMemo, useState } from "react";
+import { FaPlus, FaSave, FaTrash, FaUtensils } from "react-icons/fa";
+import {
+  createRestaurant,
+  deleteRestaurant,
+  fetchRestaurants,
+  updateRestaurant,
+} from "../../services/api";
+import {
+  buildRestaurantPayload,
+  createEmptyRestaurantDraft,
+  filterRestaurantRows,
+} from "./restaurantManagerState";
+
+const RestaurantManager = () => {
+  const [restaurants, setRestaurants] = useState([]);
+  const [draft, setDraft] = useState(createEmptyRestaurantDraft);
+  const [editingId, setEditingId] = useState("");
+  const [filters, setFilters] = useState({ search: "", status: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const visibleRestaurants = useMemo(
+    () => filterRestaurantRows(restaurants, filters),
+    [restaurants, filters]
+  );
+
+  const loadRestaurants = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchRestaurants();
+      setRestaurants(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to load restaurants.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRestaurants();
+  }, []);
+
+  const updateDraft = (key, value) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const startEdit = (restaurant) => {
+    setEditingId(restaurant._id);
+    setDraft({
+      ...createEmptyRestaurantDraft(),
+      ...restaurant,
+      cuisineTypesText: (restaurant.cuisineTypes || []).join(", "),
+      mealTypesText: (restaurant.mealTypes || []).join(", "),
+      dietaryFitsText: (restaurant.dietaryFits || []).join(", "),
+      ambianceTagsText: (restaurant.ambianceTags || []).join(", "),
+      photosText: (restaurant.photos || []).join("\n"),
+      latitude: restaurant.geo?.latitude ?? "",
+      longitude: restaurant.geo?.longitude ?? "",
+    });
+  };
+
+  const resetForm = () => {
+    setEditingId("");
+    setDraft(createEmptyRestaurantDraft());
+  };
+
+  const saveRestaurant = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setMessage("");
+
+    try {
+      const payload = buildRestaurantPayload(draft);
+      if (editingId) {
+        await updateRestaurant(editingId, payload);
+      } else {
+        await createRestaurant(payload);
+      }
+      resetForm();
+      await loadRestaurants();
+      setMessage("Restaurant saved.");
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to save restaurant.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeRestaurant = async (restaurantId) => {
+    if (!window.confirm("Delete this restaurant listing?")) return;
+    try {
+      await deleteRestaurant(restaurantId);
+      await loadRestaurants();
+      if (editingId === restaurantId) resetForm();
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to delete restaurant.");
+    }
+  };
+
+  return (
+    <section className="space-y-6">
+      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-zinc-500">
+          Hospitality Marketplace
+        </p>
+        <h2 className="mt-2 flex items-center gap-3 text-2xl font-black tracking-tight text-zinc-950">
+          <FaUtensils className="text-primary" /> Restaurants
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-zinc-600">
+          Manage canonical dining entities for public discovery, itinerary requests, and operator-led guest planning.
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+        <form onSubmit={saveRestaurant} className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-black text-zinc-950">{editingId ? "Edit Restaurant" : "New Restaurant"}</h3>
+            <button type="button" onClick={resetForm} className="rounded-xl border px-3 py-2 text-xs font-black uppercase">
+              <FaPlus className="inline" /> New
+            </button>
+          </div>
+          {[
+            ["name", "Restaurant name"],
+            ["slug", "Slug"],
+            ["destination", "Destination"],
+            ["region", "Region"],
+            ["cuisineTypesText", "Cuisine types, comma separated"],
+            ["mealTypesText", "Meal types, comma separated"],
+            ["dietaryFitsText", "Dietary fits, comma separated"],
+            ["ambianceTagsText", "Ambiance tags, comma separated"],
+            ["openingHoursSummary", "Opening hours summary"],
+            ["reservationStyleSummary", "Reservation style summary"],
+          ].map(([key, label]) => (
+            <label key={key} className="block">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">{label}</span>
+              <input
+                value={draft[key] || ""}
+                onChange={(event) => updateDraft(key, event.target.value)}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+              />
+            </label>
+          ))}
+          {[
+            ["summary", "Summary", 3],
+            ["description", "Description", 4],
+            ["trustSummary", "Trust summary", 3],
+          ].map(([key, label, rows]) => (
+            <label key={key} className="block">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">{label}</span>
+              <textarea
+                value={draft[key] || ""}
+                onChange={(event) => updateDraft(key, event.target.value)}
+                rows={rows}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+              />
+            </label>
+          ))}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              ["averageRating", "Average rating"],
+              ["reviewCount", "Review count"],
+              ["latitude", "Latitude"],
+              ["longitude", "Longitude"],
+            ].map(([key, label]) => (
+              <label key={key} className="block">
+                <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">{label}</span>
+                <input
+                  value={draft[key] ?? ""}
+                  onChange={(event) => updateDraft(key, event.target.value)}
+                  className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+                />
+              </label>
+            ))}
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Photo URLs</span>
+            <textarea
+              value={draft.photosText || ""}
+              onChange={(event) => updateDraft("photosText", event.target.value)}
+              rows={3}
+              className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium outline-none focus:border-primary"
+            />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              ["published", "Published"],
+              ["marketplaceVisible", "Marketplace visible"],
+              ["sponsoredPlacement", "Sponsored placement"],
+            ].map(([key, label]) => (
+              <label key={key} className="flex items-center gap-3 rounded-xl border border-zinc-200 px-3 py-3 text-sm font-bold text-zinc-700">
+                <input
+                  type="checkbox"
+                  checked={draft[key] === true}
+                  onChange={(event) => updateDraft(key, event.target.checked)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-white disabled:bg-zinc-300"
+          >
+            <FaSave /> {saving ? "Saving..." : editingId ? "Update Restaurant" : "Create Restaurant"}
+          </button>
+          {message ? <p className="text-sm font-semibold text-zinc-600">{message}</p> : null}
+        </form>
+
+        <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+            <input
+              value={filters.search}
+              onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+              placeholder="Search restaurants"
+              className="rounded-xl border border-zinc-200 px-3 py-3 text-sm font-medium outline-none focus:border-primary"
+            />
+            <select
+              value={filters.status}
+              onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}
+              className="rounded-xl border border-zinc-200 px-3 py-3 text-sm font-bold outline-none focus:border-primary"
+            >
+              <option value="">All statuses</option>
+              <option value="public">Public</option>
+              <option value="draft">Draft</option>
+              <option value="sponsored">Sponsored</option>
+            </select>
+          </div>
+
+          {loading ? (
+            <div className="rounded-2xl bg-zinc-50 p-10 text-center text-sm font-bold text-zinc-500">Loading restaurants...</div>
+          ) : (
+            <div className="space-y-3">
+              {visibleRestaurants.map((restaurant) => (
+                <div key={restaurant._id} className="rounded-2xl border border-zinc-200 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="text-lg font-black tracking-tight text-zinc-950">{restaurant.name}</p>
+                      <p className="mt-1 text-sm font-medium text-zinc-500">
+                        {restaurant.destination || "Destination pending"} {restaurant.region ? `· ${restaurant.region}` : ""}
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-zinc-600">
+                        {(restaurant.cuisineTypes || []).slice(0, 3).join(", ") || "Cuisine details pending"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => startEdit(restaurant)} className="rounded-xl border px-3 py-2 text-xs font-black uppercase">
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => removeRestaurant(restaurant._id)} className="rounded-xl border border-red-200 px-3 py-2 text-xs font-black uppercase text-red-600">
+                        <FaTrash className="inline" /> Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {!visibleRestaurants.length ? (
+                <div className="rounded-2xl bg-zinc-50 p-10 text-center text-sm font-bold text-zinc-500">
+                  No restaurants match this filter yet.
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default RestaurantManager;

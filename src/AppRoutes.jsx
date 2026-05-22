@@ -39,6 +39,8 @@ const DiscoveryTourDetail = React.lazy(() => import("./pages/DiscoveryTourDetail
 const HotelDiscovery = React.lazy(() => import("./pages/HotelDiscovery"));
 const HotelClaimPage = React.lazy(() => import("./pages/HotelClaimPage"));
 const HotelDetail = React.lazy(() => import("./pages/HotelDetail"));
+const RestaurantDiscovery = React.lazy(() => import("./pages/RestaurantDiscovery"));
+const RestaurantDetail = React.lazy(() => import("./pages/RestaurantDetail"));
 const HotelPartnerLogin = React.lazy(() => import("./pages/HotelPartnerLogin"));
 const HotelPartnerDashboard = React.lazy(() => import("./pages/HotelPartnerDashboard"));
 const TemplateMarketplace = React.lazy(() => import("./pages/TemplateMarketplace"));
@@ -110,6 +112,8 @@ const tenantSiteRoutes = (
     <Route path="discover/hotels" element={withPublicSuspense(<HotelDiscovery />)} />
     <Route path="discover/hotels/claim" element={withPublicSuspense(<HotelClaimPage />)} />
     <Route path="discover/hotels/:slug" element={withPublicSuspense(<HotelDetail />)} />
+    <Route path="discover/restaurants" element={withPublicSuspense(<RestaurantDiscovery />)} />
+    <Route path="discover/restaurants/:slug" element={withPublicSuspense(<RestaurantDetail />)} />
     <Route path="templates" element={withPublicSuspense(<TemplateMarketplace />)} />
   </>
 );

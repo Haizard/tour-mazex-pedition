@@ -219,6 +219,73 @@ const platformDemoHotels = [
   },
 ];
 
+const platformDemoRestaurants = [
+  {
+    _id: "platform-restaurant-savanna-table",
+    name: "Savanna Table",
+    slug: "savanna-table",
+    summary: "A refined dinner room for arrival nights, farewell meals, and operator-led celebrations.",
+    description:
+      "Savanna Table is a demo dining marketplace entity that shows how travelers can assess cuisine, atmosphere, and itinerary fit without implying live reservations or menu guarantees.",
+    destination: "Arusha",
+    region: "Northern Tanzania",
+    cuisineTypes: ["Tanzanian", "Grill"],
+    mealTypes: ["Dinner"],
+    dietaryFits: ["Vegetarian", "Halal friendly"],
+    ambianceTags: ["Romantic", "Local"],
+    openingHoursSummary: "Open daily for dinner and private group service.",
+    reservationStyleSummary: "Reservations are confirmed by the listed operator.",
+    photos: ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1400&q=80"],
+    averageRating: 4.8,
+    reviewCount: 22,
+    sponsoredPlacement: true,
+    published: true,
+    marketplaceVisible: true,
+    operator: {
+      id: "platform-demo-operator",
+      name: "MAZ Demo Operator",
+      slug: "maz-demo",
+    },
+    trust: {
+      reviewLabel: "4.8/5 from 22 reviews",
+      summary: "Demo dining trust signals are grounded in visible sample fields for interface preview only.",
+    },
+    fitTags: ["Tanzanian", "Dinner", "Vegetarian", "Romantic"],
+  },
+  {
+    _id: "platform-restaurant-coast-spice-house",
+    name: "Coast Spice House",
+    slug: "coast-spice-house",
+    summary: "A relaxed coastal dining stop for spice-forward lunches and beach-extension dinners.",
+    description:
+      "Coast Spice House demonstrates how restaurant pages can support dining intent and itinerary-building intent together in the platform.",
+    destination: "Zanzibar",
+    region: "Coast",
+    cuisineTypes: ["Swahili", "Seafood"],
+    mealTypes: ["Lunch", "Dinner"],
+    dietaryFits: ["Gluten aware"],
+    ambianceTags: ["Beachfront", "Family"],
+    openingHoursSummary: "Lunch and dinner daily, with group bookings handled by the operator.",
+    reservationStyleSummary: "Advance reservation recommended for group dinners.",
+    photos: ["https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1400&q=80"],
+    averageRating: 4.6,
+    reviewCount: 15,
+    sponsoredPlacement: false,
+    published: true,
+    marketplaceVisible: true,
+    operator: {
+      id: "platform-demo-operator",
+      name: "MAZ Demo Operator",
+      slug: "maz-demo",
+    },
+    trust: {
+      reviewLabel: "4.6/5 from 15 reviews",
+      summary: "Demo traveler proof shows where verified dining reviews and fit signals will appear.",
+    },
+    fitTags: ["Swahili", "Lunch", "Beachfront", "Family"],
+  },
+];
+
 const buildPlatformDemoHotelDetail = (hotel) => ({
   ...hotel,
   geo: { latitude: null, longitude: null },
@@ -241,6 +308,28 @@ const buildPlatformDemoHotelDetail = (hotel) => ({
   },
 });
 
+const buildPlatformDemoRestaurantDetail = (restaurant) => ({
+  ...restaurant,
+  geo: { latitude: null, longitude: null },
+  partnerAccountId: "",
+  conversion: {
+    sendInquiry: {
+      restaurantId: restaurant._id,
+      restaurantName: restaurant.name,
+      restaurantIntentType: "direct-restaurant",
+    },
+    requestInItinerary: {
+      restaurantId: restaurant._id,
+      restaurantName: restaurant.name,
+      restaurantIntentType: "itinerary-add-on",
+    },
+  },
+  aiConcierge: {
+    groundingWarning:
+      "AI guidance is based on known restaurant fields and must not invent reservations, menu details, prices, or confirmations.",
+  },
+});
+
 const buildPlatformDemoRelatedHotels = (slug = "") =>
   platformDemoHotels.filter((hotel) => hotel.slug !== slug).slice(0, 3);
 
@@ -249,6 +338,10 @@ export const getPlatformPublicApiFallback = (url = "") => {
 
   if (path === "/hotels/public") {
     return { hotels: platformDemoHotels };
+  }
+
+  if (path === "/restaurants/public") {
+    return { restaurants: platformDemoRestaurants };
   }
 
   if (path.startsWith("/hotels/public/") && path.endsWith("/related")) {
@@ -262,6 +355,12 @@ export const getPlatformPublicApiFallback = (url = "") => {
     const slug = decodeURIComponent(path.replace("/hotels/public/", ""));
     const hotel = platformDemoHotels.find((item) => item.slug === slug);
     return hotel ? buildPlatformDemoHotelDetail(hotel) : undefined;
+  }
+
+  if (path.startsWith("/restaurants/public/")) {
+    const slug = decodeURIComponent(path.replace("/restaurants/public/", ""));
+    const restaurant = platformDemoRestaurants.find((item) => item.slug === slug);
+    return restaurant ? buildPlatformDemoRestaurantDetail(restaurant) : undefined;
   }
 
   if (path === "/hotels/analytics") {
@@ -966,6 +1065,18 @@ export const updateHotelInventory = (id, data) => API.patch(`/hotels/${id}/inven
 export const fetchHotelChannelSettings = (id) => cachedGet(`/hotels/${id}/channels`);
 export const updateHotelChannelSettings = (id, data) => API.patch(`/hotels/${id}/channels`, data);
 export const syncHotelChannelConnection = (id, data) => API.post(`/hotels/${id}/channels/sync`, data);
+
+// Restaurants
+export const fetchRestaurants = () => cachedGet("/restaurants");
+export const createRestaurant = (data) => API.post("/restaurants", data);
+export const updateRestaurant = (id, data) => API.patch(`/restaurants/${id}`, data);
+export const deleteRestaurant = (id) => API.delete(`/restaurants/${id}`);
+export const fetchPublicRestaurants = (params = {}) =>
+  cachedGet("/restaurants/public", { params });
+export const fetchPublicRestaurantBySlug = (slug) =>
+  cachedGet(`/restaurants/public/${encodeURIComponent(slug)}`);
+export const requestRestaurantConciergeRecommendations = (data) =>
+  API.post("/restaurants/public/concierge/recommendations", data);
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

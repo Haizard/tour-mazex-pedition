@@ -255,6 +255,41 @@ export const normalizePrimaryAccommodationRows = (rows = []) =>
     lastSupplierMessageSharedAt: toIso(row.source_payload?.lastSupplierMessageSharedAt),
   }));
 
+export const normalizePrimaryRestaurantRows = (rows = []) =>
+  rows.map((row = {}) => ({
+    ...(row.source_payload || {}),
+    _id: String(row.source_id || ""),
+    tenantId: String(row.tenant_id || ""),
+    partnerAccountId: row.partner_account_id ? String(row.partner_account_id) : "",
+    name: String(row.name || ""),
+    slug: String(row.slug || ""),
+    summary: String(row.summary || ""),
+    description: String(row.description || ""),
+    destination: String(row.destination || ""),
+    region: String(row.region || ""),
+    cuisineTypes: Array.isArray(row.cuisine_types) ? row.cuisine_types : [],
+    mealTypes: Array.isArray(row.meal_types) ? row.meal_types : [],
+    dietaryFits: Array.isArray(row.dietary_fits) ? row.dietary_fits : [],
+    ambianceTags: Array.isArray(row.ambiance_tags) ? row.ambiance_tags : [],
+    openingHoursSummary: String(row.opening_hours_summary || ""),
+    reservationStyleSummary: String(row.reservation_style_summary || ""),
+    photos: Array.isArray(row.photos) ? row.photos : [],
+    averageRating:
+      row.average_rating === null || typeof row.average_rating === "undefined"
+        ? null
+        : Number(row.average_rating),
+    reviewCount: Number(row.review_count || 0),
+    trustSummary: String(row.trust_summary || ""),
+    published: row.published === true,
+    marketplaceVisible: row.marketplace_visible === true,
+    sponsoredPlacement: row.sponsored_placement === true,
+    status: String(row.status || "draft"),
+    geo: {
+      latitude: row.latitude === null || typeof row.latitude === "undefined" ? null : Number(row.latitude),
+      longitude: row.longitude === null || typeof row.longitude === "undefined" ? null : Number(row.longitude),
+    },
+  }));
+
 export const normalizePrimaryAirportPickupRows = (rows = []) =>
   rows.map((row = {}) => ({
     _id: String(row.source_id || ""),

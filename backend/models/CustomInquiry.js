@@ -41,6 +41,17 @@ const customInquirySchema = new mongoose.Schema({
         enum: ['direct-hotel', 'itinerary-add-on', ''],
         default: '',
     },
+    restaurantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        default: null,
+    },
+    restaurantName: { type: String, trim: true, default: '' },
+    restaurantIntentType: {
+        type: String,
+        enum: ['direct-restaurant', 'itinerary-add-on', ''],
+        default: '',
+    },
     message: { type: String, required: true },
     sourceChannel: {
         type: String,

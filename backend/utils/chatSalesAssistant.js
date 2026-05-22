@@ -15,6 +15,12 @@ const tokenize = (value = "") =>
     .map((part) => part.trim())
     .filter(Boolean);
 
+const scoreTextMatch = (messageTokens, searchable = "") =>
+  messageTokens.reduce(
+    (score, token) => (String(searchable || "").includes(token) ? score + 1 : score),
+    0
+  );
+
 const scoreTourMatch = (messageTokens, tour = {}) => {
   const searchable = [
     tour.title,
@@ -27,13 +33,28 @@ const scoreTourMatch = (messageTokens, tour = {}) => {
     .join(" ")
     .toLowerCase();
 
-  return messageTokens.reduce(
-    (score, token) => (searchable.includes(token) ? score + 1 : score),
-    0
-  );
+  return scoreTextMatch(messageTokens, searchable);
 };
 
-export const buildSalesAssistantPayload = ({ message = "", tours = [] }) => {
+const scoreRestaurantMatch = (messageTokens, restaurant = {}) => {
+  const searchable = [
+    restaurant.name,
+    restaurant.destination,
+    ...(Array.isArray(restaurant.cuisineTypes) ? restaurant.cuisineTypes : []),
+    ...(Array.isArray(restaurant.mealTypes) ? restaurant.mealTypes : []),
+    ...(Array.isArray(restaurant.dietaryFits) ? restaurant.dietaryFits : []),
+    ...(Array.isArray(restaurant.ambianceTags) ? restaurant.ambianceTags : []),
+    restaurant.summary,
+    restaurant.description,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return scoreTextMatch(messageTokens, searchable);
+};
+
+export const buildSalesAssistantPayload = ({ message = "", tours = [], restaurants = [] }) => {
   const messageTokens = tokenize(message);
   const rankedTours = tours
     .map((tour) => ({
@@ -42,7 +63,40 @@ export const buildSalesAssistantPayload = ({ message = "", tours = [] }) => {
     }))
     .sort((left, right) => right.matchScore - left.matchScore);
 
+  const rankedRestaurants = restaurants
+    .map((restaurant) => ({
+      ...restaurant,
+      matchScore: scoreRestaurantMatch(messageTokens, restaurant),
+    }))
+    .sort((left, right) => right.matchScore - left.matchScore);
+
+  const bestRestaurant = rankedRestaurants[0];
   const bestMatch = rankedTours[0];
+
+  if (bestRestaurant && bestRestaurant.matchScore > (bestMatch?.matchScore || 0)) {
+    return {
+      summary: `${bestRestaurant.name} looks like the strongest dining fit based on your request.`,
+      intent: "recommend-restaurant",
+      salesStage: "qualified-intent",
+      recommendedNextStep: "view-restaurant",
+      qualificationQuestion:
+        "Is this for a direct dining stop or should we include it inside the wider itinerary?",
+      leadCapturePrompt:
+        "Open the restaurant page and send a dining inquiry or add it to your itinerary so the operator can confirm fit, timing, and availability.",
+      quickActions: [
+        {
+          label: "View Matching Restaurant",
+          kind: "restaurant",
+          href: `/discover/restaurants/${bestRestaurant.slug || ""}`,
+        },
+        {
+          label: "Design Your Trip",
+          kind: "planner",
+          href: "/plan-my-trip",
+        },
+      ],
+    };
+  }
 
   if (!bestMatch || bestMatch.matchScore === 0) {
     return {

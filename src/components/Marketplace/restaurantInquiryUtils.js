@@ -1,0 +1,38 @@
+export const createRestaurantDirectInquiryInitialState = ({ restaurant = {} } = {}) => ({
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  travelWhen: "",
+  adults: 2,
+  tripLengthDays: 1,
+  contactPreference: "whatsapp",
+  message: `I would like to ask about ${restaurant.name || "this restaurant"} for my trip.`,
+});
+
+export const buildRestaurantDirectInquirySubmission = ({
+  restaurant = {},
+  traveler = {},
+} = {}) => ({
+  firstName: String(traveler.firstName || "").trim(),
+  lastName: String(traveler.lastName || "").trim(),
+  email: String(traveler.email || "").trim(),
+  phone: String(traveler.phone || "").trim(),
+  destinations: [restaurant.destination || "Restaurant request"].filter(Boolean),
+  tripLengthDays: Number(traveler.tripLengthDays || 1),
+  adults: Number(traveler.adults || 2),
+  childrenUnder5: 0,
+  children6To15: 0,
+  travelWhen: String(traveler.travelWhen || "").trim(),
+  sleepingArrangement: "Not required",
+  accommodationPreferences: ["Dining only"],
+  contactPreference: traveler.contactPreference || "whatsapp",
+  sourceChannel: "global-marketplace",
+  campaignLabel: restaurant._id ? `restaurant_${restaurant._id}` : "",
+  operatorTenantId: restaurant.operator?.id || "",
+  operatorTenantSlug: restaurant.operator?.slug || "",
+  restaurantId: restaurant._id || "",
+  restaurantName: restaurant.name || "",
+  restaurantIntentType: "direct-restaurant",
+  message: String(traveler.message || "").trim(),
+});
