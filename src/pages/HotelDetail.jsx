@@ -4,6 +4,7 @@ import { FaArrowLeft, FaHotel, FaMapMarkerAlt } from "react-icons/fa";
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import HotelDirectInquiryForm from "../components/Marketplace/HotelDirectInquiryForm";
 import HotelAiConciergeCard from "../components/Marketplace/HotelAiConciergeCard";
+import HotelBookingWidget from "../components/Marketplace/HotelBookingWidget";
 import { fetchPublicHotelBySlug, fetchRelatedHotels } from "../services/api";
 import { getHotelTrustLabel } from "../components/Marketplace/hotelTrustUtils";
 import { buildHotelIntentOptions } from "./hotelDiscoveryUtils";
@@ -151,6 +152,10 @@ const HotelDetail = () => {
               )}
             </div>
           </aside>
+        </div>
+
+        <div className="mt-8">
+          <HotelBookingWidget hotel={hotel} />
         </div>
 
         {relatedHotels.length ? (

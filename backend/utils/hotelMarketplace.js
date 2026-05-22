@@ -64,6 +64,8 @@ export const shapeHotelDetail = (hotel = {}) => ({
   description: hotel.description || "",
   geo: hotel.geo || { latitude: null, longitude: null },
   partnerAccountId: hotel.partnerAccountId ? String(hotel.partnerAccountId) : "",
+  roomInventory: Array.isArray(hotel.roomInventory) ? hotel.roomInventory : [],
+  checkoutSettings: hotel.checkoutSettings || {},
   conversion: {
     sendInquiry: {
       hotelId: String(hotel._id || ""),

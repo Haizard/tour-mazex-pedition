@@ -27,6 +27,17 @@ test("api service exposes hotel partner inventory calls", async () => {
   assert.equal(source.includes('API.patch(`/hotel-partner/hotels/${hotelId}/inventory`, data'), true);
 });
 
+test("api service exposes hotel partner channel calls", async () => {
+  const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("fetchHotelPartnerHotelChannels"), true);
+  assert.equal(source.includes('cachedGet(`/hotel-partner/hotels/${hotelId}/channels`'), true);
+  assert.equal(source.includes("updateHotelPartnerHotelChannels"), true);
+  assert.equal(source.includes('API.patch(`/hotel-partner/hotels/${hotelId}/channels`, data'), true);
+  assert.equal(source.includes("syncHotelPartnerHotelChannel"), true);
+  assert.equal(source.includes('API.post(`/hotel-partner/hotels/${hotelId}/channels/sync`, data'), true);
+});
+
 test("api service exposes tenant-admin hotel partner profile review call", async () => {
   const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
 
@@ -70,4 +81,19 @@ test("api service exposes tenant-admin hotel inventory calls", async () => {
   assert.equal(source.includes('cachedGet(`/hotels/${id}/inventory`)'), true);
   assert.equal(source.includes("updateHotelInventory"), true);
   assert.equal(source.includes('API.patch(`/hotels/${id}/inventory`, data)'), true);
+});
+
+test("api service exposes public hotel checkout and tenant-admin channel calls", async () => {
+  const source = await readFile(new URL("./api.js", import.meta.url), "utf8");
+
+  assert.equal(source.includes("requestPublicHotelCheckoutQuote"), true);
+  assert.equal(source.includes('API.post(`/hotels/public/${encodeURIComponent(slug)}/checkout/quote`, data)'), true);
+  assert.equal(source.includes("createPublicHotelCheckoutReservation"), true);
+  assert.equal(source.includes('API.post(`/hotels/public/${encodeURIComponent(slug)}/checkout/reserve`, data)'), true);
+  assert.equal(source.includes("fetchHotelChannelSettings"), true);
+  assert.equal(source.includes('cachedGet(`/hotels/${id}/channels`)'), true);
+  assert.equal(source.includes("updateHotelChannelSettings"), true);
+  assert.equal(source.includes('API.patch(`/hotels/${id}/channels`, data)'), true);
+  assert.equal(source.includes("syncHotelChannelConnection"), true);
+  assert.equal(source.includes('API.post(`/hotels/${id}/channels/sync`, data)'), true);
 });

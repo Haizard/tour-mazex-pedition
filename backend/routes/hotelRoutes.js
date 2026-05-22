@@ -7,8 +7,16 @@ import CustomInquiry from "../models/CustomInquiry.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { hashAdminPassword } from "../utils/adminAuth.js";
+import {
+  buildHotelCheckoutQuote,
+  buildHotelReservationDraft,
+} from "../utils/hotelCheckout.js";
+import {
+  buildHotelChannelSyncResult,
+  normalizeHotelChannelConnections,
+} from "../utils/hotelChannels.js";
 import { buildHotelAnalyticsSnapshot } from "../utils/hotelAnalytics.js";
-import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
+import { buildTenantFilter, resolveTenantBaseUrl, withTenantId } from "../utils/tenantContext.js";
 import { buildHotelPartnerAdminAccountPayload } from "../utils/hotelPartnerAccess.js";
 import {
   normalizeHotelAvailabilityEntries,
@@ -27,6 +35,7 @@ import {
   shapeHotelDetail,
   shapeHotelDiscoveryCard,
 } from "../utils/hotelMarketplace.js";
+import { buildPublicPaymentCheckoutUrl } from "../utils/paymentAutomation.js";
 import { searchAssistantKnowledge } from "../utils/pgvectorRetrieval.js";
 import {
   buildHotelRecordView,
@@ -34,9 +43,17 @@ import {
   findHotelRecord,
 } from "../utils/postgresHotelRecords.js";
 import {
+  createPostgresFirstAccommodationReservation,
+  updatePostgresFirstAccommodationReservation,
+} from "../utils/postgresFirstAccommodationService.js";
+import {
   createPostgresFirstHotel,
   updatePostgresFirstHotel,
 } from "../utils/postgresFirstHotelService.js";
+import {
+  createPostgresFirstPayment,
+  updatePostgresFirstPayment,
+} from "../utils/postgresFirstPaymentService.js";
 import { deleteHotelListingVector } from "../utils/postgresHotelVectorService.js";
 import {
   deleteMongoDocumentFromShadowStore,
@@ -88,6 +105,19 @@ const normalizeHotelPayload = (req, body = {}) => {
     roomStyleSummary: body.roomStyleSummary || "",
     ...normalizeHotelInventoryPayload(body),
     availabilityCalendar: normalizeHotelAvailabilityEntries(body.availabilityCalendar || []),
+    checkoutSettings: {
+      currency: body.checkoutSettings?.currency || body.inventorySettings?.defaultCurrency || "USD",
+      taxPercent: toOptionalNumber(body.checkoutSettings?.taxPercent) ?? 0,
+      serviceFeePercent: toOptionalNumber(body.checkoutSettings?.serviceFeePercent) ?? 0,
+      cleaningFee: toOptionalNumber(body.checkoutSettings?.cleaningFee) ?? 0,
+      depositPercent: toOptionalNumber(body.checkoutSettings?.depositPercent) ?? 100,
+      allowPayNow: body.checkoutSettings?.allowPayNow !== false,
+      instantBookable: body.checkoutSettings?.instantBookable === true,
+      cancellationPolicy: body.checkoutSettings?.cancellationPolicy || "",
+      checkInTime: body.checkoutSettings?.checkInTime || "",
+      checkOutTime: body.checkoutSettings?.checkOutTime || "",
+    },
+    channelConnections: normalizeHotelChannelConnections(body.channelConnections || []),
     photos: Array.isArray(body.photos) ? body.photos : [],
     averageRating: body.averageRating === null || body.averageRating === "" ? null : Number(body.averageRating || 0),
     reviewCount: Number(body.reviewCount || 0),
@@ -313,6 +343,140 @@ router.get("/public/:slug/related", async (req, res) => {
     return res.status(500).json({
       message: "Failed to fetch related hotels.",
       error: error.message,
+    });
+  }
+});
+
+router.post("/public/:slug/checkout/quote", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne({
+      slug: req.params.slug,
+      published: true,
+      marketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found in marketplace." });
+    }
+
+    const quote = buildHotelCheckoutQuote(hotel, req.body || {});
+    return res.status(200).json({
+      hotel: shapeHotelDiscoveryCard(hotel),
+      quote,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: error.message || "Failed to build hotel checkout quote.",
+    });
+  }
+});
+
+router.post("/public/:slug/checkout/reserve", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne({
+      slug: req.params.slug,
+      published: true,
+      marketplaceVisible: true,
+    })
+      .populate("tenantId", "name slug")
+      .lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found in marketplace." });
+    }
+
+    const quote = buildHotelCheckoutQuote(hotel, req.body || {});
+    const hotelTenantId = hotel.tenantId?._id || hotel.tenantId;
+    const traveler = req.body?.traveler || {};
+    const travelerName = `${String(traveler.firstName || "").trim()} ${String(traveler.lastName || "").trim()}`.trim();
+    if (!travelerName || !String(traveler.email || "").trim()) {
+      return res.status(400).json({ message: "Traveler name and email are required to reserve this hotel stay." });
+    }
+
+    const reservationPayload = {
+      ...buildHotelReservationDraft({ hotel, quote, traveler }),
+      tenantId: hotelTenantId,
+      bookingGuestName: travelerName,
+      hotelName: hotel.name,
+      supplierName: hotel.tenantId?.name || "",
+      destination: hotel.destination || "",
+      reservationCode: `HOTEL-${Date.now().toString(36).toUpperCase()}`,
+      notes: String(req.body?.note || "").trim(),
+      status: "pending",
+      paymentStatus:
+        quote.pricing.depositDue > 0 && quote.paymentMode === "payment-checkout"
+          ? "pending"
+          : "not-started",
+    };
+
+    const reservation = await createPostgresFirstAccommodationReservation(reservationPayload, process.env);
+
+    let payment = null;
+    if (quote.pricing.depositDue > 0 && quote.paymentMode === "payment-checkout") {
+      const createdPayment = await createPostgresFirstPayment(
+        {
+          tenantId: hotelTenantId,
+          accommodationReservationId: reservation._id,
+          customerName: travelerName,
+          provider: String(req.body?.provider || "stripe").toLowerCase() === "pesapal" ? "pesapal" : "stripe",
+          amount: quote.pricing.depositDue,
+          currency: quote.currency,
+          feePercent: 0,
+          feeAmount: 0,
+          status: "pending",
+          checkoutKind: "hotel-stay",
+          notes: `Hotel stay deposit for ${hotel.name} (${quote.checkInDate} to ${quote.checkOutDate})`,
+        },
+        process.env
+      );
+
+      const checkoutUrl = buildPublicPaymentCheckoutUrl(
+        resolveTenantBaseUrl(req),
+        createdPayment.publicToken
+      );
+      payment = await updatePostgresFirstPayment(
+        createdPayment._id,
+        createdPayment.tenantId,
+        { checkoutUrl },
+        process.env
+      );
+    }
+
+    let updatedReservation = reservation;
+    if (payment) {
+      updatedReservation = await updatePostgresFirstAccommodationReservation(
+        reservation._id,
+        hotelTenantId,
+        {
+          paymentId: payment._id,
+          paymentStatus: "pending",
+          pricing: {
+            ...reservationPayload.pricing,
+            checkoutPaymentId: String(payment._id),
+          },
+        },
+        process.env
+      );
+    }
+
+    const paymentResponse = payment
+      ? {
+          ...(payment.toObject?.() || payment),
+        }
+      : null;
+
+    return res.status(201).json({
+      hotel: shapeHotelDiscoveryCard(hotel),
+      quote,
+      reservation: updatedReservation,
+      payment: paymentResponse,
+      confirmationMode: quote.availabilityMode,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: error.message || "Failed to reserve hotel stay.",
     });
   }
 });
@@ -555,6 +719,86 @@ router.patch("/:id/inventory", async (req, res) => {
     );
 
     return res.status(200).json(updatedHotel);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.get("/:id/channels", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    return res.status(200).json({
+      checkoutSettings: hotel.checkoutSettings || {},
+      channelConnections: hotel.channelConnections || [],
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+router.patch("/:id/channels", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    const updatedHotel = await updatePostgresFirstHotel(
+      req.params.id,
+      req.tenantId,
+      {
+        checkoutSettings: {
+          ...(hotel.checkoutSettings || {}),
+          ...(req.body.checkoutSettings || {}),
+        },
+        channelConnections: normalizeHotelChannelConnections(req.body.channelConnections || []),
+      },
+      process.env
+    );
+
+    return res.status(200).json(updatedHotel);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/:id/channels/sync", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne(buildTenantFilter(req, { _id: req.params.id })).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    const provider = String(req.body.provider || "").trim().toLowerCase();
+    const direction = String(req.body.direction || "pull").trim().toLowerCase();
+    const nextConnections = (hotel.channelConnections || []).map((connection) =>
+      connection.provider === provider
+        ? {
+            ...connection,
+            ...buildHotelChannelSyncResult({ hotel, provider, direction }),
+          }
+        : connection
+    );
+
+    const updatedHotel = await updatePostgresFirstHotel(
+      req.params.id,
+      req.tenantId,
+      {
+        channelConnections: nextConnections,
+      },
+      process.env
+    );
+
+    return res.status(200).json({
+      channelConnections: updatedHotel.channelConnections || [],
+    });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }

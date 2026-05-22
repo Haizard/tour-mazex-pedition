@@ -15,6 +15,11 @@ const paymentTransactionSchema = new mongoose.Schema(
       ref: "Booking",
       default: null,
     },
+    accommodationReservationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AccommodationReservation",
+      default: null,
+    },
     customerName: {
       type: String,
       trim: true,
@@ -53,6 +58,11 @@ const paymentTransactionSchema = new mongoose.Schema(
       default: () => crypto.randomBytes(16).toString("hex"),
     },
     checkoutUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    checkoutKind: {
       type: String,
       trim: true,
       default: "",

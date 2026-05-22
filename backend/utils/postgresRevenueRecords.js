@@ -806,6 +806,10 @@ export const buildPublicPaymentRevenueView = (row = {}) => {
     provider,
     publicToken: String(row.public_token || payload.publicToken || ""),
     providerReference: String(row.provider_reference || payload.providerReference || ""),
+    accommodationReservationId: payload.accommodationReservationId
+      ? String(payload.accommodationReservationId)
+      : null,
+    checkoutKind: String(payload.checkoutKind || ""),
     customerName: String(row.customer_name || payload.customerName || ""),
     status,
     currency,

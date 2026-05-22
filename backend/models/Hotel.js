@@ -48,6 +48,65 @@ const hotelInventorySettingsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const hotelCheckoutSettingsSchema = new mongoose.Schema(
+  {
+    currency: { type: String, trim: true, uppercase: true, default: "USD" },
+    taxPercent: { type: Number, min: 0, default: 0 },
+    serviceFeePercent: { type: Number, min: 0, default: 0 },
+    cleaningFee: { type: Number, min: 0, default: 0 },
+    depositPercent: { type: Number, min: 0, max: 100, default: 100 },
+    allowPayNow: { type: Boolean, default: true },
+    instantBookable: { type: Boolean, default: false },
+    cancellationPolicy: { type: String, trim: true, default: "" },
+    checkInTime: { type: String, trim: true, default: "" },
+    checkOutTime: { type: String, trim: true, default: "" },
+  },
+  { _id: false }
+);
+
+const hotelChannelConnectionSchema = new mongoose.Schema(
+  {
+    provider: {
+      type: String,
+      enum: ["manual", "siteminder", "cloudbeds", "little-hotelier", "booking-com"],
+      default: "manual",
+    },
+    status: {
+      type: String,
+      enum: ["draft", "connected", "paused", "error"],
+      default: "draft",
+    },
+    externalHotelId: { type: String, trim: true, default: "" },
+    syncMode: {
+      type: String,
+      enum: ["pull", "push", "bidirectional"],
+      default: "pull",
+    },
+    syncInventory: { type: Boolean, default: true },
+    syncRates: { type: Boolean, default: true },
+    syncRestrictions: { type: Boolean, default: false },
+    credentialSummary: { type: String, trim: true, default: "" },
+    note: { type: String, trim: true, default: "" },
+    lastSyncAt: { type: Date, default: null },
+    lastSyncStatus: {
+      type: String,
+      enum: ["idle", "success", "warning", "failed"],
+      default: "idle",
+    },
+    lastSyncMessage: { type: String, trim: true, default: "" },
+    lastSyncDirection: {
+      type: String,
+      enum: ["pull", "push", "bidirectional", ""],
+      default: "",
+    },
+    lastSyncSnapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({}),
+    },
+  },
+  { _id: false }
+);
+
 const hotelSchema = new mongoose.Schema(
   {
     tenantId: {
@@ -86,6 +145,22 @@ const hotelSchema = new mongoose.Schema(
         checkInCutoffDays: 0,
       }),
     },
+    checkoutSettings: {
+      type: hotelCheckoutSettingsSchema,
+      default: () => ({
+        currency: "USD",
+        taxPercent: 0,
+        serviceFeePercent: 0,
+        cleaningFee: 0,
+        depositPercent: 100,
+        allowPayNow: true,
+        instantBookable: false,
+        cancellationPolicy: "",
+        checkInTime: "",
+        checkOutTime: "",
+      }),
+    },
+    channelConnections: { type: [hotelChannelConnectionSchema], default: [] },
     photos: { type: [String], default: [] },
     averageRating: { type: Number, min: 0, max: 5, default: null },
     reviewCount: { type: Number, min: 0, default: 0 },

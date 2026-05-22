@@ -55,3 +55,14 @@ test("hotel partner portal routes expose hotel inventory editing endpoints", asy
   assert.equal(source.includes("normalizeHotelInventoryPayload"), true);
   assert.equal(source.includes("normalizeHotelAvailabilityEntries"), true);
 });
+
+test("hotel partner portal routes expose channel settings and sync endpoints", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelPartnerPortalRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/hotels/:id/channels"'), true);
+  assert.equal(source.includes('router.patch("/hotels/:id/channels"'), true);
+  assert.equal(source.includes('router.post("/hotels/:id/channels/sync"'), true);
+  assert.equal(source.includes("buildHotelChannelSyncResult"), true);
+});

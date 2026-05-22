@@ -35,6 +35,16 @@ const accommodationReservationSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    travelerEmail: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    travelerPhone: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     supplierName: {
       type: String,
       trim: true,
@@ -60,6 +70,16 @@ const accommodationReservationSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    roomTypeCode: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    units: {
+      type: Number,
+      min: 1,
+      default: 1,
+    },
     checkInDate: {
       type: Date,
       default: null,
@@ -77,6 +97,30 @@ const accommodationReservationSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "confirmed", "cancelled"],
       default: "pending",
+    },
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PaymentTransaction",
+      default: null,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["not-started", "pending", "paid", "failed", "cancelled", "refunded"],
+      default: "not-started",
+    },
+    sourceChannel: {
+      type: String,
+      trim: true,
+      default: "manual",
+    },
+    hotelIntentType: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    pricing: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({}),
     },
     lastSupplierMessageSharedAt: {
       type: Date,

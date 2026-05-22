@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 
 import {
   buildPartnerAccommodationResponsePayload,
+  buildPartnerChannelPayload,
   buildPartnerInventoryPayload,
   buildPartnerHotelUpdatePayload,
+  createEmptyPartnerChannelDraft,
   createEmptyPartnerHotelDraft,
   createEmptyPartnerInventoryDraft,
   createEmptyPartnerRequestDraft,
@@ -145,4 +147,33 @@ test("filterPartnerInventoryEntries searches room and note fields", () => {
 
   assert.equal(rows.length, 1);
   assert.equal(rows[0].roomTypeCode, "deluxe");
+});
+
+test("createEmptyPartnerChannelDraft starts with checkout defaults", () => {
+  const draft = createEmptyPartnerChannelDraft();
+
+  assert.equal(draft.checkoutSettings.currency, "USD");
+  assert.equal(Array.isArray(draft.channelConnections), true);
+});
+
+test("buildPartnerChannelPayload normalizes checkout and channel fields", () => {
+  const payload = buildPartnerChannelPayload({
+    checkoutSettings: {
+      currency: "usd",
+      taxPercent: "18",
+      allowPayNow: true,
+    },
+    channelConnections: [
+      {
+        provider: "Cloudbeds",
+        status: "Connected",
+        syncMode: "Push",
+      },
+    ],
+  });
+
+  assert.equal(payload.checkoutSettings.currency, "USD");
+  assert.equal(payload.checkoutSettings.taxPercent, 18);
+  assert.equal(payload.channelConnections[0].provider, "cloudbeds");
+  assert.equal(payload.channelConnections[0].syncMode, "push");
 });

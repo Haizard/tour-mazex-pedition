@@ -106,6 +106,19 @@ const platformDemoHotels = [
     photos: ["https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1400&q=80"],
     averageRating: 4.7,
     reviewCount: 18,
+    roomInventory: [
+      { roomTypeCode: "garden-deluxe", label: "Garden Deluxe", capacity: 2, totalUnits: 6, baseNightlyRate: 180, currency: "USD" },
+    ],
+    checkoutSettings: {
+      currency: "USD",
+      taxPercent: 10,
+      serviceFeePercent: 5,
+      cleaningFee: 15,
+      depositPercent: 50,
+      allowPayNow: true,
+      instantBookable: false,
+      cancellationPolicy: "Flexible before arrival confirmation.",
+    },
     sponsoredPlacement: true,
     published: true,
     marketplaceVisible: true,
@@ -135,6 +148,19 @@ const platformDemoHotels = [
     photos: ["https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1400&q=80"],
     averageRating: 4.9,
     reviewCount: 26,
+    roomInventory: [
+      { roomTypeCode: "migration-suite", label: "Migration Suite", capacity: 2, totalUnits: 4, baseNightlyRate: 340, currency: "USD" },
+    ],
+    checkoutSettings: {
+      currency: "USD",
+      taxPercent: 10,
+      serviceFeePercent: 5,
+      cleaningFee: 20,
+      depositPercent: 40,
+      allowPayNow: true,
+      instantBookable: false,
+      cancellationPolicy: "Operator confirms migration-season logistics before final stay confirmation.",
+    },
     sponsoredPlacement: false,
     published: true,
     marketplaceVisible: true,
@@ -164,6 +190,19 @@ const platformDemoHotels = [
     photos: ["https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1400&q=80"],
     averageRating: 4.6,
     reviewCount: 14,
+    roomInventory: [
+      { roomTypeCode: "sea-view", label: "Sea View Room", capacity: 2, totalUnits: 8, baseNightlyRate: 240, currency: "USD" },
+    ],
+    checkoutSettings: {
+      currency: "USD",
+      taxPercent: 10,
+      serviceFeePercent: 5,
+      cleaningFee: 10,
+      depositPercent: 50,
+      allowPayNow: true,
+      instantBookable: true,
+      cancellationPolicy: "Standard boutique cancellation policy applies.",
+    },
     sponsoredPlacement: false,
     published: true,
     marketplaceVisible: true,
@@ -565,6 +604,18 @@ export const updateHotelPartnerHotelInventory = (hotelId, data) =>
   API.patch(`/hotel-partner/hotels/${hotelId}/inventory`, data, {
     headers: getHotelPartnerHeaders(),
   });
+export const fetchHotelPartnerHotelChannels = (hotelId) =>
+  cachedGet(`/hotel-partner/hotels/${hotelId}/channels`, {
+    headers: getHotelPartnerHeaders(),
+  });
+export const updateHotelPartnerHotelChannels = (hotelId, data) =>
+  API.patch(`/hotel-partner/hotels/${hotelId}/channels`, data, {
+    headers: getHotelPartnerHeaders(),
+  });
+export const syncHotelPartnerHotelChannel = (hotelId, data) =>
+  API.post(`/hotel-partner/hotels/${hotelId}/channels/sync`, data, {
+    headers: getHotelPartnerHeaders(),
+  });
 export const fetchHotelPartnerAccommodationRequests = (params = {}) =>
   cachedGet("/hotel-partner/accommodation-requests", {
     params,
@@ -901,6 +952,10 @@ export const requestHotelConciergeRecommendations = (data) =>
   API.post("/hotels/public/concierge/recommendations", data);
 export const fetchRelatedHotels = (slug) =>
   cachedGet(`/hotels/public/${encodeURIComponent(slug)}/related`);
+export const requestPublicHotelCheckoutQuote = (slug, data) =>
+  API.post(`/hotels/public/${encodeURIComponent(slug)}/checkout/quote`, data);
+export const createPublicHotelCheckoutReservation = (slug, data) =>
+  API.post(`/hotels/public/${encodeURIComponent(slug)}/checkout/reserve`, data);
 export const fetchHotelAnalytics = () => cachedGet("/hotels/analytics");
 export const fetchHotelClaimRequests = (params = {}) =>
   cachedGet("/hotels/claims", { params });
@@ -908,6 +963,9 @@ export const reviewHotelClaimRequest = (id, data) =>
   API.post(`/hotels/claims/${id}/review`, data);
 export const fetchHotelInventory = (id) => cachedGet(`/hotels/${id}/inventory`);
 export const updateHotelInventory = (id, data) => API.patch(`/hotels/${id}/inventory`, data);
+export const fetchHotelChannelSettings = (id) => cachedGet(`/hotels/${id}/channels`);
+export const updateHotelChannelSettings = (id, data) => API.patch(`/hotels/${id}/channels`, data);
+export const syncHotelChannelConnection = (id, data) => API.post(`/hotels/${id}/channels/sync`, data);
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

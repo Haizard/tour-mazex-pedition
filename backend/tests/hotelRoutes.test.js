@@ -91,3 +91,26 @@ test("hotel routes expose tenant-admin hotel inventory endpoints", async () => {
   assert.equal(source.includes("normalizeHotelInventoryPayload"), true);
   assert.equal(source.includes("normalizeHotelAvailabilityEntries"), true);
 });
+
+test("hotel routes expose public checkout quote and reservation endpoints", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.post("/public/:slug/checkout/quote"'), true);
+  assert.equal(source.includes('router.post("/public/:slug/checkout/reserve"'), true);
+  assert.equal(source.includes("buildHotelCheckoutQuote"), true);
+  assert.equal(source.includes("createPostgresFirstAccommodationReservation"), true);
+  assert.equal(source.includes("createPostgresFirstPayment"), true);
+});
+
+test("hotel routes expose tenant-admin channel settings and sync endpoints", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/hotelRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/:id/channels"'), true);
+  assert.equal(source.includes('router.patch("/:id/channels"'), true);
+  assert.equal(source.includes('router.post("/:id/channels/sync"'), true);
+  assert.equal(source.includes("normalizeHotelChannelConnections"), true);
+});

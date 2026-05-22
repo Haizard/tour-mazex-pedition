@@ -22,6 +22,22 @@ export const createEmptyPartnerInventoryDraft = () => ({
   },
 });
 
+export const createEmptyPartnerChannelDraft = () => ({
+  checkoutSettings: {
+    currency: "USD",
+    taxPercent: 0,
+    serviceFeePercent: 0,
+    cleaningFee: 0,
+    depositPercent: 100,
+    allowPayNow: true,
+    instantBookable: false,
+    cancellationPolicy: "",
+    checkInTime: "",
+    checkOutTime: "",
+  },
+  channelConnections: [],
+});
+
 export const createEmptyPartnerRequestDraft = () => ({
   status: "confirmed",
   reservationCode: "",
@@ -123,6 +139,46 @@ export const buildPartnerAccommodationResponsePayload = (draft = {}) => ({
     : "confirmed",
   reservationCode: String(draft.reservationCode || "").trim(),
   notes: String(draft.notes || "").trim(),
+});
+
+export const buildPartnerChannelPayload = (draft = {}) => ({
+  checkoutSettings: {
+    currency: String(draft.checkoutSettings?.currency || "USD").trim().toUpperCase() || "USD",
+    taxPercent: Number(toOptionalNumber(draft.checkoutSettings?.taxPercent) || 0),
+    serviceFeePercent: Number(toOptionalNumber(draft.checkoutSettings?.serviceFeePercent) || 0),
+    cleaningFee: Number(toOptionalNumber(draft.checkoutSettings?.cleaningFee) || 0),
+    depositPercent: Number(toOptionalNumber(draft.checkoutSettings?.depositPercent) || 100),
+    allowPayNow: draft.checkoutSettings?.allowPayNow !== false,
+    instantBookable: draft.checkoutSettings?.instantBookable === true,
+    cancellationPolicy: String(draft.checkoutSettings?.cancellationPolicy || "").trim(),
+    checkInTime: String(draft.checkoutSettings?.checkInTime || "").trim(),
+    checkOutTime: String(draft.checkoutSettings?.checkOutTime || "").trim(),
+  },
+  channelConnections: (Array.isArray(draft.channelConnections) ? draft.channelConnections : [])
+    .map((connection = {}) => {
+      const provider = String(connection.provider || "").trim().toLowerCase();
+      if (!provider) {
+        return null;
+      }
+
+      return {
+        provider,
+        status: String(connection.status || "draft").trim().toLowerCase() || "draft",
+        externalHotelId: String(connection.externalHotelId || "").trim(),
+        syncMode: String(connection.syncMode || "pull").trim().toLowerCase() || "pull",
+        syncInventory: connection.syncInventory !== false,
+        syncRates: connection.syncRates !== false,
+        syncRestrictions: connection.syncRestrictions === true,
+        credentialSummary: String(connection.credentialSummary || "").trim(),
+        note: String(connection.note || "").trim(),
+        lastSyncAt: connection.lastSyncAt || null,
+        lastSyncStatus: String(connection.lastSyncStatus || "idle").trim().toLowerCase(),
+        lastSyncMessage: String(connection.lastSyncMessage || "").trim(),
+        lastSyncDirection: String(connection.lastSyncDirection || "").trim().toLowerCase(),
+        lastSyncSnapshot: connection.lastSyncSnapshot || {},
+      };
+    })
+    .filter(Boolean),
 });
 
 export const filterPartnerHotels = (hotels = [], search = "") => {

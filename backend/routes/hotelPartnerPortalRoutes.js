@@ -9,6 +9,10 @@ import {
   canHotelPartnerManageHotel,
 } from "../utils/hotelPartnerAccess.js";
 import {
+  buildHotelChannelSyncResult,
+  normalizeHotelChannelConnections,
+} from "../utils/hotelChannels.js";
+import {
   normalizeHotelAvailabilityEntries,
   normalizeHotelInventoryPayload,
 } from "../utils/hotelInventory.js";
@@ -109,6 +113,96 @@ router.patch("/hotels/:id/inventory", async (req, res) => {
     );
 
     return res.status(200).json(updatedHotel);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.get("/hotels/:id/channels", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne({ _id: req.params.id, tenantId: req.tenantId }).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    if (!canHotelPartnerManageHotel(req.hotelPartnerAdmin, hotel)) {
+      return res.status(403).json({ message: "This hotel is not assigned to your partner account." });
+    }
+
+    return res.status(200).json({
+      checkoutSettings: hotel.checkoutSettings || {},
+      channelConnections: hotel.channelConnections || [],
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+router.patch("/hotels/:id/channels", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne({ _id: req.params.id, tenantId: req.tenantId }).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    if (!canHotelPartnerManageHotel(req.hotelPartnerAdmin, hotel)) {
+      return res.status(403).json({ message: "This hotel is not assigned to your partner account." });
+    }
+
+    const updatedHotel = await updatePostgresFirstHotel(
+      req.params.id,
+      req.tenantId,
+      {
+        checkoutSettings: {
+          ...(hotel.checkoutSettings || {}),
+          ...(req.body.checkoutSettings || {}),
+        },
+        channelConnections: normalizeHotelChannelConnections(req.body.channelConnections || []),
+      }
+    );
+
+    return res.status(200).json(updatedHotel);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/hotels/:id/channels/sync", async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne({ _id: req.params.id, tenantId: req.tenantId }).lean();
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found." });
+    }
+
+    if (!canHotelPartnerManageHotel(req.hotelPartnerAdmin, hotel)) {
+      return res.status(403).json({ message: "This hotel is not assigned to your partner account." });
+    }
+
+    const provider = String(req.body.provider || "").trim().toLowerCase();
+    const direction = String(req.body.direction || "pull").trim().toLowerCase();
+    const nextConnections = (hotel.channelConnections || []).map((connection) =>
+      connection.provider === provider
+        ? {
+            ...connection,
+            ...buildHotelChannelSyncResult({ hotel, provider, direction }),
+          }
+        : connection
+    );
+
+    const updatedHotel = await updatePostgresFirstHotel(
+      req.params.id,
+      req.tenantId,
+      {
+        channelConnections: nextConnections,
+      }
+    );
+
+    return res.status(200).json({
+      channelConnections: updatedHotel.channelConnections || [],
+    });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }

@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  fetchHotelPartnerHotelChannels,
   fetchHotelPartnerAccommodationRequests,
   fetchHotelPartnerHotelInventory,
   fetchHotelPartnerHotels,
+  syncHotelPartnerHotelChannel,
   updateHotelPartnerAccommodationRequest,
   updateHotelPartnerHotel,
+  updateHotelPartnerHotelChannels,
   updateHotelPartnerHotelInventory,
 } from "../services/api";
 import {
   buildPartnerAccommodationResponsePayload,
+  buildPartnerChannelPayload,
   buildPartnerInventoryPayload,
   buildPartnerHotelUpdatePayload,
+  createEmptyPartnerChannelDraft,
   createEmptyPartnerHotelDraft,
   createEmptyPartnerInventoryDraft,
   createEmptyPartnerRequestDraft,
@@ -38,6 +43,7 @@ const HotelPartnerDashboard = () => {
   const [draft, setDraft] = useState(createEmptyPartnerHotelDraft());
   const [requests, setRequests] = useState([]);
   const [inventoryDraft, setInventoryDraft] = useState(createEmptyPartnerInventoryDraft());
+  const [channelDraft, setChannelDraft] = useState(createEmptyPartnerChannelDraft());
   const [inventoryFilters, setInventoryFilters] = useState({ search: "", status: "" });
   const [requestDrafts, setRequestDrafts] = useState({});
   const [requestFilters, setRequestFilters] = useState({ search: "", status: "" });
@@ -107,6 +113,26 @@ const HotelPartnerDashboard = () => {
     []
   );
 
+  const loadChannels = useCallback(
+    async (hotelId) => {
+      if (!hotelId) {
+        setChannelDraft(createEmptyPartnerChannelDraft());
+        return;
+      }
+
+      const response = await fetchHotelPartnerHotelChannels(hotelId);
+      setChannelDraft({
+        ...createEmptyPartnerChannelDraft(),
+        checkoutSettings: {
+          ...createEmptyPartnerChannelDraft().checkoutSettings,
+          ...(response.data?.checkoutSettings || {}),
+        },
+        channelConnections: response.data?.channelConnections || [],
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     Promise.all([loadHotels(), loadRequests()]).catch((error) => {
       setStatus(error.response?.data?.message || "Could not load assigned hotels.");
@@ -120,6 +146,9 @@ const HotelPartnerDashboard = () => {
     loadInventory(hotel._id).catch((error) => {
       setStatus(error.response?.data?.message || "Could not load hotel inventory.");
     });
+    loadChannels(hotel._id).catch((error) => {
+      setStatus(error.response?.data?.message || "Could not load hotel channel settings.");
+    });
   };
 
   useEffect(() => {
@@ -127,8 +156,11 @@ const HotelPartnerDashboard = () => {
       loadInventory(activeHotelId).catch((error) => {
         setStatus(error.response?.data?.message || "Could not load hotel inventory.");
       });
+      loadChannels(activeHotelId).catch((error) => {
+        setStatus(error.response?.data?.message || "Could not load hotel channel settings.");
+      });
     }
-  }, [activeHotelId, loadInventory]);
+  }, [activeHotelId, loadChannels, loadInventory]);
 
   const saveHotel = async (event) => {
     event.preventDefault();
@@ -152,6 +184,29 @@ const HotelPartnerDashboard = () => {
     await updateHotelPartnerHotelInventory(activeHotelId, buildPartnerInventoryPayload(inventoryDraft));
     await loadInventory(activeHotelId);
     setStatus("Inventory saved.");
+  };
+
+  const saveChannels = async (event) => {
+    event.preventDefault();
+    if (!activeHotelId) {
+      return;
+    }
+
+    setStatus("Saving channel settings...");
+    await updateHotelPartnerHotelChannels(activeHotelId, buildPartnerChannelPayload(channelDraft));
+    await loadChannels(activeHotelId);
+    setStatus("Channel settings saved.");
+  };
+
+  const triggerChannelSync = async (provider) => {
+    if (!activeHotelId || !provider) {
+      return;
+    }
+
+    setStatus(`Running ${provider} sync...`);
+    await syncHotelPartnerHotelChannel(activeHotelId, { provider, direction: "pull" });
+    await loadChannels(activeHotelId);
+    setStatus(`${provider} sync completed.`);
   };
 
   const updateRequestDraft = (requestId, key, value) => {
@@ -403,6 +458,264 @@ const HotelPartnerDashboard = () => {
               </p>
             ) : null}
           </div>
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+              OTA checkout and channels
+            </p>
+            <h2 className="mt-2 text-2xl font-black">Pricing checkout and channel connections</h2>
+            <p className="mt-2 text-sm font-semibold text-slate-500">
+              Control deposit checkout behavior and keep channel sync settings visible beside inventory.
+            </p>
+          </div>
+
+          <form onSubmit={saveChannels} className="mt-6 space-y-6">
+            <div className="grid gap-3 md:grid-cols-3">
+              {["currency", "taxPercent", "serviceFeePercent", "cleaningFee", "depositPercent", "checkInTime", "checkOutTime"].map((field) => (
+                <input
+                  key={field}
+                  value={channelDraft.checkoutSettings[field] ?? ""}
+                  onChange={(event) =>
+                    setChannelDraft((current) => ({
+                      ...current,
+                      checkoutSettings: {
+                        ...current.checkoutSettings,
+                        [field]: event.target.value,
+                      },
+                    }))
+                  }
+                  placeholder={field}
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold"
+                />
+              ))}
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold">
+                <input
+                  type="checkbox"
+                  checked={channelDraft.checkoutSettings.allowPayNow === true}
+                  onChange={(event) =>
+                    setChannelDraft((current) => ({
+                      ...current,
+                      checkoutSettings: {
+                        ...current.checkoutSettings,
+                        allowPayNow: event.target.checked,
+                      },
+                    }))
+                  }
+                />
+                Allow public pay-now checkout
+              </label>
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold">
+                <input
+                  type="checkbox"
+                  checked={channelDraft.checkoutSettings.instantBookable === true}
+                  onChange={(event) =>
+                    setChannelDraft((current) => ({
+                      ...current,
+                      checkoutSettings: {
+                        ...current.checkoutSettings,
+                        instantBookable: event.target.checked,
+                      },
+                    }))
+                  }
+                />
+                Mark hotel as instant-bookable
+              </label>
+            </div>
+
+            <textarea
+              value={channelDraft.checkoutSettings.cancellationPolicy || ""}
+              onChange={(event) =>
+                setChannelDraft((current) => ({
+                  ...current,
+                  checkoutSettings: {
+                    ...current.checkoutSettings,
+                    cancellationPolicy: event.target.value,
+                  },
+                }))
+              }
+              placeholder="Cancellation policy"
+              className="min-h-[96px] w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold"
+            />
+
+            <div className="rounded-xl border border-slate-200 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg font-black">Channel connections</h3>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setChannelDraft((current) => ({
+                      ...current,
+                      channelConnections: [
+                        ...current.channelConnections,
+                        {
+                          provider: "manual",
+                          status: "draft",
+                          externalHotelId: "",
+                          syncMode: "pull",
+                          syncInventory: true,
+                          syncRates: true,
+                          syncRestrictions: false,
+                          credentialSummary: "",
+                          note: "",
+                          lastSyncAt: null,
+                          lastSyncStatus: "idle",
+                          lastSyncMessage: "",
+                          lastSyncDirection: "",
+                          lastSyncSnapshot: {},
+                        },
+                      ],
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black uppercase tracking-widest"
+                >
+                  Add connection
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {(channelDraft.channelConnections || []).map((connection, index) => (
+                  <div key={`${connection.provider}-${index}`} className="rounded-xl border border-slate-200 p-4">
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <select
+                        value={connection.provider || "manual"}
+                        onChange={(event) =>
+                          setChannelDraft((current) => {
+                            const nextConnections = [...current.channelConnections];
+                            nextConnections[index] = {
+                              ...nextConnections[index],
+                              provider: event.target.value,
+                            };
+                            return { ...current, channelConnections: nextConnections };
+                          })
+                        }
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold"
+                      >
+                        <option value="manual">Manual</option>
+                        <option value="siteminder">SiteMinder</option>
+                        <option value="cloudbeds">Cloudbeds</option>
+                        <option value="little-hotelier">Little Hotelier</option>
+                        <option value="booking-com">Booking.com</option>
+                      </select>
+                      <input
+                        value={connection.externalHotelId || ""}
+                        onChange={(event) =>
+                          setChannelDraft((current) => {
+                            const nextConnections = [...current.channelConnections];
+                            nextConnections[index] = {
+                              ...nextConnections[index],
+                              externalHotelId: event.target.value,
+                            };
+                            return { ...current, channelConnections: nextConnections };
+                          })
+                        }
+                        placeholder="External hotel id"
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                      />
+                      <select
+                        value={connection.syncMode || "pull"}
+                        onChange={(event) =>
+                          setChannelDraft((current) => {
+                            const nextConnections = [...current.channelConnections];
+                            nextConnections[index] = {
+                              ...nextConnections[index],
+                              syncMode: event.target.value,
+                            };
+                            return { ...current, channelConnections: nextConnections };
+                          })
+                        }
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold"
+                      >
+                        <option value="pull">Pull</option>
+                        <option value="push">Push</option>
+                        <option value="bidirectional">Bidirectional</option>
+                      </select>
+                      <select
+                        value={connection.status || "draft"}
+                        onChange={(event) =>
+                          setChannelDraft((current) => {
+                            const nextConnections = [...current.channelConnections];
+                            nextConnections[index] = {
+                              ...nextConnections[index],
+                              status: event.target.value,
+                            };
+                            return { ...current, channelConnections: nextConnections };
+                          })
+                        }
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="connected">Connected</option>
+                        <option value="paused">Paused</option>
+                        <option value="error">Error</option>
+                      </select>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <input
+                        value={connection.credentialSummary || ""}
+                        onChange={(event) =>
+                          setChannelDraft((current) => {
+                            const nextConnections = [...current.channelConnections];
+                            nextConnections[index] = {
+                              ...nextConnections[index],
+                              credentialSummary: event.target.value,
+                            };
+                            return { ...current, channelConnections: nextConnections };
+                          })
+                        }
+                        placeholder="Credential summary"
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                      />
+                      <input
+                        value={connection.note || ""}
+                        onChange={(event) =>
+                          setChannelDraft((current) => {
+                            const nextConnections = [...current.channelConnections];
+                            nextConnections[index] = {
+                              ...nextConnections[index],
+                              note: event.target.value,
+                            };
+                            return { ...current, channelConnections: nextConnections };
+                          })
+                        }
+                        placeholder="Connection note"
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold"
+                      />
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-bold text-slate-500">
+                      <span>Last sync: {connection.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString() : "Never"}</span>
+                      <span>Status: {connection.lastSyncStatus || "idle"}</span>
+                      {connection.lastSyncMessage ? <span>{connection.lastSyncMessage}</span> : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => triggerChannelSync(connection.provider)}
+                      className="mt-3 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black uppercase tracking-widest"
+                    >
+                      Run sync
+                    </button>
+                  </div>
+                ))}
+                {!channelDraft.channelConnections?.length ? (
+                  <p className="text-sm font-semibold text-slate-500">No channel connections yet.</p>
+                ) : null}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!activeHotelId}
+              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-black uppercase tracking-widest text-white disabled:opacity-50"
+            >
+              Save checkout and channels
+            </button>
+          </form>
         </section>
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
