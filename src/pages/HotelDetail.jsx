@@ -5,11 +5,13 @@ import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import HotelAiConciergeCard from "../components/Marketplace/HotelAiConciergeCard";
 import { fetchPublicHotelBySlug } from "../services/api";
 import { getHotelTrustLabel } from "../components/Marketplace/hotelTrustUtils";
+import { buildHotelIntentOptions } from "./hotelDiscoveryUtils";
 
 const HotelDetail = () => {
   const { slug } = useParams();
   const [hotel, setHotel] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedIntentId, setSelectedIntentId] = useState("direct");
 
   useEffect(() => {
     const loadHotel = async () => {
@@ -28,10 +30,15 @@ const HotelDetail = () => {
     if (slug) loadHotel();
   }, [slug]);
 
+  const intentOptions = useMemo(() => buildHotelIntentOptions(hotel || {}), [hotel]);
+  const selectedIntent = useMemo(
+    () => intentOptions.find((option) => option.id === selectedIntentId) || intentOptions[0],
+    [intentOptions, selectedIntentId]
+  );
   const defaultMessage = useMemo(() => {
-    if (!hotel) return "";
-    return `I'm interested in ${hotel.name} in ${hotel.destination || "your destination"}. Please advise on fit, availability guidance, and whether this can be included in a wider itinerary.`;
-  }, [hotel]);
+    if (!hotel || !selectedIntent) return "";
+    return selectedIntent.payload.message;
+  }, [hotel, selectedIntent]);
 
   if (loading) {
     return <div className="min-h-screen bg-[#f6f1e8] pt-40 text-center font-bold text-slate-500">Loading hotel...</div>;
@@ -78,24 +85,42 @@ const HotelDetail = () => {
           <aside className="rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
             <div className="bg-[#234232] p-6 text-white">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d9c79f]">Hotel Inquiry</p>
-              <h2 className="mt-2 text-2xl font-black uppercase tracking-tight">Request this hotel</h2>
+              <h2 className="mt-2 text-2xl font-black uppercase tracking-tight">
+                {selectedIntent?.label || "Request this hotel"}
+              </h2>
               <p className="mt-3 text-sm font-medium leading-6 text-white/75">
-                Ask directly about this hotel or request it inside a wider itinerary.
+                {selectedIntent?.description || "Ask directly about this hotel or request it inside a wider itinerary."}
               </p>
+              <div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-white/10 p-1">
+                {intentOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setSelectedIntentId(option.id)}
+                    className={`rounded-xl px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition ${
+                      selectedIntentId === option.id
+                        ? "bg-white text-[#234232]"
+                        : "text-white/75 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {option.id === "direct" ? "Direct" : "Itinerary"}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="p-1">
               <PlanMyTripWizard
                 compact
                 showIntro={false}
-                sourceChannel="global-marketplace"
-                campaignLabel={`hotel_${hotel._id}`}
-                defaultDestinations={hotel.destination ? [hotel.destination] : [hotel.name]}
+                sourceChannel={selectedIntent.payload.sourceChannel}
+                campaignLabel={selectedIntent.payload.campaignLabel}
+                defaultDestinations={selectedIntent.payload.destinations}
                 defaultMessage={defaultMessage}
-                operatorTenantId={hotel.operator?.id || ""}
-                operatorTenantSlug={hotel.operator?.slug || ""}
-                hotelId={hotel._id}
-                hotelName={hotel.name}
-                hotelIntentType="itinerary-add-on"
+                operatorTenantId={selectedIntent.payload.operatorTenantId}
+                operatorTenantSlug={selectedIntent.payload.operatorTenantSlug}
+                hotelId={selectedIntent.payload.hotelId}
+                hotelName={selectedIntent.payload.hotelName}
+                hotelIntentType={selectedIntent.payload.hotelIntentType}
               />
             </div>
           </aside>

@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import {
   buildHotelInquiryPayload,
+  buildHotelIntentOptions,
   countActiveHotelFilters,
   filterHotelCards,
 } from "./hotelDiscoveryUtils.js";
@@ -45,4 +47,28 @@ test("buildHotelInquiryPayload preserves hotel context and intent", () => {
   assert.equal(payload.operatorTenantId, "tenant-1");
   assert.equal(payload.sourceChannel, "global-marketplace");
   assert.equal(payload.campaignLabel, "hotel_hotel-1");
+});
+
+test("buildHotelIntentOptions exposes direct and itinerary conversion paths", () => {
+  const options = buildHotelIntentOptions({
+    _id: "hotel-1",
+    name: "Arusha Garden Lodge",
+    destination: "Arusha",
+    accommodationType: "lodge",
+  });
+
+  assert.equal(options.length, 2);
+  assert.equal(options[0].intentType, "direct-hotel");
+  assert.equal(options[0].payload.hotelIntentType, "direct-hotel");
+  assert.equal(options[0].payload.message.includes("directly about Arusha Garden Lodge"), true);
+  assert.equal(options[1].intentType, "itinerary-add-on");
+  assert.equal(options[1].payload.hotelIntentType, "itinerary-add-on");
+});
+
+test("HotelDetail renders selectable hotel inquiry intent controls", async () => {
+  const source = await readFile(new URL("./HotelDetail.jsx", import.meta.url), "utf8");
+
+  assert.equal(source.includes("buildHotelIntentOptions"), true);
+  assert.equal(source.includes("selectedIntentId"), true);
+  assert.equal(source.includes("selectedIntent.payload.hotelIntentType"), true);
 });
