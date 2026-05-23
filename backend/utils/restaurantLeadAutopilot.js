@@ -66,3 +66,30 @@ export const buildRestaurantLeadAutopilot = ({
     requiresHumanReview,
   };
 };
+
+export const enhanceRestaurantInquiryAutomation = (automation = {}, inquiryData = {}) => {
+  const restaurantAutopilot = buildRestaurantLeadAutopilot({
+    restaurantId: inquiryData.restaurantId,
+    restaurantName: inquiryData.restaurantName,
+    restaurantIntentType: inquiryData.restaurantIntentType,
+    message: inquiryData.message,
+  });
+
+  const summaryParts = [
+    automation.summary || "",
+    restaurantAutopilot.intentLabel ? `Restaurant intent: ${restaurantAutopilot.intentLabel}.` : "",
+    restaurantAutopilot.nextBestAction || "",
+  ].filter(Boolean);
+
+  const followUpParts = [
+    automation.followUpMessage || "",
+    ...restaurantAutopilot.replyHints,
+  ].filter(Boolean);
+
+  return {
+    ...automation,
+    summary: summaryParts.join(" ").trim(),
+    followUpMessage: followUpParts.join(" ").trim(),
+    restaurantAutopilot,
+  };
+};

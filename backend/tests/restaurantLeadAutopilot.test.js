@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildRestaurantLeadAutopilot } from "../utils/restaurantLeadAutopilot.js";
+import {
+  buildRestaurantLeadAutopilot,
+  enhanceRestaurantInquiryAutomation,
+} from "../utils/restaurantLeadAutopilot.js";
 
 test("buildRestaurantLeadAutopilot classifies direct dining requests and suggests reply guidance", () => {
   const autopilot = buildRestaurantLeadAutopilot({
@@ -56,4 +59,23 @@ test("buildRestaurantLeadAutopilot falls back gracefully when little dining cont
     autopilot.nextBestAction,
     "Confirm the dining date, guest count, and whether this is a direct booking or part of a wider itinerary."
   );
+});
+
+test("enhanceRestaurantInquiryAutomation returns merged automation plus restaurant autopilot", () => {
+  const enhanced = enhanceRestaurantInquiryAutomation(
+    {
+      summary: "Lead looks qualified.",
+      followUpMessage: "Thanks for your interest.",
+    },
+    {
+      restaurantId: "restaurant-1",
+      restaurantName: "Savanna Table",
+      restaurantIntentType: "direct-restaurant",
+      message: "I need a farewell dinner for 6 guests with vegetarian options.",
+    }
+  );
+
+  assert.equal(enhanced.restaurantAutopilot.intentLabel, "Direct dining");
+  assert.equal(enhanced.summary.includes("Restaurant intent: Direct dining."), true);
+  assert.equal(enhanced.followUpMessage.includes("Reference Savanna Table directly"), true);
 });
