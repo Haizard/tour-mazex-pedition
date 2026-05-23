@@ -74,7 +74,7 @@ const PlatformAdminLogin = () => {
               Sign In
             </h2>
             <p className="text-slate-400 text-sm mt-2 font-medium">
-              Use your platform credentials to access the tenant operations console.
+              Use your platform credentials to access the tenant operations console. The username may be customized by environment and is not always <span className="font-black text-slate-200">platform-admin</span>.
             </p>
           </div>
 

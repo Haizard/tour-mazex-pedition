@@ -44,14 +44,21 @@ const AdminLogin = () => {
         return;
       }
 
-      await login(credentials);
-      navigate(redirectPath, { replace: true });
+      try {
+        await login(credentials);
+        navigate(redirectPath, { replace: true });
+      } catch (tenantLoginError) {
+        if (tenantLoginError.response?.status !== 401) {
+          throw tenantLoginError;
+        }
+
+        await loginPlatformAdmin(credentials);
+        navigate("/platform", { replace: true });
+      }
     } catch (loginError) {
-      const isPlatformAttempt =
-        credentials.username.trim().toLowerCase() === "platform-admin";
       setError(
         loginError.response?.data?.message ||
-          "Invalid credentials. Access denied."
+          "Invalid credentials. If this is a platform account, try the dedicated platform admin login."
       );
     } finally {
       setSubmitting(false);
@@ -136,6 +143,14 @@ const AdminLogin = () => {
               {submitting || loading || platformLoading ? "Authenticating..." : "Access Dashboard ->"}
             </button>
           </form>
+
+          <button
+            type="button"
+            onClick={() => navigate("/platform/login")}
+            className="w-full border border-white/10 text-gray-300 font-black py-4 rounded-2xl uppercase tracking-widest hover:bg-white/5 transition"
+          >
+            Platform Admin Login
+          </button>
 
           <button
             onClick={() => navigate("/")}

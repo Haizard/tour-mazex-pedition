@@ -5,6 +5,11 @@ import {
   signPlatformAdminToken,
   verifyAdminPassword,
 } from "../utils/adminAuth.js";
+import {
+  ensureDefaultPlatformAdmin,
+  shouldRecoverPlatformAdminWithEnv,
+  syncConfiguredPlatformAdminPassword,
+} from "../utils/platformAdminBootstrap.js";
 
 const router = express.Router();
 
@@ -17,17 +22,31 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Username and password are required." });
     }
 
-    const admin = await PlatformAdmin.findOne({ username, status: "active" });
+    let admin = await PlatformAdmin.findOne({ username, status: "active" });
+
+    if (!admin && shouldRecoverPlatformAdminWithEnv({ username, password, env: process.env })) {
+      await ensureDefaultPlatformAdmin(process.env);
+      admin = await PlatformAdmin.findOne({ username, status: "active" });
+    }
 
     if (!admin) {
       return res.status(401).json({ message: "Invalid credentials." });
     }
 
-    const isValid = await verifyAdminPassword(
+    let isValid = await verifyAdminPassword(
       password,
       admin.passwordSalt,
       admin.passwordHash
     );
+
+    if (!isValid && shouldRecoverPlatformAdminWithEnv({ username, password, env: process.env })) {
+      admin = await syncConfiguredPlatformAdminPassword(admin, process.env);
+      isValid = await verifyAdminPassword(
+        password,
+        admin.passwordSalt,
+        admin.passwordHash
+      );
+    }
 
     if (!isValid) {
       return res.status(401).json({ message: "Invalid credentials." });
