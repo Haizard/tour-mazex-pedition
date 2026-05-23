@@ -5,7 +5,12 @@ import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import RestaurantDirectInquiryForm from "../components/Marketplace/RestaurantDirectInquiryForm";
 import RestaurantAiConciergeCard from "../components/Marketplace/RestaurantAiConciergeCard";
 import { fetchPublicRestaurantBySlug } from "../services/api";
-import { getRestaurantTrustLabel } from "../components/Marketplace/restaurantTrustUtils";
+import {
+  getRestaurantDiningReassuranceItems,
+  getRestaurantOperatorTrustLabel,
+  getRestaurantSponsoredDisclosure,
+  getRestaurantTrustLabel,
+} from "../components/Marketplace/restaurantTrustUtils";
 import { buildRestaurantIntentOptions } from "./restaurantDiscoveryUtils";
 
 const RestaurantDetail = () => {
@@ -77,6 +82,12 @@ const RestaurantDetail = () => {
                 {[...(restaurant.cuisineTypes || []), ...(restaurant.dietaryFits || [])].map((item) => <span key={item} className="rounded-full bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">{item}</span>)}
               </div>
               <p className="mt-6 text-sm font-black text-slate-900">{getRestaurantTrustLabel(restaurant)}</p>
+              <p className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#234232]">
+                {getRestaurantOperatorTrustLabel(restaurant)}
+              </p>
+              <p className="mt-2 text-xs font-medium leading-5 text-slate-500">
+                {getRestaurantSponsoredDisclosure(restaurant)}
+              </p>
               {restaurant.openingHoursSummary ? (
                 <div className="mt-4 rounded-2xl bg-[#eef6f0] px-4 py-4">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#234232]">Dining signal</p>
@@ -87,6 +98,44 @@ const RestaurantDetail = () => {
                 </div>
               ) : null}
             </div>
+          </div>
+        </section>
+
+        <section className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="rounded-[28px] border border-[#d8c8ae] bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+              {restaurant.trustModules?.operatorCredibility?.title || "Operator credibility"}
+            </p>
+            <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
+              {restaurant.trustModules?.operatorCredibility?.body ||
+                getRestaurantOperatorTrustLabel(restaurant)}
+            </p>
+          </div>
+          <div className="rounded-[28px] border border-[#d8c8ae] bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+              {restaurant.trustModules?.restaurantProof?.title || "Restaurant proof"}
+            </p>
+            <ul className="mt-3 space-y-2 text-sm font-medium leading-6 text-slate-600">
+              {(restaurant.trustModules?.restaurantProof?.items || [getRestaurantTrustLabel(restaurant)])
+                .filter(Boolean)
+                .map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+            </ul>
+          </div>
+          <div className="rounded-[28px] border border-emerald-100 bg-[#eef6f0] p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#234232]">
+              {restaurant.trustModules?.diningReassurance?.title || "Dining reassurance"}
+            </p>
+            <ul className="mt-3 space-y-2 text-sm font-medium leading-6 text-slate-600">
+              {(restaurant.trustModules?.diningReassurance?.items ||
+                getRestaurantDiningReassuranceItems(restaurant)
+              )
+                .filter(Boolean)
+                .map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+            </ul>
           </div>
         </section>
 

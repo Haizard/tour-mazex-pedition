@@ -1,3 +1,5 @@
+import { buildRestaurantLeadAutopilot } from "./restaurantLeadAutopilot.js";
+
 const slugifyTitle = (value = "") =>
   value
     .toString()
@@ -54,6 +56,16 @@ const scoreRestaurantMatch = (messageTokens, restaurant = {}) => {
   return scoreTextMatch(messageTokens, searchable);
 };
 
+const inferRestaurantIntentType = (message = "") => {
+  const normalized = String(message || "").toLowerCase();
+
+  return ["itinerary", "route", "stop", "after the", "before the", "on the way"].some(
+    (phrase) => normalized.includes(phrase)
+  )
+    ? "itinerary-add-on"
+    : "direct-restaurant";
+};
+
 export const buildSalesAssistantPayload = ({ message = "", tours = [], restaurants = [] }) => {
   const messageTokens = tokenize(message);
   const rankedTours = tours
@@ -74,15 +86,23 @@ export const buildSalesAssistantPayload = ({ message = "", tours = [], restauran
   const bestMatch = rankedTours[0];
 
   if (bestRestaurant && bestRestaurant.matchScore > (bestMatch?.matchScore || 0)) {
+    const restaurantAutopilot = buildRestaurantLeadAutopilot({
+      restaurantId: bestRestaurant._id,
+      restaurantName: bestRestaurant.name,
+      restaurantIntentType: inferRestaurantIntentType(message),
+      message,
+    });
+
     return {
       summary: `${bestRestaurant.name} looks like the strongest dining fit based on your request.`,
       intent: "recommend-restaurant",
       salesStage: "qualified-intent",
       recommendedNextStep: "view-restaurant",
-      qualificationQuestion:
-        "Is this for a direct dining stop or should we include it inside the wider itinerary?",
-      leadCapturePrompt:
-        "Open the restaurant page and send a dining inquiry or add it to your itinerary so the operator can confirm fit, timing, and availability.",
+      qualificationQuestion: restaurantAutopilot.requiresHumanReview
+        ? "Where should this meal sit in the route, and are there dietary requirements we need to protect?"
+        : "What date, guest count, and meal timing should we confirm for this dining request?",
+      leadCapturePrompt: `Open the restaurant page and send a dining inquiry so the operator can ${restaurantAutopilot.nextBestAction.charAt(0).toLowerCase()}${restaurantAutopilot.nextBestAction.slice(1)}`,
+      restaurantAutopilot,
       quickActions: [
         {
           label: "View Matching Restaurant",

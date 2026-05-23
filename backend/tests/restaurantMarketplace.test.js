@@ -31,6 +31,21 @@ test("shapeRestaurantDiscoveryCard exposes public restaurant trust and fit field
   assert.equal(card.sponsoredPlacement, true);
 });
 
+test("shapeRestaurantDiscoveryCard includes operator credibility and dining context", () => {
+  const card = shapeRestaurantDiscoveryCard({
+    _id: "restaurant-1",
+    name: "Savanna Table",
+    cuisineTypes: ["Tanzanian"],
+    mealTypes: ["Dinner"],
+    ambianceTags: ["Romantic"],
+    tenantId: { _id: "tenant-1", name: "Maz Expeditions", slug: "maz-expeditions" },
+  });
+
+  assert.equal(card.operator.name, "Maz Expeditions");
+  assert.equal(card.trust.operatorLabel.includes("Operator"), true);
+  assert.equal(card.diningContextLabel.includes("Dinner"), true);
+});
+
 test("shapeRestaurantDetail keeps inquiry and itinerary intent context explicit", () => {
   const detail = shapeRestaurantDetail({
     _id: "restaurant-1",
@@ -44,6 +59,19 @@ test("shapeRestaurantDetail keeps inquiry and itinerary intent context explicit"
   assert.equal(detail.conversion.sendInquiry.restaurantId, "restaurant-1");
   assert.equal(detail.conversion.requestInItinerary.restaurantIntentType, "itinerary-add-on");
   assert.equal(detail.aiConcierge.groundingWarning.includes("reservations"), true);
+});
+
+test("shapeRestaurantDetail includes operator credibility and dining reassurance blocks", () => {
+  const detail = shapeRestaurantDetail({
+    _id: "restaurant-1",
+    name: "Savanna Table",
+    mealTypes: ["Dinner"],
+    dietaryFits: ["Vegetarian"],
+    tenantId: { _id: "tenant-1", name: "Maz Expeditions", slug: "maz-expeditions" },
+  });
+
+  assert.equal(detail.trustModules.operatorCredibility.title, "Operator credibility");
+  assert.equal(detail.trustModules.diningReassurance.items.length > 0, true);
 });
 
 test("buildRestaurantDiscoveryQuery filters only published marketplace-visible restaurants", () => {

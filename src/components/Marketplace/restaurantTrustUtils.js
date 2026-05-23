@@ -16,6 +16,29 @@ export const getRestaurantTrustLabel = (restaurant = {}) => {
   return "Dining trust signals building";
 };
 
+export const getRestaurantOperatorTrustLabel = (restaurant = {}) => {
+  if (restaurant.trust?.operatorLabel) {
+    return restaurant.trust.operatorLabel;
+  }
+
+  if (restaurant.operator?.name) {
+    return `Operator-managed by ${restaurant.operator.name}`;
+  }
+
+  return "Operator-managed dining listing";
+};
+
+export const getRestaurantDiningReassuranceItems = (restaurant = {}) => [
+  restaurant.openingHoursSummary || "Dining hours are confirmed during operator follow-up.",
+  restaurant.reservationStyleSummary || "Reservations and menu details are confirmed after inquiry.",
+  "AI fit guidance is based only on stored dining fields and does not confirm reservations.",
+].filter(Boolean);
+
+export const getRestaurantSponsoredDisclosure = (restaurant = {}) =>
+  restaurant.sponsoredPlacement
+    ? "Sponsored placement. Visibility may be boosted, but dining guidance still relies on stored restaurant fields."
+    : "Marketplace visibility is based on published restaurant details and route fit.";
+
 export const getRestaurantFitExplanation = (restaurant = {}) => {
   const parts = compact([
     Array.isArray(restaurant.cuisineTypes) && restaurant.cuisineTypes.length

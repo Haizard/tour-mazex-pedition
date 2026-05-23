@@ -23,6 +23,10 @@ import {
   LEAD_STATUS_FILTERS,
   readLeadInboxFiltersFromSearchParams,
 } from "./leadInboxFilters";
+import {
+  getRestaurantAutopilotBadge,
+  getRestaurantAutopilotSummary,
+} from "./restaurantAutopilotState";
 
 const LeadInboxManager = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -357,6 +361,21 @@ const LeadInboxManager = () => {
                 key={inquiry._id}
                 className="rounded-[28px] border border-slate-200 bg-white p-5"
               >
+                {(() => {
+                  const restaurantAutopilotSummary = getRestaurantAutopilotSummary(
+                    inquiry.restaurantAutopilot || {}
+                  );
+                  const hasRestaurantAutopilot = Boolean(
+                    inquiry.restaurantAutopilot &&
+                      (restaurantAutopilotSummary.nextBestAction ||
+                        restaurantAutopilotSummary.replyHints.length > 0)
+                  );
+                  const urgencyClasses =
+                    restaurantAutopilotSummary.urgency === "hot"
+                      ? "border-amber-200 bg-amber-50 text-amber-900"
+                      : "border-emerald-100 bg-emerald-50 text-emerald-950";
+
+                  return (
                 <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -393,6 +412,46 @@ const LeadInboxManager = () => {
                     <p className="text-sm text-slate-600 leading-6">
                       {inquiry.message}
                     </p>
+
+                    {hasRestaurantAutopilot ? (
+                      <div className={`rounded-[24px] border px-4 py-4 ${urgencyClasses}`}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-[10px] font-black uppercase tracking-[0.18em]">
+                            {getRestaurantAutopilotBadge(inquiry.restaurantAutopilot)}
+                          </p>
+                          <span className="rounded-full border border-current/15 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em]">
+                            {restaurantAutopilotSummary.urgency}
+                          </span>
+                          {restaurantAutopilotSummary.requiresHumanReview ? (
+                            <span className="rounded-full border border-current/15 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em]">
+                              Human review
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-2 text-sm font-semibold leading-6">
+                          {restaurantAutopilotSummary.nextBestAction}
+                        </p>
+                        {restaurantAutopilotSummary.classifications.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {restaurantAutopilotSummary.classifications.map((classification) => (
+                              <span
+                                key={classification}
+                                className="rounded-full border border-current/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em]"
+                              >
+                                {classification.replace(/-/g, " ")}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                        {restaurantAutopilotSummary.replyHints.length > 0 ? (
+                          <ul className="mt-3 space-y-1 text-sm font-medium leading-6">
+                            {restaurantAutopilotSummary.replyHints.map((hint) => (
+                              <li key={hint}>{hint}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     <div className="rounded-[24px] bg-slate-50 px-4 py-4">
                       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">
@@ -611,6 +670,8 @@ const LeadInboxManager = () => {
                     </button>
                   </div>
                 </div>
+                  );
+                })()}
               </div>
             ))}
         </div>

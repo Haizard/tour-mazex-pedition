@@ -31,6 +31,27 @@ export const getRestaurantFitTags = (restaurant = {}) =>
     ...(Array.isArray(restaurant.ambianceTags) ? restaurant.ambianceTags.slice(0, 2) : []),
   ]).map((value) => value.charAt(0).toUpperCase() + value.slice(1));
 
+export const buildRestaurantOperatorLabel = (restaurant = {}) =>
+  restaurant.tenantId?.name
+    ? `Operator-routed by ${restaurant.tenantId.name}`
+    : "Operator-routed dining request";
+
+export const buildRestaurantDiningContextLabel = (restaurant = {}) =>
+  compact([
+    ...(Array.isArray(restaurant.mealTypes) ? restaurant.mealTypes.slice(0, 1) : []),
+    ...(Array.isArray(restaurant.ambianceTags) ? restaurant.ambianceTags.slice(0, 1) : []),
+  ]).join(" · ");
+
+const buildRestaurantDiningReassuranceItems = (restaurant = {}) =>
+  compact([
+    restaurant.openingHoursSummary || "Dining timing is confirmed during operator follow-up.",
+    restaurant.reservationStyleSummary || "Reservations and menu details are confirmed after inquiry.",
+    Array.isArray(restaurant.dietaryFits) && restaurant.dietaryFits.length
+      ? `Published dietary fit signals include ${restaurant.dietaryFits.slice(0, 2).join(" and ")}.`
+      : "AI fit guidance uses stored cuisine, timing, dietary, and atmosphere fields only.",
+    "AI suggestions do not confirm reservations, menu availability, pricing, or table guarantees.",
+  ]);
+
 export const shapeRestaurantDiscoveryCard = (restaurant = {}) => ({
   _id: String(restaurant._id || ""),
   name: restaurant.name || "",
@@ -59,7 +80,9 @@ export const shapeRestaurantDiscoveryCard = (restaurant = {}) => ({
   trust: {
     reviewLabel: getRestaurantReviewLabel(restaurant),
     summary: restaurant.trustSummary || "",
+    operatorLabel: buildRestaurantOperatorLabel(restaurant),
   },
+  diningContextLabel: buildRestaurantDiningContextLabel(restaurant),
   fitTags: getRestaurantFitTags(restaurant),
 });
 
@@ -82,6 +105,24 @@ export const shapeRestaurantDetail = (restaurant = {}) => ({
   aiConcierge: {
     groundingWarning:
       "AI guidance is based on known restaurant fields and must not invent reservations, menu details, prices, or confirmations.",
+  },
+  trustModules: {
+    operatorCredibility: {
+      title: "Operator credibility",
+      body: buildRestaurantOperatorLabel(restaurant),
+    },
+    restaurantProof: {
+      title: "Restaurant proof",
+      items: compact([
+        getRestaurantReviewLabel(restaurant),
+        restaurant.destination ? `Published for ${restaurant.destination}` : "",
+        buildRestaurantDiningContextLabel(restaurant),
+      ]),
+    },
+    diningReassurance: {
+      title: "Dining reassurance",
+      items: buildRestaurantDiningReassuranceItems(restaurant),
+    },
   },
 });
 

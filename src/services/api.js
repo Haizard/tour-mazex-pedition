@@ -393,6 +393,83 @@ export const getPlatformPublicApiFallback = (url = "") => {
     };
   }
 
+  if (path === "/restaurants/analytics") {
+    return {
+      summary: {
+        totalRestaurants: platformDemoRestaurants.length,
+        publicRestaurants: platformDemoRestaurants.length,
+        sponsoredRestaurants: platformDemoRestaurants.filter(
+          (restaurant) => restaurant.sponsoredPlacement
+        ).length,
+        totalRestaurantLeads: 6,
+        directRestaurantLeads: 4,
+        itineraryRestaurantLeads: 2,
+        acceptedQuotes: 1,
+      },
+      sponsoredPerformance: {
+        top: [
+          {
+            restaurantId: platformDemoRestaurants[0]._id,
+            restaurantName: platformDemoRestaurants[0].name,
+            destination: platformDemoRestaurants[0].destination,
+            sponsoredPlacement: true,
+            inquiryCount: 4,
+            directInquiryCount: 3,
+            itineraryInquiryCount: 1,
+            acceptedQuoteCount: 1,
+            lastInquiryAt: new Date().toISOString(),
+            demandScore: 29,
+          },
+        ],
+        watch: [
+          {
+            restaurantId: platformDemoRestaurants[0]._id,
+            restaurantName: platformDemoRestaurants[0].name,
+            destination: platformDemoRestaurants[0].destination,
+            sponsoredPlacement: true,
+            inquiryCount: 4,
+            directInquiryCount: 3,
+            itineraryInquiryCount: 1,
+            acceptedQuoteCount: 1,
+            lastInquiryAt: new Date().toISOString(),
+            demandScore: 29,
+          },
+        ],
+      },
+      recentActivity: [
+        {
+          restaurantId: platformDemoRestaurants[0]._id,
+          restaurantName: platformDemoRestaurants[0].name,
+          destination: platformDemoRestaurants[0].destination,
+          occurredAt: new Date().toISOString(),
+          activityLabel: "Direct restaurant inquiry",
+        },
+        {
+          restaurantId: platformDemoRestaurants[1]._id,
+          restaurantName: platformDemoRestaurants[1].name,
+          destination: platformDemoRestaurants[1].destination,
+          occurredAt: new Date(Date.now() - 86400000).toISOString(),
+          activityLabel: "Itinerary add-on inquiry",
+        },
+      ],
+      restaurants: platformDemoRestaurants.map((restaurant, index) => ({
+        restaurantId: restaurant._id,
+        restaurantName: restaurant.name,
+        destination: restaurant.destination,
+        sponsoredPlacement: restaurant.sponsoredPlacement === true,
+        published: true,
+        marketplaceVisible: true,
+        inquiryCount: 4 - index,
+        directInquiryCount: 3 - index,
+        itineraryInquiryCount: 1 + Number(index > 0),
+        quoteCount: 1,
+        acceptedQuoteCount: Number(index === 0),
+        lastInquiryAt: new Date(Date.now() - index * 86400000).toISOString(),
+        demandScore: 29 - index * 7,
+      })),
+    };
+  }
+
   if (
     path === "/tours" ||
     path === "/blogs" ||
@@ -1077,6 +1154,7 @@ export const fetchPublicRestaurantBySlug = (slug) =>
   cachedGet(`/restaurants/public/${encodeURIComponent(slug)}`);
 export const requestRestaurantConciergeRecommendations = (data) =>
   API.post("/restaurants/public/concierge/recommendations", data);
+export const fetchRestaurantAnalytics = () => cachedGet("/restaurants/analytics");
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

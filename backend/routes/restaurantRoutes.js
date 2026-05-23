@@ -1,5 +1,7 @@
 import express from "express";
 import Restaurant from "../models/Restaurant.js";
+import CustomInquiry from "../models/CustomInquiry.js";
+import QuoteProposal from "../models/QuoteProposal.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
 import { buildTenantFilter, withTenantId } from "../utils/tenantContext.js";
 import {
@@ -13,6 +15,7 @@ import {
   createPostgresFirstRestaurant,
   updatePostgresFirstRestaurant,
 } from "../utils/postgresFirstRestaurantService.js";
+import { buildRestaurantAnalyticsSnapshot } from "../utils/restaurantAnalytics.js";
 import {
   deleteRestaurantRecord,
   findRestaurantRecord,
@@ -153,6 +156,33 @@ router.get("/", async (req, res) => {
     return res
       .status(500)
       .json({ message: "Failed to fetch restaurants.", error: error.message });
+  }
+});
+
+router.get("/analytics", async (req, res) => {
+  try {
+    const [restaurants, inquiries, quotes] = await Promise.all([
+      Restaurant.find(buildTenantFilter(req)).sort({ sponsoredPlacement: -1, name: 1 }).lean(),
+      CustomInquiry.find(
+        buildTenantFilter(req, {
+          restaurantId: { $ne: null },
+        })
+      )
+        .select("_id restaurantId restaurantIntentType createdAt")
+        .lean(),
+      QuoteProposal.find(buildTenantFilter(req))
+        .select("inquiryId status conversionStage")
+        .lean(),
+    ]);
+
+    return res
+      .status(200)
+      .json(buildRestaurantAnalyticsSnapshot({ restaurants, inquiries, quotes }));
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to build restaurant analytics.",
+      error: error.message,
+    });
   }
 });
 

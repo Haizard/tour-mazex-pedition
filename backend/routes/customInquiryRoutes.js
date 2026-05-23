@@ -12,6 +12,7 @@ import {
     enhanceHotelInquiryAutomation,
     generateInquiryLeadAutomation,
 } from '../utils/leadAutomation.js';
+import { enhanceRestaurantInquiryAutomation } from '../utils/restaurantLeadAutopilot.js';
 import { scoreInquiryLead } from '../utils/leadScoring.js';
 import { generateQuoteProposal } from '../utils/quoteProposal.js';
 import {
@@ -143,6 +144,31 @@ const syncQuoteRevenueViews = async (quote = {}) => {
     }
 };
 
+const mergeInquiryContext = (inquiry = {}, fallback = {}) => ({
+    ...inquiry,
+    restaurantId: inquiry.restaurantId || fallback.restaurantId || "",
+    restaurantName: inquiry.restaurantName || fallback.restaurantName || "",
+    restaurantIntentType:
+        inquiry.restaurantIntentType || fallback.restaurantIntentType || "",
+    restaurantAutopilot:
+        inquiry.restaurantAutopilot || fallback.restaurantAutopilot || null,
+    automationSummary: inquiry.automationSummary || fallback.automationSummary || "",
+    followUpMessage: inquiry.followUpMessage || fallback.followUpMessage || "",
+});
+
+const mergePrimaryInquiryCollection = (primaryInquiries = [], fallbackInquiries = []) => {
+    const fallbackById = new Map(
+        (Array.isArray(fallbackInquiries) ? fallbackInquiries : []).map((inquiry = {}) => [
+            String(inquiry._id || ""),
+            inquiry,
+        ])
+    );
+
+    return (Array.isArray(primaryInquiries) ? primaryInquiries : []).map((inquiry = {}) =>
+        mergeInquiryContext(inquiry, fallbackById.get(String(inquiry._id || "")) || {})
+    );
+};
+
 // Get all inquiries (Admin)
 router.get('/', requireTenantAdmin, async (req, res) => {
     try {
@@ -188,7 +214,12 @@ router.get('/', requireTenantAdmin, async (req, res) => {
 
         if (String(req.query.source || '').toLowerCase() === 'postgres') {
             const primaryInquiries = await fetchPrimaryInquiries(String(req.tenantId || ''));
-            return res.status(200).json(preferPrimaryCollection(primaryInquiries, enrichedInquiries));
+            return res.status(200).json(
+                preferPrimaryCollection(
+                    mergePrimaryInquiryCollection(primaryInquiries, enrichedInquiries),
+                    enrichedInquiries
+                )
+            );
         }
 
         res.status(200).json(enrichedInquiries);
@@ -214,6 +245,7 @@ router.post('/', async (req, res) => {
             }),
             inquiryData
         );
+        const restaurantAutomation = enhanceRestaurantInquiryAutomation(automation, inquiryData);
         const scoring = scoreInquiryLead(inquiryData);
 
         if (inquiryData.referralCode) {
@@ -226,8 +258,9 @@ router.post('/', async (req, res) => {
             {
                 ...inquiryData,
                 ...scoring,
-                automationSummary: automation.summary,
-                followUpMessage: automation.followUpMessage,
+                automationSummary: restaurantAutomation.summary,
+                followUpMessage: restaurantAutomation.followUpMessage,
+                restaurantAutopilot: restaurantAutomation.restaurantAutopilot || null,
                 tenantId: inquiryContext.tenantId,
             },
             process.env
@@ -241,8 +274,13 @@ router.post('/', async (req, res) => {
             }
         );
         res.status(201).json({
-            inquiry: primaryInquiry ? buildTravelerInquiryView(primaryInquiry) : newInquiry,
-            automation,
+            inquiry: primaryInquiry
+                ? mergeInquiryContext(
+                    buildTravelerInquiryView(primaryInquiry),
+                    newInquiry.toObject ? newInquiry.toObject() : newInquiry
+                )
+                : newInquiry,
+            automation: restaurantAutomation,
         });
     } catch (error) {
         res.status(409).json({ message: error.message });
@@ -287,6 +325,7 @@ router.post('/whatsapp-lead', async (req, res) => {
             }),
             inquiryData
         );
+        const restaurantAutomation = enhanceRestaurantInquiryAutomation(automation, inquiryData);
         const scoring = scoreInquiryLead(inquiryData);
 
         if (inquiryData.referralCode) {
@@ -299,8 +338,9 @@ router.post('/whatsapp-lead', async (req, res) => {
             {
                 ...inquiryData,
                 ...scoring,
-                automationSummary: automation.summary,
-                followUpMessage: automation.followUpMessage,
+                automationSummary: restaurantAutomation.summary,
+                followUpMessage: restaurantAutomation.followUpMessage,
+                restaurantAutopilot: restaurantAutomation.restaurantAutopilot || null,
                 tenantId: inquiryContext.tenantId,
             },
             process.env
@@ -315,8 +355,13 @@ router.post('/whatsapp-lead', async (req, res) => {
         );
 
         res.status(201).json({
-            inquiry: primaryInquiry ? buildTravelerInquiryView(primaryInquiry) : newInquiry,
-            automation,
+            inquiry: primaryInquiry
+                ? mergeInquiryContext(
+                    buildTravelerInquiryView(primaryInquiry),
+                    newInquiry.toObject ? newInquiry.toObject() : newInquiry
+                )
+                : newInquiry,
+            automation: restaurantAutomation,
         });
     } catch (error) {
         res.status(409).json({ message: error.message });

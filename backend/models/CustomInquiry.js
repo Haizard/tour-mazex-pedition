@@ -75,6 +75,18 @@ const customInquirySchema = new mongoose.Schema({
     leadScoreReasons: [{ type: String }],
     automationSummary: { type: String, default: '' },
     followUpMessage: { type: String, default: '' },
+    restaurantAutopilot: {
+        intentLabel: { type: String, default: '' },
+        urgency: {
+            type: String,
+            enum: ['hot', 'warm', 'cold'],
+            default: 'warm',
+        },
+        classifications: [{ type: String }],
+        requiresHumanReview: { type: Boolean, default: false },
+        nextBestAction: { type: String, default: '' },
+        replyHints: [{ type: String }],
+    },
     whatsappAutomation: {
         outboundMessageCount: { type: Number, default: 0, min: 0 },
         lastMessageAt: { type: Date, default: null },
