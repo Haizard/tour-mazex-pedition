@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./pages/Layout";
 import Home from "./pages/Home";
 import ConfiguredPage from "./pages/ConfiguredPage";
@@ -40,10 +40,30 @@ const HotelDiscovery = React.lazy(() => import("./pages/HotelDiscovery"));
 const HotelClaimPage = React.lazy(() => import("./pages/HotelClaimPage"));
 const HotelDetail = React.lazy(() => import("./pages/HotelDetail"));
 const RestaurantDiscovery = React.lazy(() => import("./pages/RestaurantDiscovery"));
+const RestaurantClaimPage = React.lazy(() => import("./pages/RestaurantClaimPage"));
 const RestaurantDetail = React.lazy(() => import("./pages/RestaurantDetail"));
 const HotelPartnerLogin = React.lazy(() => import("./pages/HotelPartnerLogin"));
 const HotelPartnerDashboard = React.lazy(() => import("./pages/HotelPartnerDashboard"));
+const RestaurantPartnerLogin = React.lazy(() => import("./pages/RestaurantPartnerLogin"));
+const RestaurantPartnerDashboard = React.lazy(() => import("./pages/RestaurantPartnerDashboard"));
 const TemplateMarketplace = React.lazy(() => import("./pages/TemplateMarketplace"));
+const isBrowser = typeof window !== "undefined";
+
+const RestaurantPartnerRoute = ({ children }) => {
+  const location = useLocation();
+  const token = isBrowser
+    ? window.localStorage.getItem("restaurantPartnerAuthToken")
+    : "";
+
+  if (!token) {
+    return (
+      <Navigate to="/restaurant-partner/login" replace state={{ from: location }} />
+    );
+  }
+
+  return children;
+};
+
 const DashboardRouteFallback = ({ label }) => (
   <main className="min-h-[60vh] bg-[#f6f7f9] px-6 py-16">
     <div className="mx-auto max-w-4xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
@@ -113,6 +133,7 @@ const tenantSiteRoutes = (
     <Route path="discover/hotels/claim" element={withPublicSuspense(<HotelClaimPage />)} />
     <Route path="discover/hotels/:slug" element={withPublicSuspense(<HotelDetail />)} />
     <Route path="discover/restaurants" element={withPublicSuspense(<RestaurantDiscovery />)} />
+    <Route path="discover/restaurants/claim" element={withPublicSuspense(<RestaurantClaimPage />)} />
     <Route path="discover/restaurants/:slug" element={withPublicSuspense(<RestaurantDetail />)} />
     <Route path="templates" element={withPublicSuspense(<TemplateMarketplace />)} />
   </>
@@ -136,6 +157,10 @@ const AppRoutes = () => (
       <Route path="admin/login" element={<AdminLogin />} />
       <Route path="hotel-partner/login" element={withPublicSuspense(<HotelPartnerLogin />)} />
       <Route
+        path="restaurant-partner/login"
+        element={withPublicSuspense(<RestaurantPartnerLogin />)}
+      />
+      <Route
         path="hotel-partner"
         element={(
           <HotelPartnerRoute>
@@ -143,6 +168,20 @@ const AppRoutes = () => (
               <HotelPartnerDashboard />
             </Suspense>
           </HotelPartnerRoute>
+        )}
+      />
+      <Route
+        path="restaurant-partner"
+        element={(
+          <RestaurantPartnerRoute>
+            <Suspense
+              fallback={
+                <DashboardRouteFallback label="Loading restaurant partner workspace" />
+              }
+            >
+              <RestaurantPartnerDashboard />
+            </Suspense>
+          </RestaurantPartnerRoute>
         )}
       />
       <Route
@@ -185,6 +224,10 @@ const AppRoutes = () => (
       <Route path="admin/login" element={<AdminLogin />} />
       <Route path="hotel-partner/login" element={withPublicSuspense(<HotelPartnerLogin />)} />
       <Route
+        path="restaurant-partner/login"
+        element={withPublicSuspense(<RestaurantPartnerLogin />)}
+      />
+      <Route
         path="hotel-partner"
         element={(
           <HotelPartnerRoute>
@@ -192,6 +235,20 @@ const AppRoutes = () => (
               <HotelPartnerDashboard />
             </Suspense>
           </HotelPartnerRoute>
+        )}
+      />
+      <Route
+        path="restaurant-partner"
+        element={(
+          <RestaurantPartnerRoute>
+            <Suspense
+              fallback={
+                <DashboardRouteFallback label="Loading restaurant partner workspace" />
+              }
+            >
+              <RestaurantPartnerDashboard />
+            </Suspense>
+          </RestaurantPartnerRoute>
         )}
       />
       <Route path="*" element={<DynamicTenantPage />} />

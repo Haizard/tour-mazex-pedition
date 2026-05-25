@@ -4,9 +4,12 @@ import {
   createRestaurant,
   deleteRestaurant,
   fetchRestaurantAnalytics,
+  fetchRestaurantClaimRequests,
   fetchRestaurants,
+  reviewRestaurantClaimRequest,
   updateRestaurant,
 } from "../../services/api";
+import RestaurantClaimManager from "./RestaurantClaimManager";
 import {
   buildRestaurantAnalyticsCards,
   buildRestaurantRecentActivity,
@@ -34,6 +37,8 @@ const RestaurantManager = () => {
   const [analytics, setAnalytics] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [claims, setClaims] = useState([]);
+  const [reviewingClaimAction, setReviewingClaimAction] = useState("");
 
   const visibleRestaurants = useMemo(
     () => filterRestaurantRows(restaurants, filters),
@@ -57,12 +62,20 @@ const RestaurantManager = () => {
   const loadRestaurants = async () => {
     setLoading(true);
     try {
-      const [response, analyticsResponse] = await Promise.all([
+      const [response, analyticsResponse, claimsResponse] = await Promise.all([
         fetchRestaurants(),
         fetchRestaurantAnalytics().catch(() => ({ data: null })),
+        fetchRestaurantClaimRequests().catch(() => ({ data: [] })),
       ]);
       setRestaurants(Array.isArray(response.data) ? response.data : []);
       setAnalytics(analyticsResponse.data || null);
+      setClaims(
+        Array.isArray(claimsResponse.data?.claims)
+          ? claimsResponse.data.claims
+          : Array.isArray(claimsResponse.data)
+            ? claimsResponse.data
+            : []
+      );
     } catch (error) {
       setMessage(error?.response?.data?.message || "Unable to load restaurants.");
     } finally {
@@ -128,6 +141,29 @@ const RestaurantManager = () => {
       if (editingId === restaurantId) resetForm();
     } catch (error) {
       setMessage(error?.response?.data?.message || "Unable to delete restaurant.");
+    }
+  };
+
+  const reviewClaim = async (claimId, payload) => {
+    const action = payload?.action || "approve";
+
+    setReviewingClaimAction(`${claimId}:${action}`);
+    setMessage("");
+
+    try {
+      await reviewRestaurantClaimRequest(claimId, payload);
+      await loadRestaurants();
+      setMessage(
+        action === "reject"
+          ? "Restaurant claim rejected."
+          : action === "needs-more-proof"
+            ? "Restaurant claim marked for more proof."
+            : "Restaurant claim approved and restaurant partner access created."
+      );
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to review restaurant claim.");
+    } finally {
+      setReviewingClaimAction("");
     }
   };
 
@@ -487,6 +523,12 @@ const RestaurantManager = () => {
           )}
         </div>
       </div>
+
+      <RestaurantClaimManager
+        claims={claims}
+        reviewingClaimAction={reviewingClaimAction}
+        onReview={reviewClaim}
+      />
     </section>
   );
 };

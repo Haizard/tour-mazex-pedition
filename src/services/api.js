@@ -602,6 +602,22 @@ const getHotelPartnerHeaders = () => {
   };
 };
 
+const getRestaurantPartnerHeaders = () => {
+  if (!isBrowser) {
+    return {};
+  }
+
+  const token = window.localStorage.getItem("restaurantPartnerAuthToken");
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 const getTravelerHeaders = () => {
   if (!isBrowser) {
     return {};
@@ -621,6 +637,10 @@ const getTravelerHeaders = () => {
 const getAuthHeadersForUrl = (url = "") => {
   if (url.includes("/traveler-auth")) {
     return getTravelerHeaders();
+  }
+
+  if (url.includes("/restaurant-partner")) {
+    return getRestaurantPartnerHeaders();
   }
 
   if (url.includes("/hotel-partner")) {
@@ -708,6 +728,7 @@ API.interceptors.response.use(
     const requestUrl = error.config?.url || "";
     const isLoginRequest =
       requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/restaurant-partner-auth/login") ||
       requestUrl.includes("/hotel-partner-auth/login") ||
       requestUrl.includes("/platform-auth/login");
 
@@ -725,14 +746,19 @@ API.interceptors.response.use(
         window.localStorage.removeItem("adminAuthToken");
         window.localStorage.removeItem("platformAdminAuthToken");
         window.localStorage.removeItem("hotelPartnerAuthToken");
+        window.localStorage.removeItem("restaurantPartnerAuthToken");
 
         if (!window.location.pathname.endsWith("/login")) {
+          const isRestaurantPartnerPath =
+            window.location.pathname.includes("/restaurant-partner");
           const isPlatformPath =
             window.location.pathname.includes("/platform") ||
             window.location.pathname.includes("/super-admin");
           window.location.href = isPlatformPath
             ? "/platform/login?expired=true"
-            : "/admin/login?expired=true";
+            : isRestaurantPartnerPath
+              ? "/restaurant-partner/login?expired=true"
+              : "/admin/login?expired=true";
         }
       }
     } else if (isLoginRequest && error.response?.status === 401) {
@@ -759,6 +785,12 @@ export const loginHotelPartnerAdmin = (data) => API.post("/hotel-partner-auth/lo
 export const fetchHotelPartnerSession = () =>
   API.get("/hotel-partner-auth/me", {
     headers: getHotelPartnerHeaders(),
+  });
+export const loginRestaurantPartnerAdmin = (data) =>
+  API.post("/restaurant-partner-auth/login", data);
+export const fetchRestaurantPartnerSession = () =>
+  API.get("/restaurant-partner-auth/me", {
+    headers: getRestaurantPartnerHeaders(),
   });
 export const fetchTravelerSession = () =>
   API.get("/traveler-auth/me", {
@@ -1152,9 +1184,17 @@ export const fetchPublicRestaurants = (params = {}) =>
   cachedGet("/restaurants/public", { params });
 export const fetchPublicRestaurantBySlug = (slug) =>
   cachedGet(`/restaurants/public/${encodeURIComponent(slug)}`);
+export const searchRestaurantClaimListings = (params = {}) =>
+  cachedGet("/restaurants/public/claim-search", { params });
+export const submitRestaurantClaimRequest = (data) =>
+  API.post("/restaurants/public/claims", data);
 export const requestRestaurantConciergeRecommendations = (data) =>
   API.post("/restaurants/public/concierge/recommendations", data);
 export const fetchRestaurantAnalytics = () => cachedGet("/restaurants/analytics");
+export const fetchRestaurantClaimRequests = (params = {}) =>
+  cachedGet("/restaurants/claims", { params });
+export const reviewRestaurantClaimRequest = (id, data) =>
+  API.post(`/restaurants/claims/${id}/review`, data);
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

@@ -114,6 +114,32 @@ export const signHotelPartnerToken = ({
   return `${encodedPayload}.${signature}`;
 };
 
+export const signRestaurantPartnerToken = ({
+  partnerAdminId,
+  tenantId,
+  username,
+  role,
+  restaurantIds = [],
+  expiresInMs = TOKEN_TTL_MS,
+}) => {
+  const payload = {
+    partnerAdminId,
+    tenantId,
+    username,
+    role,
+    restaurantIds: restaurantIds.map((restaurantId) => String(restaurantId)),
+    scope: "restaurant_partner",
+    exp: Date.now() + expiresInMs,
+  };
+  const encodedPayload = toBase64Url(JSON.stringify(payload));
+  const signature = crypto
+    .createHmac("sha256", getAuthSecret())
+    .update(encodedPayload)
+    .digest("base64url");
+
+  return `${encodedPayload}.${signature}`;
+};
+
 export const verifyAdminToken = (token) => {
   if (!token || !token.includes(".")) {
     throw new Error("Invalid token format.");
@@ -156,6 +182,16 @@ export const verifyHotelPartnerToken = (token) => {
 
   if (payload.scope !== "hotel_partner") {
     throw new Error("Token is not a hotel partner token.");
+  }
+
+  return payload;
+};
+
+export const verifyRestaurantPartnerToken = (token) => {
+  const payload = verifyAdminToken(token);
+
+  if (payload.scope !== "restaurant_partner") {
+    throw new Error("Token is not a restaurant partner token.");
   }
 
   return payload;

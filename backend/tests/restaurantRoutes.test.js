@@ -29,6 +29,34 @@ test("restaurant routes include public AI concierge recommendations before admin
   assert.equal(source.includes("buildRestaurantConciergeRecommendations"), true);
 });
 
+test("restaurant routes expose public claim request search and intake before admin auth", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
+  );
+  const claimSearchIndex = source.indexOf('router.get("/public/claim-search"');
+  const claimCreateIndex = source.indexOf('router.post("/public/claims"');
+  const adminAuthIndex = source.indexOf("router.use(requireTenantAdmin)");
+
+  assert.equal(claimSearchIndex > -1, true);
+  assert.equal(claimCreateIndex > -1, true);
+  assert.equal(claimSearchIndex < adminAuthIndex, true);
+  assert.equal(claimCreateIndex < adminAuthIndex, true);
+  assert.equal(source.includes("RestaurantClaimRequest"), true);
+  assert.equal(source.includes("buildRestaurantClaimRequestPayload"), true);
+  assert.equal(source.includes("shapeRestaurantClaimQueueItem"), true);
+});
+
+test("restaurant routes expose tenant-admin claim moderation workflow", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/claims"'), true);
+  assert.equal(source.includes('router.post("/claims/:id/review"'), true);
+  assert.equal(source.includes("buildRestaurantClaimReviewUpdate"), true);
+  assert.equal(source.includes("RestaurantPartnerAdmin.create"), true);
+});
+
 test("restaurant routes expose public discovery/detail and tenant-admin CRUD", async () => {
   const source = await import("node:fs/promises").then((fs) =>
     fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
@@ -40,4 +68,15 @@ test("restaurant routes expose public discovery/detail and tenant-admin CRUD", a
   assert.equal(source.includes('router.post("/"'), true);
   assert.equal(source.includes('router.patch("/:id"'), true);
   assert.equal(source.includes('router.delete("/:id"'), true);
+});
+
+test("restaurant client API exports public claim search and intake helpers", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../../src/services/api.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes("export const searchRestaurantClaimListings = (params = {}) =>"), true);
+  assert.equal(source.includes('cachedGet("/restaurants/public/claim-search", { params })'), true);
+  assert.equal(source.includes("export const submitRestaurantClaimRequest = (data) =>"), true);
+  assert.equal(source.includes('API.post("/restaurants/public/claims", data)'), true);
 });
