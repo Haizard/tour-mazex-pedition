@@ -70,6 +70,38 @@ test("restaurant routes expose public discovery/detail and tenant-admin CRUD", a
   assert.equal(source.includes('router.delete("/:id"'), true);
 });
 
+test("restaurant routes expose public reservation options and request intake before admin auth", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
+  );
+  const optionsIndex = source.indexOf('router.get("/public/:id/reservations/options"');
+  const requestIndex = source.indexOf('router.post("/public/:id/reservations/requests"');
+  const adminAuthIndex = source.indexOf("router.use(requireTenantAdmin)");
+
+  assert.equal(optionsIndex > -1, true);
+  assert.equal(requestIndex > -1, true);
+  assert.equal(optionsIndex < adminAuthIndex, true);
+  assert.equal(requestIndex < adminAuthIndex, true);
+  assert.equal(source.includes("shapePublicReservationOptions"), true);
+  assert.equal(source.includes("buildReservationAutopilot"), true);
+  assert.equal(source.includes("RestaurantReservationRequest.create"), true);
+});
+
+test("restaurant routes expose tenant-admin reservation operations", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/:id/reservations"'), true);
+  assert.equal(source.includes('router.post("/:id/service-windows"'), true);
+  assert.equal(source.includes('router.patch("/service-windows/:id"'), true);
+  assert.equal(source.includes('router.post("/:id/table-types"'), true);
+  assert.equal(source.includes('router.patch("/table-types/:id"'), true);
+  assert.equal(source.includes('router.post("/:id/availability"'), true);
+  assert.equal(source.includes('router.patch("/availability/:id"'), true);
+  assert.equal(source.includes('router.patch("/reservation-requests/:id"'), true);
+});
+
 test("restaurant client API exports public claim search and intake helpers", async () => {
   const source = await import("node:fs/promises").then((fs) =>
     fs.readFile(new URL("../../src/services/api.js", import.meta.url), "utf8")
@@ -79,4 +111,17 @@ test("restaurant client API exports public claim search and intake helpers", asy
   assert.equal(source.includes('cachedGet("/restaurants/public/claim-search", { params })'), true);
   assert.equal(source.includes("export const submitRestaurantClaimRequest = (data) =>"), true);
   assert.equal(source.includes('API.post("/restaurants/public/claims", data)'), true);
+});
+
+test("restaurant client API exports reservation helpers", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../../src/services/api.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes("export const fetchRestaurantReservationOptions = (restaurantId) =>"), true);
+  assert.equal(source.includes("/restaurants/public/${restaurantId}/reservations/options"), true);
+  assert.equal(source.includes("export const submitRestaurantReservationRequest = (restaurantId, data) =>"), true);
+  assert.equal(source.includes("/restaurants/public/${restaurantId}/reservations/requests"), true);
+  assert.equal(source.includes("export const fetchRestaurantReservationOperations = (restaurantId) =>"), true);
+  assert.equal(source.includes("export const updateRestaurantReservationRequest = (id, data) =>"), true);
 });

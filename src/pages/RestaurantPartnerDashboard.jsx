@@ -1,7 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaClipboardCheck, FaDoorOpen, FaStore, FaUtensils } from "react-icons/fa";
-import { fetchRestaurantPartnerSession } from "../services/api";
+import { FaCalendarCheck, FaClipboardCheck, FaDoorOpen, FaStore, FaUtensils } from "react-icons/fa";
+import {
+  createRestaurantPartnerAvailability,
+  createRestaurantPartnerServiceWindow,
+  createRestaurantPartnerTableType,
+  fetchRestaurantPartnerReservationOperations,
+  fetchRestaurantPartnerRestaurants,
+  fetchRestaurantPartnerSession,
+  updateRestaurantPartnerReservationRequest,
+} from "../services/api";
+import {
+  buildAvailabilityPayload,
+  buildReservationStatusPayload,
+  buildServiceWindowPayload,
+  buildTableTypePayload,
+  formatReservationRequestSummary,
+} from "../components/RestaurantPartner/restaurantPartnerReservationState";
 
 const normalizePartnerSession = (payload = {}) => {
   const partnerAdmin = payload?.partnerAdmin || payload?.user || payload || {};
@@ -25,9 +40,21 @@ const getAssignedRestaurants = (session = {}) =>
 const RestaurantPartnerDashboard = () => {
   const [session, setSession] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState("");
+  const [operations, setOperations] = useState(null);
+  const [serviceDraft, setServiceDraft] = useState({ label: "", serviceType: "dinner", defaultStartTime: "18:00", defaultEndTime: "22:00" });
+  const [tableDraft, setTableDraft] = useState({ label: "", minGuests: 2, maxGuests: 4, quantity: 1 });
+  const [availabilityDraft, setAvailabilityDraft] = useState({ date: "", status: "open", availableUnits: 1, availableSeats: 4 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
   const navigate = useNavigate();
+
+  const loadReservationOperations = async (restaurantId) => {
+    if (!restaurantId) return;
+    const operationsResponse = await fetchRestaurantPartnerReservationOperations(restaurantId);
+    setOperations(operationsResponse.data || null);
+  };
 
   useEffect(() => {
     let active = true;
@@ -37,15 +64,27 @@ const RestaurantPartnerDashboard = () => {
       setError("");
 
       try {
-        const sessionResponse = await fetchRestaurantPartnerSession();
+        const [sessionResponse, restaurantsResponse] = await Promise.all([
+          fetchRestaurantPartnerSession(),
+          fetchRestaurantPartnerRestaurants().catch(() => ({ data: null })),
+        ]);
 
         if (!active) {
           return;
         }
 
         const normalizedSession = normalizePartnerSession(sessionResponse.data || {});
+        const assignedRestaurants = Array.isArray(restaurantsResponse.data?.restaurants)
+          ? restaurantsResponse.data.restaurants
+          : getAssignedRestaurants(normalizedSession);
+        const firstRestaurantId = assignedRestaurants[0]?._id || assignedRestaurants[0]?.id || "";
         setSession(normalizedSession);
-        setRestaurants(getAssignedRestaurants(normalizedSession));
+        setRestaurants(assignedRestaurants);
+        setSelectedRestaurantId(String(firstRestaurantId || ""));
+
+        if (firstRestaurantId) {
+          await loadReservationOperations(firstRestaurantId);
+        }
       } catch (loadError) {
         if (!active) {
           return;
@@ -82,6 +121,58 @@ const RestaurantPartnerDashboard = () => {
   const signOut = () => {
     window.localStorage.removeItem("restaurantPartnerAuthToken");
     navigate("/restaurant-partner/login", { replace: true });
+  };
+
+  const selectedRestaurant = useMemo(
+    () =>
+      restaurants.find(
+        (restaurant) => String(restaurant._id || restaurant.id) === String(selectedRestaurantId)
+      ) || restaurants[0],
+    [restaurants, selectedRestaurantId]
+  );
+
+  const submitServiceWindow = async (event) => {
+    event.preventDefault();
+    if (!selectedRestaurantId) return;
+    setActionMessage("");
+    await createRestaurantPartnerServiceWindow(
+      selectedRestaurantId,
+      buildServiceWindowPayload(serviceDraft)
+    );
+    setServiceDraft({ label: "", serviceType: "dinner", defaultStartTime: "18:00", defaultEndTime: "22:00" });
+    await loadReservationOperations(selectedRestaurantId);
+    setActionMessage("Service window saved.");
+  };
+
+  const submitTableType = async (event) => {
+    event.preventDefault();
+    if (!selectedRestaurantId) return;
+    setActionMessage("");
+    await createRestaurantPartnerTableType(selectedRestaurantId, buildTableTypePayload(tableDraft));
+    setTableDraft({ label: "", minGuests: 2, maxGuests: 4, quantity: 1 });
+    await loadReservationOperations(selectedRestaurantId);
+    setActionMessage("Table type saved.");
+  };
+
+  const submitAvailability = async (event) => {
+    event.preventDefault();
+    if (!selectedRestaurantId) return;
+    setActionMessage("");
+    await createRestaurantPartnerAvailability(
+      selectedRestaurantId,
+      buildAvailabilityPayload(availabilityDraft)
+    );
+    setAvailabilityDraft({ date: "", status: "open", availableUnits: 1, availableSeats: 4 });
+    await loadReservationOperations(selectedRestaurantId);
+    setActionMessage("Availability saved.");
+  };
+
+  const updateRequestStatus = async (requestId, status) => {
+    await updateRestaurantPartnerReservationRequest(
+      requestId,
+      buildReservationStatusPayload({ status })
+    );
+    await loadReservationOperations(selectedRestaurantId);
   };
 
   return (
@@ -180,6 +271,188 @@ const RestaurantPartnerDashboard = () => {
                 </div>
               </section>
             </div>
+
+            <section className="mt-8 rounded-[28px] border border-[#dccfb7] bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+                    Reservation operations
+                  </p>
+                  <h2 className="mt-2 flex items-center gap-3 text-2xl font-black tracking-tight text-slate-950">
+                    <FaCalendarCheck className="text-[#234232]" />
+                    {selectedRestaurant?.name || "Restaurant reservations"}
+                  </h2>
+                </div>
+                {restaurants.length > 1 ? (
+                  <select
+                    value={selectedRestaurantId}
+                    onChange={async (event) => {
+                      setSelectedRestaurantId(event.target.value);
+                      await loadReservationOperations(event.target.value);
+                    }}
+                    className="rounded-2xl border border-[#dccfb7] bg-white px-4 py-3 text-sm font-bold"
+                  >
+                    {restaurants.map((restaurant) => (
+                      <option key={restaurant._id || restaurant.id} value={restaurant._id || restaurant.id}>
+                        {restaurant.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+              </div>
+
+              {actionMessage ? (
+                <p className="mt-4 rounded-2xl bg-[#eef6f0] px-4 py-3 text-sm font-bold text-[#234232]">
+                  {actionMessage}
+                </p>
+              ) : null}
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                <form onSubmit={submitServiceWindow} className="rounded-3xl bg-[#fcfaf6] p-4">
+                  <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-700">
+                    Service window
+                  </h3>
+                  <input
+                    value={serviceDraft.label}
+                    onChange={(event) => setServiceDraft((current) => ({ ...current, label: event.target.value }))}
+                    placeholder="Dinner"
+                    className="mt-3 w-full rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                  />
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <input
+                      type="time"
+                      value={serviceDraft.defaultStartTime}
+                      onChange={(event) => setServiceDraft((current) => ({ ...current, defaultStartTime: event.target.value }))}
+                      className="rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                    />
+                    <input
+                      type="time"
+                      value={serviceDraft.defaultEndTime}
+                      onChange={(event) => setServiceDraft((current) => ({ ...current, defaultEndTime: event.target.value }))}
+                      className="rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                    />
+                  </div>
+                  <button className="mt-3 w-full rounded-2xl bg-[#234232] px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-white">
+                    Add service
+                  </button>
+                </form>
+
+                <form onSubmit={submitTableType} className="rounded-3xl bg-[#fcfaf6] p-4">
+                  <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-700">
+                    Table type
+                  </h3>
+                  <input
+                    value={tableDraft.label}
+                    onChange={(event) => setTableDraft((current) => ({ ...current, label: event.target.value }))}
+                    placeholder="Family table"
+                    className="mt-3 w-full rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                  />
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {["minGuests", "maxGuests", "quantity"].map((field) => (
+                      <input
+                        key={field}
+                        type="number"
+                        min="1"
+                        value={tableDraft[field]}
+                        onChange={(event) => setTableDraft((current) => ({ ...current, [field]: event.target.value }))}
+                        className="rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                      />
+                    ))}
+                  </div>
+                  <button className="mt-3 w-full rounded-2xl bg-[#234232] px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-white">
+                    Add table
+                  </button>
+                </form>
+
+                <form onSubmit={submitAvailability} className="rounded-3xl bg-[#fcfaf6] p-4">
+                  <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-700">
+                    Availability
+                  </h3>
+                  <input
+                    type="date"
+                    value={availabilityDraft.date}
+                    onChange={(event) => setAvailabilityDraft((current) => ({ ...current, date: event.target.value }))}
+                    className="mt-3 w-full rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                  />
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <select
+                      value={availabilityDraft.status}
+                      onChange={(event) => setAvailabilityDraft((current) => ({ ...current, status: event.target.value }))}
+                      className="rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                    >
+                      <option value="open">Open</option>
+                      <option value="limited">Limited</option>
+                      <option value="on_request">On request</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                    <input
+                      type="number"
+                      min="0"
+                      value={availabilityDraft.availableUnits}
+                      onChange={(event) => setAvailabilityDraft((current) => ({ ...current, availableUnits: event.target.value }))}
+                      className="rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      value={availabilityDraft.availableSeats}
+                      onChange={(event) => setAvailabilityDraft((current) => ({ ...current, availableSeats: event.target.value }))}
+                      className="rounded-2xl border border-[#dccfb7] px-3 py-3 text-sm font-bold"
+                    />
+                  </div>
+                  <button className="mt-3 w-full rounded-2xl bg-[#234232] px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-white">
+                    Add availability
+                  </button>
+                </form>
+              </div>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                <div className="rounded-3xl bg-[#fcfaf6] p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                    Current setup
+                  </p>
+                  <p className="mt-3 text-sm font-semibold text-slate-700">
+                    {(operations?.serviceWindows || []).length} services ·{" "}
+                    {(operations?.tableTypes || []).length} table types ·{" "}
+                    {(operations?.availabilityEntries || []).length} availability entries
+                  </p>
+                </div>
+                <div className="rounded-3xl bg-[#fcfaf6] p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                    Incoming requests
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    {(operations?.reservationRequests || []).slice(0, 5).map((request) => (
+                      <div key={request.id} className="rounded-2xl bg-white p-3">
+                        <p className="text-sm font-black text-slate-900">
+                          {formatReservationRequestSummary(request)}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                          {request.status}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {["confirmed", "declined", "needs-clarification"].map((status) => (
+                            <button
+                              key={status}
+                              type="button"
+                              onClick={() => updateRequestStatus(request.id, status)}
+                              className="rounded-xl border border-[#dccfb7] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em]"
+                            >
+                              {status.replace("-", " ")}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {!(operations?.reservationRequests || []).length ? (
+                      <p className="text-sm font-semibold text-slate-500">
+                        No reservation requests yet.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </section>
 
             <section className="mt-8 rounded-[28px] border border-[#dccfb7] bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">

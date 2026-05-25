@@ -5,8 +5,10 @@ import {
   deleteRestaurant,
   fetchRestaurantAnalytics,
   fetchRestaurantClaimRequests,
+  fetchRestaurantReservationOperations,
   fetchRestaurants,
   reviewRestaurantClaimRequest,
+  updateRestaurantReservationRequest,
   updateRestaurant,
 } from "../../services/api";
 import RestaurantClaimManager from "./RestaurantClaimManager";
@@ -20,6 +22,11 @@ import {
   createEmptyRestaurantDraft,
   filterRestaurantRows,
 } from "./restaurantManagerState";
+import {
+  getReservationAutopilotBadge,
+  getReservationStatusLabel,
+  shapeRestaurantReservationOperations,
+} from "./restaurantReservationAdminState";
 
 const summaryCardTones = [
   "bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-800 text-white",
@@ -38,6 +45,8 @@ const RestaurantManager = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [claims, setClaims] = useState([]);
+  const [reservationOperations, setReservationOperations] = useState(null);
+  const [reservationRestaurantName, setReservationRestaurantName] = useState("");
   const [reviewingClaimAction, setReviewingClaimAction] = useState("");
 
   const visibleRestaurants = useMemo(
@@ -104,6 +113,7 @@ const RestaurantManager = () => {
       latitude: restaurant.geo?.latitude ?? "",
       longitude: restaurant.geo?.longitude ?? "",
     });
+    loadReservationOperations(restaurant._id, restaurant.name);
   };
 
   const resetForm = () => {
@@ -164,6 +174,24 @@ const RestaurantManager = () => {
       setMessage(error?.response?.data?.message || "Unable to review restaurant claim.");
     } finally {
       setReviewingClaimAction("");
+    }
+  };
+
+  const loadReservationOperations = async (restaurantId, restaurantName = "") => {
+    if (!restaurantId) return;
+    try {
+      const response = await fetchRestaurantReservationOperations(restaurantId);
+      setReservationOperations(shapeRestaurantReservationOperations(response.data || {}));
+      setReservationRestaurantName(restaurantName);
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Unable to load reservation operations.");
+    }
+  };
+
+  const updateReservationStatus = async (requestId, status) => {
+    await updateRestaurantReservationRequest(requestId, { status });
+    if (editingId) {
+      await loadReservationOperations(editingId, reservationRestaurantName);
     }
   };
 
@@ -529,6 +557,88 @@ const RestaurantManager = () => {
         reviewingClaimAction={reviewingClaimAction}
         onReview={reviewClaim}
       />
+
+      <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">
+              Reservation operations
+            </p>
+            <h3 className="mt-2 text-lg font-black text-zinc-950">
+              {reservationRestaurantName || "Select a restaurant to inspect reservations"}
+            </h3>
+          </div>
+          {reservationOperations ? (
+            <div className="grid grid-cols-4 gap-2 text-center text-xs font-black uppercase tracking-[0.12em] text-zinc-600">
+              <span className="rounded-xl bg-zinc-50 px-3 py-2">
+                {reservationOperations.summary.pending} pending
+              </span>
+              <span className="rounded-xl bg-emerald-50 px-3 py-2">
+                {reservationOperations.summary.confirmed} confirmed
+              </span>
+              <span className="rounded-xl bg-amber-50 px-3 py-2">
+                {reservationOperations.summary.needsClarification} clarify
+              </span>
+              <span className="rounded-xl bg-zinc-50 px-3 py-2">
+                {reservationOperations.summary.total} total
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        {reservationOperations ? (
+          <div className="mt-5 grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+            <div className="rounded-2xl bg-zinc-50 p-4 text-sm font-semibold text-zinc-600">
+              <p>{reservationOperations.serviceWindows.length} service windows</p>
+              <p className="mt-2">{reservationOperations.tableTypes.length} table types</p>
+              <p className="mt-2">
+                {reservationOperations.availabilityEntries.length} availability entries
+              </p>
+            </div>
+            <div className="space-y-3">
+              {reservationOperations.reservationRequests.slice(0, 6).map((request) => (
+                <div key={request.id} className="rounded-2xl border border-zinc-200 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-zinc-950">
+                        {request.travelerName} · {request.guestCount} guests
+                      </p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                        {request.date} at {request.preferredTime} ·{" "}
+                        {getReservationStatusLabel(request.status)}
+                      </p>
+                      <p className="mt-2 text-xs font-bold text-[#234232]">
+                        {getReservationAutopilotBadge(request.autopilot)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {["confirmed", "declined", "needs-clarification"].map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => updateReservationStatus(request.id, status)}
+                          className="rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em]"
+                        >
+                          {status.replace("-", " ")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {!reservationOperations.reservationRequests.length ? (
+                <p className="rounded-2xl bg-zinc-50 p-6 text-sm font-semibold text-zinc-500">
+                  No reservation requests yet.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-4 rounded-2xl bg-zinc-50 p-6 text-sm font-semibold text-zinc-500">
+            Open a restaurant from the list above to see reservation operations.
+          </p>
+        )}
+      </section>
     </section>
   );
 };

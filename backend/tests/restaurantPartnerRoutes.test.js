@@ -32,6 +32,23 @@ test("restaurant partner auth routes expose login and session lookup", async () 
   assert.equal(source.includes("requireRestaurantPartnerAdmin"), true);
 });
 
+test("restaurant partner auth routes expose reservation operations for assigned restaurants", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantPartnerAuthRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.get("/restaurants"'), true);
+  assert.equal(source.includes('router.get("/restaurants/:restaurantId/reservations"'), true);
+  assert.equal(source.includes('router.post("/restaurants/:restaurantId/service-windows"'), true);
+  assert.equal(source.includes('router.patch("/service-windows/:id"'), true);
+  assert.equal(source.includes('router.post("/restaurants/:restaurantId/table-types"'), true);
+  assert.equal(source.includes('router.patch("/table-types/:id"'), true);
+  assert.equal(source.includes('router.post("/restaurants/:restaurantId/availability"'), true);
+  assert.equal(source.includes('router.patch("/availability/:id"'), true);
+  assert.equal(source.includes('router.patch("/reservation-requests/:id"'), true);
+  assert.equal(source.includes("assertPartnerRestaurantAccess"), true);
+});
+
 test("restaurant partner auth middleware validates tenant-scoped restaurant partner sessions", async () => {
   const source = await import("node:fs/promises").then((fs) =>
     fs.readFile(

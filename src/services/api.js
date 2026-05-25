@@ -792,6 +792,42 @@ export const fetchRestaurantPartnerSession = () =>
   API.get("/restaurant-partner-auth/me", {
     headers: getRestaurantPartnerHeaders(),
   });
+export const fetchRestaurantPartnerRestaurants = () =>
+  cachedGet("/restaurant-partner-auth/restaurants", {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const fetchRestaurantPartnerReservationOperations = (restaurantId) =>
+  cachedGet(`/restaurant-partner-auth/restaurants/${restaurantId}/reservations`, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const createRestaurantPartnerServiceWindow = (restaurantId, data) =>
+  API.post(`/restaurant-partner-auth/restaurants/${restaurantId}/service-windows`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const updateRestaurantPartnerServiceWindow = (id, data) =>
+  API.patch(`/restaurant-partner-auth/service-windows/${id}`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const createRestaurantPartnerTableType = (restaurantId, data) =>
+  API.post(`/restaurant-partner-auth/restaurants/${restaurantId}/table-types`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const updateRestaurantPartnerTableType = (id, data) =>
+  API.patch(`/restaurant-partner-auth/table-types/${id}`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const createRestaurantPartnerAvailability = (restaurantId, data) =>
+  API.post(`/restaurant-partner-auth/restaurants/${restaurantId}/availability`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const updateRestaurantPartnerAvailability = (id, data) =>
+  API.patch(`/restaurant-partner-auth/availability/${id}`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const updateRestaurantPartnerReservationRequest = (id, data) =>
+  API.patch(`/restaurant-partner-auth/reservation-requests/${id}`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
 export const fetchTravelerSession = () =>
   API.get("/traveler-auth/me", {
     headers: getTravelerHeaders(),
@@ -1184,6 +1220,10 @@ export const fetchPublicRestaurants = (params = {}) =>
   cachedGet("/restaurants/public", { params });
 export const fetchPublicRestaurantBySlug = (slug) =>
   cachedGet(`/restaurants/public/${encodeURIComponent(slug)}`);
+export const fetchRestaurantReservationOptions = (restaurantId) =>
+  cachedGet(`/restaurants/public/${restaurantId}/reservations/options`);
+export const submitRestaurantReservationRequest = (restaurantId, data) =>
+  API.post(`/restaurants/public/${restaurantId}/reservations/requests`, data);
 export const searchRestaurantClaimListings = (params = {}) =>
   cachedGet("/restaurants/public/claim-search", { params });
 export const submitRestaurantClaimRequest = (data) =>
@@ -1195,6 +1235,22 @@ export const fetchRestaurantClaimRequests = (params = {}) =>
   cachedGet("/restaurants/claims", { params });
 export const reviewRestaurantClaimRequest = (id, data) =>
   API.post(`/restaurants/claims/${id}/review`, data);
+export const fetchRestaurantReservationOperations = (restaurantId) =>
+  cachedGet(`/restaurants/${restaurantId}/reservations`);
+export const createRestaurantServiceWindow = (restaurantId, data) =>
+  API.post(`/restaurants/${restaurantId}/service-windows`, data);
+export const updateRestaurantServiceWindow = (id, data) =>
+  API.patch(`/restaurants/service-windows/${id}`, data);
+export const createRestaurantTableType = (restaurantId, data) =>
+  API.post(`/restaurants/${restaurantId}/table-types`, data);
+export const updateRestaurantTableType = (id, data) =>
+  API.patch(`/restaurants/table-types/${id}`, data);
+export const createRestaurantAvailability = (restaurantId, data) =>
+  API.post(`/restaurants/${restaurantId}/availability`, data);
+export const updateRestaurantAvailability = (id, data) =>
+  API.patch(`/restaurants/availability/${id}`, data);
+export const updateRestaurantReservationRequest = (id, data) =>
+  API.patch(`/restaurants/reservation-requests/${id}`, data);
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

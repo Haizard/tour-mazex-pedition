@@ -2,6 +2,10 @@ import express from "express";
 import Restaurant from "../models/Restaurant.js";
 import RestaurantClaimRequest from "../models/RestaurantClaimRequest.js";
 import RestaurantPartnerAdmin from "../models/RestaurantPartnerAdmin.js";
+import RestaurantAvailabilityEntry from "../models/RestaurantAvailabilityEntry.js";
+import RestaurantReservationRequest from "../models/RestaurantReservationRequest.js";
+import RestaurantServiceWindow from "../models/RestaurantServiceWindow.js";
+import RestaurantTableType from "../models/RestaurantTableType.js";
 import CustomInquiry from "../models/CustomInquiry.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
@@ -24,6 +28,16 @@ import {
   updatePostgresFirstRestaurant,
 } from "../utils/postgresFirstRestaurantService.js";
 import { buildRestaurantAnalyticsSnapshot } from "../utils/restaurantAnalytics.js";
+import {
+  buildReservationAutopilot,
+  buildReservationStatusUpdate,
+  normalizeAvailabilityPayload,
+  normalizeReservationRequestPayload,
+  normalizeServiceWindowPayload,
+  normalizeTableTypePayload,
+  shapePublicReservationOptions,
+  shapeReservationRequest,
+} from "../utils/restaurantReservations.js";
 import {
   deleteRestaurantRecord,
   findRestaurantRecord,
@@ -218,6 +232,99 @@ router.post("/public/claims", async (req, res) => {
   }
 });
 
+router.get("/public/:id/reservations/options", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({
+      _id: req.params.id,
+      published: true,
+      marketplaceVisible: true,
+    })
+      .select("_id tenantId")
+      .lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found in marketplace." });
+    }
+
+    const [serviceWindows, tableTypes, availabilityEntries] = await Promise.all([
+      RestaurantServiceWindow.find({
+        tenantId: restaurant.tenantId,
+        restaurantId: restaurant._id,
+        status: "active",
+      })
+        .sort({ serviceType: 1, defaultStartTime: 1, label: 1 })
+        .lean(),
+      RestaurantTableType.find({
+        tenantId: restaurant.tenantId,
+        restaurantId: restaurant._id,
+        status: "active",
+      })
+        .sort({ minGuests: 1, maxGuests: 1, label: 1 })
+        .lean(),
+      RestaurantAvailabilityEntry.find({
+        tenantId: restaurant.tenantId,
+        restaurantId: restaurant._id,
+        status: { $ne: "closed" },
+      })
+        .sort({ date: 1 })
+        .limit(90)
+        .lean(),
+    ]);
+
+    return res.status(200).json(
+      shapePublicReservationOptions({
+        serviceWindows,
+        tableTypes,
+        availabilityEntries,
+      })
+    );
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch restaurant reservation options.",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/public/:id/reservations/requests", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({
+      _id: req.params.id,
+      published: true,
+      marketplaceVisible: true,
+    })
+      .select("_id tenantId")
+      .lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found in marketplace." });
+    }
+
+    const payload = normalizeReservationRequestPayload(req.body);
+    if (!payload.travelerName || !payload.travelerEmail || !payload.date || !payload.preferredTime) {
+      return res.status(400).json({
+        message: "Name, email, date, and preferred time are required.",
+      });
+    }
+
+    const reservationRequest = await RestaurantReservationRequest.create({
+      ...payload,
+      tenantId: restaurant.tenantId,
+      restaurantId: restaurant._id,
+      status: "pending",
+      autopilot: buildReservationAutopilot(payload),
+    });
+
+    return res.status(201).json({
+      request: shapeReservationRequest(reservationRequest.toObject()),
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+});
+
 router.get("/public/:slug", async (req, res) => {
   try {
     const restaurant = await Restaurant.findOne({
@@ -380,6 +487,157 @@ router.get("/analytics", async (req, res) => {
       message: "Failed to build restaurant analytics.",
       error: error.message,
     });
+  }
+});
+
+router.get("/:id/reservations", async (req, res) => {
+  try {
+    const query = buildTenantFilter(req, { restaurantId: req.params.id });
+    const [serviceWindows, tableTypes, availabilityEntries, reservationRequests] =
+      await Promise.all([
+        RestaurantServiceWindow.find(query).sort({ serviceType: 1, label: 1 }).lean(),
+        RestaurantTableType.find(query).sort({ minGuests: 1, label: 1 }).lean(),
+        RestaurantAvailabilityEntry.find(query).sort({ date: 1 }).limit(120).lean(),
+        RestaurantReservationRequest.find(query).sort({ createdAt: -1 }).limit(100).lean(),
+      ]);
+
+    return res.status(200).json({
+      serviceWindows,
+      tableTypes,
+      availabilityEntries,
+      reservationRequests: reservationRequests.map(shapeReservationRequest),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch restaurant reservations.",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/:id/service-windows", async (req, res) => {
+  try {
+    const payload = normalizeServiceWindowPayload(req.body);
+    if (!payload.label) {
+      return res.status(400).json({ message: "Service window label is required." });
+    }
+
+    const serviceWindow = await RestaurantServiceWindow.create(
+      withTenantId(req, { ...payload, restaurantId: req.params.id })
+    );
+
+    return res.status(201).json(serviceWindow);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/service-windows/:id", async (req, res) => {
+  try {
+    const serviceWindow = await RestaurantServiceWindow.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      { $set: normalizeServiceWindowPayload(req.body) },
+      { new: true }
+    ).lean();
+
+    if (!serviceWindow) {
+      return res.status(404).json({ message: "Service window not found." });
+    }
+
+    return res.status(200).json(serviceWindow);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/:id/table-types", async (req, res) => {
+  try {
+    const payload = normalizeTableTypePayload(req.body);
+    if (!payload.label) {
+      return res.status(400).json({ message: "Table type label is required." });
+    }
+
+    const tableType = await RestaurantTableType.create(
+      withTenantId(req, { ...payload, restaurantId: req.params.id })
+    );
+
+    return res.status(201).json(tableType);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/table-types/:id", async (req, res) => {
+  try {
+    const tableType = await RestaurantTableType.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      { $set: normalizeTableTypePayload(req.body) },
+      { new: true }
+    ).lean();
+
+    if (!tableType) {
+      return res.status(404).json({ message: "Table type not found." });
+    }
+
+    return res.status(200).json(tableType);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/:id/availability", async (req, res) => {
+  try {
+    const payload = normalizeAvailabilityPayload(req.body);
+    if (!payload.date) {
+      return res.status(400).json({ message: "Availability date is required." });
+    }
+
+    const availability = await RestaurantAvailabilityEntry.create(
+      withTenantId(req, { ...payload, restaurantId: req.params.id })
+    );
+
+    return res.status(201).json(availability);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/availability/:id", async (req, res) => {
+  try {
+    const availability = await RestaurantAvailabilityEntry.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      { $set: normalizeAvailabilityPayload(req.body) },
+      { new: true }
+    ).lean();
+
+    if (!availability) {
+      return res.status(404).json({ message: "Availability entry not found." });
+    }
+
+    return res.status(200).json(availability);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/reservation-requests/:id", async (req, res) => {
+  try {
+    const update = buildReservationStatusUpdate(req.body);
+    const reservationRequest = await RestaurantReservationRequest.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      { $set: update },
+      { new: true }
+    ).lean();
+
+    if (!reservationRequest) {
+      return res.status(404).json({ message: "Reservation request not found." });
+    }
+
+    return res.status(200).json({
+      request: shapeReservationRequest(reservationRequest),
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
 });
 

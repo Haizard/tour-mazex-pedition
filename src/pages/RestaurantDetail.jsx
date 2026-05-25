@@ -4,7 +4,8 @@ import { FaArrowLeft, FaMapMarkerAlt, FaUtensils } from "react-icons/fa";
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import RestaurantDirectInquiryForm from "../components/Marketplace/RestaurantDirectInquiryForm";
 import RestaurantAiConciergeCard from "../components/Marketplace/RestaurantAiConciergeCard";
-import { fetchPublicRestaurantBySlug } from "../services/api";
+import RestaurantReservationWidget from "../components/Marketplace/RestaurantReservationWidget";
+import { fetchPublicRestaurantBySlug, fetchRestaurantReservationOptions } from "../services/api";
 import {
   getRestaurantDiningReassuranceItems,
   getRestaurantOperatorTrustLabel,
@@ -16,6 +17,7 @@ import { buildRestaurantIntentOptions } from "./restaurantDiscoveryUtils";
 const RestaurantDetail = () => {
   const { slug } = useParams();
   const [restaurant, setRestaurant] = useState(null);
+  const [reservationOptions, setReservationOptions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedIntentId, setSelectedIntentId] = useState("direct");
 
@@ -24,10 +26,19 @@ const RestaurantDetail = () => {
       setLoading(true);
       try {
         const response = await fetchPublicRestaurantBySlug(slug);
-        setRestaurant(response.data || null);
+        const loadedRestaurant = response.data || null;
+        setRestaurant(loadedRestaurant);
+
+        if (loadedRestaurant?.id || loadedRestaurant?._id) {
+          const optionsResponse = await fetchRestaurantReservationOptions(
+            loadedRestaurant.id || loadedRestaurant._id
+          );
+          setReservationOptions(optionsResponse.data || null);
+        }
       } catch (error) {
         console.error("Restaurant detail error:", error);
         setRestaurant(null);
+        setReservationOptions(null);
       } finally {
         setLoading(false);
       }
@@ -140,7 +151,20 @@ const RestaurantDetail = () => {
         </section>
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <RestaurantAiConciergeCard restaurant={restaurant} />
+          <div className="space-y-8">
+            <RestaurantAiConciergeCard restaurant={restaurant} />
+            <RestaurantReservationWidget
+              restaurant={restaurant}
+              options={reservationOptions}
+              context={{
+                source: selectedIntent?.intentType === "itinerary-restaurant" ? "itinerary" : "direct",
+                itineraryContext:
+                  selectedIntent?.intentType === "itinerary-restaurant"
+                    ? selectedIntent.payload
+                    : {},
+              }}
+            />
+          </div>
           <aside className="rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
             <div className="bg-[#234232] p-6 text-white">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d9c79f]">Restaurant Inquiry</p>

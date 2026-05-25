@@ -1,7 +1,19 @@
 import express from "express";
 import RestaurantPartnerAdmin from "../models/RestaurantPartnerAdmin.js";
+import Restaurant from "../models/Restaurant.js";
+import RestaurantAvailabilityEntry from "../models/RestaurantAvailabilityEntry.js";
+import RestaurantReservationRequest from "../models/RestaurantReservationRequest.js";
+import RestaurantServiceWindow from "../models/RestaurantServiceWindow.js";
+import RestaurantTableType from "../models/RestaurantTableType.js";
 import { requireRestaurantPartnerAdmin } from "../middleware/restaurantPartnerAuthMiddleware.js";
 import { signRestaurantPartnerToken, verifyAdminPassword } from "../utils/adminAuth.js";
+import {
+  buildReservationStatusUpdate,
+  normalizeAvailabilityPayload,
+  normalizeServiceWindowPayload,
+  normalizeTableTypePayload,
+  shapeReservationRequest,
+} from "../utils/restaurantReservations.js";
 
 const router = express.Router();
 
@@ -13,6 +25,18 @@ const shapePartnerAdmin = (admin = {}) => ({
   restaurantIds: (admin.restaurantIds || []).map((restaurantId) => String(restaurantId)),
   lastLoginAt: admin.lastLoginAt,
 });
+
+const getPartnerRestaurantIds = (admin = {}) =>
+  (admin.restaurantIds || []).map((restaurantId) => String(restaurantId));
+
+const assertPartnerRestaurantAccess = (req, restaurantId) => {
+  const allowedIds = getPartnerRestaurantIds(req.restaurantPartnerAdmin);
+  if (!allowedIds.includes(String(restaurantId))) {
+    const error = new Error("Restaurant is not assigned to this partner account.");
+    error.statusCode = 403;
+    throw error;
+  }
+};
 
 router.post("/login", async (req, res) => {
   try {
@@ -77,6 +101,193 @@ router.get("/me", requireRestaurantPartnerAdmin, async (req, res) => {
       slug: req.tenant.slug,
     },
   });
+});
+
+router.use(requireRestaurantPartnerAdmin);
+
+router.get("/restaurants", async (req, res) => {
+  try {
+    const restaurants = await Restaurant.find({
+      tenantId: req.tenantId,
+      _id: { $in: req.restaurantPartnerAdmin.restaurantIds || [] },
+    })
+      .sort({ name: 1 })
+      .lean();
+
+    return res.status(200).json({ restaurants });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/restaurants/:restaurantId/reservations", async (req, res) => {
+  try {
+    assertPartnerRestaurantAccess(req, req.params.restaurantId);
+    const query = {
+      tenantId: req.tenantId,
+      restaurantId: req.params.restaurantId,
+    };
+    const [serviceWindows, tableTypes, availabilityEntries, reservationRequests] =
+      await Promise.all([
+        RestaurantServiceWindow.find(query).sort({ serviceType: 1, label: 1 }).lean(),
+        RestaurantTableType.find(query).sort({ minGuests: 1, label: 1 }).lean(),
+        RestaurantAvailabilityEntry.find(query).sort({ date: 1 }).limit(120).lean(),
+        RestaurantReservationRequest.find(query).sort({ createdAt: -1 }).limit(100).lean(),
+      ]);
+
+    return res.status(200).json({
+      serviceWindows,
+      tableTypes,
+      availabilityEntries,
+      reservationRequests: reservationRequests.map(shapeReservationRequest),
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+});
+
+router.post("/restaurants/:restaurantId/service-windows", async (req, res) => {
+  try {
+    assertPartnerRestaurantAccess(req, req.params.restaurantId);
+    const payload = normalizeServiceWindowPayload(req.body);
+    if (!payload.label) {
+      return res.status(400).json({ message: "Service window label is required." });
+    }
+
+    const serviceWindow = await RestaurantServiceWindow.create({
+      ...payload,
+      tenantId: req.tenantId,
+      restaurantId: req.params.restaurantId,
+    });
+
+    return res.status(201).json(serviceWindow);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.patch("/service-windows/:id", async (req, res) => {
+  try {
+    const existing = await RestaurantServiceWindow.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Service window not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, existing.restaurantId);
+    Object.assign(existing, normalizeServiceWindowPayload(req.body));
+    await existing.save();
+
+    return res.status(200).json(existing);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.post("/restaurants/:restaurantId/table-types", async (req, res) => {
+  try {
+    assertPartnerRestaurantAccess(req, req.params.restaurantId);
+    const payload = normalizeTableTypePayload(req.body);
+    if (!payload.label) {
+      return res.status(400).json({ message: "Table type label is required." });
+    }
+
+    const tableType = await RestaurantTableType.create({
+      ...payload,
+      tenantId: req.tenantId,
+      restaurantId: req.params.restaurantId,
+    });
+
+    return res.status(201).json(tableType);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.patch("/table-types/:id", async (req, res) => {
+  try {
+    const existing = await RestaurantTableType.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Table type not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, existing.restaurantId);
+    Object.assign(existing, normalizeTableTypePayload(req.body));
+    await existing.save();
+
+    return res.status(200).json(existing);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.post("/restaurants/:restaurantId/availability", async (req, res) => {
+  try {
+    assertPartnerRestaurantAccess(req, req.params.restaurantId);
+    const payload = normalizeAvailabilityPayload(req.body);
+    if (!payload.date) {
+      return res.status(400).json({ message: "Availability date is required." });
+    }
+
+    const availability = await RestaurantAvailabilityEntry.create({
+      ...payload,
+      tenantId: req.tenantId,
+      restaurantId: req.params.restaurantId,
+    });
+
+    return res.status(201).json(availability);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.patch("/availability/:id", async (req, res) => {
+  try {
+    const existing = await RestaurantAvailabilityEntry.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Availability entry not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, existing.restaurantId);
+    Object.assign(existing, normalizeAvailabilityPayload(req.body));
+    await existing.save();
+
+    return res.status(200).json(existing);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.patch("/reservation-requests/:id", async (req, res) => {
+  try {
+    const existing = await RestaurantReservationRequest.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Reservation request not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, existing.restaurantId);
+    Object.assign(existing, buildReservationStatusUpdate(req.body));
+    await existing.save();
+
+    return res.status(200).json({ request: shapeReservationRequest(existing.toObject()) });
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
 });
 
 export default router;
