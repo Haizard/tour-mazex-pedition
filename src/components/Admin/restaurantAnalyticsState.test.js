@@ -15,12 +15,16 @@ test("buildRestaurantAnalyticsCards maps summary metrics into cards", () => {
       totalRestaurantLeads: 9,
       directRestaurantLeads: 5,
       itineraryRestaurantLeads: 4,
+      restaurantPaymentPaidAmount: 1200,
+      restaurantPaymentPendingAmount: 300,
     },
   });
 
-  assert.equal(cards.length >= 4, true);
+  assert.equal(cards.length >= 6, true);
   assert.equal(cards[0].value, 4);
   assert.equal(cards[3].value, "5 / 4");
+  assert.equal(cards[4].value, "USD 1200.00");
+  assert.equal(cards[5].value, "USD 300.00");
 });
 
 test("buildRestaurantSponsoredSpotlight separates top and low sponsored performers", () => {

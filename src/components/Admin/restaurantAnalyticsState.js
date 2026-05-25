@@ -1,4 +1,6 @@
 const toNumber = (value) => Number(value || 0);
+const formatMoney = (value, currency = "USD") =>
+  `${String(currency || "USD").toUpperCase()} ${toNumber(value).toFixed(2)}`;
 const parseTimestamp = (value = "") => {
   const time = new Date(value || 0).getTime();
   return Number.isFinite(time) ? time : 0;
@@ -46,6 +48,18 @@ export const buildRestaurantAnalyticsCards = (payload = {}) => {
       label: "Direct / Itinerary",
       value: `${toNumber(summary.directRestaurantLeads)} / ${toNumber(summary.itineraryRestaurantLeads)}`,
       tone: "indigo",
+    },
+    {
+      key: "paid-dining",
+      label: "Paid Dining Revenue",
+      value: formatMoney(summary.restaurantPaymentPaidAmount),
+      tone: "emerald",
+    },
+    {
+      key: "pending-dining",
+      label: "Pending Dining Revenue",
+      value: formatMoney(summary.restaurantPaymentPendingAmount),
+      tone: "amber",
     },
   ];
 };

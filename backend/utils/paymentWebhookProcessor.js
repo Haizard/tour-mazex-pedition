@@ -10,6 +10,7 @@ import {
   syncLinkedPaymentRevenueRecords,
   syncPaymentRevenueShadowWrites,
 } from "./paymentRevenueSync.js";
+import { syncRestaurantReservationPaymentState } from "./restaurantPaymentLifecycle.js";
 
 export const processQueuedPaymentWebhooksNow = async ({
   env = globalThis.process?.env || {},
@@ -45,7 +46,10 @@ export const processQueuedPaymentWebhooksNow = async ({
       loadPayment: async (job) => PaymentTransaction.findById(job.paymentId),
       savePayment: async (payment) => payment.save(),
       syncLinkedRecords: async (payment) =>
-        syncLinkedPaymentRevenueRecords(String(payment.tenantId || ""), payment.toObject?.() || payment),
+        Promise.all([
+          syncLinkedPaymentRevenueRecords(String(payment.tenantId || ""), payment.toObject?.() || payment),
+          syncRestaurantReservationPaymentState(payment.toObject?.() || payment),
+        ]),
       syncRevenueShadowWrites: async (payment) =>
         syncPaymentRevenueShadowWrites(String(payment.tenantId || ""), payment.toObject?.() || payment),
     });

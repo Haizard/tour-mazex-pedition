@@ -474,7 +474,7 @@ router.get("/", async (req, res) => {
 
 router.get("/analytics", async (req, res) => {
   try {
-    const [restaurants, inquiries, quotes] = await Promise.all([
+    const [restaurants, inquiries, quotes, payments] = await Promise.all([
       Restaurant.find(buildTenantFilter(req)).sort({ sponsoredPlacement: -1, name: 1 }).lean(),
       CustomInquiry.find(
         buildTenantFilter(req, {
@@ -486,11 +486,18 @@ router.get("/analytics", async (req, res) => {
       QuoteProposal.find(buildTenantFilter(req))
         .select("inquiryId status conversionStage")
         .lean(),
+      PaymentTransaction.find(
+        buildTenantFilter(req, {
+          restaurantId: { $ne: null },
+        })
+      )
+        .select("restaurantId amount status sourceMeta createdAt")
+        .lean(),
     ]);
 
     return res
       .status(200)
-      .json(buildRestaurantAnalyticsSnapshot({ restaurants, inquiries, quotes }));
+      .json(buildRestaurantAnalyticsSnapshot({ restaurants, inquiries, quotes, payments }));
   } catch (error) {
     return res.status(500).json({
       message: "Failed to build restaurant analytics.",

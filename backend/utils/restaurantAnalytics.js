@@ -82,11 +82,65 @@ const buildRecentActivity = (rows = []) =>
     )
     .slice(0, 5);
 
+const buildPaymentSummaryMap = (payments = []) => {
+  const summaryByRestaurant = new Map();
+  const reasonBreakdown = {};
+
+  for (const payment of payments || []) {
+    const restaurantId = toId(payment.restaurantId);
+    if (!restaurantId) continue;
+
+    const amount = Number(payment.amount || 0);
+    const status = String(payment.status || "pending");
+    const reason = String(payment.sourceMeta?.paymentReason || payment.paymentReason || "custom");
+    const current = summaryByRestaurant.get(restaurantId) || {
+      paymentRequestedAmount: 0,
+      paymentPendingAmount: 0,
+      paymentPaidAmount: 0,
+      paymentFailedAmount: 0,
+      paymentRefundedAmount: 0,
+      paymentRequestedCount: 0,
+      paymentPaidCount: 0,
+    };
+
+    current.paymentRequestedAmount += amount;
+    current.paymentRequestedCount += 1;
+    if (status === "paid") {
+      current.paymentPaidAmount += amount;
+      current.paymentPaidCount += 1;
+    } else if (status === "refunded") {
+      current.paymentRefundedAmount += amount;
+    } else if (["failed", "cancelled"].includes(status)) {
+      current.paymentFailedAmount += amount;
+    } else {
+      current.paymentPendingAmount += amount;
+    }
+
+    const reasonSummary = reasonBreakdown[reason] || {
+      requestedAmount: 0,
+      paidAmount: 0,
+      requestedCount: 0,
+      paidCount: 0,
+    };
+    reasonSummary.requestedAmount += amount;
+    reasonSummary.requestedCount += 1;
+    if (status === "paid") {
+      reasonSummary.paidAmount += amount;
+      reasonSummary.paidCount += 1;
+    }
+    reasonBreakdown[reason] = reasonSummary;
+    summaryByRestaurant.set(restaurantId, current);
+  }
+
+  return { summaryByRestaurant, reasonBreakdown };
+};
+
 export const buildRestaurantAnalyticsSnapshot = ({
   restaurants = [],
   inquiries = [],
   quotes = [],
   quoteCountsByRestaurantId = {},
+  payments = [],
 } = {}) => {
   const relevantInquiries = (inquiries || []).filter((inquiry) => toId(inquiry.restaurantId));
   const quoteSummaryByRestaurant = buildQuoteSummaryMap({
@@ -94,6 +148,8 @@ export const buildRestaurantAnalyticsSnapshot = ({
     inquiries: relevantInquiries,
     quoteCountsByRestaurantId,
   });
+  const { summaryByRestaurant: paymentSummaryByRestaurant, reasonBreakdown } =
+    buildPaymentSummaryMap(payments);
 
   const rows = (restaurants || []).map((restaurant) => {
     const restaurantId = toId(restaurant._id);
@@ -109,6 +165,15 @@ export const buildRestaurantAnalyticsSnapshot = ({
     const quoteSummary = quoteSummaryByRestaurant.get(restaurantId) || {
       quoteCount: 0,
       acceptedQuoteCount: 0,
+    };
+    const paymentSummary = paymentSummaryByRestaurant.get(restaurantId) || {
+      paymentRequestedAmount: 0,
+      paymentPendingAmount: 0,
+      paymentPaidAmount: 0,
+      paymentFailedAmount: 0,
+      paymentRefundedAmount: 0,
+      paymentRequestedCount: 0,
+      paymentPaidCount: 0,
     };
     const lastInquiryAt = restaurantInquiries
       .map((inquiry) => asIso(inquiry.createdAt))
@@ -138,6 +203,7 @@ export const buildRestaurantAnalyticsSnapshot = ({
       itineraryInquiryCount: itineraryInquiries.length,
       quoteCount: quoteSummary.quoteCount,
       acceptedQuoteCount: quoteSummary.acceptedQuoteCount,
+      ...paymentSummary,
       lastInquiryAt,
       lastDirectInquiryAt,
       lastItineraryInquiryAt,
@@ -159,6 +225,27 @@ export const buildRestaurantAnalyticsSnapshot = ({
   );
 
   const sponsoredRows = sortedRows.filter((row) => row.sponsoredPlacement);
+  const paymentTotals = sortedRows.reduce(
+    (summary, row) => {
+      summary.restaurantPaymentRequestedAmount += row.paymentRequestedAmount;
+      summary.restaurantPaymentPendingAmount += row.paymentPendingAmount;
+      summary.restaurantPaymentPaidAmount += row.paymentPaidAmount;
+      summary.restaurantPaymentFailedAmount += row.paymentFailedAmount;
+      summary.restaurantPaymentRefundedAmount += row.paymentRefundedAmount;
+      summary.restaurantPaymentRequestedCount += row.paymentRequestedCount;
+      summary.restaurantPaymentPaidCount += row.paymentPaidCount;
+      return summary;
+    },
+    {
+      restaurantPaymentRequestedAmount: 0,
+      restaurantPaymentPendingAmount: 0,
+      restaurantPaymentPaidAmount: 0,
+      restaurantPaymentFailedAmount: 0,
+      restaurantPaymentRefundedAmount: 0,
+      restaurantPaymentRequestedCount: 0,
+      restaurantPaymentPaidCount: 0,
+    }
+  );
 
   return {
     summary: {
@@ -174,8 +261,10 @@ export const buildRestaurantAnalyticsSnapshot = ({
       itineraryRestaurantLeads: relevantInquiries.filter(
         (inquiry) => inquiry.restaurantIntentType === "itinerary-add-on"
       ).length,
+      ...paymentTotals,
     },
     restaurants: sortedRows,
+    paymentReasonBreakdown: reasonBreakdown,
     sponsoredPerformance: {
       top: sponsoredRows.slice(0, 3),
       watch: [...sponsoredRows]

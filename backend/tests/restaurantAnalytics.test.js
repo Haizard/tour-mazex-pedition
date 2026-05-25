@@ -129,3 +129,38 @@ test("buildRestaurantAnalyticsSnapshot exposes sponsored performance and recent 
   assert.equal(snapshot.recentActivity[0].restaurantId, "restaurant-2");
   assert.equal(snapshot.recentActivity[0].activityLabel, "Direct restaurant inquiry");
 });
+
+test("buildRestaurantAnalyticsSnapshot includes restaurant payment revenue", () => {
+  const snapshot = buildRestaurantAnalyticsSnapshot({
+    restaurants: [
+      {
+        _id: "restaurant-1",
+        name: "Savanna Table",
+        destination: "Arusha",
+        sponsoredPlacement: true,
+        published: true,
+        marketplaceVisible: true,
+      },
+    ],
+    payments: [
+      {
+        restaurantId: "restaurant-1",
+        amount: 100,
+        status: "paid",
+        sourceMeta: { paymentReason: "event_dining" },
+      },
+      {
+        restaurantId: "restaurant-1",
+        amount: 50,
+        status: "pending",
+        sourceMeta: { paymentReason: "reservation_deposit" },
+      },
+    ],
+  });
+
+  assert.equal(snapshot.summary.restaurantPaymentRequestedAmount, 150);
+  assert.equal(snapshot.summary.restaurantPaymentPaidAmount, 100);
+  assert.equal(snapshot.restaurants[0].paymentRequestedAmount, 150);
+  assert.equal(snapshot.restaurants[0].paymentPaidAmount, 100);
+  assert.equal(snapshot.paymentReasonBreakdown.event_dining.paidAmount, 100);
+});
