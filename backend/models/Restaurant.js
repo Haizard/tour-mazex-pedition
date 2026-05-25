@@ -30,6 +30,18 @@ const restaurantSchema = new mongoose.Schema(
     ambianceTags: { type: [String], default: [] },
     openingHoursSummary: { type: String, trim: true, default: "" },
     reservationStyleSummary: { type: String, trim: true, default: "" },
+    restaurantCheckout: {
+      enabled: { type: Boolean, default: false },
+      depositMode: {
+        type: String,
+        enum: ["none", "fixed", "percentage", "custom-only"],
+        default: "none",
+      },
+      depositAmount: { type: Number, min: 0, default: 0 },
+      depositPercentage: { type: Number, min: 0, max: 100, default: 0 },
+      currency: { type: String, trim: true, default: "USD" },
+      paymentInstructions: { type: String, trim: true, default: "" },
+    },
     photos: { type: [String], default: [] },
     averageRating: { type: Number, min: 0, max: 5, default: null },
     reviewCount: { type: Number, min: 0, default: 0 },

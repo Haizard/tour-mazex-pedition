@@ -20,6 +20,38 @@ const paymentTransactionSchema = new mongoose.Schema(
       ref: "AccommodationReservation",
       default: null,
     },
+    restaurantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      default: null,
+      index: true,
+    },
+    restaurantReservationRequestId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RestaurantReservationRequest",
+      default: null,
+      index: true,
+    },
+    restaurantServiceWindowId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RestaurantServiceWindow",
+      default: null,
+    },
+    restaurantTableTypeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RestaurantTableType",
+      default: null,
+    },
+    sourceType: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
+    },
+    sourceMeta: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({}),
+    },
     customerName: {
       type: String,
       trim: true,

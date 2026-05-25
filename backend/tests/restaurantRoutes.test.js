@@ -102,6 +102,18 @@ test("restaurant routes expose tenant-admin reservation operations", async () =>
   assert.equal(source.includes('router.patch("/reservation-requests/:id"'), true);
 });
 
+test("restaurant routes expose tenant-admin dining checkout operations", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.patch("/:id/checkout-settings"'), true);
+  assert.equal(source.includes('router.post("/reservation-requests/:id/payment-request"'), true);
+  assert.equal(source.includes("buildRestaurantPaymentTransactionPayload"), true);
+  assert.equal(source.includes("PaymentTransaction.create"), true);
+  assert.equal(source.includes("buildReservationPaymentUpdate"), true);
+});
+
 test("restaurant client API exports public claim search and intake helpers", async () => {
   const source = await import("node:fs/promises").then((fs) =>
     fs.readFile(new URL("../../src/services/api.js", import.meta.url), "utf8")

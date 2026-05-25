@@ -828,6 +828,14 @@ export const updateRestaurantPartnerReservationRequest = (id, data) =>
   API.patch(`/restaurant-partner-auth/reservation-requests/${id}`, data, {
     headers: getRestaurantPartnerHeaders(),
   });
+export const updateRestaurantPartnerCheckoutSettings = (restaurantId, data) =>
+  API.patch(`/restaurant-partner-auth/restaurants/${restaurantId}/checkout-settings`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const createRestaurantPartnerPaymentRequest = (reservationRequestId, data) =>
+  API.post(`/restaurant-partner-auth/reservation-requests/${reservationRequestId}/payment-request`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
 export const fetchTravelerSession = () =>
   API.get("/traveler-auth/me", {
     headers: getTravelerHeaders(),
@@ -1251,6 +1259,10 @@ export const updateRestaurantAvailability = (id, data) =>
   API.patch(`/restaurants/availability/${id}`, data);
 export const updateRestaurantReservationRequest = (id, data) =>
   API.patch(`/restaurants/reservation-requests/${id}`, data);
+export const updateRestaurantCheckoutSettings = (restaurantId, data) =>
+  API.patch(`/restaurants/${restaurantId}/checkout-settings`, data);
+export const createRestaurantPaymentRequest = (reservationRequestId, data) =>
+  API.post(`/restaurants/reservation-requests/${reservationRequestId}/payment-request`, data);
 
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>

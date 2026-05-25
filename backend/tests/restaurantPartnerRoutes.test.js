@@ -49,6 +49,18 @@ test("restaurant partner auth routes expose reservation operations for assigned 
   assert.equal(source.includes("assertPartnerRestaurantAccess"), true);
 });
 
+test("restaurant partner auth routes expose dining checkout operations", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantPartnerAuthRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.patch("/restaurants/:restaurantId/checkout-settings"'), true);
+  assert.equal(source.includes('router.post("/reservation-requests/:id/payment-request"'), true);
+  assert.equal(source.includes("buildRestaurantPaymentTransactionPayload"), true);
+  assert.equal(source.includes("PaymentTransaction.create"), true);
+  assert.equal(source.includes("buildReservationPaymentUpdate"), true);
+});
+
 test("restaurant partner auth middleware validates tenant-scoped restaurant partner sessions", async () => {
   const source = await import("node:fs/promises").then((fs) =>
     fs.readFile(

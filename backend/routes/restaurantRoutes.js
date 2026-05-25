@@ -6,6 +6,7 @@ import RestaurantAvailabilityEntry from "../models/RestaurantAvailabilityEntry.j
 import RestaurantReservationRequest from "../models/RestaurantReservationRequest.js";
 import RestaurantServiceWindow from "../models/RestaurantServiceWindow.js";
 import RestaurantTableType from "../models/RestaurantTableType.js";
+import PaymentTransaction from "../models/PaymentTransaction.js";
 import CustomInquiry from "../models/CustomInquiry.js";
 import QuoteProposal from "../models/QuoteProposal.js";
 import { requireTenantAdmin } from "../middleware/adminAuthMiddleware.js";
@@ -38,6 +39,14 @@ import {
   shapePublicReservationOptions,
   shapeReservationRequest,
 } from "../utils/restaurantReservations.js";
+import {
+  buildReservationPaymentUpdate,
+  buildRestaurantPaymentTransactionPayload,
+  calculateRestaurantDepositAmount,
+  isActiveRestaurantPaymentTransaction,
+  normalizeRestaurantCheckoutSettings,
+  validateCustomRestaurantPayment,
+} from "../utils/restaurantCheckout.js";
 import {
   deleteRestaurantRecord,
   findRestaurantRecord,
@@ -635,6 +644,92 @@ router.patch("/reservation-requests/:id", async (req, res) => {
 
     return res.status(200).json({
       request: shapeReservationRequest(reservationRequest),
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/:id/checkout-settings", async (req, res) => {
+  try {
+    const settings = normalizeRestaurantCheckoutSettings(req.body);
+    const restaurant = await Restaurant.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      { $set: { restaurantCheckout: settings } },
+      { new: true }
+    ).lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    return res.status(200).json({ restaurantCheckout: restaurant.restaurantCheckout });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/reservation-requests/:id/payment-request", async (req, res) => {
+  try {
+    const reservation = await RestaurantReservationRequest.findOne(
+      buildTenantFilter(req, { _id: req.params.id })
+    );
+
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation request not found." });
+    }
+
+    const restaurant = await Restaurant.findOne(
+      buildTenantFilter(req, { _id: reservation.restaurantId })
+    ).lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const existingPayment = await PaymentTransaction.findOne({
+      tenantId: req.tenantId,
+      restaurantReservationRequestId: reservation._id,
+      status: "pending",
+    }).lean();
+
+    if (isActiveRestaurantPaymentTransaction(existingPayment)) {
+      return res.status(409).json({
+        message: "An active payment request already exists for this reservation.",
+        payment: existingPayment,
+      });
+    }
+
+    const payment =
+      req.body.paymentMode === "custom"
+        ? validateCustomRestaurantPayment(req.body)
+        : calculateRestaurantDepositAmount({
+            settings: restaurant.restaurantCheckout,
+            reservation,
+          });
+
+    const transaction = await PaymentTransaction.create(
+      buildRestaurantPaymentTransactionPayload({
+        tenantId: req.tenantId,
+        restaurant,
+        reservation,
+        payment,
+      })
+    );
+
+    Object.assign(
+      reservation,
+      buildReservationPaymentUpdate({
+        transaction,
+        paymentReason: payment.paymentReason,
+        paymentInstructions: payment.paymentInstructions,
+      })
+    );
+    await reservation.save();
+
+    return res.status(201).json({
+      payment: transaction,
+      request: shapeReservationRequest(reservation.toObject()),
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });

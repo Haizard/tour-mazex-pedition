@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FaPlus, FaSave, FaTrash, FaUtensils } from "react-icons/fa";
 import {
   createRestaurant,
+  createRestaurantPaymentRequest,
   deleteRestaurant,
   fetchRestaurantAnalytics,
   fetchRestaurantClaimRequests,
@@ -11,6 +12,10 @@ import {
   updateRestaurantReservationRequest,
   updateRestaurant,
 } from "../../services/api";
+import {
+  canRequestRestaurantPayment,
+  formatRestaurantPaymentAmount,
+} from "./restaurantCheckoutAdminState";
 import RestaurantClaimManager from "./RestaurantClaimManager";
 import {
   buildRestaurantAnalyticsCards,
@@ -190,6 +195,13 @@ const RestaurantManager = () => {
 
   const updateReservationStatus = async (requestId, status) => {
     await updateRestaurantReservationRequest(requestId, { status });
+    if (editingId) {
+      await loadReservationOperations(editingId, reservationRestaurantName);
+    }
+  };
+
+  const requestRestaurantDepositPayment = async (requestId) => {
+    await createRestaurantPaymentRequest(requestId, { paymentMode: "deposit" });
     if (editingId) {
       await loadReservationOperations(editingId, reservationRestaurantName);
     }
@@ -610,6 +622,10 @@ const RestaurantManager = () => {
                       <p className="mt-2 text-xs font-bold text-[#234232]">
                         {getReservationAutopilotBadge(request.autopilot)}
                       </p>
+                      <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-zinc-600">
+                        Payment {request.paymentStatus || "not_required"}
+                        {request.paymentAmount ? ` · ${formatRestaurantPaymentAmount(request)}` : ""}
+                      </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {["confirmed", "declined", "needs-clarification"].map((status) => (
@@ -622,6 +638,15 @@ const RestaurantManager = () => {
                           {status.replace("-", " ")}
                         </button>
                       ))}
+                      {canRequestRestaurantPayment(request) ? (
+                        <button
+                          type="button"
+                          onClick={() => requestRestaurantDepositPayment(request.id)}
+                          className="rounded-xl bg-zinc-950 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white"
+                        >
+                          Request deposit
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 </div>

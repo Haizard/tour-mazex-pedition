@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaCalendarCheck, FaClipboardCheck, FaDoorOpen, FaStore, FaUtensils } from "react-icons/fa";
 import {
   createRestaurantPartnerAvailability,
+  createRestaurantPartnerPaymentRequest,
   createRestaurantPartnerServiceWindow,
   createRestaurantPartnerTableType,
   fetchRestaurantPartnerReservationOperations,
@@ -10,6 +11,11 @@ import {
   fetchRestaurantPartnerSession,
   updateRestaurantPartnerReservationRequest,
 } from "../services/api";
+import {
+  buildCustomDiningPaymentPayload,
+  buildDepositPaymentPayload,
+  getRestaurantPaymentStatusLabel,
+} from "../components/RestaurantPartner/restaurantPartnerCheckoutState";
 import {
   buildAvailabilityPayload,
   buildReservationStatusPayload,
@@ -45,6 +51,7 @@ const RestaurantPartnerDashboard = () => {
   const [serviceDraft, setServiceDraft] = useState({ label: "", serviceType: "dinner", defaultStartTime: "18:00", defaultEndTime: "22:00" });
   const [tableDraft, setTableDraft] = useState({ label: "", minGuests: 2, maxGuests: 4, quantity: 1 });
   const [availabilityDraft, setAvailabilityDraft] = useState({ date: "", status: "open", availableUnits: 1, availableSeats: 4 });
+  const [paymentDraftByRequest, setPaymentDraftByRequest] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
@@ -172,6 +179,21 @@ const RestaurantPartnerDashboard = () => {
       requestId,
       buildReservationStatusPayload({ status })
     );
+    await loadReservationOperations(selectedRestaurantId);
+  };
+
+  const requestDepositPayment = async (requestId) => {
+    await createRestaurantPartnerPaymentRequest(requestId, buildDepositPaymentPayload());
+    await loadReservationOperations(selectedRestaurantId);
+  };
+
+  const requestCustomPayment = async (requestId) => {
+    const draft = paymentDraftByRequest[requestId] || {};
+    await createRestaurantPartnerPaymentRequest(
+      requestId,
+      buildCustomDiningPaymentPayload(draft)
+    );
+    setPaymentDraftByRequest((current) => ({ ...current, [requestId]: {} }));
     await loadReservationOperations(selectedRestaurantId);
   };
 
@@ -430,6 +452,10 @@ const RestaurantPartnerDashboard = () => {
                         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                           {request.status}
                         </p>
+                        <p className="mt-1 text-xs font-black uppercase tracking-[0.14em] text-[#234232]">
+                          {getRestaurantPaymentStatusLabel(request.paymentStatus)}
+                          {request.paymentAmount ? ` · ${request.paymentCurrency || "USD"} ${Number(request.paymentAmount).toFixed(2)}` : ""}
+                        </p>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {["confirmed", "declined", "needs-clarification"].map((status) => (
                             <button
@@ -441,6 +467,40 @@ const RestaurantPartnerDashboard = () => {
                               {status.replace("-", " ")}
                             </button>
                           ))}
+                        </div>
+                        <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto_auto]">
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="Custom amount"
+                            value={paymentDraftByRequest[request.id]?.amount || ""}
+                            onChange={(event) =>
+                              setPaymentDraftByRequest((current) => ({
+                                ...current,
+                                [request.id]: {
+                                  ...(current[request.id] || {}),
+                                  amount: event.target.value,
+                                  currency: current[request.id]?.currency || "USD",
+                                  paymentReason: current[request.id]?.paymentReason || "event_dining",
+                                },
+                              }))
+                            }
+                            className="rounded-xl border border-[#dccfb7] px-3 py-2 text-xs font-bold"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => requestDepositPayment(request.id)}
+                            className="rounded-xl bg-[#234232] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white"
+                          >
+                            Deposit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => requestCustomPayment(request.id)}
+                            className="rounded-xl border border-[#dccfb7] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em]"
+                          >
+                            Custom pay
+                          </button>
                         </div>
                       </div>
                     ))}

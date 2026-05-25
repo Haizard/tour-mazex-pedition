@@ -5,6 +5,7 @@ import RestaurantAvailabilityEntry from "../models/RestaurantAvailabilityEntry.j
 import RestaurantReservationRequest from "../models/RestaurantReservationRequest.js";
 import RestaurantServiceWindow from "../models/RestaurantServiceWindow.js";
 import RestaurantTableType from "../models/RestaurantTableType.js";
+import PaymentTransaction from "../models/PaymentTransaction.js";
 import { requireRestaurantPartnerAdmin } from "../middleware/restaurantPartnerAuthMiddleware.js";
 import { signRestaurantPartnerToken, verifyAdminPassword } from "../utils/adminAuth.js";
 import {
@@ -14,6 +15,14 @@ import {
   normalizeTableTypePayload,
   shapeReservationRequest,
 } from "../utils/restaurantReservations.js";
+import {
+  buildReservationPaymentUpdate,
+  buildRestaurantPaymentTransactionPayload,
+  calculateRestaurantDepositAmount,
+  isActiveRestaurantPaymentTransaction,
+  normalizeRestaurantCheckoutSettings,
+  validateCustomRestaurantPayment,
+} from "../utils/restaurantCheckout.js";
 
 const router = express.Router();
 
@@ -285,6 +294,100 @@ router.patch("/reservation-requests/:id", async (req, res) => {
     await existing.save();
 
     return res.status(200).json({ request: shapeReservationRequest(existing.toObject()) });
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.patch("/restaurants/:restaurantId/checkout-settings", async (req, res) => {
+  try {
+    assertPartnerRestaurantAccess(req, req.params.restaurantId);
+    const settings = normalizeRestaurantCheckoutSettings(req.body);
+    const restaurant = await Restaurant.findOneAndUpdate(
+      {
+        _id: req.params.restaurantId,
+        tenantId: req.tenantId,
+      },
+      { $set: { restaurantCheckout: settings } },
+      { new: true }
+    ).lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    return res.status(200).json({ restaurantCheckout: restaurant.restaurantCheckout });
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.post("/reservation-requests/:id/payment-request", async (req, res) => {
+  try {
+    const reservation = await RestaurantReservationRequest.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation request not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, reservation.restaurantId);
+
+    const restaurant = await Restaurant.findOne({
+      _id: reservation.restaurantId,
+      tenantId: req.tenantId,
+    }).lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const existingPayment = await PaymentTransaction.findOne({
+      tenantId: req.tenantId,
+      restaurantReservationRequestId: reservation._id,
+      status: "pending",
+    }).lean();
+
+    if (isActiveRestaurantPaymentTransaction(existingPayment)) {
+      return res.status(409).json({
+        message: "An active payment request already exists for this reservation.",
+        payment: existingPayment,
+      });
+    }
+
+    const payment =
+      req.body.paymentMode === "custom"
+        ? validateCustomRestaurantPayment(req.body)
+        : calculateRestaurantDepositAmount({
+            settings: restaurant.restaurantCheckout,
+            reservation,
+          });
+
+    const transaction = await PaymentTransaction.create(
+      buildRestaurantPaymentTransactionPayload({
+        tenantId: req.tenantId,
+        restaurant,
+        reservation,
+        payment,
+      })
+    );
+
+    Object.assign(
+      reservation,
+      buildReservationPaymentUpdate({
+        transaction,
+        paymentReason: payment.paymentReason,
+        paymentInstructions: payment.paymentInstructions,
+      })
+    );
+    await reservation.save();
+
+    return res.status(201).json({
+      payment: transaction,
+      request: shapeReservationRequest(reservation.toObject()),
+    });
   } catch (error) {
     return res.status(error.statusCode || 400).json({ message: error.message });
   }
