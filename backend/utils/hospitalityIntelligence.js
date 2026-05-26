@@ -1,4 +1,10 @@
-const toId = (value) => String(value?._id || value?.id || value || "");
+const toId = (value) => {
+  const explicitId = value?._id ?? value?.id;
+
+  if (explicitId !== undefined && explicitId !== null) return String(explicitId);
+  if (["string", "number", "bigint", "boolean"].includes(typeof value)) return String(value);
+  return "";
+};
 const toText = (value) => String(value || "").trim();
 const toLower = (value) => toText(value).toLowerCase();
 const asArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
@@ -15,6 +21,8 @@ const includesText = (list = [], needle = "") => {
   return normalizedNeedle
     ? asArray(list).some((item) => {
         const normalizedItem = toLower(item);
+        if (!normalizedItem) return false;
+
         return normalizedItem.includes(normalizedNeedle) || normalizedNeedle.includes(normalizedItem);
       })
     : false;

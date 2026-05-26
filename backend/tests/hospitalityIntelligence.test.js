@@ -106,6 +106,46 @@ test("buildHospitalityRecommendations filters unpublished public entities", () =
   assert.equal(result.recommendations[0].targetId, "visible");
 });
 
+test("buildHospitalityRecommendations excludes malformed public candidates without ids", () => {
+  const result = buildHospitalityRecommendations({
+    source: { type: "tour", id: "tour_1", name: "Known Tour", destination: "Arusha" },
+    hotels: [
+      { name: "Malformed Hotel", published: true, marketplaceVisible: true, destination: "Arusha" },
+      { _id: "hotel_1", name: "Visible Hotel", published: true, marketplaceVisible: true, destination: "Arusha" },
+    ],
+  });
+
+  assert.equal(result.recommendations.length, 1);
+  assert.equal(result.recommendations[0].targetId, "hotel_1");
+  assert.equal(result.recommendations.some((item) => item.targetId === "[object Object]"), false);
+});
+
+test("buildHospitalityRecommendations ignores empty candidate tags for restaurant fit reasons", () => {
+  const result = buildHospitalityRecommendations({
+    source: {
+      type: "tour",
+      id: "tour_1",
+      name: "Known Tour",
+      destination: "Arusha",
+      travelerContext: { mealType: "dinner", dietaryFits: ["vegetarian"], tripStyle: "family" },
+    },
+    restaurants: [
+      {
+        _id: "restaurant_1",
+        name: "Sparse Restaurant",
+        published: true,
+        marketplaceVisible: true,
+        destination: "Arusha",
+        mealTypes: ["   "],
+        dietaryFits: [""],
+        ambianceTags: ["\t"],
+      },
+    ],
+  });
+
+  assert.deepEqual(result.recommendations[0].reasons, ["Matches Arusha trip flow."]);
+});
+
 test("buildHospitalityAttribution preserves recommendation revenue context", () => {
   assert.deepEqual(
     buildHospitalityAttribution({
