@@ -1,9 +1,12 @@
 import express from "express";
+import Hotel from "../models/Hotel.js";
 import MarketplaceQuestion from "../models/MarketplaceQuestion.js";
 import MarketplaceReview from "../models/MarketplaceReview.js";
+import Restaurant from "../models/Restaurant.js";
 import TourPackage from "../models/TourPackage.js";
 import Tenant from "../models/Tenant.js";
 import TravelerPhotoSubmission from "../models/TravelerPhotoSubmission.js";
+import { buildHospitalityRecommendations } from "../utils/hospitalityIntelligence.js";
 import {
   buildAvailabilitySummary,
   matchesAvailabilityFilter,
@@ -14,6 +17,12 @@ import { buildMarketplaceReviewSummary } from "../utils/marketplaceReviewAggrega
 const router = express.Router();
 
 const buildRegex = (value = "") => new RegExp(String(value).trim(), "i");
+const toTrimmedString = (value = "") => String(value || "").trim();
+const toCommaList = (value = "") =>
+  toTrimmedString(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 const buildDiscoverySort = (sort = "") => {
   if (sort === "price-asc") {
@@ -76,6 +85,107 @@ const toDiscoveryCard = (tour = {}) => {
       requestOnly: availability.requestOnly,
       instantBookingEnabled: availability.instantBookingEnabled,
     },
+  };
+};
+
+const buildHospitalitySource = ({
+  sourceType,
+  sourceId,
+  sourceSlug,
+  destination,
+  region,
+  mealType,
+  tripStyle,
+  dietaryFits,
+}) => ({
+  type: sourceType || "marketplace",
+  id: sourceId || sourceSlug || "",
+  slug: sourceSlug || "",
+  destination: destination || "",
+  region: region || "",
+  travelerContext: {
+    mealType: mealType || "",
+    tripStyle: tripStyle || "",
+    dietaryFits,
+  },
+});
+
+const toHospitalityHotelSource = (hotel = {}) => ({
+  type: "hotel",
+  id: String(hotel._id || ""),
+  slug: hotel.slug || "",
+  name: hotel.name || "",
+  destination: hotel.destination || "",
+  region: hotel.region || "",
+});
+
+const toHospitalityRestaurantSource = (restaurant = {}) => ({
+  type: "restaurant",
+  id: String(restaurant._id || ""),
+  slug: restaurant.slug || "",
+  name: restaurant.name || "",
+  destination: restaurant.destination || "",
+  region: restaurant.region || "",
+});
+
+const toHospitalityTourSource = (tour = {}) => ({
+  type: "tour",
+  id: String(tour._id || ""),
+  name: tour.title || "",
+  destination: tour.location || tour.destinationsVisited?.[0] || "",
+  region: tour.region || tour.destinationSlug || "",
+});
+
+const resolveHospitalitySource = async (query = {}) => {
+  const sourceType = toTrimmedString(query.sourceType).toLowerCase();
+  const sourceId = toTrimmedString(query.sourceId);
+  const sourceSlug = toTrimmedString(query.sourceSlug);
+  const dietaryFits = toCommaList(query.dietaryFits);
+  const fallbackSource = buildHospitalitySource({
+    sourceType,
+    sourceId,
+    sourceSlug,
+    destination: toTrimmedString(query.destination),
+    region: toTrimmedString(query.region),
+    mealType: toTrimmedString(query.mealType),
+    tripStyle: toTrimmedString(query.tripStyle),
+    dietaryFits,
+  });
+
+  let resolvedSource = null;
+
+  if (sourceType === "hotel" && sourceSlug) {
+    const hotel = await Hotel.findOne({
+      slug: sourceSlug,
+      published: true,
+      marketplaceVisible: true,
+    }).lean();
+    if (hotel) resolvedSource = toHospitalityHotelSource(hotel);
+  }
+
+  if (sourceType === "restaurant" && sourceSlug) {
+    const restaurant = await Restaurant.findOne({
+      slug: sourceSlug,
+      published: true,
+      marketplaceVisible: true,
+    }).lean();
+    if (restaurant) resolvedSource = toHospitalityRestaurantSource(restaurant);
+  }
+
+  if (sourceType === "tour" && sourceId) {
+    const tour = await TourPackage.findOne({
+      _id: sourceId,
+      isMarketplaceVisible: true,
+    }).lean();
+    if (tour) resolvedSource = toHospitalityTourSource(tour);
+  }
+
+  return {
+    ...fallbackSource,
+    ...(resolvedSource || {}),
+    travelerContext: fallbackSource.travelerContext,
+    destination: resolvedSource?.destination || fallbackSource.destination,
+    region: resolvedSource?.region || fallbackSource.region,
   };
 };
 
@@ -336,6 +446,41 @@ router.get("/operators", async (_req, res) => {
     res.status(200).json(operators);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch operators", error: error.message });
+  }
+});
+
+/**
+ * GET /api/discovery/hospitality/recommendations
+ * Return AI-shaped pairings across visible tours, hotels, and restaurants.
+ */
+router.get("/hospitality/recommendations", async (req, res) => {
+  try {
+    const source = await resolveHospitalitySource(req.query);
+    const surface = toTrimmedString(req.query.surface) || "marketplace";
+    const sessionKey = toTrimmedString(req.query.sessionKey);
+
+    const [hotels, restaurants, tours] = await Promise.all([
+      Hotel.find({ published: true, marketplaceVisible: true }).lean(),
+      Restaurant.find({ published: true, marketplaceVisible: true }).lean(),
+      TourPackage.find({ isMarketplaceVisible: true }).lean(),
+    ]);
+
+    res.status(200).json(
+      buildHospitalityRecommendations({
+        source,
+        hotels,
+        restaurants,
+        tours,
+        sessionKey,
+        surface,
+      })
+    );
+  } catch (error) {
+    res.status(200).json({
+      recommendations: [],
+      emptyReason: "No strong hospitality pairings yet.",
+      error: error.message,
+    });
   }
 });
 
