@@ -5,6 +5,7 @@ import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import HotelDirectInquiryForm from "../components/Marketplace/HotelDirectInquiryForm";
 import HotelAiConciergeCard from "../components/Marketplace/HotelAiConciergeCard";
 import HotelBookingWidget from "../components/Marketplace/HotelBookingWidget";
+import HospitalityPairingPanel from "../components/Marketplace/HospitalityPairingPanel";
 import { fetchPublicHotelBySlug, fetchRelatedHotels } from "../services/api";
 import { getHotelTrustLabel } from "../components/Marketplace/hotelTrustUtils";
 import { buildHotelIntentOptions } from "./hotelDiscoveryUtils";
@@ -156,6 +157,19 @@ const HotelDetail = () => {
 
         <div className="mt-8">
           <HotelBookingWidget hotel={hotel} />
+        </div>
+
+        <div className="mt-8">
+          <HospitalityPairingPanel
+            title="Complete this stay with trips and dining"
+            context={{
+              sourceType: "hotel",
+              sourceSlug: hotel.slug,
+              surface: "hotel-detail",
+              destination: hotel.destination,
+              region: hotel.region,
+            }}
+          />
         </div>
 
         {relatedHotels.length ? (

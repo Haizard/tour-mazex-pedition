@@ -5,6 +5,7 @@ import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import RestaurantDirectInquiryForm from "../components/Marketplace/RestaurantDirectInquiryForm";
 import RestaurantAiConciergeCard from "../components/Marketplace/RestaurantAiConciergeCard";
 import RestaurantReservationWidget from "../components/Marketplace/RestaurantReservationWidget";
+import HospitalityPairingPanel from "../components/Marketplace/HospitalityPairingPanel";
 import { fetchPublicRestaurantBySlug, fetchRestaurantReservationOptions } from "../services/api";
 import {
   getRestaurantDiningReassuranceItems,
@@ -211,6 +212,19 @@ const RestaurantDetail = () => {
               )}
             </div>
           </aside>
+        </div>
+
+        <div className="mt-8">
+          <HospitalityPairingPanel
+            title="Pair this dining moment with stays and trips"
+            context={{
+              sourceType: "restaurant",
+              sourceSlug: restaurant.slug,
+              surface: "restaurant-detail",
+              destination: restaurant.destination,
+              region: restaurant.region,
+            }}
+          />
         </div>
       </main>
     </div>
