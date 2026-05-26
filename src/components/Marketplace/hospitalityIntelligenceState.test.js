@@ -50,6 +50,26 @@ test("normalizeHospitalityRecommendations preserves fit, disclaimer, and sponsor
   assert.equal(cards[0].disclaimer, "AI recommendation only.");
 });
 
+test("normalizeHospitalityRecommendations safely handles malformed rows", () => {
+  assert.doesNotThrow(() => normalizeHospitalityRecommendations([null, {}, "bad-row"]));
+
+  const cards = normalizeHospitalityRecommendations([null, {}, "bad-row"]);
+
+  assert.deepEqual(
+    cards.map((card) => card.id),
+    [
+      "hospitality-recommendation-0",
+      "hospitality-recommendation-1",
+      "hospitality-recommendation-2",
+    ]
+  );
+  assert.equal(new Set(cards.map((card) => card.id)).size, 3);
+  assert.equal(
+    cards[0].disclaimer,
+    "AI recommendation only. Confirm availability, pricing, and commitments before booking."
+  );
+});
+
 test("getHospitalityRecommendationLabel returns useful type labels", () => {
   assert.equal(getHospitalityRecommendationLabel("hotel"), "Stay add-on");
   assert.equal(getHospitalityRecommendationLabel("restaurant"), "Dining add-on");

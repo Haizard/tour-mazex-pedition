@@ -29,8 +29,11 @@ export const buildHospitalityRecommendationQuery = (context = {}) => ({
 });
 
 export const normalizeHospitalityRecommendations = (recommendations = []) =>
-  (Array.isArray(recommendations) ? recommendations : []).map((item = {}) => {
+  (Array.isArray(recommendations) ? recommendations : []).map((rawItem, index) => {
+    const item = rawItem && typeof rawItem === "object" ? rawItem : {};
     const targetType = toTrimmedString(item.targetType);
+    const targetId = toTrimmedString(item.targetId);
+    const composedId = targetType && targetId ? `${targetType}:${targetId}` : "";
     const sponsored = item.sponsored === true || item.attribution?.sponsored === true;
     const primaryReason = Array.isArray(item.reasons)
       ? toTrimmedString(item.reasons.find((reason) => toTrimmedString(reason)))
@@ -40,7 +43,8 @@ export const normalizeHospitalityRecommendations = (recommendations = []) =>
       ...item,
       id:
         toTrimmedString(item.recommendationId) ||
-        `${targetType}:${toTrimmedString(item.targetId)}`,
+        composedId ||
+        `hospitality-recommendation-${index}`,
       label: getHospitalityRecommendationLabel(targetType),
       sponsoredLabel: sponsored ? "Sponsored" : "Organic fit",
       confidenceLabel: getHospitalityConfidenceLabel(item.fitScore),
