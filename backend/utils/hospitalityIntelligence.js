@@ -231,3 +231,30 @@ export const buildHospitalityRecommendations = ({
     emptyReason: recommendations.length ? "" : "No strong hospitality pairings yet.",
   };
 };
+
+export const buildHospitalityOperatorGuidance = ({ source = {}, recommendations = [] } = {}) => {
+  const topHotel = recommendations.find((item) => item.targetType === "hotel");
+  const topRestaurant = recommendations.find((item) => item.targetType === "restaurant");
+  const nextBestActions = [];
+
+  if (topHotel) {
+    nextBestActions.push(`Suggest hotel add-on: ${topHotel.title}.`);
+  }
+
+  if (topRestaurant) {
+    nextBestActions.push(`Suggest dining add-on: ${topRestaurant.title}.`);
+  }
+
+  if (!nextBestActions.length) {
+    nextBestActions.push("Ask traveler whether they want stay or dining support.");
+  }
+
+  return {
+    packageCompletionHint: `${
+      source.name || "This lead"
+    } can be packaged with hospitality add-ons in ${source.destination || "the destination"}.`,
+    nextBestActions,
+    replyGuidance:
+      "Offer these as curated recommendations and confirm availability, pricing, and supplier commitments before promising anything.",
+  };
+};

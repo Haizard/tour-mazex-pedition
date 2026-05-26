@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  buildHospitalityRecommendations,
   buildHospitalityAttribution,
+  buildHospitalityOperatorGuidance,
+  buildHospitalityRecommendations,
 } from "../utils/hospitalityIntelligence.js";
 
 test("buildHospitalityRecommendations pairs a tour with hotels and restaurants by destination", () => {
@@ -171,5 +172,45 @@ test("buildHospitalityAttribution preserves recommendation revenue context", () 
       bookingId: null,
       paymentId: null,
     }
+  );
+});
+
+test("buildHospitalityOperatorGuidance summarizes package next best action", () => {
+  const guidance = buildHospitalityOperatorGuidance({
+    source: { type: "tour", name: "Family Safari", destination: "Arusha" },
+    recommendations: [
+      {
+        targetType: "hotel",
+        title: "Arusha Garden Lodge",
+        confidence: "high",
+        reasons: ["Matches Arusha trip flow."],
+      },
+      {
+        targetType: "restaurant",
+        title: "Garden Table",
+        confidence: "medium",
+        reasons: ["Good dinner timing fit."],
+      },
+    ],
+  });
+
+  assert.equal(guidance.packageCompletionHint.includes("Family Safari"), true);
+  assert.equal(guidance.packageCompletionHint.includes("Arusha"), true);
+  assert.equal(guidance.nextBestActions.includes("Suggest hotel add-on: Arusha Garden Lodge."), true);
+  assert.equal(guidance.nextBestActions.includes("Suggest dining add-on: Garden Table."), true);
+  assert.equal(guidance.replyGuidance.includes("availability"), true);
+  assert.equal(guidance.replyGuidance.includes("pricing"), true);
+  assert.equal(guidance.replyGuidance.includes("supplier commitments"), true);
+});
+
+test("buildHospitalityOperatorGuidance asks for stay or dining support without recommendations", () => {
+  const guidance = buildHospitalityOperatorGuidance({
+    source: { type: "tour", name: "Family Safari", destination: "Arusha" },
+    recommendations: [],
+  });
+
+  assert.equal(
+    guidance.nextBestActions.includes("Ask traveler whether they want stay or dining support."),
+    true
   );
 });
