@@ -1238,6 +1238,8 @@ export const submitRestaurantClaimRequest = (data) =>
   API.post("/restaurants/public/claims", data);
 export const requestRestaurantConciergeRecommendations = (data) =>
   API.post("/restaurants/public/concierge/recommendations", data);
+export const fetchHospitalityRecommendations = (params = {}) =>
+  cachedGet("/discovery/hospitality/recommendations", { params });
 export const fetchRestaurantAnalytics = () => cachedGet("/restaurants/analytics");
 export const fetchRestaurantClaimRequests = (params = {}) =>
   cachedGet("/restaurants/claims", { params });
