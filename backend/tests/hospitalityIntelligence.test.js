@@ -147,6 +147,32 @@ test("buildHospitalityRecommendations ignores empty candidate tags for restauran
   assert.deepEqual(result.recommendations[0].reasons, ["Matches Arusha trip flow."]);
 });
 
+test("buildHospitalityRecommendations recommends tour add-ons from tour package location", () => {
+  const result = buildHospitalityRecommendations({
+    source: { type: "hotel", id: "hotel_1", name: "Arusha Garden Lodge", destination: "Arusha" },
+    tours: [
+      {
+        _id: "tour_1",
+        title: "Arusha Coffee Walk",
+        location: "Arusha",
+        isMarketplaceVisible: true,
+      },
+      {
+        _id: "tour_2",
+        title: "Zanzibar Beach Escape",
+        location: "Zanzibar",
+        isMarketplaceVisible: true,
+      },
+    ],
+  });
+
+  assert.equal(result.recommendations.length, 1);
+  assert.equal(result.recommendations[0].targetType, "tour");
+  assert.equal(result.recommendations[0].targetId, "tour_1");
+  assert.equal(result.recommendations[0].destination, "Arusha");
+  assert.equal(result.recommendations[0].reasons.includes("Matches Arusha trip flow."), true);
+});
+
 test("buildHospitalityAttribution preserves recommendation revenue context", () => {
   assert.deepEqual(
     buildHospitalityAttribution({

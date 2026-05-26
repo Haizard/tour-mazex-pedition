@@ -28,9 +28,18 @@ const includesText = (list = [], needle = "") => {
     : false;
 };
 
+const getCandidateDestination = (candidate = {}) => {
+  if (candidate.destination) return candidate.destination;
+  if (candidate.location) return candidate.location;
+  if (Array.isArray(candidate.destinationsVisited) && candidate.destinationsVisited.length) {
+    return candidate.destinationsVisited[0];
+  }
+  return "";
+};
+
 const isDestinationMatch = (source = {}, candidate = {}) => {
   const sourceDestination = toLower(source.destination);
-  return sourceDestination ? sourceDestination === toLower(candidate.destination) : true;
+  return sourceDestination ? sourceDestination === toLower(getCandidateDestination(candidate)) : true;
 };
 
 const buildTargetUrl = (type, entity = {}) => {
@@ -70,9 +79,11 @@ const scoreCandidate = ({ source = {}, candidate = {}, type = "", travelerContex
   const reasons = [];
   let score = 20;
 
-  if (toLower(source.destination) && toLower(source.destination) === toLower(candidate.destination)) {
+  const candidateDestination = getCandidateDestination(candidate);
+
+  if (toLower(source.destination) && toLower(source.destination) === toLower(candidateDestination)) {
     score += 28;
-    reasons.push(`Matches ${candidate.destination} trip flow.`);
+    reasons.push(`Matches ${candidateDestination} trip flow.`);
   }
 
   if (toLower(source.region) && toLower(source.region) === toLower(candidate.region)) {
@@ -150,7 +161,7 @@ const shapeRecommendation = ({
     title: candidate.name || candidate.title || "Hospitality recommendation",
     slug: candidate.slug || "",
     url: buildTargetUrl(type, candidate),
-    destination: candidate.destination || "",
+    destination: getCandidateDestination(candidate),
     region: candidate.region || "",
     fitScore: scored.score,
     confidence: scored.score >= 70 ? "high" : scored.score >= 45 ? "medium" : "emerging",
