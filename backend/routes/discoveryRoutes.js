@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import Hotel from "../models/Hotel.js";
 import MarketplaceQuestion from "../models/MarketplaceQuestion.js";
 import MarketplaceReview from "../models/MarketplaceReview.js";
@@ -172,7 +173,7 @@ const resolveHospitalitySource = async (query = {}) => {
     if (restaurant) resolvedSource = toHospitalityRestaurantSource(restaurant);
   }
 
-  if (sourceType === "tour" && sourceId) {
+  if (sourceType === "tour" && sourceId && mongoose.isValidObjectId(sourceId)) {
     const tour = await TourPackage.findOne({
       _id: sourceId,
       isMarketplaceVisible: true,
@@ -476,10 +477,10 @@ router.get("/hospitality/recommendations", async (req, res) => {
       })
     );
   } catch (error) {
+    console.error("Hospitality recommendations error:", error);
     res.status(200).json({
       recommendations: [],
       emptyReason: "No strong hospitality pairings yet.",
-      error: error.message,
     });
   }
 });
