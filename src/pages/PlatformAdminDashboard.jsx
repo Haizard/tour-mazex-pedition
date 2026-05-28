@@ -21,6 +21,7 @@ import { usePlatformAdminAuth } from "../context/PlatformAdminAuthContext";
 import PageBuilderManager from "../components/Admin/PageBuilderManager";
 import TemplateAssignmentManager from "../components/Admin/TemplateAssignments/TemplateAssignmentManager";
 import NavigationManager from "../components/Admin/NavigationManager";
+import GrowthOutreachManager from "../components/PlatformAdmin/GrowthOutreachManager";
 import { getTemplateCatalog } from "../pageBuilder/templateMarketplace";
 import { platformPrimarySections } from "./platformAdminNavigation";
 
@@ -1429,6 +1430,11 @@ const PlatformAdminDashboard = () => {
       title: "Create Tenant",
       description: "Provision a clean tenant with its own login, empty website content, demo route, and managed hosting billing.",
     },
+    "growth-outreach": {
+      eyebrow: "Platform Growth",
+      title: "Growth Outreach",
+      description: "Run platform-owned prospecting, AI outreach drafts, readiness-gated campaign launches, and social growth content.",
+    },
     "template-studio": {
       eyebrow: "Template Studio",
       title: "Template Studio",
@@ -1571,6 +1577,7 @@ const PlatformAdminDashboard = () => {
           )}
 
           {activeSection === "create" && renderCreateTenant()}
+          {activeSection === "growth-outreach" && <GrowthOutreachManager />}
           {activeSection === "template-studio" && renderTemplateStudio()}
           {activeSection === "tenant" && renderActiveTenantPanel()}
         </div>

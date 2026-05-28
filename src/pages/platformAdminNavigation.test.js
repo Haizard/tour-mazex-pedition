@@ -10,3 +10,11 @@ test("platform primary navigation exposes Template Studio outside tenant workspa
     ),
   );
 });
+
+test("platform primary navigation exposes Growth Outreach as a platform-owned workspace", () => {
+  assert.ok(
+    platformPrimarySections.some(
+      (section) => section.id === "growth-outreach" && section.label === "Growth Outreach",
+    ),
+  );
+});

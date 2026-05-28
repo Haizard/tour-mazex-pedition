@@ -1,5 +1,9 @@
 import axios from "axios";
 import { createGetRequestCache } from "./apiCache.js";
+import {
+  buildPlatformOutreachProspectsParams,
+  platformOutreachApiPaths,
+} from "./platformOutreachApiPaths.js";
 
 const isBrowser = typeof window !== "undefined";
 const API_URL = isBrowser && window.location.hostname === "localhost"
@@ -879,6 +883,59 @@ export const updateHotelPartnerAccommodationRequest = (requestId, data) =>
   });
 export const fetchPlatformSummary = () =>
   cachedGet("/platform-admin/summary", {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformOutreachReadiness = () =>
+  cachedGet(platformOutreachApiPaths.readiness(), {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformOutreachProspects = (options = {}) =>
+  cachedGet(platformOutreachApiPaths.prospects(), {
+    params: buildPlatformOutreachProspectsParams(options),
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformOutreachProspect = (data) =>
+  API.post(platformOutreachApiPaths.prospects(), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const importPlatformOutreachProspects = (prospects) =>
+  API.post(platformOutreachApiPaths.prospectImport(), { prospects }, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformOutreachProspect = (prospectId, data) =>
+  API.patch(platformOutreachApiPaths.prospect(prospectId), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformOutreachCampaigns = () =>
+  cachedGet(platformOutreachApiPaths.campaigns(), {
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformOutreachCampaign = (data) =>
+  API.post(platformOutreachApiPaths.campaigns(), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const generatePlatformOutreachMessage = (campaignId, data) =>
+  API.post(platformOutreachApiPaths.generateCampaignMessage(campaignId), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const launchPlatformOutreachCampaign = (campaignId, data = {}) =>
+  API.post(platformOutreachApiPaths.launchCampaign(campaignId), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformOutreachMessages = () =>
+  cachedGet(platformOutreachApiPaths.messages(), {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformOutreachSocialPosts = () =>
+  cachedGet(platformOutreachApiPaths.socialPosts(), {
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformOutreachSocialPost = (data) =>
+  API.post(platformOutreachApiPaths.socialPosts(), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const updatePlatformOutreachSocialPost = (postId, data) =>
+  API.patch(platformOutreachApiPaths.socialPost(postId), data, {
     headers: getPlatformAdminHeaders(),
   });
 export const fetchPlatformTenants = () =>

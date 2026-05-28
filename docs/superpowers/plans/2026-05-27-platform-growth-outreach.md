@@ -10,6 +10,37 @@
 
 ---
 
+## Implementation Status - 2026-05-28
+
+Current status: **partially implemented as a safe V1 workspace**.
+
+Implemented:
+
+- Platform-owned Mongo models exist for prospects, campaigns, messages, threads, settings, social posts, and event logs.
+- Prospect normalization, duplicate query helpers, compliance gates, generation guardrails, and provider-readiness utilities exist with Node tests.
+- `/api/platform-admin/outreach` is mounted and supports readiness, prospects, bulk prospect import, campaign create/list, draft generation, launch readiness checks, messages, and social post create/list/update.
+- Platform admin navigation exposes `Growth Outreach`.
+- Platform admin UI V1 exists in `src/components/PlatformAdmin/GrowthOutreachManager.jsx` with readiness cards, prospect capture, campaign creation, AI draft generation, readiness-gated campaign activation, prospect qualification, social draft creation, and review queues.
+- Frontend API helpers exist for the implemented outreach endpoints.
+
+Not yet implemented from the full design:
+
+- Live email provider adapter, queue worker, send-now endpoint, delivery status updates, and provider event logging.
+- Live WhatsApp template adapter, opt-in/template send path, webhook ingestion, reply threading, and STOP/opt-out webhook automation.
+- Real production LLM call path that fails clearly when credentials are missing; current route creates a deterministic draft using the existing guardrail validator.
+- Autonomous reply agent, inbound thread UI, escalation queue, and `POST /threads/:id/agent-reply`.
+- Redis-backed platform outreach queue and processor files.
+- Event-log writes inside route actions and provider processors.
+- Pause campaign, message send-now, social publish-now, settings management, provider credentials UI, rate-limit controls, and full analytics dashboard.
+
+Next recommended implementation slice:
+
+1. Add `PlatformOutreachEventLog` writes to prospect import, campaign create/generate/launch, social draft create/update, and readiness failures.
+2. Add queue/processor utilities for draft-to-queued messages and scheduled social posts, using mocked provider adapters first.
+3. Add platform settings UI for compliance identity, sender readiness, WhatsApp template readiness, and escalation rules.
+
+---
+
 ## File Structure
 
 Create backend models:
