@@ -34,3 +34,6 @@ safari_clone/
 
 # Local design/source assets
 Mazex Pedition logo.png
+
+# Local git worktrees
+.worktrees/
