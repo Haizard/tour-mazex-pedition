@@ -32,6 +32,9 @@ const toNonNegativeInt = (value, fallback = 0) => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 };
 
+const toStringArray = (value) =>
+  Array.isArray(value) ? value.map((item) => toTrimmedString(item)).filter(Boolean) : [];
+
 const normalizeEnum = (value, allowed, fallback) => {
   const normalized = toTrimmedString(value).toLowerCase();
   return allowed.has(normalized) ? normalized : fallback;
@@ -83,6 +86,12 @@ export const normalizeReservationRequestPayload = (payload = {}) => ({
   seatingPreference: toTrimmedString(payload.seatingPreference),
   dietaryNotes: toTrimmedString(payload.dietaryNotes),
   occasion: toTrimmedString(payload.occasion),
+  selectedMenuItemIds: toStringArray(payload.selectedMenuItemIds),
+  selectedMenuItems: Array.isArray(payload.selectedMenuItems)
+    ? payload.selectedMenuItems.filter((item) => item && typeof item === "object")
+    : [],
+  groupMealNotes: toTrimmedString(payload.groupMealNotes),
+  preorderInterest: payload.preorderInterest === true,
   source: normalizeEnum(payload.source, REQUEST_SOURCES, "direct"),
   status: normalizeEnum(payload.status, REQUEST_STATUSES, "pending"),
   publicNotes: toTrimmedString(payload.publicNotes || payload.notes),
@@ -213,6 +222,10 @@ export const shapeReservationRequest = (request = {}) => ({
   seatingPreference: request.seatingPreference || "",
   dietaryNotes: request.dietaryNotes || "",
   occasion: request.occasion || "",
+  selectedMenuItemIds: toStringArray(request.selectedMenuItemIds),
+  selectedMenuItems: Array.isArray(request.selectedMenuItems) ? request.selectedMenuItems : [],
+  groupMealNotes: request.groupMealNotes || "",
+  preorderInterest: request.preorderInterest === true,
   source: request.source || "direct",
   status: request.status || "pending",
   publicNotes: request.publicNotes || "",

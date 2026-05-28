@@ -6,6 +6,7 @@ import {
   normalizeReservationRequestPayload,
   normalizeServiceWindowPayload,
   normalizeTableTypePayload,
+  shapeReservationRequest,
   shapePublicReservationOptions,
   summarizeRestaurantAvailability,
 } from "../utils/restaurantReservations.js";
@@ -64,6 +65,46 @@ test("normalizes reservation requests with pending status and direct source", ()
   assert.equal(result.travelerName, "Asha Traveler");
   assert.equal(result.source, "direct");
   assert.equal(result.status, "pending");
+});
+
+test("normalizeReservationRequestPayload preserves menu interest", () => {
+  const payload = normalizeReservationRequestPayload({
+    travelerName: "Amina",
+    travelerEmail: "AMINA@example.com",
+    date: "2026-06-01",
+    preferredTime: "19:00",
+    guestCount: 10,
+    selectedMenuItemIds: [" item_1 ", "item_2", ""],
+    selectedMenuItems: [{ itemId: "item_1", name: "Group Platter", price: 45, currency: "USD" }],
+    groupMealNotes: "Birthday group",
+    preorderInterest: true,
+  });
+
+  assert.deepEqual(payload.selectedMenuItemIds, ["item_1", "item_2"]);
+  assert.equal(payload.selectedMenuItems[0].name, "Group Platter");
+  assert.equal(payload.groupMealNotes, "Birthday group");
+  assert.equal(payload.preorderInterest, true);
+});
+
+test("shapeReservationRequest exposes menu interest to partners and admins", () => {
+  const shaped = shapeReservationRequest({
+    _id: "req_1",
+    restaurantId: "restaurant_1",
+    travelerName: "Amina",
+    travelerEmail: "amina@example.com",
+    date: "2026-06-01",
+    preferredTime: "19:00",
+    guestCount: 10,
+    selectedMenuItemIds: ["item_1"],
+    selectedMenuItems: [{ itemId: "item_1", name: "Group Platter" }],
+    groupMealNotes: "Birthday group",
+    preorderInterest: true,
+  });
+
+  assert.deepEqual(shaped.selectedMenuItemIds, ["item_1"]);
+  assert.equal(shaped.selectedMenuItems[0].name, "Group Platter");
+  assert.equal(shaped.groupMealNotes, "Birthday group");
+  assert.equal(shaped.preorderInterest, true);
 });
 
 test("summarizes availability for public reservation options", () => {

@@ -80,6 +80,10 @@ const restaurantReservationRequestSchema = new mongoose.Schema(
     paymentRequestedAt: { type: Date, default: null },
     paymentPaidAt: { type: Date, default: null },
     paymentInstructions: { type: String, trim: true, default: "" },
+    selectedMenuItemIds: { type: [String], default: [] },
+    selectedMenuItems: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    groupMealNotes: { type: String, trim: true, default: "" },
+    preorderInterest: { type: Boolean, default: false },
     publicNotes: { type: String, trim: true, default: "" },
     partnerNotes: { type: String, trim: true, default: "" },
     linkedInquiryId: {
