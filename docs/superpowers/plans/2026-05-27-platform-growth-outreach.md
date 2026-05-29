@@ -10,7 +10,7 @@
 
 ---
 
-## Implementation Status - 2026-05-28
+## Implementation Status - 2026-05-29
 
 Current status: **partially implemented as a safe V1 workspace**.
 
@@ -22,22 +22,25 @@ Implemented:
 - Platform admin navigation exposes `Growth Outreach`.
 - Platform admin UI V1 exists in `src/components/PlatformAdmin/GrowthOutreachManager.jsx` with readiness cards, prospect capture, campaign creation, AI draft generation, readiness-gated campaign activation, prospect qualification, social draft creation, and review queues.
 - Frontend API helpers exist for the implemented outreach endpoints.
+- Route actions now write safe append-only audit events for readiness checks, prospect changes, campaign changes, message generation/queueing, and social post changes.
+- Queue/processor utilities exist for due outreach messages and platform social posts with injectable provider adapters, readiness rechecks, suppression checks, delivery status updates, and event logging.
+- Operational endpoints now exist for pausing campaigns, queueing a reviewed message for immediate dispatch, and queueing a platform social post for immediate publishing.
+- Settings management now exists for compliance sender identity, WhatsApp readiness metadata, social account IDs, and conservative rate limits. Raw provider credentials remain environment-owned.
+- The platform outreach Redis processing loop is wired into the non-Vercel server startup path and safely returns an empty summary when Redis is unavailable.
 
 Not yet implemented from the full design:
 
-- Live email provider adapter, queue worker, send-now endpoint, delivery status updates, and provider event logging.
+- Live email provider adapter and runtime queue worker wiring.
 - Live WhatsApp template adapter, opt-in/template send path, webhook ingestion, reply threading, and STOP/opt-out webhook automation.
 - Real production LLM call path that fails clearly when credentials are missing; current route creates a deterministic draft using the existing guardrail validator.
 - Autonomous reply agent, inbound thread UI, escalation queue, and `POST /threads/:id/agent-reply`.
-- Redis-backed platform outreach queue and processor files.
-- Event-log writes inside route actions and provider processors.
-- Pause campaign, message send-now, social publish-now, settings management, provider credentials UI, rate-limit controls, and full analytics dashboard.
+- Live provider credential connection UI, escalation-rule management, and full analytics dashboard.
 
 Next recommended implementation slice:
 
-1. Add `PlatformOutreachEventLog` writes to prospect import, campaign create/generate/launch, social draft create/update, and readiness failures.
-2. Add queue/processor utilities for draft-to-queued messages and scheduled social posts, using mocked provider adapters first.
-3. Add platform settings UI for compliance identity, sender readiness, WhatsApp template readiness, and escalation rules.
+1. Add production LLM generation behind a credential check, with deterministic guardrail fallback removed from live send paths.
+2. Add inbound threads, webhook opt-out handling, autonomous reply decisions, and escalation-rule management.
+3. Add live provider adapters/credential connection UI for email, WhatsApp, and platform social publishing.
 
 ---
 

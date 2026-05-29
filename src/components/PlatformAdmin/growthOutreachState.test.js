@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildDefaultOutreachCampaignForm,
   buildDefaultOutreachProspectForm,
+  buildDefaultOutreachSettingsForm,
   buildDefaultSocialPostForm,
   summarizeOutreachReadiness,
 } from "./growthOutreachState.js";
@@ -36,6 +37,49 @@ test("growth outreach forms start with safe, review-first defaults", () => {
     status: "draft",
     scheduledFor: "",
   });
+});
+
+test("buildDefaultOutreachSettingsForm maps stored settings into editable compliance fields", () => {
+  assert.deepEqual(
+    buildDefaultOutreachSettingsForm({
+      email: {
+        senderName: "Mazex",
+        senderEmail: "hello@mazex.com",
+        postalAddress: "Arusha",
+        unsubscribeBaseUrl: "https://mazex.test/unsubscribe",
+      },
+      whatsapp: {
+        businessAccountId: "waba",
+        phoneNumberId: "phone",
+        defaultMarketingTemplateName: "intro",
+        webhookVerifyToken: "verify",
+      },
+      social: {
+        facebookPageId: "page",
+        instagramBusinessAccountId: "ig",
+      },
+      rateLimits: {
+        maxEmailPerHour: 25,
+        maxWhatsAppPerHour: 10,
+        maxSocialPostsPerDay: 3,
+      },
+    }),
+    {
+      senderName: "Mazex",
+      senderEmail: "hello@mazex.com",
+      postalAddress: "Arusha",
+      unsubscribeBaseUrl: "https://mazex.test/unsubscribe",
+      whatsappBusinessAccountId: "waba",
+      whatsappPhoneNumberId: "phone",
+      whatsappTemplateName: "intro",
+      whatsappWebhookVerifyToken: "verify",
+      facebookPageId: "page",
+      instagramBusinessAccountId: "ig",
+      maxEmailPerHour: "25",
+      maxWhatsAppPerHour: "10",
+      maxSocialPostsPerDay: "3",
+    },
+  );
 });
 
 test("summarizeOutreachReadiness counts ready and blocked channels", () => {

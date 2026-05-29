@@ -8,15 +8,19 @@ import {
 
 test("platform outreach API paths point at the platform-admin outreach namespace", () => {
   assert.equal(platformOutreachApiPaths.readiness(), "/platform-admin/outreach/settings/readiness");
+  assert.equal(platformOutreachApiPaths.settings(), "/platform-admin/outreach/settings");
   assert.equal(platformOutreachApiPaths.prospects(), "/platform-admin/outreach/prospects");
   assert.equal(platformOutreachApiPaths.prospect("abc123"), "/platform-admin/outreach/prospects/abc123");
   assert.equal(platformOutreachApiPaths.prospectImport(), "/platform-admin/outreach/prospects/import");
   assert.equal(platformOutreachApiPaths.campaigns(), "/platform-admin/outreach/campaigns");
   assert.equal(platformOutreachApiPaths.generateCampaignMessage("camp1"), "/platform-admin/outreach/campaigns/camp1/generate");
   assert.equal(platformOutreachApiPaths.launchCampaign("camp1"), "/platform-admin/outreach/campaigns/camp1/launch");
+  assert.equal(platformOutreachApiPaths.pauseCampaign("camp1"), "/platform-admin/outreach/campaigns/camp1/pause");
   assert.equal(platformOutreachApiPaths.messages(), "/platform-admin/outreach/messages");
+  assert.equal(platformOutreachApiPaths.sendMessageNow("msg1"), "/platform-admin/outreach/messages/msg1/send-now");
   assert.equal(platformOutreachApiPaths.socialPosts(), "/platform-admin/outreach/social-posts");
   assert.equal(platformOutreachApiPaths.socialPost("post1"), "/platform-admin/outreach/social-posts/post1");
+  assert.equal(platformOutreachApiPaths.publishSocialPostNow("post1"), "/platform-admin/outreach/social-posts/post1/publish-now");
 });
 
 test("platform outreach prospect params omit blank status filters", () => {

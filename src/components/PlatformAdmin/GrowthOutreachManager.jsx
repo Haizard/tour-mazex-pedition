@@ -10,11 +10,16 @@ import {
   fetchPlatformOutreachSocialPosts,
   generatePlatformOutreachMessage,
   launchPlatformOutreachCampaign,
+  pausePlatformOutreachCampaign,
+  publishPlatformOutreachSocialPostNow,
+  sendPlatformOutreachMessageNow,
+  updatePlatformOutreachSettings,
   updatePlatformOutreachProspect,
 } from "../../services/api";
 import {
   buildDefaultOutreachCampaignForm,
   buildDefaultOutreachProspectForm,
+  buildDefaultOutreachSettingsForm,
   buildDefaultSocialPostForm,
   formatOutreachDate,
   summarizeOutreachReadiness,
@@ -56,6 +61,7 @@ const GrowthOutreachManager = () => {
   const [prospectForm, setProspectForm] = useState(buildDefaultOutreachProspectForm());
   const [campaignForm, setCampaignForm] = useState(buildDefaultOutreachCampaignForm());
   const [socialPostForm, setSocialPostForm] = useState(buildDefaultSocialPostForm());
+  const [settingsForm, setSettingsForm] = useState(buildDefaultOutreachSettingsForm());
   const [selectedProspectId, setSelectedProspectId] = useState("");
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [selectedMessageChannel, setSelectedMessageChannel] = useState("email");
@@ -100,6 +106,7 @@ const GrowthOutreachManager = () => {
       const nextProspects = Array.isArray(prospectsResponse.data) ? prospectsResponse.data : [];
       const nextCampaigns = Array.isArray(campaignsResponse.data) ? campaignsResponse.data : [];
       setReadiness(readinessResponse.data?.readiness || null);
+      setSettingsForm(buildDefaultOutreachSettingsForm(readinessResponse.data?.settings || {}));
       setProspects(nextProspects);
       setCampaigns(nextCampaigns);
       setMessages(Array.isArray(messagesResponse.data) ? messagesResponse.data : []);
@@ -127,6 +134,10 @@ const GrowthOutreachManager = () => {
 
   const updateSocialPostForm = (field, value) => {
     setSocialPostForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateSettingsForm = (field, value) => {
+    setSettingsForm((current) => ({ ...current, [field]: value }));
   };
 
   const toggleCampaignChannel = (channel) => {
@@ -247,6 +258,27 @@ const GrowthOutreachManager = () => {
     }
   };
 
+  const handlePauseCampaign = async () => {
+    if (!selectedCampaignId) {
+      setError("Choose a campaign before pausing.");
+      return;
+    }
+    setWorking("pause");
+    setError("");
+    setNotice("");
+    try {
+      await pausePlatformOutreachCampaign(selectedCampaignId, {
+        reason: "Paused from Growth Outreach workspace.",
+      });
+      setNotice("Campaign paused.");
+      await loadOutreachWorkspace();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to pause campaign.");
+    } finally {
+      setWorking("");
+    }
+  };
+
   const handleCreateSocialPost = async (event) => {
     event.preventDefault();
     setWorking("social");
@@ -270,6 +302,45 @@ const GrowthOutreachManager = () => {
     }
   };
 
+  const handleSaveSettings = async (event) => {
+    event.preventDefault();
+    setWorking("settings");
+    setError("");
+    setNotice("");
+    try {
+      const response = await updatePlatformOutreachSettings({
+        email: {
+          senderName: settingsForm.senderName,
+          senderEmail: settingsForm.senderEmail,
+          postalAddress: settingsForm.postalAddress,
+          unsubscribeBaseUrl: settingsForm.unsubscribeBaseUrl,
+        },
+        whatsapp: {
+          businessAccountId: settingsForm.whatsappBusinessAccountId,
+          phoneNumberId: settingsForm.whatsappPhoneNumberId,
+          defaultMarketingTemplateName: settingsForm.whatsappTemplateName,
+          webhookVerifyToken: settingsForm.whatsappWebhookVerifyToken,
+        },
+        social: {
+          facebookPageId: settingsForm.facebookPageId,
+          instagramBusinessAccountId: settingsForm.instagramBusinessAccountId,
+        },
+        rateLimits: {
+          maxEmailPerHour: Number(settingsForm.maxEmailPerHour || 50),
+          maxWhatsAppPerHour: Number(settingsForm.maxWhatsAppPerHour || 20),
+          maxSocialPostsPerDay: Number(settingsForm.maxSocialPostsPerDay || 10),
+        },
+      });
+      setReadiness(response.data?.readiness || null);
+      setSettingsForm(buildDefaultOutreachSettingsForm(response.data?.settings || {}));
+      setNotice("Outreach settings saved and readiness recalculated.");
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to save outreach settings.");
+    } finally {
+      setWorking("");
+    }
+  };
+
   const markProspectQualified = async (prospectId) => {
     setWorking(`prospect-${prospectId}`);
     setError("");
@@ -280,6 +351,36 @@ const GrowthOutreachManager = () => {
       await loadOutreachWorkspace();
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to update prospect.");
+    } finally {
+      setWorking("");
+    }
+  };
+
+  const handleQueueMessageNow = async (messageId) => {
+    setWorking(`message-${messageId}`);
+    setError("");
+    setNotice("");
+    try {
+      await sendPlatformOutreachMessageNow(messageId);
+      setNotice("Message queued for provider dispatch.");
+      await loadOutreachWorkspace();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to queue message.");
+    } finally {
+      setWorking("");
+    }
+  };
+
+  const handlePublishSocialPostNow = async (postId) => {
+    setWorking(`social-${postId}`);
+    setError("");
+    setNotice("");
+    try {
+      await publishPlatformOutreachSocialPostNow(postId);
+      setNotice("Social post queued for publishing.");
+      await loadOutreachWorkspace();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to queue social post.");
     } finally {
       setWorking("");
     }
@@ -327,6 +428,94 @@ const GrowthOutreachManager = () => {
           Missing provider setup: {readinessSummary.missing.join(", ")}
         </div>
       )}
+
+      <form onSubmit={handleSaveSettings} className={panelClass}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Settings</p>
+            <h3 className="mt-2 text-2xl font-black text-zinc-950">Compliance and provider readiness</h3>
+            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-zinc-500">
+              Store platform sender identity, WhatsApp template metadata, social account IDs, and conservative rate limits.
+              Raw API credentials stay in environment variables and are never entered here.
+            </p>
+          </div>
+          <button type="submit" disabled={working === "settings"} className="rounded-xl bg-zinc-950 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50">
+            {working === "settings" ? "Saving..." : "Save Settings"}
+          </button>
+        </div>
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl border border-zinc-200 p-4">
+            <p className="mb-4 text-xs font-black uppercase tracking-widest text-zinc-400">Email Identity</p>
+            <div className="space-y-3">
+              <label>
+                <span className={labelClass}>Sender name</span>
+                <input className={inputClass} value={settingsForm.senderName} onChange={(event) => updateSettingsForm("senderName", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Sender email</span>
+                <input className={inputClass} type="email" value={settingsForm.senderEmail} onChange={(event) => updateSettingsForm("senderEmail", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Postal address</span>
+                <textarea className={`${inputClass} min-h-20`} value={settingsForm.postalAddress} onChange={(event) => updateSettingsForm("postalAddress", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Unsubscribe base URL</span>
+                <input className={inputClass} value={settingsForm.unsubscribeBaseUrl} onChange={(event) => updateSettingsForm("unsubscribeBaseUrl", event.target.value)} />
+              </label>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 p-4">
+            <p className="mb-4 text-xs font-black uppercase tracking-widest text-zinc-400">WhatsApp And Social</p>
+            <div className="space-y-3">
+              <label>
+                <span className={labelClass}>WhatsApp Business Account ID</span>
+                <input className={inputClass} value={settingsForm.whatsappBusinessAccountId} onChange={(event) => updateSettingsForm("whatsappBusinessAccountId", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>WhatsApp phone number ID</span>
+                <input className={inputClass} value={settingsForm.whatsappPhoneNumberId} onChange={(event) => updateSettingsForm("whatsappPhoneNumberId", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Approved template</span>
+                <input className={inputClass} value={settingsForm.whatsappTemplateName} onChange={(event) => updateSettingsForm("whatsappTemplateName", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Webhook verify token</span>
+                <input className={inputClass} value={settingsForm.whatsappWebhookVerifyToken} onChange={(event) => updateSettingsForm("whatsappWebhookVerifyToken", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Facebook Page ID</span>
+                <input className={inputClass} value={settingsForm.facebookPageId} onChange={(event) => updateSettingsForm("facebookPageId", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Instagram Business Account ID</span>
+                <input className={inputClass} value={settingsForm.instagramBusinessAccountId} onChange={(event) => updateSettingsForm("instagramBusinessAccountId", event.target.value)} />
+              </label>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 p-4">
+            <p className="mb-4 text-xs font-black uppercase tracking-widest text-zinc-400">Rate Limits</p>
+            <div className="space-y-3">
+              <label>
+                <span className={labelClass}>Max email per hour</span>
+                <input className={inputClass} type="number" min="1" value={settingsForm.maxEmailPerHour} onChange={(event) => updateSettingsForm("maxEmailPerHour", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Max WhatsApp per hour</span>
+                <input className={inputClass} type="number" min="1" value={settingsForm.maxWhatsAppPerHour} onChange={(event) => updateSettingsForm("maxWhatsAppPerHour", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Max social posts per day</span>
+                <input className={inputClass} type="number" min="1" value={settingsForm.maxSocialPostsPerDay} onChange={(event) => updateSettingsForm("maxSocialPostsPerDay", event.target.value)} />
+              </label>
+              <div className="rounded-2xl bg-zinc-50 p-4 text-sm font-semibold leading-6 text-zinc-500">
+                Environment variables still control actual provider credentials: email/SMTP, Meta access token, and WhatsApp access token.
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <form onSubmit={handleCreateProspect} className={panelClass}>
@@ -477,6 +666,9 @@ const GrowthOutreachManager = () => {
           <button type="button" onClick={handleLaunchCampaign} disabled={working === "launch" || !selectedCampaignId} className="mt-5 w-full rounded-xl bg-zinc-950 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50">
             {working === "launch" ? "Checking..." : "Run Readiness And Launch"}
           </button>
+          <button type="button" onClick={handlePauseCampaign} disabled={working === "pause" || !selectedCampaignId} className="mt-3 w-full rounded-xl border border-zinc-300 px-5 py-3 text-xs font-black uppercase tracking-widest text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950 disabled:opacity-50">
+            {working === "pause" ? "Pausing..." : "Pause Campaign"}
+          </button>
         </div>
       </section>
 
@@ -524,6 +716,14 @@ const GrowthOutreachManager = () => {
                   <StatusPill tone={message.status === "draft" ? "amber" : "emerald"}>{message.status}</StatusPill>
                 </div>
                 <p className="mt-3 line-clamp-3 text-sm font-medium leading-6 text-zinc-600">{message.body}</p>
+                <button
+                  type="button"
+                  onClick={() => handleQueueMessageNow(message._id)}
+                  disabled={working === `message-${message._id}` || !["draft", "failed"].includes(message.status)}
+                  className="mt-4 rounded-full border border-zinc-200 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 transition hover:border-zinc-950 hover:text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {working === `message-${message._id}` ? "Queueing..." : "Queue Send"}
+                </button>
               </div>
             )) : <EmptyState title="No generated drafts" body="Generate one draft after creating a campaign and prospect." />}
           </div>
@@ -577,6 +777,14 @@ const GrowthOutreachManager = () => {
                   <StatusPill tone={post.status === "published" ? "emerald" : "zinc"}>{post.status}</StatusPill>
                 </div>
                 <p className="mt-3 line-clamp-2 text-sm font-medium leading-6 text-zinc-600">{post.caption}</p>
+                <button
+                  type="button"
+                  onClick={() => handlePublishSocialPostNow(post._id)}
+                  disabled={working === `social-${post._id}` || !["draft", "failed"].includes(post.status)}
+                  className="mt-4 rounded-full border border-zinc-200 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 transition hover:border-zinc-950 hover:text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {working === `social-${post._id}` ? "Queueing..." : "Publish Now"}
+                </button>
               </div>
             )) : <EmptyState title="No social posts yet" body="Create a platform social draft to prepare launch content." />}
           </div>

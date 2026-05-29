@@ -26,6 +26,22 @@ export const buildDefaultSocialPostForm = () => ({
   scheduledFor: "",
 });
 
+export const buildDefaultOutreachSettingsForm = (settings = {}) => ({
+  senderName: settings.email?.senderName || "",
+  senderEmail: settings.email?.senderEmail || "",
+  postalAddress: settings.email?.postalAddress || "",
+  unsubscribeBaseUrl: settings.email?.unsubscribeBaseUrl || "",
+  whatsappBusinessAccountId: settings.whatsapp?.businessAccountId || "",
+  whatsappPhoneNumberId: settings.whatsapp?.phoneNumberId || "",
+  whatsappTemplateName: settings.whatsapp?.defaultMarketingTemplateName || "",
+  whatsappWebhookVerifyToken: settings.whatsapp?.webhookVerifyToken || "",
+  facebookPageId: settings.social?.facebookPageId || "",
+  instagramBusinessAccountId: settings.social?.instagramBusinessAccountId || "",
+  maxEmailPerHour: String(settings.rateLimits?.maxEmailPerHour || 50),
+  maxWhatsAppPerHour: String(settings.rateLimits?.maxWhatsAppPerHour || 20),
+  maxSocialPostsPerDay: String(settings.rateLimits?.maxSocialPostsPerDay || 10),
+});
+
 export const summarizeOutreachReadiness = (readiness = {}) => {
   const checks = Array.isArray(readiness.checks) ? readiness.checks : [];
   const readyCount = checks.filter((check) => check.ready).length;

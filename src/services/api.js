@@ -889,6 +889,10 @@ export const fetchPlatformOutreachReadiness = () =>
   cachedGet(platformOutreachApiPaths.readiness(), {
     headers: getPlatformAdminHeaders(),
   });
+export const updatePlatformOutreachSettings = (data) =>
+  API.patch(platformOutreachApiPaths.settings(), data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchPlatformOutreachProspects = (options = {}) =>
   cachedGet(platformOutreachApiPaths.prospects(), {
     params: buildPlatformOutreachProspectsParams(options),
@@ -922,8 +926,16 @@ export const launchPlatformOutreachCampaign = (campaignId, data = {}) =>
   API.post(platformOutreachApiPaths.launchCampaign(campaignId), data, {
     headers: getPlatformAdminHeaders(),
   });
+export const pausePlatformOutreachCampaign = (campaignId, data = {}) =>
+  API.post(platformOutreachApiPaths.pauseCampaign(campaignId), data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchPlatformOutreachMessages = () =>
   cachedGet(platformOutreachApiPaths.messages(), {
+    headers: getPlatformAdminHeaders(),
+  });
+export const sendPlatformOutreachMessageNow = (messageId, data = {}) =>
+  API.post(platformOutreachApiPaths.sendMessageNow(messageId), data, {
     headers: getPlatformAdminHeaders(),
   });
 export const fetchPlatformOutreachSocialPosts = () =>
@@ -936,6 +948,10 @@ export const createPlatformOutreachSocialPost = (data) =>
   });
 export const updatePlatformOutreachSocialPost = (postId, data) =>
   API.patch(platformOutreachApiPaths.socialPost(postId), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const publishPlatformOutreachSocialPostNow = (postId, data = {}) =>
+  API.post(platformOutreachApiPaths.publishSocialPostNow(postId), data, {
     headers: getPlatformAdminHeaders(),
   });
 export const fetchPlatformTenants = () =>

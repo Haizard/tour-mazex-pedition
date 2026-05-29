@@ -69,6 +69,7 @@ import { startShadowWriteReplayLoop } from "./utils/postgresShadowWrites.js";
 import { startPaymentWebhookProcessingLoop } from "./utils/paymentWebhookProcessor.js";
 import { startSocialPostProcessingLoop } from "./utils/socialPostProcessor.js";
 import { startEmailSyncProcessingLoop } from "./utils/emailSyncProcessor.js";
+import { startPlatformOutreachProcessingLoop } from "./utils/platformOutreachProcessingLoop.js";
 import { startMarketplaceReminderProcessingLoop } from "./utils/marketplaceReminderNotifications.js";
 import { orchestrator } from "./utils/backgroundOrchestrator.js";
 
@@ -273,6 +274,7 @@ if (!isVercelRuntime) {
   startPaymentWebhookProcessingLoop();
   startSocialPostProcessingLoop();
   startEmailSyncProcessingLoop();
+  startPlatformOutreachProcessingLoop();
   startMarketplaceReminderProcessingLoop();
 
   app.listen(PORT, () => {
