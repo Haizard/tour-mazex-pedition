@@ -14,6 +14,13 @@ export const platformOutreachApiPaths = {
   messages: () => "/platform-admin/outreach/messages",
   sendMessageNow: (messageId) =>
     `/platform-admin/outreach/messages/${encodeURIComponent(messageId)}/send-now`,
+  analytics: () => "/platform-admin/outreach/analytics",
+  threads: () => "/platform-admin/outreach/threads",
+  ingestThreadReply: () => "/platform-admin/outreach/threads/ingest-reply",
+  agentReply: (threadId) =>
+    `/platform-admin/outreach/threads/${encodeURIComponent(threadId)}/agent-reply`,
+  approveAgentReply: (threadId) =>
+    `/platform-admin/outreach/threads/${encodeURIComponent(threadId)}/approve-agent-reply`,
   socialPosts: () => "/platform-admin/outreach/social-posts",
   socialPost: (postId) => `/platform-admin/outreach/social-posts/${encodeURIComponent(postId)}`,
   publishSocialPostNow: (postId) =>

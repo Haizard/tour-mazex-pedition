@@ -12,7 +12,7 @@
 
 ## Implementation Status - 2026-05-29
 
-Current status: **partially implemented as a safe V1 workspace**.
+Current status: **implemented as a provider-ready V1 growth suite**.
 
 Implemented:
 
@@ -27,20 +27,23 @@ Implemented:
 - Operational endpoints now exist for pausing campaigns, queueing a reviewed message for immediate dispatch, and queueing a platform social post for immediate publishing.
 - Settings management now exists for compliance sender identity, WhatsApp readiness metadata, social account IDs, and conservative rate limits. Raw provider credentials remain environment-owned.
 - The platform outreach Redis processing loop is wired into the non-Vercel server startup path and safely returns an empty summary when Redis is unavailable.
+- Outreach draft generation now uses a provider-backed Gemini LLM path with strict JSON parsing and clear credential failure instead of deterministic placeholder copy.
+- Inbound reply/thread foundations now exist: platform admins can list threads, ingest provider replies, detect opt-outs, update prospect suppression state, and draft or escalate agent replies.
+- Growth Outreach UI now includes an inbound thread and escalation queue panel with agent-reply decision controls.
+- Live provider adapters now exist for email, WhatsApp template sends, Facebook publishing, and Instagram publishing, and the Redis-backed processing loop wires queued work into those adapters.
+- Approved agent replies can now be queued from the thread review panel, converting a reviewed AI reply into an outbound dispatch message.
+- Growth Outreach UI now includes a full analytics dashboard plus an environment-owned credential checklist for AI, email, WhatsApp, and social providers.
 
 Not yet implemented from the full design:
 
-- Live email provider adapter and runtime queue worker wiring.
-- Live WhatsApp template adapter, opt-in/template send path, webhook ingestion, reply threading, and STOP/opt-out webhook automation.
-- Real production LLM call path that fails clearly when credentials are missing; current route creates a deterministic draft using the existing guardrail validator.
-- Autonomous reply agent, inbound thread UI, escalation queue, and `POST /threads/:id/agent-reply`.
-- Live provider credential connection UI, escalation-rule management, and full analytics dashboard.
+- Provider webhook endpoints for automatic inbound email/WhatsApp reply ingestion from live providers.
+- Escalation-rule management UI beyond the current guardrail-based review queue.
 
 Next recommended implementation slice:
 
-1. Add production LLM generation behind a credential check, with deterministic guardrail fallback removed from live send paths.
-2. Add inbound threads, webhook opt-out handling, autonomous reply decisions, and escalation-rule management.
-3. Add live provider adapters/credential connection UI for email, WhatsApp, and platform social publishing.
+1. Add provider webhook endpoints for inbound email/WhatsApp replies so live provider callbacks feed the existing thread ingestion logic.
+2. Add configurable escalation rules for pricing, legal, support, and low-confidence replies.
+3. Add conversion attribution from outreach threads into demos, tenant trials, and paid subscriptions.
 
 ---
 

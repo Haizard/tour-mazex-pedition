@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  approvePlatformOutreachAgentReply,
   createPlatformOutreachCampaign,
   createPlatformOutreachProspect,
   createPlatformOutreachSocialPost,
+  fetchPlatformOutreachAnalytics,
   fetchPlatformOutreachCampaigns,
   fetchPlatformOutreachMessages,
   fetchPlatformOutreachProspects,
   fetchPlatformOutreachReadiness,
   fetchPlatformOutreachSocialPosts,
+  fetchPlatformOutreachThreads,
   generatePlatformOutreachMessage,
+  createPlatformOutreachAgentReply,
   launchPlatformOutreachCampaign,
   pausePlatformOutreachCampaign,
   publishPlatformOutreachSocialPostNow,
@@ -29,6 +33,28 @@ const panelClass = "rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm";
 const inputClass = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-950 outline-none focus:border-zinc-950";
 const labelClass = "mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500";
 const channels = ["email", "whatsapp", "facebook", "instagram"];
+const credentialRequirements = [
+  {
+    label: "AI generation",
+    env: "GEMINI_API_KEY / GOOGLE_API_KEY / PLATFORM_OUTREACH_AI_API_KEY",
+    note: "Required before the AI agent can generate reviewed outreach copy.",
+  },
+  {
+    label: "Email provider",
+    env: "PLATFORM_EMAIL_API_KEY or PLATFORM_SMTP_HOST",
+    note: "Required before approved email drafts can leave the queue.",
+  },
+  {
+    label: "WhatsApp provider",
+    env: "PLATFORM_WHATSAPP_ACCESS_TOKEN",
+    note: "Required for Meta WhatsApp template dispatch.",
+  },
+  {
+    label: "Social publishing",
+    env: "PLATFORM_META_ACCESS_TOKEN",
+    note: "Required for Facebook and Instagram publishing.",
+  },
+];
 
 const EmptyState = ({ title, body }) => (
   <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-8 text-center">
@@ -57,7 +83,9 @@ const GrowthOutreachManager = () => {
   const [prospects, setProspects] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [threads, setThreads] = useState([]);
   const [socialPosts, setSocialPosts] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [prospectForm, setProspectForm] = useState(buildDefaultOutreachProspectForm());
   const [campaignForm, setCampaignForm] = useState(buildDefaultOutreachCampaignForm());
   const [socialPostForm, setSocialPostForm] = useState(buildDefaultSocialPostForm());
@@ -94,12 +122,16 @@ const GrowthOutreachManager = () => {
         prospectsResponse,
         campaignsResponse,
         messagesResponse,
+        analyticsResponse,
+        threadsResponse,
         socialPostsResponse,
       ] = await Promise.all([
         fetchPlatformOutreachReadiness(),
         fetchPlatformOutreachProspects(),
         fetchPlatformOutreachCampaigns(),
         fetchPlatformOutreachMessages(),
+        fetchPlatformOutreachAnalytics(),
+        fetchPlatformOutreachThreads(),
         fetchPlatformOutreachSocialPosts(),
       ]);
 
@@ -110,6 +142,8 @@ const GrowthOutreachManager = () => {
       setProspects(nextProspects);
       setCampaigns(nextCampaigns);
       setMessages(Array.isArray(messagesResponse.data) ? messagesResponse.data : []);
+      setAnalytics(analyticsResponse.data || null);
+      setThreads(Array.isArray(threadsResponse.data) ? threadsResponse.data : []);
       setSocialPosts(Array.isArray(socialPostsResponse.data) ? socialPostsResponse.data : []);
       setSelectedProspectId((current) => current || nextProspects[0]?._id || "");
       setSelectedCampaignId((current) => current || nextCampaigns[0]?._id || "");
@@ -386,6 +420,36 @@ const GrowthOutreachManager = () => {
     }
   };
 
+  const handleDraftAgentReply = async (threadId) => {
+    setWorking(`thread-${threadId}`);
+    setError("");
+    setNotice("");
+    try {
+      await createPlatformOutreachAgentReply(threadId);
+      setNotice("Agent reply decision created for review.");
+      await loadOutreachWorkspace();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to create agent reply decision.");
+    } finally {
+      setWorking("");
+    }
+  };
+
+  const handleApproveAgentReply = async (threadId) => {
+    setWorking(`approve-thread-${threadId}`);
+    setError("");
+    setNotice("");
+    try {
+      await approvePlatformOutreachAgentReply(threadId);
+      setNotice("Approved agent reply queued for provider dispatch.");
+      await loadOutreachWorkspace();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to approve and queue agent reply.");
+    } finally {
+      setWorking("");
+    }
+  };
+
   if (loading) {
     return (
       <div className={panelClass}>
@@ -419,7 +483,7 @@ const GrowthOutreachManager = () => {
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Pipeline</p>
           <p className="mt-3 text-4xl font-black text-zinc-950">{prospects.length}</p>
           <p className="mt-1 text-sm font-semibold text-zinc-500">prospects captured</p>
-          <p className="mt-4 text-xs font-bold text-zinc-500">{messages.length} outreach drafts and {socialPosts.length} social posts</p>
+          <p className="mt-4 text-xs font-bold text-zinc-500">{messages.length} outreach drafts, {threads.length} threads, and {socialPosts.length} social posts</p>
         </div>
       </section>
 
@@ -428,6 +492,46 @@ const GrowthOutreachManager = () => {
           Missing provider setup: {readinessSummary.missing.join(", ")}
         </div>
       )}
+
+      <section className={panelClass}>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Analytics Dashboard</p>
+            <h3 className="mt-2 text-2xl font-black text-zinc-950">Growth engine health</h3>
+            <p className="mt-2 text-sm font-medium text-zinc-500">Track prospect quality, approved dispatches, replies, failures, and social publishing from one cockpit.</p>
+          </div>
+          <StatusPill tone={(analytics?.summary?.failedMessageCount || analytics?.summary?.socialFailedCount) ? "amber" : "emerald"}>
+            {(analytics?.summary?.failedMessageCount || 0) + (analytics?.summary?.socialFailedCount || 0)} failures
+          </StatusPill>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-6">
+          {[
+            ["Prospects", analytics?.summary?.prospectCount ?? prospects.length],
+            ["Qualified", analytics?.summary?.qualifiedProspectCount ?? 0],
+            ["Sent", analytics?.summary?.sentMessageCount ?? 0],
+            ["Queued", analytics?.summary?.queuedMessageCount ?? 0],
+            ["Threads", analytics?.summary?.activeThreadCount ?? threads.length],
+            ["Social Live", analytics?.summary?.socialPublishedCount ?? 0],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{label}</p>
+              <p className="mt-2 text-3xl font-black text-zinc-950">{value}</p>
+            </div>
+          ))}
+        </div>
+        {analytics?.recentFailures?.length > 0 && (
+          <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4">
+            <p className="text-xs font-black uppercase tracking-widest text-red-500">Recent provider failures</p>
+            <div className="mt-3 space-y-2">
+              {analytics.recentFailures.map((failure) => (
+                <p key={failure._id} className="text-sm font-semibold text-red-700">
+                  {failure.channel}: {failure.providerError || failure.subject || "Provider failure"}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
 
       <form onSubmit={handleSaveSettings} className={panelClass}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -513,6 +617,18 @@ const GrowthOutreachManager = () => {
                 Environment variables still control actual provider credentials: email/SMTP, Meta access token, and WhatsApp access token.
               </div>
             </div>
+          </div>
+        </div>
+        <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-xs font-black uppercase tracking-widest text-zinc-400">Provider Credential Checklist</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
+            {credentialRequirements.map((item) => (
+              <div key={item.label} className="rounded-2xl bg-white p-4">
+                <p className="font-black text-zinc-950">{item.label}</p>
+                <p className="mt-2 text-xs font-black uppercase tracking-widest text-zinc-400">{item.env}</p>
+                <p className="mt-2 text-sm font-medium leading-6 text-zinc-500">{item.note}</p>
+              </div>
+            ))}
           </div>
         </div>
       </form>
@@ -727,6 +843,61 @@ const GrowthOutreachManager = () => {
               </div>
             )) : <EmptyState title="No generated drafts" body="Generate one draft after creating a campaign and prospect." />}
           </div>
+        </div>
+      </section>
+
+      <section className={panelClass}>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Inbound Threads</p>
+            <h3 className="mt-2 text-2xl font-black text-zinc-950">Reply and escalation queue</h3>
+            <p className="mt-2 text-sm font-medium text-zinc-500">Review provider-ingested replies, detect opt-outs, and draft safe platform-sales responses.</p>
+          </div>
+          <StatusPill tone={threads.some((thread) => thread.status === "needs_review") ? "amber" : "zinc"}>
+            {threads.filter((thread) => thread.status === "needs_review").length} escalations
+          </StatusPill>
+        </div>
+        <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
+          {threads.length ? threads.slice(0, 6).map((thread) => {
+            const lastMessage = [...(thread.messages || [])].reverse()[0] || {};
+            const decision = thread.agentState?.lastDecision || null;
+            return (
+              <div key={thread._id} className="rounded-2xl border border-zinc-200 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest text-zinc-400">{thread.channel} / {thread.participantAddress}</p>
+                    <p className="mt-2 font-black text-zinc-950">{lastMessage.subject || "Inbound reply"}</p>
+                  </div>
+                  <StatusPill tone={thread.status === "needs_review" ? "amber" : thread.status === "opted_out" ? "red" : "zinc"}>
+                    {thread.status}
+                  </StatusPill>
+                </div>
+                <p className="mt-3 line-clamp-3 text-sm font-medium leading-6 text-zinc-600">{lastMessage.body || "No message body captured."}</p>
+                {decision && (
+                  <div className="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm font-semibold leading-6 text-zinc-600">
+                    <p className="font-black text-zinc-950">Agent decision: {decision.action}</p>
+                    <p className="mt-1">{decision.requiresEscalation ? decision.reason : decision.replyBody}</p>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleDraftAgentReply(thread._id)}
+                  disabled={working === `thread-${thread._id}` || thread.status === "opted_out"}
+                  className="mt-4 rounded-full border border-zinc-200 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 transition hover:border-zinc-950 hover:text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {working === `thread-${thread._id}` ? "Thinking..." : "Draft Agent Reply"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApproveAgentReply(thread._id)}
+                  disabled={working === `approve-thread-${thread._id}` || thread.status === "opted_out" || !decision || decision.action !== "draft_auto_reply"}
+                  className="ml-2 mt-4 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-700 transition hover:border-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {working === `approve-thread-${thread._id}` ? "Queueing..." : "Approve And Queue"}
+                </button>
+              </div>
+            );
+          }) : <EmptyState title="No inbound threads yet" body="Provider webhooks or manual reply ingestion will populate this queue." />}
         </div>
       </section>
 

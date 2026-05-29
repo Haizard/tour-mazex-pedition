@@ -938,6 +938,26 @@ export const sendPlatformOutreachMessageNow = (messageId, data = {}) =>
   API.post(platformOutreachApiPaths.sendMessageNow(messageId), data, {
     headers: getPlatformAdminHeaders(),
   });
+export const fetchPlatformOutreachAnalytics = () =>
+  cachedGet(platformOutreachApiPaths.analytics(), {
+    headers: getPlatformAdminHeaders(),
+  });
+export const fetchPlatformOutreachThreads = () =>
+  cachedGet(platformOutreachApiPaths.threads(), {
+    headers: getPlatformAdminHeaders(),
+  });
+export const ingestPlatformOutreachThreadReply = (data) =>
+  API.post(platformOutreachApiPaths.ingestThreadReply(), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const createPlatformOutreachAgentReply = (threadId, data = {}) =>
+  API.post(platformOutreachApiPaths.agentReply(threadId), data, {
+    headers: getPlatformAdminHeaders(),
+  });
+export const approvePlatformOutreachAgentReply = (threadId, data = {}) =>
+  API.post(platformOutreachApiPaths.approveAgentReply(threadId), data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchPlatformOutreachSocialPosts = () =>
   cachedGet(platformOutreachApiPaths.socialPosts(), {
     headers: getPlatformAdminHeaders(),

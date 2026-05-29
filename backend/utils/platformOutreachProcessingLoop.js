@@ -1,4 +1,5 @@
 import PlatformOutreachMessage from "../models/PlatformOutreachMessage.js";
+import PlatformOutreachSettings from "../models/PlatformOutreachSettings.js";
 import PlatformSocialPost from "../models/PlatformSocialPost.js";
 import { getRedisClient as defaultGetRedisClient } from "./redisClient.js";
 import {
@@ -10,6 +11,11 @@ import {
   queueDuePlatformOutreachDispatches,
   releasePlatformOutreachDispatchLock,
 } from "./platformOutreachProcessor.js";
+import {
+  publishPlatformSocialPostToProviders,
+  resolvePlatformOutreachReadiness,
+  sendPlatformOutreachMessage,
+} from "./platformOutreachProviders.js";
 
 const emptySummary = () => ({
   queued: 0,
@@ -63,6 +69,18 @@ export const processQueuedPlatformOutreachNow = async ({
     const drained = await drainQueue({
       limit,
       dequeueJob: async () => dequeuePlatformOutreachDispatchJob({ redisClient }),
+      loadSettings: async () =>
+        (await PlatformOutreachSettings.findOne({ singletonKey: "platform-outreach" }).lean()) || {},
+      resolveReadiness: ({ settings, channels }) =>
+        resolvePlatformOutreachReadiness({ settings, channels, env }),
+      sendMessage: ({ message, prospect, settings }) =>
+        sendPlatformOutreachMessage({ message, prospect, settings, env }),
+      publishSocialPost: async (socialPost) => {
+        const settings = (await PlatformOutreachSettings.findOne({
+          singletonKey: "platform-outreach",
+        }).lean()) || {};
+        return publishPlatformSocialPostToProviders({ socialPost, settings, env });
+      },
     });
 
     return {

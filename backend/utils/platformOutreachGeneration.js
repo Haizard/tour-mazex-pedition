@@ -71,3 +71,50 @@ export const validateGeneratedOutreach = (payload = {}) => {
     guardrailNotes: Array.isArray(payload.guardrailNotes) ? payload.guardrailNotes : [],
   };
 };
+
+export const parseGeneratedOutreachJson = (text = "") => {
+  const raw = String(text || "").trim();
+  const fencedMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fencedMatch?.[1]?.trim() || raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
+
+  if (!candidate || !candidate.startsWith("{")) {
+    throw new Error("AI outreach response must be valid JSON.");
+  }
+
+  return JSON.parse(candidate);
+};
+
+const defaultGenerateText = async ({ prompt, model, apiKey }) => {
+  const { GoogleGenAI } = await import("@google/genai");
+  const ai = new GoogleGenAI({ apiKey });
+  const response = await ai.models.generateContent({
+    model,
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+  });
+
+  return response.text || "";
+};
+
+export const generatePlatformOutreachWithLlm = async ({
+  campaign = {},
+  prospect = {},
+  channel = "email",
+  env = process.env,
+  generateText = defaultGenerateText,
+  model = env.PLATFORM_OUTREACH_AI_MODEL || env.PAGE_BUILDER_AI_MODEL || "gemini-2.5-flash",
+} = {}) => {
+  const apiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY || env.PLATFORM_OUTREACH_AI_API_KEY;
+  if (!apiKey) {
+    throw new Error("AI credentials are required for platform outreach generation.");
+  }
+
+  const prompt = buildPlatformOutreachPrompt({ campaign, prospect, channel });
+  const text = await generateText({ prompt, model, apiKey });
+  const parsed = parseGeneratedOutreachJson(text);
+
+  return {
+    ...validateGeneratedOutreach(parsed),
+    prompt,
+    model,
+  };
+};

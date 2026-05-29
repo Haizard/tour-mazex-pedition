@@ -49,3 +49,27 @@ test("processQueuedPlatformOutreachNow queues due work before draining dispatch 
     remaining: false,
   });
 });
+
+test("processQueuedPlatformOutreachNow wires live provider dispatch callbacks into the queue drain", async () => {
+  const redisClient = {
+    async set() {
+      return "OK";
+    },
+    async lPush() {},
+    async del() {},
+  };
+  let drainOptions = null;
+
+  await processQueuedPlatformOutreachNow({
+    getRedisClient: async () => redisClient,
+    queueDueDispatches: async () => ({ enqueuedCount: 0 }),
+    drainQueue: async (options) => {
+      drainOptions = options;
+      return { attempted: 0, processed: 0, failed: 0, remaining: false };
+    },
+  });
+
+  assert.equal(typeof drainOptions.sendMessage, "function");
+  assert.equal(typeof drainOptions.publishSocialPost, "function");
+  assert.equal(typeof drainOptions.loadSettings, "function");
+});
