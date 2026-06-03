@@ -9,6 +9,8 @@ import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.
 import {
   buildPlatformProspectPayload,
   buildProspectDuplicateQuery,
+  normalizeEmail,
+  normalizeWhatsAppNumber,
 } from "../utils/platformOutreachProspects.js";
 import { generatePlatformOutreachWithLlm } from "../utils/platformOutreachGeneration.js";
 import { recordPlatformOutreachEvent } from "../utils/platformOutreachEventLog.js";
@@ -17,10 +19,16 @@ import {
   buildPlatformAutoReplyDecision,
 } from "../utils/platformOutreachInbound.js";
 import { resolvePlatformOutreachReadiness } from "../utils/platformOutreachProviders.js";
+import {
+  normalizePlatformEmailWebhookPayload,
+  normalizePlatformWhatsAppWebhookPayload,
+} from "../utils/platformOutreachWebhooks.js";
+import {
+  buildPlatformOutreachConversionPayload,
+  summarizePlatformOutreachConversions,
+} from "../utils/platformOutreachConversion.js";
 
 const router = express.Router();
-
-router.use(requirePlatformAdmin);
 
 const getSettings = async () =>
   PlatformOutreachSettings.findOneAndUpdate(
@@ -35,6 +43,7 @@ const buildSettingsPayload = (body = {}) => ({
     senderEmail: body.email?.senderEmail || "",
     postalAddress: body.email?.postalAddress || "",
     unsubscribeBaseUrl: body.email?.unsubscribeBaseUrl || "",
+    webhookSecret: body.email?.webhookSecret || "",
   },
   whatsapp: {
     businessAccountId: body.whatsapp?.businessAccountId || "",
@@ -51,7 +60,167 @@ const buildSettingsPayload = (body = {}) => ({
     maxWhatsAppPerHour: Number(body.rateLimits?.maxWhatsAppPerHour || 20),
     maxSocialPostsPerDay: Number(body.rateLimits?.maxSocialPostsPerDay || 10),
   },
+  escalationRules: Array.isArray(body.escalationRules)
+    ? body.escalationRules.map((rule) => ({
+        label: rule.label || "Custom escalation rule",
+        keywords: Array.isArray(rule.keywords)
+          ? rule.keywords.map((keyword) => String(keyword || "").trim()).filter(Boolean)
+          : String(rule.keywords || "")
+              .split(/[,\n]/)
+              .map((keyword) => keyword.trim())
+              .filter(Boolean),
+        enabled: rule.enabled !== false,
+        minConfidence: Number(rule.minConfidence || 0.65),
+      }))
+    : [],
 });
+
+const findProspectForWebhookReply = async (reply = {}) => {
+  if (reply.channel === "whatsapp") {
+    const normalized = normalizeWhatsAppNumber(reply.participantAddress);
+    return PlatformOutreachProspect.findOne({ whatsappNumber: normalized });
+  }
+
+  return PlatformOutreachProspect.findOne({ email: normalizeEmail(reply.participantAddress) });
+};
+
+const findCampaignForWebhookReply = async ({ prospectId, channel }) => {
+  const latestMessage = await PlatformOutreachMessage.findOne({
+    prospectId,
+    channel,
+    direction: "outbound",
+  })
+    .sort({ updatedAt: -1 })
+    .select("campaignId")
+    .lean();
+  return latestMessage?.campaignId || null;
+};
+
+const ingestPlatformOutreachReply = async ({ reply, req }) => {
+  const prospect = await findProspectForWebhookReply(reply);
+  if (!prospect) {
+    await recordPlatformOutreachEvent({
+      event: {
+        eventType: "reply_unmatched",
+        req,
+        actorType: "provider",
+        summary: `Inbound ${reply.channel} reply did not match a prospect.`,
+        metadata: {
+          participantAddress: reply.participantAddress,
+          providerMessageId: reply.providerMessageId,
+        },
+      },
+    });
+    return { matched: false, reply };
+  }
+
+  const campaignId = await findCampaignForWebhookReply({
+    prospectId: prospect._id,
+    channel: reply.channel,
+  });
+  const inboundUpdate = buildInboundPlatformOutreachThreadUpdate(reply);
+  const thread = await PlatformOutreachThread.findOneAndUpdate(
+    {
+      prospectId: prospect._id,
+      channel: reply.channel,
+      participantAddress: reply.participantAddress,
+    },
+    {
+      $set: {
+        campaignId,
+        status: inboundUpdate.threadStatus,
+        lastMessageAt: reply.receivedAt,
+      },
+      $push: { messages: inboundUpdate.message },
+    },
+    { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+  );
+
+  Object.assign(prospect, inboundUpdate.prospectUpdate);
+  await prospect.save();
+
+  await recordPlatformOutreachEvent({
+    event: {
+      eventType: inboundUpdate.threadStatus === "opted_out" ? "reply_opt_out_detected" : "reply_ingested",
+      req,
+      prospectId: prospect._id,
+      campaignId,
+      actorType: "provider",
+      summary: `Inbound ${reply.channel} reply ingested for ${prospect.companyName}.`,
+      metadata: {
+        threadId: String(thread._id),
+        status: inboundUpdate.threadStatus,
+        providerMessageId: reply.providerMessageId,
+      },
+    },
+  });
+
+  return { matched: true, prospect, thread };
+};
+
+const getWebhookToken = (req) =>
+  req.get("x-platform-outreach-webhook-token") ||
+  req.query.token ||
+  req.body?.token ||
+  "";
+
+router.post("/webhooks/email", async (req, res) => {
+  const settings = await getSettings();
+  const expectedToken = process.env.PLATFORM_OUTREACH_EMAIL_WEBHOOK_TOKEN || settings.email?.webhookSecret || "";
+  if (!expectedToken) {
+    return res.status(503).json({ message: "Email webhook token is not configured." });
+  }
+  if (getWebhookToken(req) !== expectedToken) {
+    return res.status(401).json({ message: "Invalid email webhook token." });
+  }
+
+  const replies = normalizePlatformEmailWebhookPayload(req.body);
+  const results = [];
+  for (const reply of replies) {
+    results.push(await ingestPlatformOutreachReply({ reply, req }));
+  }
+
+  return res.status(202).json({
+    received: replies.length,
+    matched: results.filter((result) => result.matched).length,
+  });
+});
+
+router.get("/webhooks/whatsapp", async (req, res) => {
+  const settings = await getSettings();
+  if (
+    req.query["hub.mode"] === "subscribe" &&
+    req.query["hub.verify_token"] === settings.whatsapp?.webhookVerifyToken
+  ) {
+    return res.status(200).send(req.query["hub.challenge"] || "");
+  }
+  return res.status(403).json({ message: "WhatsApp webhook verification failed." });
+});
+
+router.post("/webhooks/whatsapp", async (req, res) => {
+  const settings = await getSettings();
+  const expectedToken = settings.whatsapp?.webhookVerifyToken || "";
+  const suppliedToken = getWebhookToken(req);
+  if (!expectedToken) {
+    return res.status(503).json({ message: "WhatsApp webhook token is not configured." });
+  }
+  if (suppliedToken !== expectedToken) {
+    return res.status(401).json({ message: "Invalid WhatsApp webhook token." });
+  }
+
+  const replies = normalizePlatformWhatsAppWebhookPayload(req.body);
+  const results = [];
+  for (const reply of replies) {
+    results.push(await ingestPlatformOutreachReply({ reply, req }));
+  }
+
+  return res.status(202).json({
+    received: replies.length,
+    matched: results.filter((result) => result.matched).length,
+  });
+});
+
+router.use(requirePlatformAdmin);
 
 router.get("/settings/readiness", async (req, res) => {
   const settings = await getSettings();
@@ -372,6 +541,7 @@ router.get("/analytics", async (_req, res) => {
     threadStatuses,
     socialStatuses,
     recentFailures,
+    convertedThreads,
   ] = await Promise.all([
     PlatformOutreachProspect.countDocuments(),
     PlatformOutreachProspect.countDocuments({ status: "qualified" }),
@@ -396,7 +566,11 @@ router.get("/analytics", async (_req, res) => {
       .limit(5)
       .select("channel subject providerError updatedAt")
       .lean(),
+    PlatformOutreachThread.find({ "conversionAttribution.stage": { $exists: true, $ne: "" } })
+      .select("conversionAttribution campaignId prospectId")
+      .lean(),
   ]);
+  const conversionSummary = summarizePlatformOutreachConversions(convertedThreads);
 
   return res.status(200).json({
     summary: {
@@ -411,10 +585,12 @@ router.get("/analytics", async (_req, res) => {
       activeThreadCount: threadStatuses.open + threadStatuses.needs_review + threadStatuses.qualified,
       socialPublishedCount: socialStatuses.published,
       socialFailedCount: socialStatuses.failed,
+      ...conversionSummary,
     },
     messages: messageStatuses,
     threads: threadStatuses,
     socialPosts: socialStatuses,
+    conversions: conversionSummary,
     recentFailures,
   });
 });
@@ -512,11 +688,13 @@ router.post("/threads/:id/agent-reply", async (req, res) => {
     PlatformOutreachProspect.findById(thread.prospectId).lean(),
     thread.campaignId ? PlatformOutreachCampaign.findById(thread.campaignId).lean() : null,
   ]);
+  const settings = await getSettings();
   const lastInbound = [...(thread.messages || [])].reverse().find((message) => message.direction === "inbound");
   const decision = buildPlatformAutoReplyDecision({
     body: req.body.body || lastInbound?.body || "",
     prospect: prospect || {},
     campaign: campaign || {},
+    escalationRules: settings.escalationRules || [],
   });
 
   thread.agentState = {
@@ -622,6 +800,36 @@ router.post("/threads/:id/approve-agent-reply", async (req, res) => {
   });
 
   return res.status(201).json({ thread, message: queuedMessage });
+});
+
+router.post("/threads/:id/conversion", async (req, res) => {
+  const thread = await PlatformOutreachThread.findById(req.params.id);
+  if (!thread) return res.status(404).json({ message: "Thread not found." });
+
+  const attribution = buildPlatformOutreachConversionPayload(req.body);
+  thread.conversionAttribution = attribution;
+  if (["demo_booked", "trial_started", "subscription_won"].includes(attribution.stage)) {
+    thread.status = "qualified";
+  }
+  thread.markModified("conversionAttribution");
+  await thread.save();
+
+  await recordPlatformOutreachEvent({
+    event: {
+      eventType: "conversion_attributed",
+      req,
+      prospectId: thread.prospectId,
+      campaignId: thread.campaignId,
+      actorType: "admin",
+      summary: `Platform outreach conversion attributed: ${attribution.stage}.`,
+      metadata: {
+        threadId: String(thread._id),
+        attribution,
+      },
+    },
+  });
+
+  return res.status(200).json({ thread, conversionAttribution: attribution });
 });
 
 router.get("/social-posts", async (_req, res) => {

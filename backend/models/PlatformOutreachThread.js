@@ -24,6 +24,7 @@ const platformOutreachThreadSchema = new mongoose.Schema(
     lastMessageAt: { type: Date, default: null },
     messages: { type: [mongoose.Schema.Types.Mixed], default: [] },
     agentState: { type: mongoose.Schema.Types.Mixed, default: {} },
+    conversionAttribution: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }
 );

@@ -43,7 +43,26 @@ export const buildPlatformAutoReplyDecision = ({
   body = "",
   prospect = {},
   campaign = {},
+  escalationRules = [],
 } = {}) => {
+  const normalizedBody = String(body || "").toLowerCase();
+  const matchedRule = (escalationRules || []).find((rule) => {
+    if (rule?.enabled === false) return false;
+    return (rule?.keywords || []).some((keyword) =>
+      normalizedBody.includes(String(keyword || "").toLowerCase())
+    );
+  });
+
+  if (matchedRule) {
+    return {
+      action: "escalate",
+      requiresEscalation: true,
+      reason: `Matched escalation rule: ${matchedRule.label}.`,
+      confidence: Number(matchedRule.minConfidence || 0.65),
+      replyBody: "",
+    };
+  }
+
   const classification = classifyPlatformReplyIntent(body);
 
   if (classification.requiresEscalation) {
@@ -51,6 +70,23 @@ export const buildPlatformAutoReplyDecision = ({
       action: "escalate",
       requiresEscalation: true,
       reason: classification.reason,
+      confidence: classification.confidence,
+      replyBody: "",
+    };
+  }
+
+  const confidenceThreshold = Math.max(
+    0,
+    ...(escalationRules || [])
+      .filter((rule) => rule?.enabled !== false)
+      .map((rule) => Number(rule?.minConfidence || 0))
+  );
+
+  if (confidenceThreshold > 0 && classification.confidence < confidenceThreshold) {
+    return {
+      action: "escalate",
+      requiresEscalation: true,
+      reason: `Low confidence reply decision (${classification.confidence}) below threshold ${confidenceThreshold}.`,
       confidence: classification.confidence,
       replyBody: "",
     };

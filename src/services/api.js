@@ -958,6 +958,10 @@ export const approvePlatformOutreachAgentReply = (threadId, data = {}) =>
   API.post(platformOutreachApiPaths.approveAgentReply(threadId), data, {
     headers: getPlatformAdminHeaders(),
   });
+export const attributePlatformOutreachThreadConversion = (threadId, data) =>
+  API.post(platformOutreachApiPaths.threadConversion(threadId), data, {
+    headers: getPlatformAdminHeaders(),
+  });
 export const fetchPlatformOutreachSocialPosts = () =>
   cachedGet(platformOutreachApiPaths.socialPosts(), {
     headers: getPlatformAdminHeaders(),

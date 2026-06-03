@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   approvePlatformOutreachAgentReply,
+  attributePlatformOutreachThreadConversion,
   createPlatformOutreachCampaign,
   createPlatformOutreachProspect,
   createPlatformOutreachSocialPost,
@@ -25,6 +26,8 @@ import {
   buildDefaultOutreachProspectForm,
   buildDefaultOutreachSettingsForm,
   buildDefaultSocialPostForm,
+  buildDefaultThreadConversionForm,
+  buildProviderCredentialWizardSteps,
   formatOutreachDate,
   summarizeOutreachReadiness,
 } from "./growthOutreachState";
@@ -90,6 +93,7 @@ const GrowthOutreachManager = () => {
   const [campaignForm, setCampaignForm] = useState(buildDefaultOutreachCampaignForm());
   const [socialPostForm, setSocialPostForm] = useState(buildDefaultSocialPostForm());
   const [settingsForm, setSettingsForm] = useState(buildDefaultOutreachSettingsForm());
+  const [conversionForms, setConversionForms] = useState({});
   const [selectedProspectId, setSelectedProspectId] = useState("");
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [selectedMessageChannel, setSelectedMessageChannel] = useState("email");
@@ -111,6 +115,15 @@ const GrowthOutreachManager = () => {
   const selectedProspect = useMemo(
     () => prospects.find((prospect) => prospect._id === selectedProspectId) || null,
     [prospects, selectedProspectId]
+  );
+
+  const credentialWizardSteps = useMemo(
+    () =>
+      buildProviderCredentialWizardSteps({
+        baseUrl: typeof window !== "undefined" ? window.location.origin : "https://mazexpeditions.vercel.app",
+        readiness: readiness || {},
+      }),
+    [readiness]
   );
 
   const loadOutreachWorkspace = async () => {
@@ -172,6 +185,17 @@ const GrowthOutreachManager = () => {
 
   const updateSettingsForm = (field, value) => {
     setSettingsForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateConversionForm = (threadId, field, value, currentConversion = {}) => {
+    setConversionForms((current) => ({
+      ...current,
+      [threadId]: {
+        ...buildDefaultThreadConversionForm(currentConversion),
+        ...(current[threadId] || {}),
+        [field]: value,
+      },
+    }));
   };
 
   const toggleCampaignChannel = (channel) => {
@@ -348,6 +372,7 @@ const GrowthOutreachManager = () => {
           senderEmail: settingsForm.senderEmail,
           postalAddress: settingsForm.postalAddress,
           unsubscribeBaseUrl: settingsForm.unsubscribeBaseUrl,
+          webhookSecret: settingsForm.emailWebhookSecret,
         },
         whatsapp: {
           businessAccountId: settingsForm.whatsappBusinessAccountId,
@@ -364,6 +389,17 @@ const GrowthOutreachManager = () => {
           maxWhatsAppPerHour: Number(settingsForm.maxWhatsAppPerHour || 20),
           maxSocialPostsPerDay: Number(settingsForm.maxSocialPostsPerDay || 10),
         },
+        escalationRules: [
+          {
+            label: "Sales and risk escalation",
+            keywords: settingsForm.escalationKeywords
+              .split(/[,\n]/)
+              .map((keyword) => keyword.trim())
+              .filter(Boolean),
+            enabled: true,
+            minConfidence: Number(settingsForm.lowConfidenceThreshold || 0.65),
+          },
+        ],
       });
       setReadiness(response.data?.readiness || null);
       setSettingsForm(buildDefaultOutreachSettingsForm(response.data?.settings || {}));
@@ -450,6 +486,25 @@ const GrowthOutreachManager = () => {
     }
   };
 
+  const handleAttributeConversion = async (threadId, existingConversion = {}) => {
+    const form = conversionForms[threadId] || buildDefaultThreadConversionForm(existingConversion);
+    setWorking(`conversion-${threadId}`);
+    setError("");
+    setNotice("");
+    try {
+      await attributePlatformOutreachThreadConversion(threadId, {
+        ...form,
+        source: "platform-admin",
+      });
+      setNotice("Outreach conversion attribution saved.");
+      await loadOutreachWorkspace();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to save conversion attribution.");
+    } finally {
+      setWorking("");
+    }
+  };
+
   if (loading) {
     return (
       <div className={panelClass}>
@@ -512,6 +567,7 @@ const GrowthOutreachManager = () => {
             ["Queued", analytics?.summary?.queuedMessageCount ?? 0],
             ["Threads", analytics?.summary?.activeThreadCount ?? threads.length],
             ["Social Live", analytics?.summary?.socialPublishedCount ?? 0],
+            ["Revenue", `${analytics?.summary?.attributedRevenue ?? 0} USD`],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{label}</p>
@@ -567,6 +623,10 @@ const GrowthOutreachManager = () => {
                 <span className={labelClass}>Unsubscribe base URL</span>
                 <input className={inputClass} value={settingsForm.unsubscribeBaseUrl} onChange={(event) => updateSettingsForm("unsubscribeBaseUrl", event.target.value)} />
               </label>
+              <label>
+                <span className={labelClass}>Email webhook token</span>
+                <input className={inputClass} value={settingsForm.emailWebhookSecret} onChange={(event) => updateSettingsForm("emailWebhookSecret", event.target.value)} placeholder="Used by provider reply webhooks" />
+              </label>
             </div>
           </div>
           <div className="rounded-2xl border border-zinc-200 p-4">
@@ -616,17 +676,31 @@ const GrowthOutreachManager = () => {
               <div className="rounded-2xl bg-zinc-50 p-4 text-sm font-semibold leading-6 text-zinc-500">
                 Environment variables still control actual provider credentials: email/SMTP, Meta access token, and WhatsApp access token.
               </div>
+              <label>
+                <span className={labelClass}>Escalation keywords</span>
+                <textarea className={`${inputClass} min-h-20`} value={settingsForm.escalationKeywords} onChange={(event) => updateSettingsForm("escalationKeywords", event.target.value)} />
+              </label>
+              <label>
+                <span className={labelClass}>Low confidence threshold</span>
+                <input className={inputClass} type="number" min="0" max="1" step="0.05" value={settingsForm.lowConfidenceThreshold} onChange={(event) => updateSettingsForm("lowConfidenceThreshold", event.target.value)} />
+              </label>
             </div>
           </div>
         </div>
         <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-          <p className="text-xs font-black uppercase tracking-widest text-zinc-400">Provider Credential Checklist</p>
+          <p className="text-xs font-black uppercase tracking-widest text-zinc-400">Provider Connection Wizard</p>
           <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
-            {credentialRequirements.map((item) => (
+            {credentialWizardSteps.map((item) => (
               <div key={item.label} className="rounded-2xl bg-white p-4">
-                <p className="font-black text-zinc-950">{item.label}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-black text-zinc-950">{item.label}</p>
+                  <StatusPill tone={item.ready ? "emerald" : "amber"}>{item.ready ? "ready" : "setup"}</StatusPill>
+                </div>
                 <p className="mt-2 text-xs font-black uppercase tracking-widest text-zinc-400">{item.env}</p>
                 <p className="mt-2 text-sm font-medium leading-6 text-zinc-500">{item.note}</p>
+                {item.webhookUrl && (
+                  <p className="mt-3 break-all rounded-xl bg-zinc-50 p-3 text-xs font-bold text-zinc-600">{item.webhookUrl}</p>
+                )}
               </div>
             ))}
           </div>
@@ -861,6 +935,7 @@ const GrowthOutreachManager = () => {
           {threads.length ? threads.slice(0, 6).map((thread) => {
             const lastMessage = [...(thread.messages || [])].reverse()[0] || {};
             const decision = thread.agentState?.lastDecision || null;
+            const conversionForm = conversionForms[thread._id] || buildDefaultThreadConversionForm(thread.conversionAttribution);
             return (
               <div key={thread._id} className="rounded-2xl border border-zinc-200 p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -895,6 +970,53 @@ const GrowthOutreachManager = () => {
                 >
                   {working === `approve-thread-${thread._id}` ? "Queueing..." : "Approve And Queue"}
                 </button>
+                <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                  <p className="text-xs font-black uppercase tracking-widest text-zinc-400">Conversion Attribution</p>
+                  {thread.conversionAttribution?.stage && (
+                    <p className="mt-2 text-sm font-bold text-emerald-700">
+                      Current: {thread.conversionAttribution.stage} / {thread.conversionAttribution.revenueAmount || 0} {thread.conversionAttribution.currency || "USD"}
+                    </p>
+                  )}
+                  <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <select
+                      className={inputClass}
+                      value={conversionForm.stage}
+                      onChange={(event) => updateConversionForm(thread._id, "stage", event.target.value, thread.conversionAttribution)}
+                    >
+                      <option value="demo_booked">Demo booked</option>
+                      <option value="trial_started">Trial started</option>
+                      <option value="subscription_won">Subscription won</option>
+                      <option value="lost">Lost</option>
+                    </select>
+                    <input
+                      className={inputClass}
+                      type="number"
+                      min="0"
+                      placeholder="Revenue"
+                      value={conversionForm.revenueAmount}
+                      onChange={(event) => updateConversionForm(thread._id, "revenueAmount", event.target.value, thread.conversionAttribution)}
+                    />
+                    <input
+                      className={inputClass}
+                      value={conversionForm.currency}
+                      onChange={(event) => updateConversionForm(thread._id, "currency", event.target.value, thread.conversionAttribution)}
+                    />
+                  </div>
+                  <textarea
+                    className={`${inputClass} mt-3 min-h-16`}
+                    placeholder="Attribution notes"
+                    value={conversionForm.notes}
+                    onChange={(event) => updateConversionForm(thread._id, "notes", event.target.value, thread.conversionAttribution)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAttributeConversion(thread._id, thread.conversionAttribution)}
+                    disabled={working === `conversion-${thread._id}`}
+                    className="mt-3 rounded-full border border-zinc-300 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 transition hover:border-zinc-950 hover:text-zinc-950 disabled:opacity-40"
+                  >
+                    {working === `conversion-${thread._id}` ? "Saving..." : "Save Conversion"}
+                  </button>
+                </div>
               </div>
             );
           }) : <EmptyState title="No inbound threads yet" body="Provider webhooks or manual reply ingestion will populate this queue." />}

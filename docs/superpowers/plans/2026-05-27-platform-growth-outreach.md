@@ -33,17 +33,21 @@ Implemented:
 - Live provider adapters now exist for email, WhatsApp template sends, Facebook publishing, and Instagram publishing, and the Redis-backed processing loop wires queued work into those adapters.
 - Approved agent replies can now be queued from the thread review panel, converting a reviewed AI reply into an outbound dispatch message.
 - Growth Outreach UI now includes a full analytics dashboard plus an environment-owned credential checklist for AI, email, WhatsApp, and social providers.
+- Public email and WhatsApp webhook endpoints now normalize provider replies into the existing thread ingestion flow, including automatic STOP/unsubscribe suppression.
+- Platform admins can configure escalation keywords and low-confidence thresholds from the Growth Outreach settings panel.
+- Outreach threads now support conversion attribution for demos, trials, subscription wins, lost deals, and attributed revenue.
+- Growth Outreach analytics now includes conversion and revenue totals, and the provider credential area is now a guided setup wizard with webhook URLs.
 
 Not yet implemented from the full design:
 
-- Provider webhook endpoints for automatic inbound email/WhatsApp reply ingestion from live providers.
-- Escalation-rule management UI beyond the current guardrail-based review queue.
+- Deep provider-specific webhook signature verification for every supported vendor. Current webhooks support token gating and Meta verification challenge handling.
+- Automated conversion attribution from billing/trial systems. Current attribution is admin-controlled from outreach threads.
 
 Next recommended implementation slice:
 
-1. Add provider webhook endpoints for inbound email/WhatsApp replies so live provider callbacks feed the existing thread ingestion logic.
-2. Add configurable escalation rules for pricing, legal, support, and low-confidence replies.
-3. Add conversion attribution from outreach threads into demos, tenant trials, and paid subscriptions.
+1. Add vendor-specific signature validation for Resend, SMTP relay providers, and Meta app-secret proof where credentials are available.
+2. Connect outreach conversion attribution to the subscription/trial billing source of truth.
+3. Add proactive alerts when provider webhooks receive unmatched replies or repeated failed dispatches.
 
 ---
 

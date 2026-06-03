@@ -31,6 +31,7 @@ export const buildDefaultOutreachSettingsForm = (settings = {}) => ({
   senderEmail: settings.email?.senderEmail || "",
   postalAddress: settings.email?.postalAddress || "",
   unsubscribeBaseUrl: settings.email?.unsubscribeBaseUrl || "",
+  emailWebhookSecret: settings.email?.webhookSecret || "",
   whatsappBusinessAccountId: settings.whatsapp?.businessAccountId || "",
   whatsappPhoneNumberId: settings.whatsapp?.phoneNumberId || "",
   whatsappTemplateName: settings.whatsapp?.defaultMarketingTemplateName || "",
@@ -40,7 +41,50 @@ export const buildDefaultOutreachSettingsForm = (settings = {}) => ({
   maxEmailPerHour: String(settings.rateLimits?.maxEmailPerHour || 50),
   maxWhatsAppPerHour: String(settings.rateLimits?.maxWhatsAppPerHour || 20),
   maxSocialPostsPerDay: String(settings.rateLimits?.maxSocialPostsPerDay || 10),
+  escalationKeywords: (settings.escalationRules?.[0]?.keywords || ["discount", "refund", "angry", "legal", "guarantee"]).join(", "),
+  lowConfidenceThreshold: String(settings.escalationRules?.[0]?.minConfidence || 0.65),
 });
+
+export const buildDefaultThreadConversionForm = (conversion = {}) => ({
+  stage: conversion.stage || "demo_booked",
+  revenueAmount: conversion.revenueAmount ? String(conversion.revenueAmount) : "",
+  currency: conversion.currency || "USD",
+  notes: conversion.notes || "",
+});
+
+export const buildProviderCredentialWizardSteps = ({ baseUrl = "", readiness = {} } = {}) => {
+  const normalizedBaseUrl = String(baseUrl || "").replace(/\/$/, "");
+  const checks = Array.isArray(readiness.checks) ? readiness.checks : [];
+  const isReady = (channel) => checks.some((check) => check.channel === channel && check.ready);
+  return [
+    {
+      label: "AI generation",
+      env: "GEMINI_API_KEY / GOOGLE_API_KEY / PLATFORM_OUTREACH_AI_API_KEY",
+      ready: true,
+      note: "Add one AI key in the deployment environment for reviewed copy generation.",
+    },
+    {
+      label: "Email",
+      env: "PLATFORM_EMAIL_API_KEY or PLATFORM_SMTP_HOST",
+      ready: isReady("email"),
+      webhookUrl: `${normalizedBaseUrl}/api/platform-admin/outreach/webhooks/email`,
+      note: "Point provider reply webhooks here and pass the configured webhook token.",
+    },
+    {
+      label: "WhatsApp",
+      env: "PLATFORM_WHATSAPP_ACCESS_TOKEN",
+      ready: isReady("whatsapp"),
+      webhookUrl: `${normalizedBaseUrl}/api/platform-admin/outreach/webhooks/whatsapp`,
+      note: "Use this Meta webhook URL for inbound messages and STOP automation.",
+    },
+    {
+      label: "Social",
+      env: "PLATFORM_META_ACCESS_TOKEN",
+      ready: isReady("social"),
+      note: "Connect Facebook Page and Instagram Business IDs in settings.",
+    },
+  ];
+};
 
 export const summarizeOutreachReadiness = (readiness = {}) => {
   const checks = Array.isArray(readiness.checks) ? readiness.checks : [];

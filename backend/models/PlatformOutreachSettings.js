@@ -8,6 +8,7 @@ const platformOutreachSettingsSchema = new mongoose.Schema(
       senderEmail: { type: String, trim: true, lowercase: true, default: "" },
       postalAddress: { type: String, trim: true, default: "" },
       unsubscribeBaseUrl: { type: String, trim: true, default: "" },
+      webhookSecret: { type: String, trim: true, default: "" },
     },
     whatsapp: {
       businessAccountId: { type: String, trim: true, default: "" },
@@ -23,6 +24,17 @@ const platformOutreachSettingsSchema = new mongoose.Schema(
       maxEmailPerHour: { type: Number, min: 1, default: 50 },
       maxWhatsAppPerHour: { type: Number, min: 1, default: 20 },
       maxSocialPostsPerDay: { type: Number, min: 1, default: 10 },
+    },
+    escalationRules: {
+      type: [
+        {
+          label: { type: String, trim: true, required: true },
+          keywords: { type: [String], default: [] },
+          enabled: { type: Boolean, default: true },
+          minConfidence: { type: Number, min: 0, max: 1, default: 0.65 },
+        },
+      ],
+      default: [],
     },
   },
   { timestamps: true }

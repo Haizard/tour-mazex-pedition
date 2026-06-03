@@ -21,6 +21,10 @@ export const platformOutreachApiPaths = {
     `/platform-admin/outreach/threads/${encodeURIComponent(threadId)}/agent-reply`,
   approveAgentReply: (threadId) =>
     `/platform-admin/outreach/threads/${encodeURIComponent(threadId)}/approve-agent-reply`,
+  threadConversion: (threadId) =>
+    `/platform-admin/outreach/threads/${encodeURIComponent(threadId)}/conversion`,
+  emailWebhook: () => "/platform-admin/outreach/webhooks/email",
+  whatsAppWebhook: () => "/platform-admin/outreach/webhooks/whatsapp",
   socialPosts: () => "/platform-admin/outreach/social-posts",
   socialPost: (postId) => `/platform-admin/outreach/social-posts/${encodeURIComponent(postId)}`,
   publishSocialPostNow: (postId) =>

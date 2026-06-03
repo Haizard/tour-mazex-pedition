@@ -56,3 +56,37 @@ test("buildPlatformAutoReplyDecision drafts safe platform sales replies", () => 
   assert.match(decision.replyBody, /Mazex/i);
   assert.match(decision.replyBody, /demo/i);
 });
+
+test("buildPlatformAutoReplyDecision honors configurable escalation rules", () => {
+  const decision = buildPlatformAutoReplyDecision({
+    body: "Your price is too high and I am angry about this.",
+    escalationRules: [
+      {
+        label: "Commercial negotiation",
+        keywords: ["price", "discount", "too high"],
+        enabled: true,
+      },
+    ],
+  });
+
+  assert.equal(decision.action, "escalate");
+  assert.equal(decision.requiresEscalation, true);
+  assert.match(decision.reason, /Commercial negotiation/i);
+});
+
+test("buildPlatformAutoReplyDecision escalates low-confidence replies by threshold", () => {
+  const decision = buildPlatformAutoReplyDecision({
+    body: "",
+    escalationRules: [
+      {
+        label: "Low confidence",
+        keywords: [],
+        enabled: true,
+        minConfidence: 0.65,
+      },
+    ],
+  });
+
+  assert.equal(decision.action, "escalate");
+  assert.match(decision.reason, /Low confidence/i);
+});

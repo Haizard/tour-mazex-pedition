@@ -23,6 +23,9 @@ test("platform outreach API paths point at the platform-admin outreach namespace
   assert.equal(platformOutreachApiPaths.ingestThreadReply(), "/platform-admin/outreach/threads/ingest-reply");
   assert.equal(platformOutreachApiPaths.agentReply("thread1"), "/platform-admin/outreach/threads/thread1/agent-reply");
   assert.equal(platformOutreachApiPaths.approveAgentReply("thread1"), "/platform-admin/outreach/threads/thread1/approve-agent-reply");
+  assert.equal(platformOutreachApiPaths.threadConversion("thread1"), "/platform-admin/outreach/threads/thread1/conversion");
+  assert.equal(platformOutreachApiPaths.emailWebhook(), "/platform-admin/outreach/webhooks/email");
+  assert.equal(platformOutreachApiPaths.whatsAppWebhook(), "/platform-admin/outreach/webhooks/whatsapp");
   assert.equal(platformOutreachApiPaths.socialPosts(), "/platform-admin/outreach/social-posts");
   assert.equal(platformOutreachApiPaths.socialPost("post1"), "/platform-admin/outreach/social-posts/post1");
   assert.equal(platformOutreachApiPaths.publishSocialPostNow("post1"), "/platform-admin/outreach/social-posts/post1/publish-now");
