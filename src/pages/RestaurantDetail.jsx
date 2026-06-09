@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { FaArrowLeft, FaMapMarkerAlt, FaUtensils } from "react-icons/fa";
+import { FaArrowLeft, FaMapMarkerAlt, FaStore, FaUtensils } from "react-icons/fa";
 import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import RestaurantDirectInquiryForm from "../components/Marketplace/RestaurantDirectInquiryForm";
 import RestaurantAiConciergeCard from "../components/Marketplace/RestaurantAiConciergeCard";
 import RestaurantReservationWidget from "../components/Marketplace/RestaurantReservationWidget";
 import RestaurantMenuPreview from "../components/Marketplace/RestaurantMenuPreview";
 import HospitalityPairingPanel from "../components/Marketplace/HospitalityPairingPanel";
-import { fetchPublicRestaurantBySlug, fetchPublicRestaurantMenu, fetchRestaurantReservationOptions } from "../services/api";
+import { fetchPublicRestaurantBySlug, fetchPublicRestaurantMenu, fetchPublicRestaurants, fetchRestaurantReservationOptions } from "../services/api";
 import {
   getRestaurantDiningReassuranceItems,
   getRestaurantOperatorTrustLabel,
@@ -21,6 +21,7 @@ const RestaurantDetail = () => {
   const [restaurant, setRestaurant] = useState(null);
   const [reservationOptions, setReservationOptions] = useState(null);
   const [menuPreview, setMenuPreview] = useState(null);
+  const [relatedRestaurants, setRelatedRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIntentId, setSelectedIntentId] = useState("direct");
 
@@ -35,12 +36,19 @@ const RestaurantDetail = () => {
         const restaurantId = loadedRestaurant.id || loadedRestaurant._id;
 
         if (restaurantId) {
-          const [optionsResponse, menuResponse] = await Promise.all([
+          const [optionsResponse, menuResponse, relatedResponse] = await Promise.all([
             fetchRestaurantReservationOptions(restaurantId),
             fetchPublicRestaurantMenu(restaurantId).catch(() => ({ data: null })),
+            fetchPublicRestaurants({ destination: loadedRestaurant.destination }).catch(() => ({
+              data: { restaurants: [] },
+            })),
           ]);
           setReservationOptions(optionsResponse.data || null);
           setMenuPreview(menuResponse.data || null);
+          const allRelated = relatedResponse.data?.restaurants || [];
+          setRelatedRestaurants(
+            allRelated.filter((r) => (r.id || r._id) !== restaurantId)
+          );
         }
       } catch (error) {
         console.error("Restaurant detail error:", error);
@@ -82,6 +90,12 @@ const RestaurantDetail = () => {
       <main className="mx-auto max-w-7xl">
         <Link to="/discover/restaurants" className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-500">
           <FaArrowLeft /> Back to restaurants
+        </Link>
+        <Link
+          to="/discover/restaurants/claim"
+          className="ml-4 inline-flex items-center gap-2 rounded-full border border-[#d8c8ae] bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#234232]"
+        >
+          <FaStore /> Claim your restaurant
         </Link>
 
         <section className="mt-8 overflow-hidden rounded-[36px] border border-[#d8c8ae] bg-white shadow-[0_24px_80px_rgba(35,66,50,0.12)]">
@@ -236,6 +250,43 @@ const RestaurantDetail = () => {
             }}
           />
         </div>
+
+        {relatedRestaurants.length ? (
+          <section className="mt-10">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b7451]">
+                  Dining nearby
+                </p>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">
+                  More restaurants in {restaurant.destination || "the area"}
+                </h2>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-5 md:grid-cols-3">
+              {relatedRestaurants.slice(0, 6).map((item) => (
+                <Link
+                  key={item._id}
+                  to={`/discover/restaurants/${item.slug}`}
+                  className="rounded-[28px] border border-[#d8c8ae] bg-white p-5 shadow-[0_18px_50px_rgba(35,66,50,0.08)] transition hover:-translate-y-1"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8b7451]">
+                    {(item.cuisineTypes || [])[0] || "Restaurant"}
+                  </p>
+                  <h3 className="mt-3 text-lg font-black uppercase tracking-tight text-slate-900">
+                    {item.name}
+                  </h3>
+                  <p className="mt-2 text-sm font-medium text-slate-500">
+                    {item.destination || "Destination on request"}
+                  </p>
+                  <p className="mt-3 line-clamp-3 text-sm font-medium leading-6 text-slate-600">
+                    {item.summary || "Operator details are being prepared."}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
     </div>
   );
