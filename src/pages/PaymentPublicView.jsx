@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Badge from "../components/UI/Badge";
 import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
@@ -14,6 +14,7 @@ const statusTone = {
 
 const PaymentPublicView = () => {
   const { token } = useParams();
+  const navigate = useNavigate();
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,6 +41,13 @@ const PaymentPublicView = () => {
     try {
       const response = await respondToPublicPaymentCheckout(token, { status });
       setPayment(response.data);
+
+      // Redirect restaurant reservation payments back to My Reservations
+      if (payment?.checkoutKind === "restaurant_reservation") {
+        const outcome = status === "paid" ? "success" : status === "cancelled" ? "cancelled" : "failed";
+        navigate(`/my-reservations?payment=${outcome}`);
+        return;
+      }
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to update this payment right now.");
     } finally {

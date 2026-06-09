@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaCalendarCheck, FaClock, FaExternalLinkAlt, FaStar, FaUsers } from "react-icons/fa";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { FaCalendarCheck, FaCheckCircle, FaClock, FaExclamationTriangle, FaExternalLinkAlt, FaStar, FaTimes, FaUsers } from "react-icons/fa";
 import { fetchTravelerRestaurantReservations } from "../services/api";
 import { useTravelerAuth } from "../context/TravelerAuthContext";
 import { buildReservationDepositStatus, formatDepositAmount } from "../components/Marketplace/restaurantDepositState";
@@ -28,11 +28,44 @@ const fmtDate = (value) => {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 };
 
+const PAYMENT_OUTCOME_MESSAGES = {
+  success: {
+    title: "Payment completed",
+    message: "Your deposit payment was successful. The restaurant will confirm your reservation.",
+    icon: FaCheckCircle,
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    text: "text-emerald-800",
+    iconColor: "text-emerald-500",
+  },
+  failed: {
+    title: "Payment failed",
+    message: "The payment could not be processed. You can try paying again from the reservation card below.",
+    icon: FaExclamationTriangle,
+    bg: "bg-red-50",
+    border: "border-red-200",
+    text: "text-red-800",
+    iconColor: "text-red-500",
+  },
+  cancelled: {
+    title: "Payment cancelled",
+    message: "You cancelled the payment. The deposit is still pending — you can pay anytime from the reservation card below.",
+    icon: FaExclamationTriangle,
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    text: "text-amber-800",
+    iconColor: "text-amber-500",
+  },
+};
+
 const MyReservations = () => {
   const { isAuthenticated, traveler, loading: authLoading } = useTravelerAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [paymentOutcome, setPaymentOutcome] = useState(null);
+  const processedOutcomeRef = useRef(false);
 
   const loadReservations = async () => {
     if (!isAuthenticated) return;
@@ -53,6 +86,25 @@ const MyReservations = () => {
       loadReservations();
     }
   }, [isAuthenticated, authLoading]);
+
+  // Handle payment outcome from URL params
+  useEffect(() => {
+    if (authLoading || processedOutcomeRef.current) return;
+
+    const outcome = searchParams.get("payment");
+    if (outcome && PAYMENT_OUTCOME_MESSAGES[outcome]) {
+      processedOutcomeRef.current = true;
+      setPaymentOutcome(outcome);
+
+      // Clean the URL param after capturing it
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("payment");
+      setSearchParams(nextParams, { replace: true });
+
+      // Refresh reservations to reflect the updated payment status
+      loadReservations();
+    }
+  }, [authLoading, searchParams]);
 
   // Not authenticated — show sign-in prompt
   if (authLoading) {
@@ -115,6 +167,31 @@ const MyReservations = () => {
             {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
+
+        {/* Payment outcome banner */}
+        {paymentOutcome ? (() => {
+          const pm = PAYMENT_OUTCOME_MESSAGES[paymentOutcome];
+          const Icon = pm.icon;
+          return (
+            <div className={`mt-6 flex items-start gap-4 rounded-[28px] border ${pm.border} ${pm.bg} p-5`}>
+              <div className={`mt-0.5 shrink-0 ${pm.iconColor}`}>
+                <Icon />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm font-black uppercase tracking-[0.08em] ${pm.text}`}>{pm.title}</p>
+                <p className={`mt-1 text-sm font-medium leading-5 ${pm.text}`}>{pm.message}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentOutcome(null)}
+                className={`shrink-0 ${pm.text} grid h-7 w-7 place-items-center rounded-full transition hover:bg-white/40`}
+                aria-label="Dismiss"
+              >
+                <FaTimes className="text-[10px]" />
+              </button>
+            </div>
+          );
+        })() : null}
 
         {error ? (
           <div className="mt-6 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">

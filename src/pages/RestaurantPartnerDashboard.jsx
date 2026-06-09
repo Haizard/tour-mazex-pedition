@@ -14,6 +14,7 @@ import {
   fetchRestaurantPartnerReservationOperations,
   fetchRestaurantPartnerRestaurants,
   fetchRestaurantPartnerSession,
+  updateRestaurantPartnerCheckoutSettings,
   updateRestaurantPartnerMenuItem,
   updateRestaurantPartnerMenuSection,
   updateRestaurantPartnerReservationRequest,
@@ -21,6 +22,7 @@ import {
 import {
   buildCustomDiningPaymentPayload,
   buildDepositPaymentPayload,
+  buildRestaurantCheckoutSettingsPayload,
   getRestaurantPaymentStatusLabel,
 } from "../components/RestaurantPartner/restaurantPartnerCheckoutState";
 import {
@@ -74,6 +76,17 @@ const RestaurantPartnerDashboard = () => {
   const [editingSectionTitle, setEditingSectionTitle] = useState("");
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingItemDraft, setEditingItemDraft] = useState(null);
+  const [checkoutSettings, setCheckoutSettings] = useState({
+    enabled: false,
+    depositMode: "none",
+    depositAmount: "",
+    depositPercentage: "",
+    currency: "USD",
+    paymentInstructions: "",
+    autoDeposit: false,
+  });
+  const [savingCheckout, setSavingCheckout] = useState(false);
+  const [checkoutMessage, setCheckoutMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
@@ -168,6 +181,48 @@ const RestaurantPartnerDashboard = () => {
       ) || restaurants[0],
     [restaurants, selectedRestaurantId]
   );
+
+  // Sync checkout settings from the selected restaurant
+  useEffect(() => {
+    const checkout = selectedRestaurant?.restaurantCheckout || {};
+    setCheckoutSettings({
+      enabled: checkout.enabled === true,
+      depositMode: checkout.depositMode || "none",
+      depositAmount: checkout.depositAmount ?? "",
+      depositPercentage: checkout.depositPercentage ?? "",
+      currency: checkout.currency || "USD",
+      paymentInstructions: checkout.paymentInstructions || "",
+      autoDeposit: checkout.autoDeposit === true,
+    });
+    setCheckoutMessage("");
+  }, [selectedRestaurant]);
+
+  const saveCheckoutSettings = async () => {
+    if (!selectedRestaurantId) return;
+    setSavingCheckout(true);
+    setCheckoutMessage("");
+    try {
+      const payload = buildRestaurantCheckoutSettingsPayload(checkoutSettings);
+      const response = await updateRestaurantPartnerCheckoutSettings(selectedRestaurantId, payload);
+      const saved = response.data?.restaurantCheckout || {};
+      setCheckoutSettings({
+        enabled: saved.enabled === true,
+        depositMode: saved.depositMode || "none",
+        depositAmount: saved.depositAmount ?? "",
+        depositPercentage: saved.depositPercentage ?? "",
+        currency: saved.currency || "USD",
+        paymentInstructions: saved.paymentInstructions || "",
+        autoDeposit: saved.autoDeposit === true,
+      });
+      setCheckoutMessage("Checkout settings saved.");
+    } catch (saveError) {
+      setCheckoutMessage(
+        saveError.response?.data?.message || "Unable to save checkout settings."
+      );
+    } finally {
+      setSavingCheckout(false);
+    }
+  };
 
   const submitServiceWindow = async (event) => {
     event.preventDefault();
@@ -865,6 +920,215 @@ const RestaurantPartnerDashboard = () => {
                   ))}
                 </div>
               ) : null}
+            </section>
+
+            {/* Checkout settings */}
+            <section className="mt-8 rounded-[28px] border border-[#dccfb7] bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b7451]">
+                    Deposit & checkout
+                  </p>
+                  <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                    {selectedRestaurant?.name || "Restaurant"}
+                  </h2>
+                </div>
+              </div>
+
+              {checkoutMessage ? (
+                <div
+                  className={`mt-4 rounded-2xl px-4 py-3 text-sm font-bold ${
+                    checkoutMessage.includes("saved")
+                      ? "bg-[#eef6f0] text-[#234232]"
+                      : "bg-red-50 text-red-700"
+                  }`}
+                >
+                  {checkoutMessage}
+                </div>
+              ) : null}
+
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                {/* Enabled toggle */}
+                <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-[#fcfaf6] p-4">
+                  <input
+                    type="checkbox"
+                    checked={checkoutSettings.enabled}
+                    onChange={(event) =>
+                      setCheckoutSettings((current) => ({
+                        ...current,
+                        enabled: event.target.checked,
+                      }))
+                    }
+                    className="h-5 w-5 rounded border-[#dccfb7] text-[#234232]"
+                  />
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-[0.12em] text-slate-800">
+                      Checkout enabled
+                    </p>
+                    <p className="mt-0.5 text-xs font-medium text-slate-500">
+                      Allow travelers to pay deposits and request reservations
+                    </p>
+                  </div>
+                </label>
+
+                {/* Auto-deposit toggle */}
+                <label
+                  className={`flex cursor-pointer items-center gap-3 rounded-2xl bg-[#fcfaf6] p-4 transition ${
+                    !checkoutSettings.enabled ? "opacity-40" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checkoutSettings.autoDeposit}
+                    onChange={(event) =>
+                      setCheckoutSettings((current) => ({
+                        ...current,
+                        autoDeposit: event.target.checked,
+                      }))
+                    }
+                    disabled={!checkoutSettings.enabled}
+                    className="h-5 w-5 rounded border-[#dccfb7] text-[#234232]"
+                  />
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-[0.12em] text-slate-800">
+                      Auto-deposit on confirm
+                    </p>
+                    <p className="mt-0.5 text-xs font-medium text-slate-500">
+                      Automatically request a deposit payment when confirming a reservation
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              <div className="mt-4 grid gap-5 md:grid-cols-3">
+                {/* Deposit mode */}
+                <div className="rounded-2xl bg-[#fcfaf6] p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    Deposit mode
+                  </p>
+                  <select
+                    value={checkoutSettings.depositMode}
+                    onChange={(event) =>
+                      setCheckoutSettings((current) => ({
+                        ...current,
+                        depositMode: event.target.value,
+                      }))
+                    }
+                    disabled={!checkoutSettings.enabled}
+                    className={`mt-2 w-full rounded-xl border border-[#dccfb7] bg-white px-3 py-2.5 text-sm font-bold ${
+                      !checkoutSettings.enabled ? "opacity-40" : ""
+                    }`}
+                  >
+                    <option value="none">None</option>
+                    <option value="fixed">Fixed amount</option>
+                    <option value="percentage">Percentage</option>
+                    <option value="custom-only">Manual only</option>
+                  </select>
+                </div>
+
+                {/* Deposit amount (fixed) */}
+                <div className="rounded-2xl bg-[#fcfaf6] p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    {checkoutSettings.depositMode === "percentage"
+                      ? "Deposit %"
+                      : "Deposit amount"}
+                  </p>
+                  {checkoutSettings.depositMode === "percentage" ? (
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={checkoutSettings.depositPercentage}
+                      onChange={(event) =>
+                        setCheckoutSettings((current) => ({
+                          ...current,
+                          depositPercentage: event.target.value,
+                        }))
+                      }
+                      disabled={!checkoutSettings.enabled}
+                      placeholder="20"
+                      className={`mt-2 w-full rounded-xl border border-[#dccfb7] bg-white px-3 py-2.5 text-sm font-bold ${
+                        !checkoutSettings.enabled ? "opacity-40" : ""
+                      }`}
+                    />
+                  ) : (
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={checkoutSettings.depositAmount}
+                      onChange={(event) =>
+                        setCheckoutSettings((current) => ({
+                          ...current,
+                          depositAmount: event.target.value,
+                        }))
+                      }
+                      disabled={!checkoutSettings.enabled}
+                      placeholder="25.00"
+                      className={`mt-2 w-full rounded-xl border border-[#dccfb7] bg-white px-3 py-2.5 text-sm font-bold ${
+                        !checkoutSettings.enabled ? "opacity-40" : ""
+                      }`}
+                    />
+                  )}
+                </div>
+
+                {/* Currency */}
+                <div className="rounded-2xl bg-[#fcfaf6] p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    Currency
+                  </p>
+                  <input
+                    value={checkoutSettings.currency}
+                    onChange={(event) =>
+                      setCheckoutSettings((current) => ({
+                        ...current,
+                        currency: event.target.value.toUpperCase(),
+                      }))
+                    }
+                    disabled={!checkoutSettings.enabled}
+                    placeholder="USD"
+                    maxLength={3}
+                    className={`mt-2 w-full rounded-xl border border-[#dccfb7] bg-white px-3 py-2.5 text-sm font-bold uppercase ${
+                      !checkoutSettings.enabled ? "opacity-40" : ""
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Payment instructions */}
+              <div className="mt-4">
+                <div className="rounded-2xl bg-[#fcfaf6] p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    Payment instructions
+                  </p>
+                  <textarea
+                    value={checkoutSettings.paymentInstructions}
+                    onChange={(event) =>
+                      setCheckoutSettings((current) => ({
+                        ...current,
+                        paymentInstructions: event.target.value,
+                      }))
+                    }
+                    disabled={!checkoutSettings.enabled}
+                    placeholder="Deposit confirms the table request. Balance is paid at the restaurant."
+                    rows={3}
+                    className={`mt-2 w-full rounded-xl border border-[#dccfb7] bg-white px-3 py-2.5 text-sm font-bold ${
+                      !checkoutSettings.enabled ? "opacity-40" : ""
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={saveCheckoutSettings}
+                  disabled={savingCheckout}
+                  className="rounded-2xl bg-[#234232] px-6 py-3 text-xs font-black uppercase tracking-[0.16em] text-white disabled:opacity-60"
+                >
+                  {savingCheckout ? "Saving..." : "Save checkout settings"}
+                </button>
+              </div>
             </section>
 
             <section className="mt-8 rounded-[28px] border border-[#dccfb7] bg-white p-6 shadow-sm">
