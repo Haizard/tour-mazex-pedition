@@ -269,23 +269,31 @@ const Navbar = ({ handleOrderPopup }) => {
 
           <div className="flex items-center gap-6 text-[13px] font-medium uppercase tracking-tighter">
             {isTravelerAuthenticated && (
-              <div className="flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-white">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[10px] font-black text-[#264232]">
-                  {travelerInitials}
-                </span>
-                <span className="max-w-[130px] truncate normal-case tracking-normal">
-                  {travelerProfileLabel}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleTravelerLogout}
-                  className="grid h-7 w-7 place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white"
-                  aria-label="Sign out traveler account"
-                  title="Sign out"
+              <>
+                <Link
+                  to="/my-reservations"
+                  className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold tracking-wider text-white transition hover:bg-white/20"
                 >
-                  <FaSignOutAlt />
-                </button>
-              </div>
+                  My Reservations
+                </Link>
+                <div className="flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-white">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[10px] font-black text-[#264232]">
+                    {travelerInitials}
+                  </span>
+                  <span className="max-w-[130px] truncate normal-case tracking-normal">
+                    {travelerProfileLabel}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleTravelerLogout}
+                    className="grid h-7 w-7 place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white"
+                    aria-label="Sign out traveler account"
+                    title="Sign out"
+                  >
+                    <FaSignOutAlt />
+                  </button>
+                </div>
+              </>
             )}
             {isLegacyTenant && (
               <select className="bg-transparent border-none outline-none cursor-pointer focus:ring-0 text-white">

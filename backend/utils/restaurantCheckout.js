@@ -114,6 +114,85 @@ export const buildRestaurantPaymentTransactionPayload = ({
   };
 };
 
+/**
+ * Auto-create a deposit payment for a reservation when it's confirmed,
+ * if the restaurant has autoDeposit enabled and checkout is properly configured.
+ *
+ * @param {{ tenantId, restaurant, reservation }} params
+ * @returns {Promise<{ created: boolean, payment?: object, error?: string }>}
+ */
+export const autoCreateRestaurantDepositPayment = async ({
+  tenantId,
+  restaurant = {},
+  reservation = {},
+} = {}) => {
+  const settings = normalizeRestaurantCheckoutSettings(restaurant);
+
+  // Must have autoDeposit enabled AND be a valid deposit mode
+  if (!settings.enabled || !restaurant.restaurantCheckout?.autoDeposit) {
+    return { created: false, skipped: true };
+  }
+
+  if (["none", "custom-only"].includes(settings.depositMode)) {
+    return { created: false, skipped: true };
+  }
+
+  // Skip if reservation already has a payment requested or paid
+  if (["payment_requested", "pending", "paid"].includes(reservation.paymentStatus)) {
+    return { created: false, skipped: true };
+  }
+
+  // Check for existing active payment
+  const PaymentTransaction = (await import("../models/PaymentTransaction.js")).default;
+  const existingPayment = await PaymentTransaction.findOne({
+    tenantId,
+    restaurantReservationRequestId: reservation._id,
+    status: "pending",
+  }).lean();
+
+  if (isActiveRestaurantPaymentTransaction(existingPayment)) {
+    return { created: false, skipped: true };
+  }
+
+  // Calculate deposit
+  let payment;
+  try {
+    payment = calculateRestaurantDepositAmount({ settings: restaurant.restaurantCheckout, reservation });
+  } catch (error) {
+    return { created: false, error: error.message };
+  }
+
+  // Create PaymentTransaction
+  const transaction = await PaymentTransaction.create(
+    buildRestaurantPaymentTransactionPayload({
+      tenantId,
+      restaurant,
+      reservation,
+      payment,
+    })
+  );
+
+  // Update the reservation with payment info
+  const RestaurantReservationRequest = (await import("../models/RestaurantReservationRequest.js")).default;
+  await RestaurantReservationRequest.findByIdAndUpdate(
+    reservation._id,
+    {
+      $set: buildReservationPaymentUpdate({
+        transaction,
+        paymentReason: payment.paymentReason,
+        paymentInstructions: payment.paymentInstructions,
+      }),
+    }
+  );
+
+  return {
+    created: true,
+    payment: transaction,
+    publicToken: transaction.publicToken,
+    checkoutUrl: `/payment/${transaction.publicToken}`,
+  };
+};
+
 export const buildReservationPaymentUpdate = ({
   transaction = {},
   paymentReason = "reservation_deposit",

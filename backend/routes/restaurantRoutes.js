@@ -40,6 +40,7 @@ import {
   shapeReservationRequest,
 } from "../utils/restaurantReservations.js";
 import {
+  autoCreateRestaurantDepositPayment,
   buildReservationPaymentUpdate,
   buildRestaurantPaymentTransactionPayload,
   calculateRestaurantDepositAmount,
@@ -941,8 +942,38 @@ router.patch("/reservation-requests/:id", async (req, res) => {
       return res.status(404).json({ message: "Reservation request not found." });
     }
 
+    // Auto-deposit: when status changes to "confirmed", create deposit payment automatically
+    let autoDeposit = null;
+    if (update.status === "confirmed") {
+      try {
+        const restaurant = await Restaurant.findOne(
+          buildTenantFilter(req, { _id: reservationRequest.restaurantId })
+        ).lean();
+
+        if (restaurant) {
+          autoDeposit = await autoCreateRestaurantDepositPayment({
+            tenantId: req.tenantId,
+            restaurant,
+            reservation: reservationRequest,
+          });
+        }
+      } catch (_err) {
+        // Auto-deposit failure should not block the status update
+      }
+    }
+
     return res.status(200).json({
       request: shapeReservationRequest(reservationRequest),
+      ...(autoDeposit?.created
+        ? {
+            autoDeposit: {
+              created: true,
+              paymentId: autoDeposit.payment._id,
+              publicToken: autoDeposit.publicToken,
+              checkoutUrl: autoDeposit.checkoutUrl,
+            },
+          }
+        : {}),
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });

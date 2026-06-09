@@ -13,6 +13,10 @@ import {
 } from "../utils/travelerAuthTokens.js";
 import { mergeTravelerAccountContinuity } from "../utils/travelerAccountContinuity.js";
 import TravelerIdentity from "../models/TravelerIdentity.js";
+import RestaurantReservationRequest from "../models/RestaurantReservationRequest.js";
+import Restaurant from "../models/Restaurant.js";
+import PaymentTransaction from "../models/PaymentTransaction.js";
+import { shapeReservationRequest } from "../utils/restaurantReservations.js";
 
 const router = express.Router();
 
@@ -123,6 +127,95 @@ export const handleTravelerGoogleCallback = async (req, res) => {
 };
 
 router.get("/google/callback", handleTravelerGoogleCallback);
+
+router.get("/reservations", async (req, res) => {
+  try {
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length) : "";
+    const payload = verifyTravelerAuthToken(token);
+    const identity = await TravelerIdentity.findById(payload.travelerIdentityId).lean();
+
+    if (!identity) {
+      return res.status(404).json({ message: "Traveler account not found." });
+    }
+
+    const travelerEmail = identity.email;
+    if (!travelerEmail) {
+      return res.status(200).json({ reservations: [] });
+    }
+
+    const reservations = await RestaurantReservationRequest.find({
+      travelerEmail,
+    })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+
+    // Fetch restaurant names and active payment statuses in parallel
+    const restaurantIds = [...new Set(reservations.map((r) => String(r.restaurantId)))];
+    const reservationIds = reservations.map((r) => r._id);
+
+    const [restaurants, activePayments] = await Promise.all([
+      Restaurant.find({ _id: { $in: restaurantIds } })
+        .select("_id name slug destination")
+        .lean(),
+      PaymentTransaction.find({
+        restaurantReservationRequestId: { $in: reservationIds },
+      })
+        .select("amount currency status publicToken notes restaurantReservationRequestId")
+        .lean(),
+    ]);
+
+    const restaurantMap = {};
+    for (const r of restaurants) {
+      restaurantMap[String(r._id)] = r;
+    }
+
+    const paymentMap = {};
+    for (const p of activePayments) {
+      const rid = String(p.restaurantReservationRequestId);
+      if (!paymentMap[rid] || (p.status === "pending" && paymentMap[rid].status !== "pending")) {
+        paymentMap[rid] = p;
+      }
+    }
+
+    const enriched = reservations.map((reservation) => {
+      const restaurantId = String(reservation.restaurantId);
+      const rest = restaurantMap[restaurantId] || null;
+      const payment = paymentMap[String(reservation._id)] || null;
+
+      return {
+        ...shapeReservationRequest(reservation),
+        restaurant: rest
+          ? {
+              id: String(rest._id),
+              name: rest.name,
+              slug: rest.slug,
+              destination: rest.destination,
+            }
+          : null,
+        payment: payment
+          ? {
+              id: String(payment._id),
+              amount: payment.amount,
+              currency: payment.currency,
+              status: payment.status,
+              publicToken: payment.publicToken,
+              checkoutUrl: `/payment/${payment.publicToken}`,
+              notes: payment.notes,
+            }
+          : null,
+        checkoutUrl: payment?.publicToken
+          ? `/payment/${payment.publicToken}`
+          : null,
+      };
+    });
+
+    return res.status(200).json({ reservations: enriched });
+  } catch (_error) {
+    return res.status(401).json({ message: "Invalid traveler session." });
+  }
+});
 
 router.get("/me", async (req, res) => {
   try {

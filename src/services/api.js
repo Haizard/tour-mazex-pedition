@@ -844,6 +844,10 @@ export const fetchTravelerSession = () =>
   API.get("/traveler-auth/me", {
     headers: getTravelerHeaders(),
   });
+export const fetchTravelerRestaurantReservations = () =>
+  API.get("/traveler-auth/reservations", {
+    headers: getTravelerHeaders(),
+  });
 export const fetchHotelPartnerHotels = () =>
   cachedGet("/hotel-partner/hotels", {
     headers: getHotelPartnerHeaders(),

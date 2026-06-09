@@ -41,6 +41,7 @@ const restaurantSchema = new mongoose.Schema(
       depositPercentage: { type: Number, min: 0, max: 100, default: 0 },
       currency: { type: String, trim: true, default: "USD" },
       paymentInstructions: { type: String, trim: true, default: "" },
+      autoDeposit: { type: Boolean, default: false },
     },
     photos: { type: [String], default: [] },
     averageRating: { type: Number, min: 0, max: 5, default: null },

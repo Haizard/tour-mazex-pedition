@@ -88,13 +88,22 @@ const ResponsiveMenu = ({
         </div>
 
         {isTravelerAuthenticated && (
-          <button
-            type="button"
-            onClick={onTravelerLogout}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/20"
-          >
-            <FaSignOutAlt /> Sign out
-          </button>
+          <div className="flex flex-col gap-2">
+            <Link
+              to="/my-reservations"
+              onClick={() => setShowMenu(false)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/20"
+            >
+              My Reservations
+            </Link>
+            <button
+              type="button"
+              onClick={onTravelerLogout}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/20"
+            >
+              <FaSignOutAlt /> Sign out
+            </button>
+          </div>
         )}
 
         <nav className="mt-2">

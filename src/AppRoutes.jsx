@@ -47,6 +47,7 @@ const HotelPartnerDashboard = React.lazy(() => import("./pages/HotelPartnerDashb
 const RestaurantPartnerLogin = React.lazy(() => import("./pages/RestaurantPartnerLogin"));
 const RestaurantPartnerDashboard = React.lazy(() => import("./pages/RestaurantPartnerDashboard"));
 const TemplateMarketplace = React.lazy(() => import("./pages/TemplateMarketplace"));
+const MyReservations = React.lazy(() => import("./pages/MyReservations"));
 const isBrowser = typeof window !== "undefined";
 
 const RestaurantPartnerRoute = ({ children }) => {
@@ -136,6 +137,7 @@ const tenantSiteRoutes = (
     <Route path="discover/restaurants/claim" element={withPublicSuspense(<RestaurantClaimPage />)} />
     <Route path="discover/restaurants/:slug" element={withPublicSuspense(<RestaurantDetail />)} />
     <Route path="templates" element={withPublicSuspense(<TemplateMarketplace />)} />
+    <Route path="my-reservations" element={withPublicSuspense(<MyReservations />)} />
   </>
 );
 

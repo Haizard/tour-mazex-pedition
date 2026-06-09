@@ -12,6 +12,7 @@ export const buildRestaurantCheckoutSettingsPayload = (form = {}) => ({
   depositPercentage: Math.min(Math.max(toNumber(form.depositPercentage, 0), 0), 100),
   currency: toTrimmedString(form.currency || "USD").toUpperCase(),
   paymentInstructions: toTrimmedString(form.paymentInstructions),
+  autoDeposit: form.autoDeposit === true,
 });
 
 export const buildDepositPaymentPayload = () => ({

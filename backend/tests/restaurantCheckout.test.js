@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  autoCreateRestaurantDepositPayment,
   buildReservationPaymentUpdate,
   buildRestaurantPaymentTransactionPayload,
   calculateRestaurantDepositAmount,
@@ -92,4 +93,49 @@ test("builds reservation payment update payloads", () => {
   assert.equal(update.paymentTransactionId, "payment-1");
   assert.equal(update.paymentAmount, 80);
   assert.equal(update.paymentReason, "reservation_deposit");
+});
+
+test("autoCreateRestaurantDepositPayment skips when autoDeposit is not enabled", async () => {
+  const result = await autoCreateRestaurantDepositPayment({
+    tenantId: "tenant-1",
+    restaurant: {
+      _id: "restaurant-1",
+      name: "River Table",
+      restaurantCheckout: { enabled: true, depositMode: "fixed", depositAmount: 25, autoDeposit: false },
+    },
+    reservation: { _id: "reservation-1", paymentStatus: "not_required", estimatedTotal: 100 },
+  });
+
+  assert.equal(result.created, false);
+  assert.equal(result.skipped, true);
+});
+
+test("autoCreateRestaurantDepositPayment skips when reservation already has payment", async () => {
+  const result = await autoCreateRestaurantDepositPayment({
+    tenantId: "tenant-1",
+    restaurant: {
+      _id: "restaurant-1",
+      name: "River Table",
+      restaurantCheckout: { enabled: true, depositMode: "fixed", depositAmount: 25, autoDeposit: true },
+    },
+    reservation: { _id: "reservation-1", paymentStatus: "payment_requested", estimatedTotal: 100 },
+  });
+
+  assert.equal(result.created, false);
+  assert.equal(result.skipped, true);
+});
+
+test("autoCreateRestaurantDepositPayment returns error for disabled checkout", async () => {
+  const result = await autoCreateRestaurantDepositPayment({
+    tenantId: "tenant-1",
+    restaurant: {
+      _id: "restaurant-1",
+      name: "River Table",
+      restaurantCheckout: { enabled: false, depositMode: "none", autoDeposit: true },
+    },
+    reservation: { _id: "reservation-1", paymentStatus: "not_required" },
+  });
+
+  assert.equal(result.created, false);
+  assert.equal(result.skipped, true);
 });
