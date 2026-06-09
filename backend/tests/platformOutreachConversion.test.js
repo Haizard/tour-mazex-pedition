@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildAutomaticPlatformOutreachAttribution,
   buildPlatformOutreachConversionPayload,
   summarizePlatformOutreachConversions,
 } from "../utils/platformOutreachConversion.js";
@@ -37,4 +38,34 @@ test("summarizePlatformOutreachConversions counts funnel and revenue totals", ()
     subscriptionWonCount: 2,
     attributedRevenue: 1000,
   });
+});
+
+test("buildAutomaticPlatformOutreachAttribution maps billing events to outreach conversion stages", () => {
+  const attribution = buildAutomaticPlatformOutreachAttribution({
+    eventType: "subscription.created",
+    prospectId: "prospect-1",
+    tenantId: "tenant-1",
+    amount: "2500",
+    currency: "tzs",
+    occurredAt: "2026-06-03T09:00:00.000Z",
+    sourceId: "stripe-sub-1",
+  });
+
+  assert.equal(attribution.stage, "subscription_won");
+  assert.equal(attribution.source, "billing-system");
+  assert.equal(attribution.revenueAmount, 2500);
+  assert.equal(attribution.currency, "TZS");
+  assert.equal(attribution.metadata.tenantId, "tenant-1");
+  assert.equal(attribution.metadata.sourceId, "stripe-sub-1");
+});
+
+test("buildAutomaticPlatformOutreachAttribution maps trial and demo events", () => {
+  assert.equal(
+    buildAutomaticPlatformOutreachAttribution({ eventType: "trial.started", prospectEmail: "sales@example.com" }).stage,
+    "trial_started",
+  );
+  assert.equal(
+    buildAutomaticPlatformOutreachAttribution({ eventType: "demo.booked", prospectEmail: "sales@example.com" }).stage,
+    "demo_booked",
+  );
 });

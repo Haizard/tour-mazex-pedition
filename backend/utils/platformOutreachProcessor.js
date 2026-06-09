@@ -3,6 +3,7 @@ import PlatformOutreachProspect from "../models/PlatformOutreachProspect.js";
 import PlatformOutreachSettings from "../models/PlatformOutreachSettings.js";
 import PlatformSocialPost from "../models/PlatformSocialPost.js";
 import { assertCanSendPlatformMessage } from "./platformOutreachCompliance.js";
+import { buildPlatformOutreachAlertEvent } from "./platformOutreachAlerts.js";
 import { recordPlatformOutreachEvent } from "./platformOutreachEventLog.js";
 import { resolvePlatformOutreachReadiness } from "./platformOutreachProviders.js";
 
@@ -111,8 +112,13 @@ export const queueDuePlatformOutreachDispatches = async ({
 };
 
 const failMessage = async ({ message, error, recordEvent = async () => {} }) => {
+  const failureCount = Number(message.llmGenerationMeta?.failureCount || 0) + 1;
   message.status = "failed";
   message.providerError = error;
+  message.llmGenerationMeta = {
+    ...(message.llmGenerationMeta || {}),
+    failureCount,
+  };
   await message.save();
   await recordEvent({
     eventType: "message_send_failed",
@@ -121,8 +127,22 @@ const failMessage = async ({ message, error, recordEvent = async () => {} }) => 
     campaignId: message.campaignId,
     messageId: message._id,
     summary: "Platform outreach message failed during queued dispatch.",
-    metadata: { error, channel: message.channel },
+    metadata: { error, channel: message.channel, failureCount },
   });
+  if (failureCount >= 3) {
+    await recordEvent({
+      ...buildPlatformOutreachAlertEvent({
+        type: "dispatch_failure",
+        channel: message.channel,
+        failureCount,
+        providerError: error,
+        metadata: { messageId: String(message._id), campaignId: String(message.campaignId || "") },
+      }),
+      prospectId: message.prospectId,
+      campaignId: message.campaignId,
+      messageId: message._id,
+    });
+  }
   return { changed: true, failed: true, missing: false };
 };
 

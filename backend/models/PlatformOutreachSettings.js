@@ -9,12 +9,17 @@ const platformOutreachSettingsSchema = new mongoose.Schema(
       postalAddress: { type: String, trim: true, default: "" },
       unsubscribeBaseUrl: { type: String, trim: true, default: "" },
       webhookSecret: { type: String, trim: true, default: "" },
+      signatureSecret: { type: String, trim: true, default: "" },
     },
     whatsapp: {
       businessAccountId: { type: String, trim: true, default: "" },
       phoneNumberId: { type: String, trim: true, default: "" },
       defaultMarketingTemplateName: { type: String, trim: true, default: "" },
       webhookVerifyToken: { type: String, trim: true, default: "" },
+      appSecret: { type: String, trim: true, default: "" },
+    },
+    attribution: {
+      webhookSecret: { type: String, trim: true, default: "" },
     },
     social: {
       facebookPageId: { type: String, trim: true, default: "" },

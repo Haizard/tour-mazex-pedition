@@ -1335,6 +1335,38 @@ export const submitRestaurantClaimRequest = (data) =>
   API.post("/restaurants/public/claims", data);
 export const requestRestaurantConciergeRecommendations = (data) =>
   API.post("/restaurants/public/concierge/recommendations", data);
+export const fetchPublicRestaurantMenu = (restaurantId) =>
+  cachedGet(`/restaurants/public/${restaurantId}/menu`);
+export const fetchPublicRestaurantReservationCheckout = (restaurantId, reservationId) =>
+  cachedGet(`/restaurants/public/${restaurantId}/reservations/${reservationId}/checkout`);
+export const fetchRestaurantPartnerMenu = (restaurantId) =>
+  cachedGet(`/restaurant-partner-auth/restaurants/${restaurantId}/menu`, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const createRestaurantPartnerMenuSection = (restaurantId, data) =>
+  API.post(`/restaurant-partner-auth/restaurants/${restaurantId}/menu/sections`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const createRestaurantPartnerMenuItem = (restaurantId, data) =>
+  API.post(`/restaurant-partner-auth/restaurants/${restaurantId}/menu/items`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const updateRestaurantPartnerMenuSection = (id, data) =>
+  API.patch(`/restaurant-partner-auth/menu-sections/${id}`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const deleteRestaurantPartnerMenuSection = (id) =>
+  API.delete(`/restaurant-partner-auth/menu-sections/${id}`, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const updateRestaurantPartnerMenuItem = (id, data) =>
+  API.patch(`/restaurant-partner-auth/menu-items/${id}`, data, {
+    headers: getRestaurantPartnerHeaders(),
+  });
+export const deleteRestaurantPartnerMenuItem = (id) =>
+  API.delete(`/restaurant-partner-auth/menu-items/${id}`, {
+    headers: getRestaurantPartnerHeaders(),
+  });
 export const fetchHospitalityRecommendations = (params = {}) =>
   cachedGet("/discovery/hospitality/recommendations", { params });
 export const fetchRestaurantAnalytics = () => cachedGet("/restaurants/analytics");

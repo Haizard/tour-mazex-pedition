@@ -51,6 +51,13 @@ import {
   deleteRestaurantRecord,
   findRestaurantRecord,
 } from "../utils/postgresRestaurantRecords.js";
+import RestaurantMenuSection from "../models/RestaurantMenuSection.js";
+import RestaurantMenuItem from "../models/RestaurantMenuItem.js";
+import {
+  normalizeMenuItemPayload,
+  normalizeMenuSectionPayload,
+  shapePublicRestaurantMenuPreview,
+} from "../utils/restaurantMenu.js";
 import { deleteMongoDocumentFromShadowStore } from "../utils/postgresShadowWrites.js";
 
 const router = express.Router();
@@ -324,8 +331,31 @@ router.post("/public/:id/reservations/requests", async (req, res) => {
       autopilot: buildReservationAutopilot(payload),
     });
 
+    // Include restaurant checkout info so the frontend can show deposit expectations
+    const restaurantCheckout = normalizeRestaurantCheckoutSettings(restaurant);
+
+    // Calculate estimated deposit if checkout is enabled
+    let estimatedDeposit = null;
+    if (restaurantCheckout.enabled && !["none", "custom-only"].includes(restaurantCheckout.depositMode)) {
+      try {
+        estimatedDeposit = calculateRestaurantDepositAmount({
+          settings: restaurant.restaurantCheckout,
+          reservation: reservationRequest,
+        });
+      } catch (_err) {
+        // Deposit calculation may fail at this stage
+      }
+    }
+
     return res.status(201).json({
       request: shapeReservationRequest(reservationRequest.toObject()),
+      estimatedDeposit,
+      restaurantCheckout: {
+        enabled: restaurantCheckout.enabled,
+        depositMode: restaurantCheckout.depositMode,
+        currency: restaurantCheckout.currency,
+        paymentInstructions: restaurantCheckout.paymentInstructions,
+      },
     });
   } catch (error) {
     return res.status(400).json({
@@ -353,6 +383,115 @@ router.get("/public/:slug", async (req, res) => {
     return res
       .status(500)
       .json({ message: "Failed to fetch restaurant.", error: error.message });
+  }
+});
+
+router.get("/public/:id/menu", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({
+      _id: req.params.id,
+      published: true,
+      marketplaceVisible: true,
+    })
+      .select("_id tenantId")
+      .lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found in marketplace." });
+    }
+
+    const [sections, items] = await Promise.all([
+      RestaurantMenuSection.find({
+        tenantId: restaurant.tenantId,
+        restaurantId: restaurant._id,
+        status: "active",
+      })
+        .sort({ displayOrder: 1, title: 1 })
+        .lean(),
+      RestaurantMenuItem.find({
+        tenantId: restaurant.tenantId,
+        restaurantId: restaurant._id,
+        status: "active",
+        available: true,
+      })
+        .sort({ featured: -1, groupFriendly: -1, name: 1 })
+        .limit(60)
+        .lean(),
+    ]);
+
+    return res.status(200).json(shapePublicRestaurantMenuPreview({ sections, items }));
+  } catch (error) {
+    return res.status(200).json(
+      shapePublicRestaurantMenuPreview({ sections: [], items: [] })
+    );
+  }
+});
+
+router.get("/public/:restaurantId/reservations/:reservationId/checkout", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({
+      _id: req.params.restaurantId,
+      published: true,
+      marketplaceVisible: true,
+    })
+      .select("_id tenantId name restaurantCheckout")
+      .lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found in marketplace." });
+    }
+
+    const reservation = await RestaurantReservationRequest.findOne({
+      _id: req.params.reservationId,
+      restaurantId: restaurant._id,
+    }).lean();
+
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found." });
+    }
+
+    // Check for active payment transaction
+    const activePayment = await PaymentTransaction.findOne({
+      tenantId: restaurant.tenantId,
+      restaurantReservationRequestId: reservation._id,
+      status: "pending",
+    }).lean();
+
+    const checkoutSettings = normalizeRestaurantCheckoutSettings(restaurant);
+
+    let estimatedDeposit = null;
+    if (checkoutSettings.enabled && !["none", "custom-only"].includes(checkoutSettings.depositMode)) {
+      try {
+        estimatedDeposit = calculateRestaurantDepositAmount({
+          settings: restaurant.restaurantCheckout,
+          reservation,
+        });
+      } catch (_err) {}
+    }
+
+    return res.status(200).json({
+      reservation: shapeReservationRequest(reservation),
+      payment: activePayment
+        ? {
+            id: activePayment._id,
+            amount: activePayment.amount,
+            currency: activePayment.currency,
+            status: activePayment.status,
+            publicToken: activePayment.publicToken,
+            checkoutUrl: `/payment/${activePayment.publicToken}`,
+            notes: activePayment.notes,
+          }
+        : null,
+      estimatedDeposit,
+      checkoutSettings: {
+        enabled: checkoutSettings.enabled,
+        depositMode: checkoutSettings.depositMode,
+        currency: checkoutSettings.currency,
+        paymentInstructions: checkoutSettings.paymentInstructions,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 });
 
@@ -469,6 +608,159 @@ router.get("/", async (req, res) => {
     return res
       .status(500)
       .json({ message: "Failed to fetch restaurants.", error: error.message });
+  }
+});
+
+router.get("/:restaurantId/menu", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne(buildTenantFilter(req, { _id: req.params.restaurantId }))
+      .select("_id tenantId")
+      .lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const [sections, items] = await Promise.all([
+      RestaurantMenuSection.find(buildTenantFilter(req, { restaurantId: restaurant._id }))
+        .sort({ displayOrder: 1, title: 1 })
+        .lean(),
+      RestaurantMenuItem.find(buildTenantFilter(req, { restaurantId: restaurant._id }))
+        .sort({ featured: -1, groupFriendly: -1, name: 1 })
+        .lean(),
+    ]);
+
+    return res.status(200).json({ sections, items });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch restaurant menu.", error: error.message });
+  }
+});
+
+router.post("/:restaurantId/menu/sections", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne(buildTenantFilter(req, { _id: req.params.restaurantId }))
+      .select("_id tenantId")
+      .lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const payload = normalizeMenuSectionPayload(req.body);
+    if (!payload.title) {
+      return res.status(400).json({ message: "Menu section title is required." });
+    }
+
+    const section = await RestaurantMenuSection.create({
+      ...payload,
+      tenantId: restaurant.tenantId,
+      restaurantId: restaurant._id,
+    });
+
+    return res.status(201).json(section);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/:restaurantId/menu/items", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne(buildTenantFilter(req, { _id: req.params.restaurantId }))
+      .select("_id tenantId")
+      .lean();
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const payload = normalizeMenuItemPayload(req.body);
+    if (!payload.name) {
+      return res.status(400).json({ message: "Menu item name is required." });
+    }
+
+    const item = await RestaurantMenuItem.create({
+      ...payload,
+      tenantId: restaurant.tenantId,
+      restaurantId: restaurant._id,
+    });
+
+    return res.status(201).json(item);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.patch("/menu-sections/:id", async (req, res) => {
+  try {
+    const section = await RestaurantMenuSection.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      { $set: normalizeMenuSectionPayload(req.body) },
+      { new: true }
+    ).lean();
+
+    if (!section) {
+      return res.status(404).json({ message: "Menu section not found." });
+    }
+
+    return res.status(200).json(section);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.delete("/menu-sections/:id", async (req, res) => {
+  try {
+    const section = await RestaurantMenuSection.findOneAndDelete(
+      buildTenantFilter(req, { _id: req.params.id })
+    ).lean();
+
+    if (!section) {
+      return res.status(404).json({ message: "Menu section not found." });
+    }
+
+    // Also unlink items in this section
+    await RestaurantMenuItem.updateMany(
+      { sectionId: req.params.id, tenantId: req.tenantId },
+      { $set: { sectionId: null } }
+    ).catch(() => {});
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+router.patch("/menu-items/:id", async (req, res) => {
+  try {
+    const item = await RestaurantMenuItem.findOneAndUpdate(
+      buildTenantFilter(req, { _id: req.params.id }),
+      { $set: normalizeMenuItemPayload(req.body) },
+      { new: true }
+    ).lean();
+
+    if (!item) {
+      return res.status(404).json({ message: "Menu item not found." });
+    }
+
+    return res.status(200).json(item);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.delete("/menu-items/:id", async (req, res) => {
+  try {
+    const item = await RestaurantMenuItem.findOneAndDelete(
+      buildTenantFilter(req, { _id: req.params.id })
+    ).lean();
+
+    if (!item) {
+      return res.status(404).json({ message: "Menu item not found." });
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 });
 

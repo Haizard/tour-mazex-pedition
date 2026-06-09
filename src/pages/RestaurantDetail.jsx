@@ -5,8 +5,9 @@ import PlanMyTripWizard from "../components/PlanMyTrip/PlanMyTripWizard";
 import RestaurantDirectInquiryForm from "../components/Marketplace/RestaurantDirectInquiryForm";
 import RestaurantAiConciergeCard from "../components/Marketplace/RestaurantAiConciergeCard";
 import RestaurantReservationWidget from "../components/Marketplace/RestaurantReservationWidget";
+import RestaurantMenuPreview from "../components/Marketplace/RestaurantMenuPreview";
 import HospitalityPairingPanel from "../components/Marketplace/HospitalityPairingPanel";
-import { fetchPublicRestaurantBySlug, fetchRestaurantReservationOptions } from "../services/api";
+import { fetchPublicRestaurantBySlug, fetchPublicRestaurantMenu, fetchRestaurantReservationOptions } from "../services/api";
 import {
   getRestaurantDiningReassuranceItems,
   getRestaurantOperatorTrustLabel,
@@ -19,6 +20,7 @@ const RestaurantDetail = () => {
   const { slug } = useParams();
   const [restaurant, setRestaurant] = useState(null);
   const [reservationOptions, setReservationOptions] = useState(null);
+  const [menuPreview, setMenuPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedIntentId, setSelectedIntentId] = useState("direct");
 
@@ -30,11 +32,15 @@ const RestaurantDetail = () => {
         const loadedRestaurant = response.data || null;
         setRestaurant(loadedRestaurant);
 
-        if (loadedRestaurant?.id || loadedRestaurant?._id) {
-          const optionsResponse = await fetchRestaurantReservationOptions(
-            loadedRestaurant.id || loadedRestaurant._id
-          );
+        const restaurantId = loadedRestaurant.id || loadedRestaurant._id;
+
+        if (restaurantId) {
+          const [optionsResponse, menuResponse] = await Promise.all([
+            fetchRestaurantReservationOptions(restaurantId),
+            fetchPublicRestaurantMenu(restaurantId).catch(() => ({ data: null })),
+          ]);
           setReservationOptions(optionsResponse.data || null);
+          setMenuPreview(menuResponse.data || null);
         }
       } catch (error) {
         console.error("Restaurant detail error:", error);
@@ -150,6 +156,10 @@ const RestaurantDetail = () => {
             </ul>
           </div>
         </section>
+
+        <div className="mt-8">
+          <RestaurantMenuPreview preview={menuPreview} />
+        </div>
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="space-y-8">

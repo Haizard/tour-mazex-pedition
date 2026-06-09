@@ -1,4 +1,15 @@
 const allowedStages = new Set(["demo_booked", "trial_started", "subscription_won", "lost"]);
+const eventStageMap = new Map([
+  ["demo.booked", "demo_booked"],
+  ["demo_booked", "demo_booked"],
+  ["trial.started", "trial_started"],
+  ["trial_started", "trial_started"],
+  ["subscription.created", "subscription_won"],
+  ["subscription.paid", "subscription_won"],
+  ["subscription_won", "subscription_won"],
+  ["customer.lost", "lost"],
+  ["lost", "lost"],
+]);
 
 export const buildPlatformOutreachConversionPayload = ({
   stage = "demo_booked",
@@ -37,3 +48,30 @@ export const summarizePlatformOutreachConversions = (threads = []) =>
       attributedRevenue: 0,
     }
   );
+
+export const buildAutomaticPlatformOutreachAttribution = (event = {}) => {
+  const eventType = String(event.eventType || event.type || "").trim().toLowerCase();
+  const stage = eventStageMap.get(eventType);
+  if (!stage) {
+    throw new Error("Unsupported platform outreach conversion event type.");
+  }
+
+  return {
+    ...buildPlatformOutreachConversionPayload({
+      stage,
+      revenueAmount: event.amount ?? event.revenueAmount ?? 0,
+      currency: event.currency || "USD",
+      source: "billing-system",
+      occurredAt: event.occurredAt || event.createdAt || new Date(),
+      notes: event.notes || `Automatically attributed from ${eventType}.`,
+    }),
+    metadata: {
+      eventType,
+      prospectId: event.prospectId || "",
+      prospectEmail: event.prospectEmail || event.email || "",
+      prospectWhatsAppNumber: event.prospectWhatsAppNumber || event.whatsappNumber || "",
+      tenantId: event.tenantId || "",
+      sourceId: event.sourceId || event.subscriptionId || event.demoId || event.trialId || "",
+    },
+  };
+};

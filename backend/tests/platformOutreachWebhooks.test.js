@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import {
   normalizePlatformEmailWebhookPayload,
   normalizePlatformWhatsAppWebhookPayload,
+  verifyPlatformEmailWebhookSignature,
+  verifyPlatformWhatsAppWebhookSignature,
 } from "../utils/platformOutreachWebhooks.js";
 
 test("normalizePlatformEmailWebhookPayload extracts an inbound reply", () => {
@@ -58,4 +60,49 @@ test("normalizePlatformWhatsAppWebhookPayload extracts Meta inbound messages", (
   assert.equal(replies[0].body, "STOP");
   assert.equal(replies[0].providerMessageId, "wamid.1");
   assert.equal(replies[0].receivedAt.toISOString(), "2026-05-08T06:49:16.000Z");
+});
+
+test("verifyPlatformEmailWebhookSignature accepts Resend HMAC signatures", async () => {
+  const rawBody = JSON.stringify({ type: "email.replied", data: { id: "evt_1" } });
+  const secret = "resend-secret";
+  const crypto = await import("node:crypto");
+  const signature = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+
+  assert.equal(
+    verifyPlatformEmailWebhookSignature({
+      provider: "resend",
+      rawBody,
+      secret,
+      headers: { "resend-signature": signature },
+    }).valid,
+    true,
+  );
+});
+
+test("verifyPlatformEmailWebhookSignature rejects invalid configured signatures", () => {
+  const result = verifyPlatformEmailWebhookSignature({
+    provider: "resend",
+    rawBody: "{}",
+    secret: "resend-secret",
+    headers: { "resend-signature": "bad-signature" },
+  });
+
+  assert.equal(result.valid, false);
+  assert.match(result.reason, /signature/i);
+});
+
+test("verifyPlatformWhatsAppWebhookSignature accepts Meta app-secret signatures", async () => {
+  const rawBody = JSON.stringify({ object: "whatsapp_business_account" });
+  const secret = "meta-app-secret";
+  const crypto = await import("node:crypto");
+  const digest = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+
+  assert.equal(
+    verifyPlatformWhatsAppWebhookSignature({
+      rawBody,
+      appSecret: secret,
+      headers: { "x-hub-signature-256": `sha256=${digest}` },
+    }).valid,
+    true,
+  );
 });

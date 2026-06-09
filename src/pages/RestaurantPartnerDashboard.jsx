@@ -3,12 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { FaCalendarCheck, FaClipboardCheck, FaDoorOpen, FaStore, FaUtensils } from "react-icons/fa";
 import {
   createRestaurantPartnerAvailability,
+  createRestaurantPartnerMenuItem,
+  createRestaurantPartnerMenuSection,
   createRestaurantPartnerPaymentRequest,
   createRestaurantPartnerServiceWindow,
   createRestaurantPartnerTableType,
+  deleteRestaurantPartnerMenuItem,
+  deleteRestaurantPartnerMenuSection,
+  fetchRestaurantPartnerMenu,
   fetchRestaurantPartnerReservationOperations,
   fetchRestaurantPartnerRestaurants,
   fetchRestaurantPartnerSession,
+  updateRestaurantPartnerMenuItem,
+  updateRestaurantPartnerMenuSection,
   updateRestaurantPartnerReservationRequest,
 } from "../services/api";
 import {
@@ -52,6 +59,21 @@ const RestaurantPartnerDashboard = () => {
   const [tableDraft, setTableDraft] = useState({ label: "", minGuests: 2, maxGuests: 4, quantity: 1 });
   const [availabilityDraft, setAvailabilityDraft] = useState({ date: "", status: "open", availableUnits: 1, availableSeats: 4 });
   const [paymentDraftByRequest, setPaymentDraftByRequest] = useState({});
+  const [menu, setMenu] = useState({ sections: [], items: [] });
+  const [menuSectionDraft, setMenuSectionDraft] = useState({ title: "", description: "" });
+  const [menuItemDraft, setMenuItemDraft] = useState({
+    name: "",
+    description: "",
+    price: "",
+    currency: "USD",
+    groupFriendly: false,
+    preorderEnabled: false,
+    featured: false,
+  });
+  const [editingSectionId, setEditingSectionId] = useState(null);
+  const [editingSectionTitle, setEditingSectionTitle] = useState("");
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editingItemDraft, setEditingItemDraft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
@@ -61,6 +83,14 @@ const RestaurantPartnerDashboard = () => {
     if (!restaurantId) return;
     const operationsResponse = await fetchRestaurantPartnerReservationOperations(restaurantId);
     setOperations(operationsResponse.data || null);
+  };
+
+  const loadMenu = async (restaurantId) => {
+    if (!restaurantId) return;
+    const menuResponse = await fetchRestaurantPartnerMenu(restaurantId).catch(
+      () => ({ data: null })
+    );
+    setMenu(menuResponse?.data || { sections: [], items: [] });
   };
 
   useEffect(() => {
@@ -91,6 +121,7 @@ const RestaurantPartnerDashboard = () => {
 
         if (firstRestaurantId) {
           await loadReservationOperations(firstRestaurantId);
+          await loadMenu(firstRestaurantId);
         }
       } catch (loadError) {
         if (!active) {
@@ -309,8 +340,10 @@ const RestaurantPartnerDashboard = () => {
                   <select
                     value={selectedRestaurantId}
                     onChange={async (event) => {
-                      setSelectedRestaurantId(event.target.value);
-                      await loadReservationOperations(event.target.value);
+                      const restaurantId = event.target.value;
+                      setSelectedRestaurantId(restaurantId);
+                      await loadReservationOperations(restaurantId);
+                      await loadMenu(restaurantId);
                     }}
                     className="rounded-2xl border border-[#dccfb7] bg-white px-4 py-3 text-sm font-bold"
                   >
@@ -512,6 +545,326 @@ const RestaurantPartnerDashboard = () => {
                   </div>
                 </div>
               </div>
+            </section>
+
+            <section className="mt-8 rounded-[28px] border border-[#dccfb7] bg-white p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b7451]">
+                Menu workspace
+              </p>
+              <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                Group dining menu
+              </h3>
+              <p className="mt-2 text-sm font-medium text-slate-600">
+                Add menu sections and pre-order friendly items for traveler confidence and group dining
+                deposits.
+              </p>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <input
+                  placeholder="Section title (e.g. Starters, Mains, Group Platters)"
+                  value={menuSectionDraft.title}
+                  onChange={(event) =>
+                    setMenuSectionDraft((current) => ({ ...current, title: event.target.value }))
+                  }
+                  className="rounded-2xl border border-[#dccfb7] bg-white px-3 py-3 text-sm font-bold"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const restaurantId = selectedRestaurantId;
+                    if (!restaurantId || !menuSectionDraft.title) return;
+                    await createRestaurantPartnerMenuSection(restaurantId, menuSectionDraft);
+                    await loadMenu(restaurantId);
+                    setMenuSectionDraft({ title: "", description: "" });
+                  }}
+                  className="rounded-2xl bg-[#234232] px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-white"
+                >
+                  Add section
+                </button>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <input
+                  placeholder="Menu item name"
+                  value={menuItemDraft.name}
+                  onChange={(event) =>
+                    setMenuItemDraft((current) => ({ ...current, name: event.target.value }))
+                  }
+                  className="rounded-2xl border border-[#dccfb7] bg-white px-3 py-3 text-sm font-bold"
+                />
+                <input
+                  placeholder="Price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={menuItemDraft.price}
+                  onChange={(event) =>
+                    setMenuItemDraft((current) => ({ ...current, price: event.target.value }))
+                  }
+                  className="rounded-2xl border border-[#dccfb7] bg-white px-3 py-3 text-sm font-bold"
+                />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={menuItemDraft.groupFriendly}
+                    onChange={(event) =>
+                      setMenuItemDraft((current) => ({
+                        ...current,
+                        groupFriendly: event.target.checked,
+                      }))
+                    }
+                  />
+                  Group-friendly
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={menuItemDraft.preorderEnabled}
+                    onChange={(event) =>
+                      setMenuItemDraft((current) => ({
+                        ...current,
+                        preorderEnabled: event.target.checked,
+                      }))
+                    }
+                  />
+                  Pre-order enabled
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={menuItemDraft.featured}
+                    onChange={(event) =>
+                      setMenuItemDraft((current) => ({
+                        ...current,
+                        featured: event.target.checked,
+                      }))
+                    }
+                  />
+                  Featured
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const restaurantId = selectedRestaurantId;
+                  if (!restaurantId || !menuItemDraft.name) return;
+                  await createRestaurantPartnerMenuItem(restaurantId, menuItemDraft);
+                  await loadMenu(restaurantId);
+                  setMenuItemDraft({
+                    name: "",
+                    description: "",
+                    price: "",
+                    currency: "USD",
+                    groupFriendly: false,
+                    preorderEnabled: false,
+                    featured: false,
+                  });
+                }}
+                className="mt-3 rounded-2xl border border-[#234232] px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-[#234232]"
+              >
+                Add menu item
+              </button>
+              <p className="mt-4 text-sm font-bold text-slate-600">
+                {menu?.items?.length || 0} menu items stored for this restaurant
+                {menu?.sections?.length > 0
+                  ? ` · ${menu.sections.length} sections`
+                  : ""}
+              </p>
+
+              {menu?.sections?.length > 0 || menu?.items?.length > 0 ? (
+                <div className="mt-5 space-y-3">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                    Manage menu
+                  </p>
+                  {menu.sections.map((section) => (
+                    <div key={section._id || section.id} className="flex items-center gap-3 rounded-2xl bg-[#fcfaf6] p-3">
+                      {editingSectionId === (section._id || section.id) ? (
+                        <>
+                          <input
+                            value={editingSectionTitle}
+                            onChange={(event) => setEditingSectionTitle(event.target.value)}
+                            className="flex-1 rounded-xl border border-[#dccfb7] px-3 py-2 text-sm font-bold"
+                          />
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await updateRestaurantPartnerMenuSection(section._id || section.id, {
+                                title: editingSectionTitle,
+                              });
+                              await loadMenu(selectedRestaurantId);
+                              setEditingSectionId(null);
+                              setEditingSectionTitle("");
+                            }}
+                            className="rounded-xl bg-[#234232] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white"
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingSectionId(null);
+                              setEditingSectionTitle("");
+                            }}
+                            className="rounded-xl border border-[#dccfb7] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em]"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="flex-1 text-sm font-bold text-slate-800">
+                            {section.title}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingSectionId(section._id || section.id);
+                              setEditingSectionTitle(section.title);
+                            }}
+                            className="rounded-xl border border-[#dccfb7] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em]"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await deleteRestaurantPartnerMenuSection(section._id || section.id);
+                              await loadMenu(selectedRestaurantId);
+                            }}
+                            className="rounded-xl border border-red-200 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-red-600"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                  {menu.items.map((item) => (
+                    <div key={item._id || item.id} className="flex flex-wrap items-center gap-2 rounded-2xl bg-[#fcfaf6] p-3">
+                      {editingItemId === (item._id || item.id) && editingItemDraft ? (
+                        <>
+                          <input
+                            value={editingItemDraft.name}
+                            onChange={(event) =>
+                              setEditingItemDraft((current) => ({ ...current, name: event.target.value }))
+                            }
+                            className="min-w-0 flex-1 rounded-xl border border-[#dccfb7] px-3 py-2 text-sm font-bold"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={editingItemDraft.price}
+                            onChange={(event) =>
+                              setEditingItemDraft((current) => ({ ...current, price: event.target.value }))
+                            }
+                            className="w-20 rounded-xl border border-[#dccfb7] px-3 py-2 text-sm font-bold"
+                          />
+                          <label className="flex items-center gap-1 text-[10px] font-bold">
+                            <input
+                              type="checkbox"
+                              checked={editingItemDraft.groupFriendly}
+                              onChange={(event) =>
+                                setEditingItemDraft((current) => ({
+                                  ...current,
+                                  groupFriendly: event.target.checked,
+                                }))
+                              }
+                            />
+                            Group
+                          </label>
+                          <label className="flex items-center gap-1 text-[10px] font-bold">
+                            <input
+                              type="checkbox"
+                              checked={editingItemDraft.preorderEnabled}
+                              onChange={(event) =>
+                                setEditingItemDraft((current) => ({
+                                  ...current,
+                                  preorderEnabled: event.target.checked,
+                                }))
+                              }
+                            />
+                            Pre
+                          </label>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await updateRestaurantPartnerMenuItem(item._id || item.id, editingItemDraft);
+                              await loadMenu(selectedRestaurantId);
+                              setEditingItemId(null);
+                              setEditingItemDraft(null);
+                            }}
+                            className="rounded-xl bg-[#234232] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white"
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingItemId(null);
+                              setEditingItemDraft(null);
+                            }}
+                            className="rounded-xl border border-[#dccfb7] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em]"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="min-w-0 flex-1 text-sm font-bold text-slate-800">
+                            {item.name}
+                            {item.price > 0 ? ` — ${item.currency || "USD"} ${Number(item.price).toFixed(2)}` : ""}
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {item.groupFriendly ? (
+                              <span className="rounded-full bg-[#eef6f0] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#234232]">
+                                Group
+                              </span>
+                            ) : null}
+                            {item.preorderEnabled ? (
+                              <span className="rounded-full bg-[#fffaf1] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#8b7451]">
+                                Pre
+                              </span>
+                            ) : null}
+                            {item.featured ? (
+                              <span className="rounded-full bg-[#fef3c7] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#92400e]">
+                                Featured
+                              </span>
+                            ) : null}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingItemId(item._id || item.id);
+                              setEditingItemDraft({
+                                name: item.name,
+                                price: String(item.price || ""),
+                                currency: item.currency || "USD",
+                                groupFriendly: item.groupFriendly,
+                                preorderEnabled: item.preorderEnabled,
+                                featured: item.featured,
+                              });
+                            }}
+                            className="rounded-xl border border-[#dccfb7] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em]"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await deleteRestaurantPartnerMenuItem(item._id || item.id);
+                              await loadMenu(selectedRestaurantId);
+                            }}
+                            className="rounded-xl border border-red-200 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-red-600"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </section>
 
             <section className="mt-8 rounded-[28px] border border-[#dccfb7] bg-white p-6 shadow-sm">

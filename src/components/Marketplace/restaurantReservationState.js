@@ -52,6 +52,9 @@ export const validateReservationRequestForm = (form = {}) => {
   return errors;
 };
 
+const toStringArray = (value) =>
+  Array.isArray(value) ? value.map((item) => toTrimmedString(item)).filter(Boolean) : [];
+
 export const buildRestaurantReservationPayload = (form = {}, context = {}) => ({
   serviceWindowId: form.serviceWindowId || null,
   tableTypeId: form.tableTypeId || null,
@@ -65,6 +68,9 @@ export const buildRestaurantReservationPayload = (form = {}, context = {}) => ({
   dietaryNotes: toTrimmedString(form.dietaryNotes),
   occasion: toTrimmedString(form.occasion),
   publicNotes: toTrimmedString(form.publicNotes),
+  selectedMenuItemIds: toStringArray(form.selectedMenuItemIds),
+  groupMealNotes: toTrimmedString(form.groupMealNotes),
+  preorderInterest: form.preorderInterest === true,
   source: context.source || "direct",
   itineraryContext: context.itineraryContext || {},
 });

@@ -68,3 +68,40 @@ test("returns compact availability tones", () => {
   assert.equal(getReservationAvailabilityTone("open").label, "Open");
   assert.equal(getReservationAvailabilityTone("closed").tone, "closed");
 });
+
+test("buildRestaurantReservationPayload includes menu interest fields", () => {
+  const payload = buildRestaurantReservationPayload(
+    {
+      travelerName: "Amina",
+      travelerEmail: "AMINA@example.com",
+      date: "2026-06-01",
+      preferredTime: "19:00",
+      guestCount: 8,
+      selectedMenuItemIds: ["item_1", ""],
+      groupMealNotes: "Birthday dinner",
+      preorderInterest: true,
+    },
+    { source: "direct" }
+  );
+
+  assert.deepEqual(payload.selectedMenuItemIds, ["item_1"]);
+  assert.equal(payload.groupMealNotes, "Birthday dinner");
+  assert.equal(payload.preorderInterest, true);
+  assert.equal(payload.source, "direct");
+});
+
+test("buildRestaurantReservationPayload handles empty menu interest", () => {
+  const payload = buildRestaurantReservationPayload(
+    {
+      travelerName: "Amina",
+      travelerEmail: "amina@example.com",
+      date: "2026-06-01",
+      preferredTime: "19:00",
+      guestCount: 4,
+    }
+  );
+
+  assert.deepEqual(payload.selectedMenuItemIds, []);
+  assert.equal(payload.groupMealNotes, "");
+  assert.equal(payload.preorderInterest, false);
+});

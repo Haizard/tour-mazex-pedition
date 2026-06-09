@@ -7,6 +7,7 @@ import {
   normalizeReservationOptions,
   validateReservationRequestForm,
 } from "./restaurantReservationState";
+import RestaurantDepositFlow from "./RestaurantDepositFlow";
 
 const initialForm = {
   serviceWindowId: "",
@@ -21,6 +22,9 @@ const initialForm = {
   dietaryNotes: "",
   occasion: "",
   publicNotes: "",
+  selectedMenuItemIds: [],
+  groupMealNotes: "",
+  preorderInterest: false,
 };
 
 const RestaurantReservationWidget = ({ restaurant, options, context }) => {
@@ -33,6 +37,8 @@ const RestaurantReservationWidget = ({ restaurant, options, context }) => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [submittedReservationId, setSubmittedReservationId] = useState(null);
+  const [submittedDepositInfo, setSubmittedDepositInfo] = useState(null);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -52,10 +58,16 @@ const RestaurantReservationWidget = ({ restaurant, options, context }) => {
 
     setSubmitting(true);
     try {
-      await submitRestaurantReservationRequest(
+      const response = await submitRestaurantReservationRequest(
         restaurant.id || restaurant._id,
         buildRestaurantReservationPayload(form, context)
       );
+      const { request, estimatedDeposit, restaurantCheckout } = response.data;
+      setSubmittedReservationId(request?.id || request?._id || "");
+      setSubmittedDepositInfo({
+        estimatedDeposit: estimatedDeposit || null,
+        restaurantCheckout: restaurantCheckout || null,
+      });
       setSuccess("Reservation request sent. The restaurant team will confirm availability.");
       setForm(initialForm);
     } catch (error) {
@@ -66,6 +78,22 @@ const RestaurantReservationWidget = ({ restaurant, options, context }) => {
       setSubmitting(false);
     }
   };
+
+  if (submittedReservationId) {
+    return (
+      <RestaurantDepositFlow
+        restaurantId={restaurant.id || restaurant._id}
+        reservationId={submittedReservationId}
+        estimatedDeposit={submittedDepositInfo?.estimatedDeposit}
+        restaurantCheckout={submittedDepositInfo?.restaurantCheckout}
+        onReset={() => {
+          setSubmittedReservationId(null);
+          setSubmittedDepositInfo(null);
+          setSuccess("");
+        }}
+      />
+    );
+  }
 
   return (
     <section className="rounded-[28px] border border-[#d8c8ae] bg-[#fcfaf6] p-5">
@@ -190,6 +218,23 @@ const RestaurantReservationWidget = ({ restaurant, options, context }) => {
             className="rounded-2xl border border-[#d8c8ae] bg-white px-3 py-3 text-sm font-bold text-slate-800"
           />
         </div>
+
+        <label className="flex items-start gap-3 rounded-2xl border border-[#d8c8ae] bg-white p-4 text-sm font-bold text-slate-700">
+          <input
+            type="checkbox"
+            checked={form.preorderInterest}
+            onChange={(event) => updateField("preorderInterest", event.target.checked)}
+            className="mt-1"
+          />
+          I am interested in pre-ordering or arranging a group meal package.
+        </label>
+
+        <textarea
+          placeholder="Group meal notes, preferred dishes, or pre-order details"
+          value={form.groupMealNotes}
+          onChange={(event) => updateField("groupMealNotes", event.target.value)}
+          className="min-h-16 w-full rounded-2xl border border-[#d8c8ae] bg-white px-3 py-3 text-sm font-bold text-slate-800"
+        />
 
         <textarea
           placeholder="Dietary notes, timing details, or special requests"

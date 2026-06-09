@@ -87,6 +87,32 @@ test("restaurant routes expose public reservation options and request intake bef
   assert.equal(source.includes("RestaurantReservationRequest.create"), true);
 });
 
+test("restaurant routes expose public reservation checkout endpoint", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(
+    source.includes('router.get("/public/:restaurantId/reservations/:reservationId/checkout"'),
+    true
+  );
+});
+
+test("restaurant routes expose public and admin menu endpoints", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
+  );
+  const publicMenuIndex = source.indexOf('router.get("/public/:id/menu"');
+  const adminAuthIndex = source.indexOf("router.use(requireTenantAdmin)");
+
+  assert.equal(publicMenuIndex > -1, true);
+  assert.equal(publicMenuIndex < adminAuthIndex, true);
+  assert.equal(source.includes('router.get("/:restaurantId/menu"'), true);
+  assert.equal(source.includes('router.post("/:restaurantId/menu/sections"'), true);
+  assert.equal(source.includes('router.post("/:restaurantId/menu/items"'), true);
+  assert.equal(source.includes("shapePublicRestaurantMenuPreview"), true);
+});
+
 test("restaurant routes expose tenant-admin reservation operations", async () => {
   const source = await import("node:fs/promises").then((fs) =>
     fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
@@ -100,6 +126,18 @@ test("restaurant routes expose tenant-admin reservation operations", async () =>
   assert.equal(source.includes('router.post("/:id/availability"'), true);
   assert.equal(source.includes('router.patch("/availability/:id"'), true);
   assert.equal(source.includes('router.patch("/reservation-requests/:id"'), true);
+});
+
+test("restaurant routes expose admin menu section and item edit/delete endpoints", async () => {
+  const source = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("../routes/restaurantRoutes.js", import.meta.url), "utf8")
+  );
+
+  assert.equal(source.includes('router.patch("/menu-sections/:id"'), true);
+  assert.equal(source.includes('router.delete("/menu-sections/:id"'), true);
+  assert.equal(source.includes('router.patch("/menu-items/:id"'), true);
+  assert.equal(source.includes('router.delete("/menu-items/:id"'), true);
+  assert.equal(source.includes("RestaurantMenuItem.updateMany"), true);
 });
 
 test("restaurant routes expose tenant-admin dining checkout operations", async () => {

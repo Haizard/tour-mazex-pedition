@@ -5,6 +5,8 @@ import RestaurantAvailabilityEntry from "../models/RestaurantAvailabilityEntry.j
 import RestaurantReservationRequest from "../models/RestaurantReservationRequest.js";
 import RestaurantServiceWindow from "../models/RestaurantServiceWindow.js";
 import RestaurantTableType from "../models/RestaurantTableType.js";
+import RestaurantMenuSection from "../models/RestaurantMenuSection.js";
+import RestaurantMenuItem from "../models/RestaurantMenuItem.js";
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import { requireRestaurantPartnerAdmin } from "../middleware/restaurantPartnerAuthMiddleware.js";
 import { signRestaurantPartnerToken, verifyAdminPassword } from "../utils/adminAuth.js";
@@ -15,6 +17,10 @@ import {
   normalizeTableTypePayload,
   shapeReservationRequest,
 } from "../utils/restaurantReservations.js";
+import {
+  normalizeMenuItemPayload,
+  normalizeMenuSectionPayload,
+} from "../utils/restaurantMenu.js";
 import {
   buildReservationPaymentUpdate,
   buildRestaurantPaymentTransactionPayload,
@@ -234,6 +240,154 @@ router.patch("/table-types/:id", async (req, res) => {
     return res.status(200).json(existing);
   } catch (error) {
     return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.get("/restaurants/:restaurantId/menu", async (req, res) => {
+  try {
+    assertPartnerRestaurantAccess(req, req.params.restaurantId);
+    const query = {
+      tenantId: req.tenantId,
+      restaurantId: req.params.restaurantId,
+    };
+
+    const [sections, items] = await Promise.all([
+      RestaurantMenuSection.find(query).sort({ displayOrder: 1, title: 1 }).lean(),
+      RestaurantMenuItem.find(query).sort({ featured: -1, groupFriendly: -1, name: 1 }).lean(),
+    ]);
+
+    return res.status(200).json({ sections, items });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+});
+
+router.post("/restaurants/:restaurantId/menu/sections", async (req, res) => {
+  try {
+    assertPartnerRestaurantAccess(req, req.params.restaurantId);
+    const payload = normalizeMenuSectionPayload(req.body);
+    if (!payload.title) {
+      return res.status(400).json({ message: "Menu section title is required." });
+    }
+
+    const section = await RestaurantMenuSection.create({
+      ...payload,
+      tenantId: req.tenantId,
+      restaurantId: req.params.restaurantId,
+    });
+
+    return res.status(201).json(section);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.post("/restaurants/:restaurantId/menu/items", async (req, res) => {
+  try {
+    assertPartnerRestaurantAccess(req, req.params.restaurantId);
+    const payload = normalizeMenuItemPayload(req.body);
+    if (!payload.name) {
+      return res.status(400).json({ message: "Menu item name is required." });
+    }
+
+    const item = await RestaurantMenuItem.create({
+      ...payload,
+      tenantId: req.tenantId,
+      restaurantId: req.params.restaurantId,
+    });
+
+    return res.status(201).json(item);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.patch("/menu-sections/:id", async (req, res) => {
+  try {
+    const section = await RestaurantMenuSection.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!section) {
+      return res.status(404).json({ message: "Menu section not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, section.restaurantId);
+    Object.assign(section, normalizeMenuSectionPayload(req.body));
+    await section.save();
+
+    return res.status(200).json(section);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.delete("/menu-sections/:id", async (req, res) => {
+  try {
+    const section = await RestaurantMenuSection.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!section) {
+      return res.status(404).json({ message: "Menu section not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, section.restaurantId);
+
+    // Unlink items belonging to this section
+    await RestaurantMenuItem.updateMany(
+      { sectionId: req.params.id, tenantId: req.tenantId },
+      { $set: { sectionId: null } }
+    ).catch(() => {});
+
+    await RestaurantMenuSection.deleteOne({ _id: req.params.id });
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+});
+
+router.patch("/menu-items/:id", async (req, res) => {
+  try {
+    const item = await RestaurantMenuItem.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!item) {
+      return res.status(404).json({ message: "Menu item not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, item.restaurantId);
+    Object.assign(item, normalizeMenuItemPayload(req.body));
+    await item.save();
+
+    return res.status(200).json(item);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+});
+
+router.delete("/menu-items/:id", async (req, res) => {
+  try {
+    const item = await RestaurantMenuItem.findOne({
+      _id: req.params.id,
+      tenantId: req.tenantId,
+    });
+
+    if (!item) {
+      return res.status(404).json({ message: "Menu item not found." });
+    }
+
+    assertPartnerRestaurantAccess(req, item.restaurantId);
+    await RestaurantMenuItem.deleteOne({ _id: req.params.id });
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
   }
 });
 

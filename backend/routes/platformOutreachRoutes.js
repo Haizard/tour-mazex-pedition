@@ -5,6 +5,7 @@ import PlatformOutreachProspect from "../models/PlatformOutreachProspect.js";
 import PlatformOutreachSettings from "../models/PlatformOutreachSettings.js";
 import PlatformOutreachThread from "../models/PlatformOutreachThread.js";
 import PlatformSocialPost from "../models/PlatformSocialPost.js";
+import PlatformOutreachEventLog from "../models/PlatformOutreachEventLog.js";
 import { requirePlatformAdmin } from "../middleware/platformAdminAuthMiddleware.js";
 import {
   buildPlatformProspectPayload,
@@ -22,11 +23,19 @@ import { resolvePlatformOutreachReadiness } from "../utils/platformOutreachProvi
 import {
   normalizePlatformEmailWebhookPayload,
   normalizePlatformWhatsAppWebhookPayload,
+  verifyPlatformEmailWebhookSignature,
+  verifyPlatformWhatsAppWebhookSignature,
 } from "../utils/platformOutreachWebhooks.js";
 import {
+  buildAutomaticPlatformOutreachAttribution,
   buildPlatformOutreachConversionPayload,
   summarizePlatformOutreachConversions,
 } from "../utils/platformOutreachConversion.js";
+import {
+  buildPlatformOutreachAlertEvent,
+  platformOutreachAlertEventTypes,
+  summarizePlatformOutreachAlerts,
+} from "../utils/platformOutreachAlerts.js";
 
 const router = express.Router();
 
@@ -44,12 +53,17 @@ const buildSettingsPayload = (body = {}) => ({
     postalAddress: body.email?.postalAddress || "",
     unsubscribeBaseUrl: body.email?.unsubscribeBaseUrl || "",
     webhookSecret: body.email?.webhookSecret || "",
+    signatureSecret: body.email?.signatureSecret || "",
   },
   whatsapp: {
     businessAccountId: body.whatsapp?.businessAccountId || "",
     phoneNumberId: body.whatsapp?.phoneNumberId || "",
     defaultMarketingTemplateName: body.whatsapp?.defaultMarketingTemplateName || "",
     webhookVerifyToken: body.whatsapp?.webhookVerifyToken || "",
+    appSecret: body.whatsapp?.appSecret || "",
+  },
+  attribution: {
+    webhookSecret: body.attribution?.webhookSecret || "",
   },
   social: {
     facebookPageId: body.social?.facebookPageId || "",
@@ -111,6 +125,14 @@ const ingestPlatformOutreachReply = async ({ reply, req }) => {
         },
       },
     });
+    await recordPlatformOutreachEvent({
+      event: buildPlatformOutreachAlertEvent({
+        type: "unmatched_reply",
+        channel: reply.channel,
+        participantAddress: reply.participantAddress,
+        providerMessageId: reply.providerMessageId,
+      }),
+    });
     return { matched: false, reply };
   }
 
@@ -164,6 +186,10 @@ const getWebhookToken = (req) =>
   req.body?.token ||
   "";
 
+const getRawWebhookBody = (req) => req.rawBody || JSON.stringify(req.body || {});
+
+const getHeaderMap = (req) => req.headers || {};
+
 router.post("/webhooks/email", async (req, res) => {
   const settings = await getSettings();
   const expectedToken = process.env.PLATFORM_OUTREACH_EMAIL_WEBHOOK_TOKEN || settings.email?.webhookSecret || "";
@@ -172,6 +198,15 @@ router.post("/webhooks/email", async (req, res) => {
   }
   if (getWebhookToken(req) !== expectedToken) {
     return res.status(401).json({ message: "Invalid email webhook token." });
+  }
+  const signatureResult = verifyPlatformEmailWebhookSignature({
+    provider: "resend",
+    rawBody: getRawWebhookBody(req),
+    secret: process.env.PLATFORM_OUTREACH_EMAIL_WEBHOOK_SIGNATURE_SECRET || settings.email?.signatureSecret || "",
+    headers: getHeaderMap(req),
+  });
+  if (!signatureResult.valid) {
+    return res.status(401).json({ message: signatureResult.reason });
   }
 
   const replies = normalizePlatformEmailWebhookPayload(req.body);
@@ -207,6 +242,14 @@ router.post("/webhooks/whatsapp", async (req, res) => {
   if (suppliedToken !== expectedToken) {
     return res.status(401).json({ message: "Invalid WhatsApp webhook token." });
   }
+  const signatureResult = verifyPlatformWhatsAppWebhookSignature({
+    rawBody: getRawWebhookBody(req),
+    appSecret: process.env.PLATFORM_META_APP_SECRET || settings.whatsapp?.appSecret || "",
+    headers: getHeaderMap(req),
+  });
+  if (!signatureResult.valid) {
+    return res.status(401).json({ message: signatureResult.reason });
+  }
 
   const replies = normalizePlatformWhatsAppWebhookPayload(req.body);
   const results = [];
@@ -218,6 +261,87 @@ router.post("/webhooks/whatsapp", async (req, res) => {
     received: replies.length,
     matched: results.filter((result) => result.matched).length,
   });
+});
+
+const findProspectForConversionEvent = async (attribution = {}) => {
+  const metadata = attribution.metadata || {};
+  if (metadata.prospectId) return PlatformOutreachProspect.findById(metadata.prospectId);
+  if (metadata.prospectEmail) return PlatformOutreachProspect.findOne({ email: normalizeEmail(metadata.prospectEmail) });
+  if (metadata.prospectWhatsAppNumber) {
+    return PlatformOutreachProspect.findOne({
+      whatsappNumber: normalizeWhatsAppNumber(metadata.prospectWhatsAppNumber),
+    });
+  }
+  if (metadata.tenantId) return PlatformOutreachProspect.findOne({ "metadata.tenantId": metadata.tenantId });
+  return null;
+};
+
+router.post("/conversion-events", async (req, res) => {
+  const settings = await getSettings();
+  const expectedToken =
+    process.env.PLATFORM_OUTREACH_CONVERSION_WEBHOOK_TOKEN || settings.attribution?.webhookSecret || "";
+  if (!expectedToken) {
+    return res.status(503).json({ message: "Conversion attribution webhook token is not configured." });
+  }
+  if (getWebhookToken(req) !== expectedToken) {
+    return res.status(401).json({ message: "Invalid conversion attribution webhook token." });
+  }
+
+  const attribution = buildAutomaticPlatformOutreachAttribution(req.body);
+  const prospect = await findProspectForConversionEvent(attribution);
+  if (!prospect) {
+    await recordPlatformOutreachEvent({
+      event: buildPlatformOutreachAlertEvent({
+        type: "unmatched_reply",
+        channel: "conversion",
+        participantAddress:
+          attribution.metadata?.prospectEmail ||
+          attribution.metadata?.prospectWhatsAppNumber ||
+          attribution.metadata?.tenantId ||
+          "",
+        metadata: { attribution },
+      }),
+    });
+    return res.status(202).json({ matched: false, conversionAttribution: attribution });
+  }
+
+  const thread = await PlatformOutreachThread.findOne({ prospectId: prospect._id })
+    .sort({ lastMessageAt: -1, updatedAt: -1 });
+  if (!thread) {
+    await recordPlatformOutreachEvent({
+      event: buildPlatformOutreachAlertEvent({
+        type: "unmatched_reply",
+        channel: "conversion",
+        participantAddress: prospect.email || prospect.whatsappNumber || String(prospect._id),
+        metadata: { attribution, prospectId: String(prospect._id) },
+      }),
+    });
+    return res.status(202).json({ matched: false, prospectId: prospect._id, conversionAttribution: attribution });
+  }
+
+  thread.conversionAttribution = attribution;
+  if (["demo_booked", "trial_started", "subscription_won"].includes(attribution.stage)) {
+    thread.status = "qualified";
+    prospect.status = "qualified";
+  }
+  thread.markModified("conversionAttribution");
+  await Promise.all([thread.save(), prospect.save()]);
+
+  await recordPlatformOutreachEvent({
+    event: {
+      eventType: "conversion_auto_attributed",
+      prospectId: prospect._id,
+      campaignId: thread.campaignId,
+      actorType: "system",
+      summary: `Platform outreach conversion auto-attributed: ${attribution.stage}.`,
+      metadata: {
+        threadId: String(thread._id),
+        attribution,
+      },
+    },
+  });
+
+  return res.status(200).json({ matched: true, thread, prospect, conversionAttribution: attribution });
 });
 
 router.use(requirePlatformAdmin);
@@ -542,6 +666,7 @@ router.get("/analytics", async (_req, res) => {
     socialStatuses,
     recentFailures,
     convertedThreads,
+    alertEvents,
   ] = await Promise.all([
     PlatformOutreachProspect.countDocuments(),
     PlatformOutreachProspect.countDocuments({ status: "qualified" }),
@@ -569,8 +694,13 @@ router.get("/analytics", async (_req, res) => {
     PlatformOutreachThread.find({ "conversionAttribution.stage": { $exists: true, $ne: "" } })
       .select("conversionAttribution campaignId prospectId")
       .lean(),
+    PlatformOutreachEventLog.find({ eventType: { $in: platformOutreachAlertEventTypes } })
+      .sort({ createdAt: -1 })
+      .limit(25)
+      .lean(),
   ]);
   const conversionSummary = summarizePlatformOutreachConversions(convertedThreads);
+  const alertSummary = summarizePlatformOutreachAlerts(alertEvents);
 
   return res.status(200).json({
     summary: {
@@ -586,11 +716,16 @@ router.get("/analytics", async (_req, res) => {
       socialPublishedCount: socialStatuses.published,
       socialFailedCount: socialStatuses.failed,
       ...conversionSummary,
+      ...alertSummary,
     },
     messages: messageStatuses,
     threads: threadStatuses,
     socialPosts: socialStatuses,
     conversions: conversionSummary,
+    alerts: {
+      ...alertSummary,
+      recent: alertEvents,
+    },
     recentFailures,
   });
 });

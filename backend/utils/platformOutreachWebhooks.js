@@ -1,4 +1,5 @@
 import { normalizeEmail, normalizeWhatsAppNumber } from "./platformOutreachProspects.js";
+import crypto from "node:crypto";
 
 const toDate = (value) => {
   if (!value) return new Date();
@@ -52,4 +53,57 @@ export const normalizePlatformWhatsAppWebhookPayload = (payload = {}) => {
     }
   }
   return replies;
+};
+
+const timingSafeEqual = (actual = "", expected = "") => {
+  const actualBuffer = Buffer.from(String(actual || ""));
+  const expectedBuffer = Buffer.from(String(expected || ""));
+  return actualBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(actualBuffer, expectedBuffer);
+};
+
+const hmacSha256 = ({ secret = "", rawBody = "" } = {}) =>
+  crypto.createHmac("sha256", String(secret)).update(String(rawBody || "")).digest("hex");
+
+export const verifyPlatformEmailWebhookSignature = ({
+  provider = "resend",
+  rawBody = "",
+  secret = "",
+  headers = {},
+} = {}) => {
+  if (!secret) return { valid: true, reason: "No email signature secret configured." };
+  const normalizedHeaders = Object.fromEntries(
+    Object.entries(headers || {}).map(([key, value]) => [key.toLowerCase(), value]),
+  );
+  const suppliedSignature =
+    normalizedHeaders["resend-signature"] ||
+    normalizedHeaders["x-resend-signature"] ||
+    normalizedHeaders["x-webhook-signature"] ||
+    "";
+
+  if (!suppliedSignature) {
+    return { valid: false, reason: `${provider} webhook signature header is missing.` };
+  }
+
+  const expectedSignature = hmacSha256({ secret, rawBody });
+  const cleanedSignature = String(suppliedSignature).replace(/^sha256=/i, "");
+  return timingSafeEqual(cleanedSignature, expectedSignature)
+    ? { valid: true, provider }
+    : { valid: false, provider, reason: `${provider} webhook signature is invalid.` };
+};
+
+export const verifyPlatformWhatsAppWebhookSignature = ({ rawBody = "", appSecret = "", headers = {} } = {}) => {
+  if (!appSecret) return { valid: true, reason: "No Meta app secret configured." };
+  const normalizedHeaders = Object.fromEntries(
+    Object.entries(headers || {}).map(([key, value]) => [key.toLowerCase(), value]),
+  );
+  const suppliedSignature = String(normalizedHeaders["x-hub-signature-256"] || "").replace(/^sha256=/i, "");
+
+  if (!suppliedSignature) {
+    return { valid: false, reason: "Meta webhook signature header is missing." };
+  }
+
+  const expectedSignature = hmacSha256({ secret: appSecret, rawBody });
+  return timingSafeEqual(suppliedSignature, expectedSignature)
+    ? { valid: true, provider: "meta" }
+    : { valid: false, provider: "meta", reason: "Meta webhook signature is invalid." };
 };

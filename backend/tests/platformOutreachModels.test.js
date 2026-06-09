@@ -40,11 +40,16 @@ test("platform social post requires at least one platform", async () => {
 
 test("platform outreach settings support escalation rules and email webhook setup", async () => {
   const settings = new PlatformOutreachSettings({
-    email: { webhookSecret: "email-hook" },
+    email: { webhookSecret: "email-hook", signatureSecret: "resend-secret" },
+    whatsapp: { appSecret: "meta-secret" },
+    attribution: { webhookSecret: "conversion-secret" },
     escalationRules: [{ label: "Pricing", keywords: ["discount"], enabled: true }],
   });
 
   await assert.doesNotReject(() => settings.validate());
+  assert.equal(settings.email.signatureSecret, "resend-secret");
+  assert.equal(settings.whatsapp.appSecret, "meta-secret");
+  assert.equal(settings.attribution.webhookSecret, "conversion-secret");
   assert.equal(settings.escalationRules[0].label, "Pricing");
 });
 
