@@ -270,49 +270,6 @@ const Navbar = ({ handleOrderPopup }) => {
           </div>
 
           <div className="flex items-center gap-6 text-[13px] font-medium uppercase tracking-tighter">
-            {/* Partner Login dropdown */}
-            <div
-              className="relative group"
-              onMouseEnter={() => setActiveMenu("partner-login")}
-              onMouseLeave={() => setActiveMenu(null)}
-            >
-              <button
-                type="button"
-                className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold tracking-wider text-white transition hover:bg-white/20"
-              >
-                <FaStore className="text-[10px]" />
-                Partner Login
-                <FaCaretDown className="text-[9px] transition-transform duration-300 group-hover:rotate-180" />
-              </button>
-              <AnimatePresence>
-                {activeMenu === "partner-login" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute right-0 top-full mt-2 w-[220px] rounded-xl bg-white p-2 shadow-2xl shadow-slate-950/20 ring-1 ring-slate-200 z-[2000]"
-                  >
-                    <Link
-                      to="/restaurant-partner/login"
-                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-xs font-black uppercase tracking-wider text-slate-800 transition hover:bg-slate-50 hover:text-[#234232]"
-                      onClick={() => setActiveMenu(null)}
-                    >
-                      <FaConciergeBell className="text-[#234232]" />
-                      Restaurant Partner
-                    </Link>
-                    <Link
-                      to="/hotel-partner/login"
-                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-xs font-black uppercase tracking-wider text-slate-800 transition hover:bg-slate-50 hover:text-[#234232]"
-                      onClick={() => setActiveMenu(null)}
-                    >
-                      <FaConciergeBell className="text-[#234232]" />
-                      Hotel Partner
-                    </Link>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
             {isTravelerAuthenticated && (
               <>
                 <Link
@@ -479,6 +436,52 @@ const Navbar = ({ handleOrderPopup }) => {
                   </AnimatePresence>
                 </li>
               ))}
+              {/* Partner Login dropdown */}
+              <li
+                className="relative group"
+                onMouseEnter={() => setActiveMenu("partner-login")}
+                onMouseLeave={() => setActiveMenu(null)}
+              >
+                <button
+                  type="button"
+                  className={`flex items-center gap-1 text-[13px] xl:text-[14px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border-2 transition-all duration-300 ${
+                    isScrolled
+                      ? "text-safari-green border-safari-green hover:bg-safari-green hover:text-white"
+                      : "text-white border-white hover:bg-white hover:text-safari-green"
+                  }`}
+                >
+                  <FaStore />
+                  Partner Login
+                  <FaCaretDown className="text-[10px] transition-transform duration-300 group-hover:rotate-180" />
+                </button>
+                <AnimatePresence>
+                  {activeMenu === "partner-login" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 top-full mt-4 w-[240px] rounded-xl bg-white p-2 shadow-2xl shadow-slate-950/20 ring-1 ring-slate-200 z-[2000]"
+                    >
+                      <Link
+                        to="/restaurant-partner/login"
+                        className="flex items-center gap-3 rounded-lg px-3 py-3 text-xs font-black uppercase tracking-wider text-slate-800 transition hover:bg-slate-50 hover:text-[#234232]"
+                        onClick={() => setActiveMenu(null)}
+                      >
+                        <FaConciergeBell className="text-[#234232]" />
+                        Restaurant Partner
+                      </Link>
+                      <Link
+                        to="/hotel-partner/login"
+                        className="flex items-center gap-3 rounded-lg px-3 py-3 text-xs font-black uppercase tracking-wider text-slate-800 transition hover:bg-slate-50 hover:text-[#234232]"
+                        onClick={() => setActiveMenu(null)}
+                      >
+                        <FaConciergeBell className="text-[#234232]" />
+                        Hotel Partner
+                      </Link>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
               <li className="relative group flex items-center ml-2">
                 <NavLink
                   to={isPlatform ? "/demo/mazexpeditions" : "/discover"}
