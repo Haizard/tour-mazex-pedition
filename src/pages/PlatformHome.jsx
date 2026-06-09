@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import {
   FaChartLine,
+  FaConciergeBell,
   FaGlobeAfrica,
   FaHandshake,
   FaMapMarkedAlt,
   FaRobot,
   FaStar,
+  FaStore,
+  FaUtensils,
   FaWhatsapp,
 } from "react-icons/fa";
 import SEO from "../components/UI/SEO";
@@ -245,6 +248,72 @@ const PlatformHome = () => (
               <p className="pt-2 text-sm font-black uppercase tracking-wide text-slate-700">{step}</p>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+
+    {/* Restaurant owner section */}
+    <section className="px-6 py-20 md:px-10">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div className="rounded-[36px] border border-[#d9ccb4] bg-white p-8 shadow-sm">
+            <div className="grid h-16 w-16 place-items-center rounded-3xl bg-amber-100 text-amber-800">
+              <FaUtensils />
+            </div>
+            <h2 className="mt-6 text-4xl font-black uppercase tracking-tight">
+              Own a restaurant?
+            </h2>
+            <p className="mt-5 text-base font-semibold leading-8 text-slate-600">
+              Claim your restaurant listing, manage reservations, set up deposits, and receive payments
+              — all from your partner dashboard.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link
+                to="/discover/restaurants/claim"
+                className="inline-flex items-center gap-3 rounded-full bg-[#2f5b3a] px-7 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#24492f]"
+              >
+                <FaStore />
+                Claim your restaurant
+              </Link>
+              <Link
+                to="/restaurant-partner/login"
+                className="inline-flex items-center gap-3 rounded-full border border-[#cdbd9c] bg-white/80 px-7 py-4 text-sm font-black uppercase tracking-[0.22em] text-[#2b241c] transition hover:border-[#2f5b3a] hover:text-[#2f5b3a]"
+              >
+                <FaConciergeBell />
+                Partner login
+              </Link>
+            </div>
+          </div>
+          <div className="grid gap-4">
+            {[
+              {
+                title: "Claim your listing",
+                text: "Search for your restaurant in the marketplace and submit a claim request to become the verified partner.",
+              },
+              {
+                title: "Manage reservations",
+                text: "View incoming requests, confirm or adjust bookings, and communicate with travelers through your dashboard.",
+              },
+              {
+                title: "Accept deposits",
+                text: "Set up deposit amounts, enable auto-deposits on confirmation, and receive payments directly through the platform.",
+              },
+              {
+                title: "Grow your presence",
+                text: "Update your menu, manage availability, and get discovered by travelers browsing restaurants in your destination.",
+              },
+            ].map((item) => (
+              <div key={item.title} className="flex items-start gap-4 rounded-[28px] border border-[#e3d7c2] bg-[#fcfaf6] p-5">
+                <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#234232] text-xs text-white">
+                  <FaUtensils />
+                </div>
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-slate-800">{item.title}</p>
+                  <p className="mt-1 text-sm font-medium leading-6 text-slate-500">{item.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

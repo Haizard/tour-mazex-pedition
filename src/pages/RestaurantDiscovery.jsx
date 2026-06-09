@@ -65,6 +65,14 @@ const RestaurantDiscovery = () => {
         <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-slate-600">
           Browse operator-linked dining options for arrival dinners, family lunches, special occasions, and itinerary add-ons.
         </p>
+        <div className="mt-6">
+          <Link
+            to="/discover/restaurants/claim"
+            className="inline-flex items-center gap-2 rounded-full border border-[#d8c8ae] bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#234232]"
+          >
+            <FaUtensils /> Claim your restaurant
+          </Link>
+        </div>
 
         <div className="mt-8 grid gap-3 rounded-[28px] border border-[#d8c8ae] bg-white p-4 shadow-sm md:grid-cols-6">
           <label className="flex items-center rounded-2xl border border-slate-200 px-3 py-2 md:col-span-2">

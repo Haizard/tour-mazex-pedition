@@ -4,13 +4,15 @@ import Logo from "../../assets/maz-logo.jpeg";
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaCaretDown,
+  FaConciergeBell,
   FaFacebookF,
-  FaTwitter,
   FaInstagram,
+  FaSignOutAlt,
+  FaStore,
+  FaTwitter,
   FaWhatsapp,
   FaYoutube,
   FaRedditAlien,
-  FaSignOutAlt,
 } from "react-icons/fa";
 import { HiMenuAlt3, HiMenuAlt1 } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -268,6 +270,49 @@ const Navbar = ({ handleOrderPopup }) => {
           </div>
 
           <div className="flex items-center gap-6 text-[13px] font-medium uppercase tracking-tighter">
+            {/* Partner Login dropdown */}
+            <div
+              className="relative group"
+              onMouseEnter={() => setActiveMenu("partner-login")}
+              onMouseLeave={() => setActiveMenu(null)}
+            >
+              <button
+                type="button"
+                className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold tracking-wider text-white transition hover:bg-white/20"
+              >
+                <FaStore className="text-[10px]" />
+                Partner Login
+                <FaCaretDown className="text-[9px] transition-transform duration-300 group-hover:rotate-180" />
+              </button>
+              <AnimatePresence>
+                {activeMenu === "partner-login" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute right-0 top-full mt-2 w-[220px] rounded-xl bg-white p-2 shadow-2xl shadow-slate-950/20 ring-1 ring-slate-200 z-[2000]"
+                  >
+                    <Link
+                      to="/restaurant-partner/login"
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-xs font-black uppercase tracking-wider text-slate-800 transition hover:bg-slate-50 hover:text-[#234232]"
+                      onClick={() => setActiveMenu(null)}
+                    >
+                      <FaConciergeBell className="text-[#234232]" />
+                      Restaurant Partner
+                    </Link>
+                    <Link
+                      to="/hotel-partner/login"
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-xs font-black uppercase tracking-wider text-slate-800 transition hover:bg-slate-50 hover:text-[#234232]"
+                      onClick={() => setActiveMenu(null)}
+                    >
+                      <FaConciergeBell className="text-[#234232]" />
+                      Hotel Partner
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {isTravelerAuthenticated && (
               <>
                 <Link

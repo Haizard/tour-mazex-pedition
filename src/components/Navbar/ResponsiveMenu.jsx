@@ -1,15 +1,17 @@
 /* eslint-disable react/prop-types */
 import React from "react";
 import {
-  FaUserCircle,
+  FaChevronDown,
+  FaConciergeBell,
   FaFacebookF,
-  FaTwitter,
   FaInstagram,
+  FaRedditAlien,
+  FaSignOutAlt,
+  FaStore,
+  FaTwitter,
+  FaUserCircle,
   FaWhatsapp,
   FaYoutube,
-  FaRedditAlien,
-  FaChevronDown,
-  FaSignOutAlt,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -85,6 +87,29 @@ const ResponsiveMenu = ({
               {isTravelerAuthenticated ? "Traveler account" : menuSubheading}
             </h2>
           </div>
+        </div>
+
+        {/* Partner Login section */}
+        <div className="flex flex-col gap-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+            Partner Login
+          </p>
+          <Link
+            to="/restaurant-partner/login"
+            onClick={() => setShowMenu(false)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/20"
+          >
+            <FaConciergeBell />
+            Restaurant Partner
+          </Link>
+          <Link
+            to="/hotel-partner/login"
+            onClick={() => setShowMenu(false)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/20"
+          >
+            <FaStore />
+            Hotel Partner
+          </Link>
         </div>
 
         {isTravelerAuthenticated && (
