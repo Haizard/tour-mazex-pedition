@@ -58,11 +58,15 @@ const RestaurantClaimPage = () => {
 
     try {
       const payload = buildRestaurantClaimPayload(draft, selectedRestaurant);
-      await submitRestaurantClaimRequest(payload);
+      const response = await submitRestaurantClaimRequest(payload);
+      const registeredUsername =
+        response.data?.partnerAdmin?.username ||
+        payload.requestedUsername ||
+        payload.claimantEmail;
       setMessage(
         draft.claimType === "new-listing-request"
-          ? "Your new restaurant listing request has been submitted for review."
-          : "Your restaurant claim request has been submitted for review."
+          ? `Your new restaurant listing request has been submitted. After review, sign in with username: ${registeredUsername}`
+          : `Your claim has been submitted. Sign in with username: ${registeredUsername}`
       );
       setDraft(createEmptyRestaurantClaimDraft());
       setSelectedRestaurantId("");
