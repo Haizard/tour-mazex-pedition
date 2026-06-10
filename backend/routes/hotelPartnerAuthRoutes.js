@@ -1,4 +1,5 @@
 import express from "express";
+import Tenant from "../models/Tenant.js";
 import HotelPartnerAdmin from "../models/HotelPartnerAdmin.js";
 import { requireHotelPartnerAdmin } from "../middleware/hotelPartnerAuthMiddleware.js";
 import { signHotelPartnerToken, verifyAdminPassword } from "../utils/adminAuth.js";
@@ -23,8 +24,12 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Username and password are required." });
     }
 
+    // On the platform domain (e.g. mazexpeditions.vercel.app), req.tenantId is null.
+    // Look up the partner admin by username across all tenants and use the
+    // stored tenantId from the admin record to sign the token.
+    // When req.tenantId is available (tenant subdomain), scope the lookup.
     const partnerAdmin = await HotelPartnerAdmin.findOne({
-      tenantId: req.tenantId,
+      ...(req.tenantId ? { tenantId: req.tenantId } : {}),
       username,
       status: "active",
     });
@@ -46,22 +51,31 @@ router.post("/login", async (req, res) => {
     partnerAdmin.lastLoginAt = new Date();
     await partnerAdmin.save();
 
+    const actualTenantId = String(partnerAdmin.tenantId || "");
+
     const token = signHotelPartnerToken({
       partnerAdminId: String(partnerAdmin._id),
-      tenantId: String(req.tenantId),
+      tenantId: actualTenantId,
       username: partnerAdmin.username,
       role: partnerAdmin.role,
       hotelIds: partnerAdmin.hotelIds,
     });
 
+    // Look up the tenant for the response (required on platform domain)
+    const resolvedTenant = req.tenant || (actualTenantId
+      ? await Tenant.findById(actualTenantId).lean().catch(() => null)
+      : null);
+
     return res.status(200).json({
       token,
       partnerAdmin: shapePartnerAdmin(partnerAdmin),
-      tenant: {
-        id: req.tenant._id,
-        name: req.tenant.name,
-        slug: req.tenant.slug,
-      },
+      tenant: resolvedTenant
+        ? {
+            id: resolvedTenant._id,
+            name: resolvedTenant.name,
+            slug: resolvedTenant.slug,
+          }
+        : null,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -69,13 +83,20 @@ router.post("/login", async (req, res) => {
 });
 
 router.get("/me", requireHotelPartnerAdmin, async (req, res) => {
+  // On the platform domain req.tenant may be null; resolve from token tenantId
+  const resolvedTenant = req.tenant || (req.tenantId
+    ? await Tenant.findById(req.tenantId).lean().catch(() => null)
+    : null);
+
   res.status(200).json({
     partnerAdmin: shapePartnerAdmin(req.hotelPartnerAdmin),
-    tenant: {
-      id: req.tenant._id,
-      name: req.tenant.name,
-      slug: req.tenant.slug,
-    },
+    tenant: resolvedTenant
+      ? {
+          id: resolvedTenant._id,
+          name: resolvedTenant.name,
+          slug: resolvedTenant.slug,
+        }
+      : null,
   });
 });
 

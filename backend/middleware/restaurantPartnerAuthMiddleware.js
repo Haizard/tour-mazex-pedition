@@ -21,15 +21,23 @@ export const requireRestaurantPartnerAdmin = async (req, res, next) => {
 
     const payload = verifyRestaurantPartnerToken(token);
 
-    if (payload.tenantId !== String(req.tenantId)) {
+    // When on the platform domain (req.tenantId is null), use the token's
+    // stored tenantId so the partner's data is scoped correctly.
+    const resolvedTenantId = req.tenantId || payload.tenantId;
+
+    if (payload.tenantId !== String(resolvedTenantId)) {
       return res
         .status(403)
         .json({ message: "Restaurant partner token does not match this tenant." });
     }
 
+    if (!req.tenantId) {
+      req.tenantId = resolvedTenantId;
+    }
+
     const partnerAdmin = await RestaurantPartnerAdmin.findOne({
       _id: payload.partnerAdminId,
-      tenantId: req.tenantId,
+      tenantId: resolvedTenantId,
       status: "active",
     });
 
