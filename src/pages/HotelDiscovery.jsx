@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaHotel, FaSearch, FaStar } from "react-icons/fa";
-import { fetchPublicHotels } from "../services/api";
+import { fetchPublicHotels, fetchTenantPartnershipIds } from "../services/api";
 import { countActiveHotelFilters, filterHotelCards, sortHotelCards } from "./hotelDiscoveryUtils";
 import { getHotelTrustLabel } from "../components/Marketplace/hotelTrustUtils";
 
@@ -17,13 +17,37 @@ const HotelDiscovery = () => {
   const [hotels, setHotels] = useState([]);
   const [filters, setFilters] = useState(initialFilters);
   const [loading, setLoading] = useState(true);
+  const [partneredIds, setPartneredIds] = useState(undefined);
 
+  // Fetch partnership IDs once on mount
   useEffect(() => {
+    fetchTenantPartnershipIds()
+      .then((res) => setPartneredIds(res.data || null))
+      .catch(() => setPartneredIds(null));
+  }, []);
+
+  // Fetch hotels — wait for partnership data to resolve first
+  useEffect(() => {
+    if (partneredIds === undefined) return;
+
     const loadHotels = async () => {
       setLoading(true);
       try {
         const response = await fetchPublicHotels(filters);
-        setHotels(response.data?.hotels || []);
+        const allHotels = response.data?.hotels || [];
+
+        if (partneredIds?.hotelIds?.length) {
+          const validIds = new Set(
+            partneredIds.hotelIds.map((id) => String(id))
+          );
+          setHotels(allHotels.filter((h) => validIds.has(String(h._id))));
+        } else if (partneredIds?.hasTenantContext) {
+          // Tenant context but no partnerships — show empty
+          setHotels([]);
+        } else {
+          // No tenant context (platform page) — show all
+          setHotels(allHotels);
+        }
       } catch (error) {
         console.error("Hotel discovery error:", error);
         setHotels([]);
@@ -33,7 +57,7 @@ const HotelDiscovery = () => {
     };
 
     loadHotels();
-  }, [filters]);
+  }, [filters, partneredIds]);
 
   const visibleHotels = useMemo(
     () => sortHotelCards(filterHotelCards(hotels, filters), filters.sort),

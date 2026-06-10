@@ -157,6 +157,23 @@ const paymentTransactionSchema = new mongoose.Schema(
       ),
       default: () => ({}),
     },
+    // Marketplace commission tracking fields
+    marketplacePayoutAmount: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    distributorTenantId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    marketplaceCommissionPercent: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+    },
     invoiceMediaId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Media",

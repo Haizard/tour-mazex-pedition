@@ -53,6 +53,7 @@ import travelerPortalRoutes from "./routes/travelerPortalRoutes.js";
 import travelerAuthRoutes from "./routes/travelerAuthRoutes.js";
 import discoveryRoutes from "./routes/discoveryRoutes.js";
 import marketplaceEngagementRoutes from "./routes/marketplaceEngagementRoutes.js";
+import tenantPartnershipRoutes from "./routes/tenantPartnershipRoutes.js";
 import {
   applySecurityHeaders,
   attachRequestMetadata,
@@ -242,6 +243,7 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/infrastructure", infrastructureRoutes);
 app.use("/api/traveler-portal", travelerPortalRoutes);
+app.use("/api/partner-properties", tenantPartnershipRoutes);
 app.use("/api/discovery", discoveryRoutes);
 
 app.use("/", seoRoutes);

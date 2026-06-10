@@ -83,6 +83,7 @@ import HotelManager from "../components/Admin/HotelManager";
 import RestaurantManager from "../components/Admin/RestaurantManager";
 import AirportPickupManager from "../components/Admin/AirportPickupManager";
 import PartnerPortalManager from "../components/Admin/PartnerPortalManager";
+import PartnerPropertyManager from "../components/Admin/PartnerPropertyManager";
 import PaymentAutomationManager from "../components/Admin/PaymentAutomationManager";
 import InfrastructureReadinessManager from "../components/Admin/InfrastructureReadinessManager";
 import DistributionManager from "../components/Admin/DistributionManager";
@@ -4240,6 +4241,8 @@ const AdminDashboard = () => {
           {activeTab === "hotels" && <HotelManager />}
 
           {activeTab === "restaurants" && <RestaurantManager />}
+          {activeTab === "partner-properties" && <PartnerPropertyManager />}
+
 
           {activeTab === "accommodations" && <AccommodationManager />}
 

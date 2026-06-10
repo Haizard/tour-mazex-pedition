@@ -1399,6 +1399,27 @@ export const updateRestaurantCheckoutSettings = (restaurantId, data) =>
 export const createRestaurantPaymentRequest = (reservationRequestId, data) =>
   API.post(`/restaurants/reservation-requests/${reservationRequestId}/payment-request`, data);
 
+// ── Tenant Property Partnerships ────────────────────────────────────────────
+
+export const fetchTenantPartnerships = () =>
+  cachedGet("/partner-properties");
+export const fetchCommissionReport = () =>
+  API.get("/partner-properties/commission-report");
+export const fetchTenantPartnershipsPublic = () =>
+  cachedGet("/partner-properties/public");
+export const fetchTenantPartnershipIds = () =>
+  cachedGet("/partner-properties/public/ids");
+export const fetchAvailablePropertiesForPartnership = (propertyType, q = "") =>
+  cachedGet("/partner-properties/available", {
+    params: { propertyType, q },
+  });
+export const createTenantPartnership = (data) =>
+  API.post("/partner-properties", data);
+export const updateTenantPartnership = (id, data) =>
+  API.patch(`/partner-properties/${id}`, data);
+export const deleteTenantPartnership = (id) =>
+  API.delete(`/partner-properties/${id}`);
+
 // Social Posts
 export const fetchSocialPosts = (params = {}) =>
   cachedGet("/social-posts", { params });

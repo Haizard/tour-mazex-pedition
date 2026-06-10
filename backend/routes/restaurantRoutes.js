@@ -49,6 +49,10 @@ import {
   validateCustomRestaurantPayment,
 } from "../utils/restaurantCheckout.js";
 import {
+  calculateMarketplacePayout,
+  lookupTenantPropertyCommission,
+} from "../utils/tenantPartnershipLookup.js";
+import {
   deleteRestaurantRecord,
   findRestaurantRecord,
 } from "../utils/postgresRestaurantRecords.js";
@@ -1038,14 +1042,28 @@ router.post("/reservation-requests/:id/payment-request", async (req, res) => {
             reservation,
           });
 
-    const transaction = await PaymentTransaction.create(
-      buildRestaurantPaymentTransactionPayload({
+    // Look up partnership commission for marketplace payout tracking
+    const partnership = await lookupTenantPropertyCommission(
+      String(req.tenantId || ""),
+      String(restaurant._id || ""),
+      "restaurant"
+    );
+    const marketplacePayoutAmount = partnership
+      ? calculateMarketplacePayout(payment.amount, partnership.commissionPercent)
+      : 0;
+
+    const transactionPayload = {
+      ...buildRestaurantPaymentTransactionPayload({
         tenantId: req.tenantId,
         restaurant,
         reservation,
         payment,
-      })
-    );
+      }),
+      marketplacePayoutAmount,
+      distributorTenantId: partnership ? String(req.tenantId || "") : "",
+      marketplaceCommissionPercent: partnership ? partnership.commissionPercent : 0,
+    };
+    const transaction = await PaymentTransaction.create(transactionPayload);
 
     Object.assign(
       reservation,

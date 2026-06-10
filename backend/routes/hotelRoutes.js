@@ -12,6 +12,10 @@ import {
   buildHotelReservationDraft,
 } from "../utils/hotelCheckout.js";
 import {
+  calculateMarketplacePayout,
+  lookupTenantPropertyCommission,
+} from "../utils/tenantPartnershipLookup.js";
+import {
   buildHotelChannelSyncResult,
   normalizeHotelChannelConnections,
 } from "../utils/hotelChannels.js";
@@ -413,8 +417,19 @@ router.post("/public/:slug/checkout/reserve", async (req, res) => {
 
     const reservation = await createPostgresFirstAccommodationReservation(reservationPayload, process.env);
 
+    // Look up the tenant partnership commission for this hotel
+    const partnership = await lookupTenantPropertyCommission(
+      String(req.tenantId || ""),
+      String(hotel._id || ""),
+      "hotel"
+    );
+
     let payment = null;
     if (quote.pricing.depositDue > 0 && quote.paymentMode === "payment-checkout") {
+      const payoutAmount = partnership
+        ? calculateMarketplacePayout(quote.pricing.depositDue, partnership.commissionPercent)
+        : 0;
+
       const createdPayment = await createPostgresFirstPayment(
         {
           tenantId: hotelTenantId,
@@ -427,7 +442,10 @@ router.post("/public/:slug/checkout/reserve", async (req, res) => {
           feeAmount: 0,
           status: "pending",
           checkoutKind: "hotel-stay",
+          marketplacePayoutAmount: payoutAmount,
           notes: `Hotel stay deposit for ${hotel.name} (${quote.checkInDate} to ${quote.checkOutDate})`,
+          distributorTenantId: partnership ? String(req.tenantId || "") : "",
+          marketplaceCommissionPercent: partnership ? partnership.commissionPercent : 0,
         },
         process.env
       );

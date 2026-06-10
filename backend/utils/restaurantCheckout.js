@@ -162,15 +162,30 @@ export const autoCreateRestaurantDepositPayment = async ({
     return { created: false, error: error.message };
   }
 
-  // Create PaymentTransaction
-  const transaction = await PaymentTransaction.create(
-    buildRestaurantPaymentTransactionPayload({
+  // Look up partnership commission for marketplace payout tracking
+  const { lookupTenantPropertyCommission, calculateMarketplacePayout } = await import("./tenantPartnershipLookup.js");
+  const partnership = await lookupTenantPropertyCommission(
+    String(tenantId || ""),
+    String(restaurant._id || ""),
+    "restaurant"
+  );
+  const marketplacePayoutAmount = partnership
+    ? calculateMarketplacePayout(payment.amount, partnership.commissionPercent)
+    : 0;
+
+  // Create PaymentTransaction with commission data
+  const transactionPayload = {
+    ...buildRestaurantPaymentTransactionPayload({
       tenantId,
       restaurant,
       reservation,
       payment,
-    })
-  );
+    }),
+    marketplacePayoutAmount,
+    distributorTenantId: partnership ? String(tenantId || "") : "",
+    marketplaceCommissionPercent: partnership ? partnership.commissionPercent : 0,
+  };
+  const transaction = await PaymentTransaction.create(transactionPayload);
 
   // Update the reservation with payment info
   const RestaurantReservationRequest = (await import("../models/RestaurantReservationRequest.js")).default;

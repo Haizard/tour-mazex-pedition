@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaSearch, FaStar, FaUtensils } from "react-icons/fa";
-import { fetchPublicRestaurants } from "../services/api";
+import { fetchPublicRestaurants, fetchTenantPartnershipIds } from "../services/api";
 import {
   countActiveRestaurantFilters,
   filterRestaurantCards,
@@ -26,13 +26,39 @@ const RestaurantDiscovery = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [filters, setFilters] = useState(initialFilters);
   const [loading, setLoading] = useState(true);
+  const [partneredIds, setPartneredIds] = useState(undefined);
 
+  // Fetch partnership IDs once on mount
   useEffect(() => {
+    fetchTenantPartnershipIds()
+      .then((res) => setPartneredIds(res.data || null))
+      .catch(() => setPartneredIds(null));
+  }, []);
+
+  // Fetch restaurants — wait for partnership data to resolve first
+  useEffect(() => {
+    if (partneredIds === undefined) return;
+
     const loadRestaurants = async () => {
       setLoading(true);
       try {
         const response = await fetchPublicRestaurants(filters);
-        setRestaurants(response.data?.restaurants || []);
+        const allRestaurants = response.data?.restaurants || [];
+
+        if (partneredIds?.restaurantIds?.length) {
+          const validIds = new Set(
+            partneredIds.restaurantIds.map((id) => String(id))
+          );
+          setRestaurants(
+            allRestaurants.filter((r) => validIds.has(String(r._id)))
+          );
+        } else if (partneredIds?.hasTenantContext) {
+          // Tenant context but no partnerships — show empty
+          setRestaurants([]);
+        } else {
+          // No tenant context (platform page) — show all
+          setRestaurants(allRestaurants);
+        }
       } catch (error) {
         console.error("Restaurant discovery error:", error);
         setRestaurants([]);
@@ -42,7 +68,7 @@ const RestaurantDiscovery = () => {
     };
 
     loadRestaurants();
-  }, [filters]);
+  }, [filters, partneredIds]);
 
   const visibleRestaurants = useMemo(
     () => sortRestaurantCards(filterRestaurantCards(restaurants, filters), filters.sort),
