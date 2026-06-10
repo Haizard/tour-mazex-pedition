@@ -127,6 +127,7 @@ export const buildPaymentRevenueRecord = (payment = {}) => ({
   cancelledAt: payment.cancelledAt ? new Date(payment.cancelledAt).toISOString() : null,
   invoiceMediaId: payment.invoiceMediaId ? String(payment.invoiceMediaId) : "",
   marketplacePayoutAmount: Number(payment.marketplacePayoutAmount || 0),
+  checkoutKind: String(payment.checkoutKind || ""),
   sourcePayload: payment,
 });
 
@@ -305,7 +306,7 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
       insert into public.payment_records (
         source_id, tenant_id, booking_id, provider, public_token, provider_reference, customer_name, status,
         currency, amount, fee_percent, fee_amount, failure_reason, paid_at, refunded_at, cancelled_at, invoice_media_id,
-        marketplace_payout_amount, source_payload
+        marketplace_payout_amount, checkout_kind, source_payload
       ) values (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb
       )
@@ -328,6 +329,7 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
         cancelled_at = excluded.cancelled_at,
         invoice_media_id = excluded.invoice_media_id,
         marketplace_payout_amount = excluded.marketplace_payout_amount,
+        checkout_kind = excluded.checkout_kind,
         source_payload = excluded.source_payload,
         updated_at = now()
     `,
@@ -335,7 +337,7 @@ export const buildPaymentRevenueUpsert = (payment = {}) => {
       record.sourceId, record.tenantId, record.bookingId || null, record.provider, record.publicToken, record.providerReference,
       record.customerName, record.status, record.currency, record.amount, record.feePercent, record.feeAmount,
       record.failureReason, record.paidAt, record.refundedAt, record.cancelledAt, record.invoiceMediaId || null,
-      record.marketplacePayoutAmount, JSON.stringify(record.sourcePayload || {}),
+      record.marketplacePayoutAmount, record.checkoutKind, JSON.stringify(record.sourcePayload || {}),
     ],
   };
 };

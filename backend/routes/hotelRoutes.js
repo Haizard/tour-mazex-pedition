@@ -245,8 +245,40 @@ router.post("/public/claims", async (req, res) => {
 
     const claim = await HotelClaimRequest.create(payload);
 
+    // ── Auto-create partner admin for self-service claims ────────────────
+    // The partner can log in immediately using the username and password they
+    // provided on the claim form. Tenant admins still control visibility on
+    // their website independently via published/marketplaceVisible flags.
+    let partnerAdmin = null;
+    if (hotelId && claim.tenantId) {
+      try {
+        const partnerPayload = buildApprovedHotelPartnerAdminPayload({
+          ...(claim.toObject?.() || claim),
+          hotelId,
+          tenantId: claim.tenantId,
+        });
+        partnerAdmin = await HotelPartnerAdmin.create(partnerPayload);
+        claim.linkedPartnerAdminId = partnerAdmin._id;
+        await claim.save();
+      } catch (innerError) {
+        // Partner admin creation failure should not block the claim submission.
+        // The admin can still create the partner admin via the review flow.
+      }
+    }
+
     return res.status(201).json({
       claim: shapeHotelClaimQueueItem(claim.toObject?.() || claim),
+      ...(partnerAdmin
+        ? {
+            partnerAdmin: {
+              id: String(partnerAdmin._id),
+              username: partnerAdmin.username,
+              displayName: partnerAdmin.displayName,
+              role: partnerAdmin.role,
+              hotelIds: partnerAdmin.hotelIds.map((item) => String(item)),
+            },
+          }
+        : {}),
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });
@@ -582,18 +614,25 @@ router.post("/claims/:id/review", async (req, res) => {
       claim.hotelId = createdHotel._id;
     }
 
-    const partnerPayload = buildApprovedHotelPartnerAdminPayload({
-      ...claim.toObject(),
-      hotelId,
-      tenantId: req.tenantId,
-    });
-    const partnerAdmin = await HotelPartnerAdmin.create(partnerPayload);
+    let partnerAdmin;
+    if (claim.linkedPartnerAdminId) {
+      // Partner admin was already created during self-service claim submission.
+      // Fetch the existing record instead of creating a duplicate.
+      partnerAdmin = await HotelPartnerAdmin.findById(claim.linkedPartnerAdminId);
+    } else {
+      const partnerPayload = buildApprovedHotelPartnerAdminPayload({
+        ...claim.toObject(),
+        hotelId,
+        tenantId: req.tenantId,
+      });
+      partnerAdmin = await HotelPartnerAdmin.create(partnerPayload);
+      claim.linkedPartnerAdminId = partnerAdmin._id;
+    }
 
     claim.status = "approved";
     claim.reviewedBy = reviewUpdate.reviewedBy;
     claim.reviewedAt = reviewUpdate.reviewedAt;
     claim.reviewNote = reviewUpdate.reviewNote;
-    claim.linkedPartnerAdminId = partnerAdmin._id;
     claim.tenantId = req.tenantId;
     await claim.save();
 

@@ -1,0 +1,197 @@
+# Migration Test CI
+#
+# Applies new Supabase migrations against a test PostgreSQL database and runs
+# the Node.js integration tests to verify correctness.
+#
+# Triggers:
+#   - Pull requests targeting main
+#   - Pushes to main (after merge)
+#
+# The workflow uses a PostgreSQL service container (matching Supabase PG v17)
+# and sets environment variables so the app's postgresClient.js can connect.
+
+name: Migration Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/migrations/*.sql"
+      - "backend/utils/postgresRevenueRecords.js"
+      - "backend/utils/postgresClient.js"
+      - "backend/utils/postgresTenantPropertyPartnershipRecords.js"
+      - "backend/tests/tenantPropertyPartnershipMigration.test.js"
+      - ".github/workflows/migration-test.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/*.sql"
+      - "backend/utils/postgresRevenueRecords.js"
+      - "backend/utils/postgresClient.js"
+      - "backend/utils/postgresTenantPropertyPartnershipRecords.js"
+      - "backend/tests/tenantPropertyPartnershipMigration.test.js"
+      - ".github/workflows/migration-test.yml"
+  workflow_dispatch: # Allow manual trigger for ad-hoc testing
+
+env:
+  NODE_VERSION: "22"
+  PG_VERSION: "17"
+
+jobs:
+  migration-test:
+    runs-on: ubuntu-latest
+
+    services:
+      # Spin up a fresh PostgreSQL matching Supabase PG version
+      postgres:
+        image: postgres:${{ env.PG_VERSION }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Step 1: Apply base revenue migration ──────────────────────────────
+      # Required so the commission-columns migration has tables to alter,
+      # and so Test 3 (full revenue schema integration) can run.
+      - name: Apply base revenue migration (20260428160000)
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
+          -f supabase/migrations/20260428160000_create_revenue_record_tables.sql
+        env:
+          PGPASSWORD: postgres
+
+      - name: Apply public_token migration (20260430071500)
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
+          -f supabase/migrations/20260430071500_add_public_token_to_payment_records.sql
+        env:
+          PGPASSWORD: postgres
+
+      # ── Step 2: Apply the two new migrations ──────────────────────────────
+      - name: Apply Migration 1 — tenant_property_partnerships table
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
+          -f supabase/migrations/20260610090000_create_tenant_property_partnerships.sql
+        env:
+          PGPASSWORD: postgres
+
+      - name: Apply Migration 2 — missing commission columns
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
+          -f supabase/migrations/20260610100000_add_missing_commission_columns.sql
+        env:
+          PGPASSWORD: postgres
+
+      # ── Step 3: Verify schema & data roundtrip via psql ─────────────────
+      # (Runs before Node.js tests because the tests drop all tables in cleanup)
+
+      - name: Verify tenant_property_partnerships table
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "
+          select count(*)::int as column_count
+          from information_schema.columns
+          where table_schema='public' and table_name='tenant_property_partnerships';
+          " | grep -q "13" && echo "✅ tenant_property_partnerships: 13 columns OK"
+
+      - name: Verify payment_records commission columns
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "
+          select column_name, data_type, is_nullable
+          from information_schema.columns
+          where table_schema='public' and table_name='payment_records'
+            and column_name in ('invoice_media_id','marketplace_payout_amount','checkout_kind')
+          order by ordinal_position;
+          " && echo "✅ payment_records: commission columns exist"
+
+      - name: Verify booking_records commission columns
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "
+          select column_name, data_type, is_nullable
+          from information_schema.columns
+          where table_schema='public' and table_name='booking_records'
+            and column_name in ('itinerary_media_id','distributor_tenant_id','marketplace_commission_percent')
+          order by ordinal_position;
+          " && echo "✅ booking_records: commission columns exist"
+
+      - name: Verify indexes
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "
+          select indexname
+          from pg_indexes
+          where schemaname='public'
+            and indexname in ('payment_records_payout_idx','booking_records_distributor_idx');
+          " && echo "✅ Both new indexes exist"
+
+      - name: Verify idempotent re-apply
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
+          -f supabase/migrations/20260610090000_create_tenant_property_partnerships.sql
+          && PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
+          -f supabase/migrations/20260610100000_add_missing_commission_columns.sql
+          && echo "✅ Both migrations re-apply without error (idempotent)"
+
+      - name: Verify data insert/read/delete roundtrip via psql
+        run: >-
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "
+          insert into public.tenant_property_partnerships
+            (source_id, tenant_id, property_id, property_type, commission_percent, status)
+          values
+            ('ci-test-001', 'ci-tenant', 'prop-1', 'hotel', 15.0, 'active');
+
+          insert into public.payment_records
+            (source_id, tenant_id, provider, amount, marketplace_payout_amount, checkout_kind, source_payload)
+          values
+            ('ci-pay-001', 'ci-tenant', 'stripe', 100.00, 15.00, 'hotel_reservation',
+             '{"test":true}'::jsonb);
+
+          insert into public.booking_records
+            (source_id, tenant_id, traveler_name, total_price,
+             distributor_tenant_id, marketplace_commission_percent, source_payload)
+          values
+            ('ci-book-001', 'ci-tenant', 'CI Test Traveler', 500.00,
+             'dist-001', 10.00, '{"channel":"marketplace"}'::jsonb);
+
+          select 'tenant_property_partnerships' as tbl, source_id, property_type,
+                 commission_percent, status
+          from public.tenant_property_partnerships
+          where source_id = 'ci-test-001';
+
+          select 'payment_records' as tbl, source_id, marketplace_payout_amount, checkout_kind
+          from public.payment_records
+          where source_id = 'ci-pay-001';
+
+          select 'booking_records' as tbl, source_id, distributor_tenant_id,
+                 marketplace_commission_percent
+          from public.booking_records
+          where source_id = 'ci-book-001';
+
+          delete from public.tenant_property_partnerships where source_id = 'ci-test-001';
+          delete from public.payment_records where source_id = 'ci-pay-001';
+          delete from public.booking_records where source_id = 'ci-book-001';
+          " && echo "✅ Data roundtrip (insert/read/delete) verified"
+
+      # ── Step 4: Run Node.js integration tests ─────────────────────────────
+      - name: Run migration integration tests
+        run: node --test backend/tests/tenantPropertyPartnershipMigration.test.js
+        env:
+          SUPABASE_DB_URL: postgresql://postgres:postgres@localhost:5432/postgres

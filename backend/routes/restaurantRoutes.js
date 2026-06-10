@@ -245,8 +245,41 @@ router.post("/public/claims", async (req, res) => {
 
     const claim = await RestaurantClaimRequest.create(payload);
 
+    // ── Auto-create partner admin for self-service claims ────────────────
+    // The partner can log in immediately using the username and password they
+    // provided on the claim form. Tenant admins still control visibility on
+    // their website independently via published/marketplaceVisible flags.
+    let partnerAdmin = null;
+    if (restaurantId && claim.tenantId) {
+      try {
+        const partnerPayload = buildApprovedRestaurantPartnerAdminPayload({
+          ...(claim.toObject?.() || claim),
+          restaurantId,
+          tenantId: claim.tenantId,
+        });
+        partnerAdmin = await RestaurantPartnerAdmin.create(partnerPayload);
+        claim.linkedPartnerAdminId = partnerAdmin._id;
+        await claim.save();
+      } catch (_err) {
+        // Partner admin creation failure should not block the claim submission.
+        // The admin can still create the partner admin via the review flow.
+        console.error("Auto-create restaurant partner admin failed:", _err.message);
+      }
+    }
+
     return res.status(201).json({
       claim: shapeRestaurantClaimQueueItem(claim.toObject?.() || claim),
+      ...(partnerAdmin
+        ? {
+            partnerAdmin: {
+              id: String(partnerAdmin._id),
+              username: partnerAdmin.username,
+              displayName: partnerAdmin.displayName,
+              role: partnerAdmin.role,
+              restaurantIds: partnerAdmin.restaurantIds.map((item) => String(item)),
+            },
+          }
+        : {}),
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });
@@ -569,18 +602,25 @@ router.post("/claims/:id/review", async (req, res) => {
       claim.restaurantId = createdRestaurant._id;
     }
 
-    const partnerPayload = buildApprovedRestaurantPartnerAdminPayload({
-      ...claim.toObject(),
-      restaurantId,
-      tenantId: req.tenantId,
-    });
-    const partnerAdmin = await RestaurantPartnerAdmin.create(partnerPayload);
+    let partnerAdmin;
+    if (claim.linkedPartnerAdminId) {
+      // Partner admin was already created during self-service claim submission.
+      // Fetch the existing record instead of creating a duplicate.
+      partnerAdmin = await RestaurantPartnerAdmin.findById(claim.linkedPartnerAdminId);
+    } else {
+      const partnerPayload = buildApprovedRestaurantPartnerAdminPayload({
+        ...claim.toObject(),
+        restaurantId,
+        tenantId: req.tenantId,
+      });
+      partnerAdmin = await RestaurantPartnerAdmin.create(partnerPayload);
+      claim.linkedPartnerAdminId = partnerAdmin._id;
+    }
 
     claim.status = "approved";
     claim.reviewedBy = reviewUpdate.reviewedBy;
     claim.reviewedAt = reviewUpdate.reviewedAt;
     claim.reviewNote = reviewUpdate.reviewNote;
-    claim.linkedPartnerAdminId = partnerAdmin._id;
     claim.tenantId = req.tenantId;
     await claim.save();
 
