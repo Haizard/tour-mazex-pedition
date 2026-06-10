@@ -80,6 +80,20 @@ const restaurantClaimRequestSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    requestedUsername: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
+    passwordHash: {
+      type: String,
+      required: true,
+    },
+    passwordSalt: {
+      type: String,
+      required: true,
+    },
     reviewNote: {
       type: String,
       default: "",
