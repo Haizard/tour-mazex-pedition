@@ -49,6 +49,45 @@ test("scopeImportedCss prevents imported CSS from leaking outside the section", 
   assert.equal(scoped.includes(".pb-import-abc h1"), true);
 });
 
+test("scopeImportedCss passes through global and root-level selectors unchanged", () => {
+  const css = `
+    html { box-sizing: border-box; }
+    body { margin: 0; font-family: sans-serif; }
+    * { box-sizing: inherit; }
+    :root { --accent: #ff6600; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @media (min-width: 768px) { .hero { font-size: 3rem; } }
+    .luxury-hero { color: white; }
+    h1 { font-size: 64px; }
+  `;
+  const scoped = scopeImportedCss(css, "pb-import-abc");
+
+  // Root/global selectors stay as-is
+  assert.ok(scoped.includes("html { box-sizing: border-box; }"), "html kept as-is");
+  assert.ok(scoped.includes("body { margin: 0;"), "body kept as-is");
+  assert.ok(scoped.includes("* { box-sizing: inherit; }"), "universal * kept as-is");
+  assert.ok(scoped.includes(":root { --accent: #ff6600; }"), ":root kept as-is");
+  assert.ok(scoped.includes("@keyframes fadeIn"), "@keyframes kept as-is");
+  assert.ok(scoped.includes("@media (min-width: 768px)"), "@media kept as-is");
+
+  // Regular selectors get scoped
+  assert.ok(scoped.includes(".pb-import-abc .luxury-hero"), ".luxury-hero scoped");
+  assert.ok(scoped.includes(".pb-import-abc h1"), "h1 scoped");
+});
+
+test("scopeImportedCss keeps already-scoped selectors unchanged", () => {
+  const css = `
+    .pb-import-abc .hero { background: black; }
+    .other-import .hero { background: red; }
+  `;
+  const scoped = scopeImportedCss(css, "pb-import-abc");
+
+  // Already-scoped with the right class stays exact
+  assert.ok(scoped.includes(".pb-import-abc .hero { background: black; }"), "correct scope kept exact");
+  // Already-scoped with a different class gets scoped under our class
+  assert.ok(scoped.includes(".pb-import-abc .other-import .hero"), "different scope further scoped");
+});
+
 test("buildImportedSectionFromSource converts pasted source into editable customHtml section", () => {
   const section = buildImportedSectionFromSource({
     sourceCode: pastedSource,

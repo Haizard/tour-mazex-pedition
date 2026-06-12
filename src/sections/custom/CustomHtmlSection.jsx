@@ -37,10 +37,31 @@ const applyTemplateVariables = (template = "", content = {}) => {
   );
 };
 
+/** Tailwind-like container width presets applied as inline styles. */
+const CONTAINER_WIDTH_MAP = {
+  narrow: "max-w-3xl",
+  standard: "max-w-6xl",
+  wide: "max-w-7xl",
+  full: "max-w-full",
+};
+
+/** Spacing preset multipliers applied as padding-top / padding-bottom. */
+const SPACING_PRESET_MAP = {
+  compact: { py: "1.5rem" },
+  comfortable: { py: "4rem" },
+  spacious: { py: "7rem" },
+};
+
 const CustomHtmlSection = ({
   htmlTemplate = "",
   customCss = "",
   scopeClass = "",
+  containerWidth = "",
+  spacingPreset = "",
+  paddingTop,
+  paddingBottom,
+  backgroundColor = "",
+  textColor = "",
   ...content
 }) => {
   const location = useLocation();
@@ -53,11 +74,32 @@ const CustomHtmlSection = ({
   );
   const renderedHtml = React.useMemo(
     () => sanitizeHtml(applyTemplateVariables(htmlTemplate, scopedContent)),
-    [htmlTemplate, scopedContent]
+    [htmlTemplate, scopedContent],
   );
 
+  // Build the section wrapper class list from builder style controls
+  const sectionClasses = React.useMemo(() => {
+    const classes = [scopeClass || undefined, CONTAINER_WIDTH_MAP[containerWidth]].filter(Boolean);
+    return classes.join(" ");
+  }, [scopeClass, containerWidth]);
+
+  // Build inline styles for fine-grained control that CSS scoping can't override
+  const sectionStyles = React.useMemo(() => {
+    const spacing = SPACING_PRESET_MAP[spacingPreset] || {};
+    return {
+      paddingTop: paddingTop !== undefined ? `${paddingTop}px` : spacing.py,
+      paddingBottom: paddingBottom !== undefined ? `${paddingBottom}px` : spacing.py,
+      backgroundColor: backgroundColor || undefined,
+      color: textColor || undefined,
+    };
+  }, [spacingPreset, paddingTop, paddingBottom, backgroundColor, textColor]);
+
   return (
-    <section className={scopeClass || undefined} suppressHydrationWarning>
+    <section
+      className={sectionClasses || undefined}
+      style={sectionStyles}
+      suppressHydrationWarning
+    >
       {customCss ? <style suppressHydrationWarning>{customCss}</style> : null}
       <div dangerouslySetInnerHTML={{ __html: renderedHtml }} suppressHydrationWarning />
     </section>

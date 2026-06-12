@@ -784,9 +784,8 @@ const buildSectionProps = (section) => {
 
   if (section.type === "customHtml") {
     return {
-      ...contentConfig,
-      customCss: section.styleConfig?.customCss || "",
-      scopeClass: section.styleConfig?.scopeClass || "",
+      ...(section.contentConfig || {}),
+      ...(section.styleConfig || {}),
     };
   }
 
