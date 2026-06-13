@@ -51,7 +51,7 @@ export default function InspectorPane({
 
   return (
     <aside
-      className="flex h-full min-h-0 w-full shrink-0 md:basis-[21rem] xl:basis-[23rem] 2xl:basis-[27rem] flex-col border-l border-white/10 bg-[#f8fafc]"
+      className="flex h-full min-h-0 w-full shrink-0 md:basis-[21rem] md:max-w-[21rem] xl:basis-[23rem] xl:max-w-[23rem] 2xl:basis-[26rem] 2xl:max-w-[26rem] flex-col overflow-hidden border-l border-white/10 bg-[#f8fafc]"
       data-testid="template-studio-inspector"
     >
       <div className="border-b border-slate-200 px-5 py-5">

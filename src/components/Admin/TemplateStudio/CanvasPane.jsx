@@ -117,7 +117,7 @@ export default function CanvasPane({
 
   return (
     <main
-      className="flex min-h-0 flex-1 flex-col"
+      className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden"
       data-testid="template-studio-canvas"
       style={{
         background:

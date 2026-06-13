@@ -412,7 +412,7 @@ export default function TemplateStudioShell({
           {message}
         </div>
       ) : null}
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-auto lg:flex-row">
         {isPreviewOpen ? (
           <PreviewPane
             page={{ ...pageDraft, sections: canvasState.sections }}
@@ -442,15 +442,15 @@ export default function TemplateStudioShell({
             ) : sidebarGroup === "versions" ? (
               <VersionManagerPane
                 pageName={pageDraft.pageName}
-              snapshots={pageDraft.snapshots || []}
-              selectedSnapshotId={selectedSnapshotId}
-              comparisonSnapshotId={comparisonSnapshotId}
-              onCreateSnapshot={handleSaveSnapshot}
-              onRestoreSnapshot={handleSnapshotChange}
-              onRenameSnapshot={handleRenameSnapshot}
-              onDeleteSnapshot={handleDeleteSnapshot}
-              onSelectComparisonSnapshot={setComparisonSnapshotId}
-            />
+                snapshots={pageDraft.snapshots || []}
+                selectedSnapshotId={selectedSnapshotId}
+                comparisonSnapshotId={comparisonSnapshotId}
+                onCreateSnapshot={handleSaveSnapshot}
+                onRestoreSnapshot={handleSnapshotChange}
+                onRenameSnapshot={handleRenameSnapshot}
+                onDeleteSnapshot={handleDeleteSnapshot}
+                onSelectComparisonSnapshot={setComparisonSnapshotId}
+              />
             ) : (
               <LibraryPane
                 sections={mergedLibrarySections}

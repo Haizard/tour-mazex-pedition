@@ -9,7 +9,7 @@ export default function StudioSidebar({
 }) {
   return (
     <aside
-      className="flex h-full min-h-0 w-full shrink-0 md:basis-[16rem] xl:basis-[17rem] 2xl:basis-[19rem] flex-col border-r border-white/10 bg-[#08090d] text-slate-100"
+      className="flex h-full min-h-0 w-full shrink-0 md:basis-[16rem] md:max-w-[16rem] xl:basis-[17rem] xl:max-w-[17rem] 2xl:basis-[18rem] 2xl:max-w-[18rem] flex-col overflow-hidden border-r border-white/10 bg-[#08090d] text-slate-100"
       data-testid="template-studio-sidebar"
     >
       <div className="border-b border-white/10 px-5 py-5">

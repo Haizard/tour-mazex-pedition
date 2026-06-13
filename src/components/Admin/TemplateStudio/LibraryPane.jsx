@@ -67,7 +67,7 @@ export default function LibraryPane({
 
   return (
     <aside
-      className="flex h-full min-h-0 w-full shrink-0 md:basis-[20rem] xl:basis-[22rem] 2xl:basis-[25rem] flex-col border-r border-white/10 bg-[#f8fafc]"
+      className="flex h-full min-h-0 w-full shrink-0 md:basis-[20rem] md:max-w-[20rem] xl:basis-[22rem] xl:max-w-[22rem] 2xl:basis-[24rem] 2xl:max-w-[24rem] flex-col overflow-hidden border-r border-white/10 bg-[#f8fafc]"
       data-testid="template-studio-library"
     >
       <div className="border-b border-slate-200 px-5 py-5">
