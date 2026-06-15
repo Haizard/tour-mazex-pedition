@@ -58,7 +58,7 @@ import {
   isTemplateUsable,
   resolveTemplateCatalogForTenant,
 } from "../../pageBuilder/templateMarketplace";
-import { sectionRegistry } from "../../sections/registry/sectionRegistry";
+import { sectionRegistry, renderRegisteredSection } from "../../sections/registry/sectionRegistry";
 import MediaUploadField from "../UI/MediaUploadField";
 import TemplateStudioShell from "./TemplateStudio/TemplateStudioShell.jsx";
 import { pageConfigToStudioPage } from "./TemplateStudio/studioTypes.js";
@@ -392,7 +392,7 @@ const SectionContentFields = ({ section, onChange }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+    <div className="grid grid-cols-1 gap-4 mt-5">
       {schema.map((field) => {
         const source = section[field.group] || {};
         const value = getValueAtPath(source, field.path);
@@ -437,7 +437,7 @@ const SectionStyleFields = ({ section, onChange }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+    <div className="grid grid-cols-1 gap-4 mt-5">
       {schema.map((field) => {
         const source = section[field.group] || {};
         const value = getValueAtPath(source, field.path);
@@ -2031,7 +2031,7 @@ const PageBuilderManager = ({
         </div>
       )}
 
-      <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)_minmax(0,1fr)]">
         <aside className="rounded-[28px] border border-slate-200 bg-[#0b0b0f] p-3 text-white xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between gap-3">
@@ -2174,7 +2174,7 @@ const PageBuilderManager = ({
           </div>
         </aside>
 
-        <main className="min-w-0">
+        <main className="flex min-w-0 flex-col gap-3 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto xl:pr-1">
           {activeTool === "settings" && renderPageSettings()}
           {activeTool === "templates" && renderTemplateTool()}
           {activeTool === "add" && renderAddSectionTool()}
@@ -2182,6 +2182,61 @@ const PageBuilderManager = ({
           {activeTool === "import" && renderImportSourceTool()}
           {activeTool === "section" && renderSectionEditor()}
         </main>
+
+        <aside
+          className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto"
+          data-testid="page-builder-preview"
+        >
+          {activeTool === "section" && selectedSection ? (
+            <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                  Live Preview
+                </p>
+                <h3 className="mt-1 text-lg font-black text-slate-950">
+                  {getSectionLabel(selectedSection.type)}
+                </h3>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  Edit on the left and watch this section update in real time.
+                </p>
+              </div>
+              <div className="mt-3 max-h-[60vh] overflow-auto rounded-2xl border border-slate-200 bg-white p-3">
+                {renderRegisteredSection(selectedSection)}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                Live Preview
+              </p>
+              <h3 className="mt-2 text-lg font-black text-slate-950">
+                {activePageMeta.label}
+              </h3>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                Select a section in the left sidebar to see a live preview of that
+                block. The preview updates as soon as you save changes.
+              </p>
+              <div className="mt-4 max-h-[60vh] space-y-3 overflow-auto rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-3">
+                {pageConfig.sections.length ? (
+                  pageConfig.sections
+                    .filter((section) => section.enabled !== false)
+                    .map((section) => (
+                      <div
+                        key={section._id || `${section.type}-${Math.random()}`}
+                        className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                      >
+                        {renderRegisteredSection(section)}
+                      </div>
+                    ))
+                ) : (
+                  <p className="px-3 py-6 text-center text-xs font-semibold text-slate-400">
+                    No sections on this page yet. Add one to see a preview.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </aside>
       </div>
     </div>
   );
